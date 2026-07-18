@@ -27,4 +27,28 @@ class CasoValor
             ]);
         }
     }
+
+    public static function eliminarPorCaso(int $casoId): void
+    {
+        $consulta = Database::conexion()->prepare('DELETE FROM caso_valor WHERE caso_id = :caso');
+        $consulta->execute(['caso' => $casoId]);
+    }
+
+    /**
+     * Valores ya guardados de un caso, indexados por campo_def_id => valor (string).
+     */
+    public static function porCaso(int $casoId): array
+    {
+        $consulta = Database::conexion()->prepare(
+            'SELECT campo_def_id, valor FROM caso_valor WHERE caso_id = :caso'
+        );
+        $consulta->execute(['caso' => $casoId]);
+
+        $valores = [];
+        foreach ($consulta->fetchAll() as $fila) {
+            $valores[(int) $fila['campo_def_id']] = $fila['valor'];
+        }
+
+        return $valores;
+    }
 }

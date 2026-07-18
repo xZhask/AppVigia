@@ -13,7 +13,7 @@ class UnidadesController extends Controller
 
     public function index(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/unidades/index', [
             'tituloVista' => 'Unidades PNP',
@@ -24,7 +24,7 @@ class UnidadesController extends Controller
 
     public function nuevo(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/unidades/formulario', [
             'tituloVista' => 'Nueva unidad PNP',
@@ -36,7 +36,7 @@ class UnidadesController extends Controller
 
     public function crear(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST);
@@ -59,7 +59,7 @@ class UnidadesController extends Controller
 
     public function editar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $unidad = UnidadPnp::buscar((int) $id);
         if (!$unidad) {
@@ -78,7 +78,7 @@ class UnidadesController extends Controller
 
     public function actualizar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST);
@@ -101,7 +101,7 @@ class UnidadesController extends Controller
 
     public function alternarActivo(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         $unidad = UnidadPnp::buscar((int) $id);

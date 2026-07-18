@@ -7,6 +7,7 @@ use App\Controllers\CasosController;
 use App\Controllers\EnfermedadesController;
 use App\Controllers\EstablecimientosController;
 use App\Controllers\GradosController;
+use App\Controllers\ImportacionController;
 use App\Controllers\PanelController;
 use App\Controllers\RedesController;
 use App\Controllers\ReportesController;
@@ -16,6 +17,19 @@ use App\Controllers\UsuariosController;
 use App\Core\Auth;
 use App\Core\Router;
 use App\Core\Session;
+
+$config = require __DIR__ . '/../config/config.php';
+
+error_reporting(E_ALL);
+ini_set('display_errors', $config['app']['debug'] ? '1' : '0');
+
+set_exception_handler(function (\Throwable $e): void {
+    error_log('Excepción no capturada: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
+    if (!headers_sent()) {
+        http_response_code(500);
+    }
+    require __DIR__ . '/../app/Views/500.php';
+});
 
 Session::iniciar();
 
@@ -61,8 +75,52 @@ $router->get('/casos/nuevo/secciones-clinicas', function () {
     (new CasosController())->seccionesClinicas();
 });
 
+$router->get('/casos/nuevo/paciente', function () {
+    (new CasosController())->buscarPaciente();
+});
+
+$router->get('/casos/importar', function () {
+    (new ImportacionController())->formulario();
+});
+
+$router->get('/casos/importar/plantilla', function () {
+    (new ImportacionController())->plantilla();
+});
+
+$router->post('/casos/importar', function () {
+    (new ImportacionController())->procesar();
+});
+
+$router->get('/casos/importar/lotes', function () {
+    (new ImportacionController())->lotes();
+});
+
+$router->get('/casos/{id}/editar', function ($id) {
+    (new CasosController())->editar($id);
+});
+
+$router->post('/casos/{id}/estado', function ($id) {
+    (new CasosController())->cambiarEstado($id);
+});
+
+$router->post('/casos/{id}/anular', function ($id) {
+    (new CasosController())->anular($id);
+});
+
+$router->get('/casos/{id}', function ($id) {
+    (new CasosController())->ver($id);
+});
+
+$router->post('/casos/{id}', function ($id) {
+    (new CasosController())->actualizar($id);
+});
+
 $router->get('/reportes', function () {
     (new ReportesController())->index();
+});
+
+$router->get('/reportes/exportar', function () {
+    (new ReportesController())->exportarExcel();
 });
 
 // ---------- Catálogo: enfermedades ----------

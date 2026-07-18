@@ -1,6 +1,7 @@
 <?php
 // Funciones de ayuda para las vistas. Sin namespace: de uso global.
 
+use App\Models\CatalogoItem;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Provincia;
@@ -18,7 +19,7 @@ function contextoUbigeo(?string $distritoId): array
     $distritosIniciales = [];
 
     if (!empty($distritoId)) {
-        $distrito = Distrito::buscar((int) $distritoId);
+        $distrito = Distrito::buscarPorId($distritoId);
         if ($distrito) {
             $departamentoId = $distrito['departamento_id'];
             $provinciaId = $distrito['provincia_id'];
@@ -113,6 +114,80 @@ function semanaEpidemiologica(string $fechaIso): array
         'anio'   => (int) $dt->format('o'),
         'semana' => (int) $dt->format('W'),
     ];
+}
+
+/**
+ * Reconstruye el query string de un listado paginado conservando los
+ * filtros activos y solo cambiando la página (o lo que se pase en $sobrescribir).
+ */
+function queryConPagina(array $filtros, array $sobrescribir = []): string
+{
+    return http_build_query(array_filter(array_merge($filtros, $sobrescribir), fn($v) => $v !== '' && $v !== null));
+}
+
+/**
+ * Enmascara un número de documento para listados: primer dígito, cuatro
+ * puntos fijos y los últimos tres dígitos (mismo patrón que el mockup).
+ */
+function enmascararDocumento(string $numDoc): string
+{
+    $largo = mb_strlen($numDoc);
+    if ($largo <= 4) {
+        return $numDoc;
+    }
+
+    return mb_substr($numDoc, 0, 1) . '••••' . mb_substr($numDoc, -3);
+}
+
+/**
+ * Texto legible de un valor guardado en caso_valor, para la vista de solo
+ * lectura de la ficha (Ver). $campo es una fila de campo_def.
+ */
+function campoValorTexto(array $campo, ?string $valorCrudo): string
+{
+    if ($valorCrudo === null || $valorCrudo === '') {
+        return '—';
+    }
+    switch ($campo['tipo']) {
+        case 'BOOLEANO':
+            return $valorCrudo === '1' ? 'Sí' : 'No';
+        case 'FECHA':
+            return fechaIsoADmy($valorCrudo) ?: '—';
+        case 'SELECT':
+        case 'MULTISELECT':
+            $opciones = $campo['catalogo_id'] ? CatalogoItem::porCatalogo((int) $campo['catalogo_id']) : [];
+            $mapa = array_column($opciones, 'etiqueta', 'valor');
+            $valores = $campo['tipo'] === 'MULTISELECT' ? explode(',', $valorCrudo) : [$valorCrudo];
+            return implode(', ', array_map(fn($v) => $mapa[$v] ?? $v, $valores));
+        default:
+            return $valorCrudo;
+    }
+}
+
+/**
+ * Secuencia ordenada de semanas epidemiológicas entre dos pares (año, SE),
+ * inclusive, para rellenar de ceros las semanas sin casos en la curva
+ * epidemiológica (el conteo real de cada semana lo resuelve SQL; esto solo
+ * genera el calendario de semanas a mostrar).
+ *
+ * @return array<int, array{anio: int, semana: int}>
+ */
+function semanasEnRango(int $anioDesde, int $seDesde, int $anioHasta, int $seHasta): array
+{
+    // Cualquier día de esa semana ISO sirve como ancla; el jueves siempre
+    // cae dentro de la semana correcta (regla ISO-8601).
+    $cursor = new DateTime();
+    $cursor->setISODate($anioDesde, $seDesde, 4);
+    $fin = new DateTime();
+    $fin->setISODate($anioHasta, $seHasta, 4);
+
+    $semanas = [];
+    while ($cursor <= $fin) {
+        $semanas[] = ['anio' => (int) $cursor->format('o'), 'semana' => (int) $cursor->format('W')];
+        $cursor->modify('+7 days');
+    }
+
+    return $semanas;
 }
 
 function edadDesdeFecha(?string $fechaNacIso): ?int

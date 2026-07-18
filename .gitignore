@@ -1,0 +1,10 @@
+# Respaldos generados por scripts/respaldo_bd.ps1 — nunca versionar dumps de la BD.
+/backups/
+
+# Exports crudos del padrón RENIPRESS (fuente de datos, no código).
+/USLR*.xls
+/USLR*.xlsx
+
+# Artefactos de SO/editor.
+Thumbs.db
+.DS_Store

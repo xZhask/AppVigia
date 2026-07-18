@@ -1,13 +1,12 @@
 <?php
 /**
- * Las tres secciones que el mockup muestra colapsadas (se activan en fases
- * posteriores). Viven dentro del mismo contenedor recargable que las
- * secciones clínicas para que la numeración siga siendo correcta al cambiar
- * de enfermedad. Variable esperada: $numeroSeccion (entero, se incrementa).
+ * La sección que en "Nueva ficha" se mantiene colapsada: la clasificación se
+ * decide durante el seguimiento (Ver/Editar ficha), no al notificar. Vive
+ * dentro del mismo contenedor recargable que las secciones clínicas para que
+ * la numeración siga siendo correcta al cambiar de enfermedad. Variable
+ * esperada: $numeroSeccion (entero, se incrementa).
  */
 $placeholders = [
-    ['titulo' => 'Antecedentes epidemiológicos', 'nota' => 'Viajes · contactos · lugar probable'],
-    ['titulo' => 'Laboratorio', 'nota' => 'Muestras y resultados'],
     ['titulo' => 'Clasificación del caso', 'nota' => 'Sospechoso · probable · confirmado · descartado'],
 ];
 ?>

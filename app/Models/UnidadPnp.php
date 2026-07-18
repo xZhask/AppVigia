@@ -17,4 +17,13 @@ class UnidadPnp extends Model
 
         return Database::conexion()->query($sql)->fetchAll();
     }
+
+    public static function buscarPorNombre(string $nombre): ?array
+    {
+        $consulta = Database::conexion()->prepare('SELECT * FROM unidad_pnp WHERE nombre = :nombre');
+        $consulta->execute(['nombre' => $nombre]);
+        $fila = $consulta->fetch();
+
+        return $fila ?: null;
+    }
 }

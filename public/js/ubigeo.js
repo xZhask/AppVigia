@@ -36,4 +36,37 @@ function inicializarUbigeo(prefijo) {
       .then(function (resp) { return resp.json(); })
       .then(function (distritos) { llenarOpciones(selDist, distritos, 'Seleccionar…'); });
   });
+
+  window['_ubigeoLlenar_' + prefijo] = llenarOpciones;
+}
+
+/**
+ * Selecciona en cascada departamento → provincia → distrito de forma
+ * programática (por ejemplo, tras autocompletar un paciente encontrado).
+ * Requiere que inicializarUbigeo(prefijo) ya se haya ejecutado.
+ */
+function establecerUbigeo(prefijo, departamentoId, provinciaId, distritoId) {
+  var selDep = document.getElementById(prefijo + '-departamento');
+  var selProv = document.getElementById(prefijo + '-provincia');
+  var selDist = document.getElementById(prefijo + '-distrito');
+  var llenarOpciones = window['_ubigeoLlenar_' + prefijo];
+  if (!selDep || !selProv || !selDist || !llenarOpciones || !departamentoId) return;
+
+  selDep.value = departamentoId;
+
+  fetch('/api/provincias?departamento=' + encodeURIComponent(departamentoId))
+    .then(function (resp) { return resp.json(); })
+    .then(function (provincias) {
+      llenarOpciones(selProv, provincias, 'Seleccionar…');
+      selProv.value = provinciaId || '';
+      if (!provinciaId) return Promise.reject('sin-provincia');
+
+      return fetch('/api/distritos?provincia=' + encodeURIComponent(provinciaId))
+        .then(function (resp) { return resp.json(); })
+        .then(function (distritos) {
+          llenarOpciones(selDist, distritos, 'Seleccionar…');
+          selDist.value = distritoId || '';
+        });
+    })
+    .catch(function () { /* sin provincia/distrito previo: se deja el departamento nada más */ });
 }

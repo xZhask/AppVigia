@@ -14,7 +14,7 @@ class RedesController extends Controller
 
     public function index(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/redes/index', [
             'tituloVista' => 'Redes de salud',
@@ -25,7 +25,7 @@ class RedesController extends Controller
 
     public function nuevo(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/redes/formulario', [
             'tituloVista' => 'Nueva red de salud',
@@ -37,7 +37,7 @@ class RedesController extends Controller
 
     public function crear(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST);
@@ -60,7 +60,7 @@ class RedesController extends Controller
 
     public function editar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $red = RedSalud::buscar((int) $id);
         if (!$red) {
@@ -79,7 +79,7 @@ class RedesController extends Controller
 
     public function actualizar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST);
@@ -102,7 +102,7 @@ class RedesController extends Controller
 
     public function eliminar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         try {

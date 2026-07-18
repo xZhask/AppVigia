@@ -17,4 +17,18 @@ class Distrito extends Model
 
         return $consulta->fetchAll();
     }
+
+    /**
+     * Busca por id preservando el string tal cual (a diferencia de
+     * Model::buscar(int), que trunca el cero inicial de departamentos 01-09
+     * y deja de encontrar la fila con sentencias preparadas reales).
+     */
+    public static function buscarPorId(string $id): ?array
+    {
+        $consulta = Database::conexion()->prepare('SELECT * FROM distrito WHERE id = :id');
+        $consulta->execute(['id' => $id]);
+        $fila = $consulta->fetch();
+
+        return $fila ?: null;
+    }
 }

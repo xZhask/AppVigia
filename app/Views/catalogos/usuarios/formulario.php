@@ -34,9 +34,7 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
           <div class="control <?= isset($errores['rol']) ? 'err' : '' ?>">
             <select name="rol">
               <option value="REGISTRADOR" <?= seleccionado($usuario['rol'], 'REGISTRADOR') ?>>Registrador/a</option>
-              <option value="EPIDEMIOLOGO" <?= seleccionado($usuario['rol'], 'EPIDEMIOLOGO') ?>>Epidemiólogo/a</option>
               <option value="ADMIN" <?= seleccionado($usuario['rol'], 'ADMIN') ?>>Administrador</option>
-              <option value="LECTOR" <?= seleccionado($usuario['rol'], 'LECTOR') ?>>Lector/a</option>
             </select>
           </div>
         </div>

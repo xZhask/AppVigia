@@ -15,7 +15,7 @@ class EstablecimientosController extends Controller
 
     public function index(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/establecimientos/index', [
             'tituloVista'     => 'Establecimientos',
@@ -26,7 +26,7 @@ class EstablecimientosController extends Controller
 
     public function nuevo(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/establecimientos/formulario', [
             'tituloVista'   => 'Nuevo establecimiento',
@@ -42,7 +42,7 @@ class EstablecimientosController extends Controller
 
     public function crear(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST);
@@ -66,7 +66,7 @@ class EstablecimientosController extends Controller
 
     public function editar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $establecimiento = Establecimiento::buscar((int) $id);
         if (!$establecimiento) {
@@ -86,7 +86,7 @@ class EstablecimientosController extends Controller
 
     public function actualizar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST);
@@ -110,7 +110,7 @@ class EstablecimientosController extends Controller
 
     public function alternarActivo(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         $establecimiento = Establecimiento::buscar((int) $id);

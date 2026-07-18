@@ -10,12 +10,12 @@ use App\Models\Usuario;
 
 class UsuariosController extends Controller
 {
-    private const ROLES = ['ADMIN', 'EPIDEMIOLOGO', 'REGISTRADOR', 'LECTOR'];
+    private const ROLES = ['ADMIN', 'REGISTRADOR'];
     private const RUTA = 'catalogos/usuarios';
 
     public function index(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/usuarios/index', [
             'tituloVista' => 'Usuarios',
@@ -26,7 +26,7 @@ class UsuariosController extends Controller
 
     public function nuevo(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/usuarios/formulario', [
             'tituloVista' => 'Nuevo usuario',
@@ -39,7 +39,7 @@ class UsuariosController extends Controller
 
     public function crear(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST, null);
@@ -66,7 +66,7 @@ class UsuariosController extends Controller
 
     public function editar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $usuario = Usuario::buscar((int) $id);
         if (!$usuario) {
@@ -86,7 +86,7 @@ class UsuariosController extends Controller
 
     public function actualizar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST, (int) $id);
@@ -115,7 +115,7 @@ class UsuariosController extends Controller
 
     public function alternarActivo(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         if ((int) $id === Auth::usuario()['id']) {

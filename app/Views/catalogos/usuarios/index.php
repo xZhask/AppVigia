@@ -7,7 +7,7 @@ $pestanas = [
     ['ruta' => 'catalogos/unidades', 'etiqueta' => 'Unidades PNP'],
 ];
 $etiquetasRol = [
-    'ADMIN' => 'Administrador', 'EPIDEMIOLOGO' => 'Epidemiólogo/a', 'REGISTRADOR' => 'Registrador/a', 'LECTOR' => 'Lector/a',
+    'ADMIN' => 'Administrador', 'REGISTRADOR' => 'Registrador/a',
 ];
 $miId = Auth::usuario()['id'];
 ?>

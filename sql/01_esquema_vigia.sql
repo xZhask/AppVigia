@@ -96,7 +96,7 @@ CREATE TABLE usuario (
   nombre             VARCHAR(120) NOT NULL,
   email              VARCHAR(120) NOT NULL,
   password_hash      VARCHAR(255) NOT NULL,
-  rol                ENUM('REGISTRADOR','EPIDEMIOLOGO','ADMIN','LECTOR')
+  rol                ENUM('ADMIN','REGISTRADOR')
                                   NOT NULL DEFAULT 'REGISTRADOR',
   establecimiento_id INT          NULL,     -- registrador ligado a su EESS
   activo             TINYINT(1)   NOT NULL DEFAULT 1,

@@ -15,7 +15,7 @@ class GradosController extends Controller
 
     public function index(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/grados/index', [
             'tituloVista' => 'Grados PNP',
@@ -26,7 +26,7 @@ class GradosController extends Controller
 
     public function nuevo(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $this->vista('catalogos/grados/formulario', [
             'tituloVista' => 'Nuevo grado PNP',
@@ -38,7 +38,7 @@ class GradosController extends Controller
 
     public function crear(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST);
@@ -61,7 +61,7 @@ class GradosController extends Controller
 
     public function editar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
 
         $grado = GradoPnp::buscar((int) $id);
         if (!$grado) {
@@ -80,7 +80,7 @@ class GradosController extends Controller
 
     public function actualizar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         [$datos, $errores] = $this->validar($_POST);
@@ -103,7 +103,7 @@ class GradosController extends Controller
 
     public function eliminar(string $id): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO');
+        Auth::exigirRol('ADMIN');
         $this->exigirCsrf();
 
         try {

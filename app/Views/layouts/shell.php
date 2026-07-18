@@ -15,10 +15,8 @@ $anioEpi = (int) date('Y');
 $semanaEpi = (int) date('W');
 
 $rolesEtiqueta = [
-    'ADMIN'        => 'Administrador',
-    'EPIDEMIOLOGO' => 'Epidemiólogo/a',
-    'REGISTRADOR'  => 'Registrador/a',
-    'LECTOR'       => 'Lector/a',
+    'ADMIN'       => 'Administrador',
+    'REGISTRADOR' => 'Registrador/a',
 ];
 
 $navItems = [
@@ -49,7 +47,7 @@ if (!$coincidenciaExacta) {
     }
 }
 
-$puedeVerCatalogos = Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
+$puedeVerCatalogos = Auth::tieneRol('ADMIN');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -153,6 +151,7 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
 <script src="/js/shell.js"></script>
 <script src="/js/ubigeo.js"></script>
 <script src="/js/filtro-tabla.js"></script>
+<script src="/js/filas-dinamicas.js"></script>
 <script src="/js/ficha.js"></script>
 </body>
 </html>
