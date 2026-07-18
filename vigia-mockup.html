@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIGÍA · Vigilancia epidemiológica — DIRSAPOL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F6F8;
+    --surface:#FFFFFF;
+    --ink:#14202B;
+    --ink-2:#243441;
+    --muted:#5F6E7A;
+    --faint:#8A97A2;
+    --line:#E5EAEE;
+    --line-2:#EEF2F5;
+    --accent:#0E7A6E;
+    --accent-soft:#E3F1EE;
+    --accent-deep:#0A5A51;
+    --sidebar:#141E27;
+    --sidebar-2:#1C2A35;
+    --sidebar-line:#26333E;
+    --sidebar-text:#93A2AD;
+    /* estados de clasificación de caso: rampa de severidad */
+    --s-sospechoso:#B98A3B;
+    --s-probable:#C2622D;
+    --s-confirmado:#B23B3B;
+    --s-descartado:#3F7A6B;
+    --radius:11px;
+    --radius-sm:8px;
+    --shadow:0 1px 2px rgba(20,32,43,.04), 0 6px 20px rgba(20,32,43,.05);
+    --shadow-soft:0 1px 2px rgba(20,32,43,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+  .serif{font-family:"IBM Plex Serif",serif}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer}
+  ::selection{background:var(--accent-soft)}
+
+  /* ---------- Shell ---------- */
+  .app{display:flex;min-height:100vh}
+
+  /* Sidebar */
+  .sidebar{
+    width:236px;flex-shrink:0;background:var(--sidebar);color:var(--sidebar-text);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:11px;padding:22px 22px 20px}
+  .brand-mark{
+    width:32px;height:32px;border-radius:9px;flex-shrink:0;
+    background:linear-gradient(150deg,var(--accent) 0%,var(--accent-deep) 100%);
+    display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+  .brand-mark svg{display:block}
+  .brand-name{font-family:"IBM Plex Serif",serif;font-weight:600;font-size:19px;letter-spacing:.14em;color:#fff;line-height:1}
+  .brand-sub{font-size:10.5px;letter-spacing:.04em;color:var(--faint);margin-top:3px}
+  .nav{padding:8px 12px;flex:1;overflow-y:auto}
+  .nav-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5A6B77;padding:16px 12px 8px;font-weight:600}
+  .nav-item{
+    display:flex;align-items:center;gap:11px;width:100%;background:none;border:0;
+    color:var(--sidebar-text);padding:9px 12px;border-radius:8px;font-size:13.5px;
+    text-align:left;margin-bottom:1px;transition:background .15s,color .15s;position:relative;
+  }
+  .nav-item:hover{background:var(--sidebar-2);color:#DCE4EA}
+  .nav-item.active{background:var(--sidebar-2);color:#fff}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+  .nav-item svg{flex-shrink:0;opacity:.85}
+  .nav-item.active svg{opacity:1;color:var(--accent)}
+  .nav-item .count{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;background:#26333E;color:#B7C4CD;border-radius:20px;padding:1px 7px}
+  .sidebar-foot{border-top:1px solid var(--sidebar-line);padding:14px 18px;display:flex;align-items:center;gap:10px}
+  .avatar{width:30px;height:30px;border-radius:50%;background:#2C3B47;color:#C9D4DB;display:grid;place-items:center;font-size:12px;font-weight:600;flex-shrink:0}
+  .who{font-size:12.5px;color:#CBD5DC;line-height:1.3}
+  .who small{display:block;color:#6C7B87;font-size:11px}
+
+  /* Main */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    height:60px;background:rgba(244,246,248,.85);backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;
+    padding:0 28px;position:sticky;top:0;z-index:20;
+  }
+  .crumb{font-size:13px;color:var(--muted)}
+  .crumb b{color:var(--ink);font-weight:600}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .se-badge{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted)}
+  .se-badge b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:600}
+  .se-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+  .icon-btn:hover{color:var(--ink);border-color:#D4DBE0}
+  .menu-toggle{display:none}
+
+  .view{padding:26px 28px 60px;max-width:1180px;margin:0 auto;width:100%}
+  .view[hidden]{display:none}
+  .page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  .page-title{font-family:"IBM Plex Serif",serif;font-weight:500;font-size:25px;letter-spacing:-.01em;line-height:1.15;color:var(--ink)}
+  .page-desc{color:var(--muted);font-size:13.5px;margin-top:4px}
+  .page-head .spacer{flex:1}
+
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:9px;padding:9px 15px;font-size:13.5px;font-weight:500;border:1px solid transparent;background:none;transition:all .15s;white-space:nowrap}
+  .btn svg{flex-shrink:0}
+  .btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(10,90,81,.25)}
+  .btn-primary:hover{background:var(--accent-deep)}
+  .btn-ghost{background:var(--surface);border-color:var(--line);color:var(--ink-2)}
+  .btn-ghost:hover{border-color:#CFD7DD;background:#fff}
+  .btn-quiet{color:var(--muted);padding:9px 12px}
+  .btn-quiet:hover{color:var(--ink);background:var(--line-2)}
+
+  /* Cards & grid */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-soft)}
+  .grid{display:grid;gap:16px}
+  .eyebrow{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600}
+
+  /* Metric tiles */
+  .metrics{grid-template-columns:repeat(4,1fr)}
+  .metric{padding:16px 18px}
+  .metric .eyebrow{margin-bottom:11px}
+  .metric-val{font-family:"IBM Plex Mono",monospace;font-size:30px;font-weight:500;letter-spacing:-.02em;line-height:1;color:var(--ink)}
+  .metric-meta{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--muted)}
+  .delta{display:inline-flex;align-items:center;gap:3px;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:11.5px;padding:1px 6px;border-radius:6px}
+  .delta.up{color:var(--s-confirmado);background:#FBEDED}
+  .delta.down{color:var(--s-descartado);background:#EAF4F0}
+  .delta.flat{color:var(--muted);background:var(--line-2)}
+
+  /* Panel layout */
+  .panel-grid{grid-template-columns:1.85fr 1fr;align-items:start}
+  .card-head{display:flex;align-items:center;gap:12px;padding:16px 18px 12px}
+  .card-head h3{font-size:14.5px;font-weight:600;margin:0;color:var(--ink)}
+  .card-head .sub{font-size:12px;color:var(--faint);margin-top:1px}
+  .card-head .spacer{flex:1}
+  .seg{display:inline-flex;background:var(--line-2);border-radius:8px;padding:2px}
+  .seg button{border:0;background:none;font-size:12px;color:var(--muted);padding:4px 11px;border-radius:6px;font-weight:500}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-soft)}
+
+  /* Epi curve */
+  .chart-wrap{padding:4px 14px 14px}
+  .epi{width:100%;height:auto;display:block}
+  .chart-legend{display:flex;gap:18px;padding:2px 18px 16px;flex-wrap:wrap}
+  .lg{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
+  .lg .sw{width:14px;height:10px;border-radius:3px}
+  .lg .swl{width:16px;height:2px;border-radius:2px}
+
+  /* breakdown lists */
+  .brk{padding:6px 18px 16px}
+  .brk-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line-2)}
+  .brk-row:last-child{border-bottom:0}
+  .brk-name{font-size:13px;width:132px;flex-shrink:0;color:var(--ink-2)}
+  .bar-track{flex:1;height:7px;background:var(--line-2);border-radius:20px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:20px;background:var(--accent)}
+  .brk-num{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--muted);width:34px;text-align:right}
+
+  /* classification chips */
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;padding:3px 10px 3px 8px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--ink-2);white-space:nowrap}
+  .chip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .dot-sos{background:var(--s-sospechoso)} .dot-pro{background:var(--s-probable)}
+  .dot-con{background:var(--s-confirmado)} .dot-des{background:var(--s-descartado)}
+  .state{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .state .dot{width:6px;height:6px;border-radius:50%}
+  .st-open{background:var(--accent)} .st-val{background:var(--s-sospechoso)} .st-closed{background:var(--faint)}
+
+  /* class distribution */
+  .class-dist{padding:8px 18px 18px;display:grid;gap:10px}
+  .cd-row{display:flex;align-items:center;gap:10px}
+  .cd-row .chip{width:118px;justify-content:flex-start}
+  .cd-track{flex:1;height:8px;background:var(--line-2);border-radius:20px;overflow:hidden}
+  .cd-fill{height:100%;border-radius:20px}
+  .cd-num{font-family:"IBM Plex Mono",monospace;font-size:12.5px;width:30px;text-align:right;color:var(--muted)}
+
+  /* Tables */
+  .table-card{overflow:hidden}
+  .toolbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .search{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 11px;flex:1;min-width:200px;color:var(--faint)}
+  .search input{border:0;background:none;outline:none;font-family:inherit;font-size:13.5px;color:var(--ink);width:100%}
+  .filter{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px;color:var(--muted)}
+  .filter:hover{border-color:#CFD7DD;color:var(--ink)}
+  .filter b{color:var(--ink-2);font-weight:500}
+  table{width:100%;border-collapse:collapse}
+  thead th{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:600;text-align:left;padding:11px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+  tbody td{padding:13px 16px;border-bottom:1px solid var(--line-2);font-size:13px;vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#FBFCFD}
+  .pt-name{font-weight:500;color:var(--ink)}
+  .pt-doc{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--faint);margin-top:1px}
+  .cell-sub{color:var(--faint);font-size:11.5px;margin-top:1px}
+  .row-actions{display:flex;gap:4px}
+  .ra{width:28px;height:28px;border-radius:7px;border:1px solid transparent;background:none;color:var(--faint);display:grid;place-items:center}
+  .ra:hover{background:var(--line-2);color:var(--ink)}
+  .table-foot{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;color:var(--muted);font-size:12.5px}
+  .pager{display:flex;gap:4px}
+  .pg{min-width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:#fff;font-size:12.5px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+  .pg.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* Form view */
+  .form-grid{grid-template-columns:1fr 300px;align-items:start;gap:20px}
+  .disease-pick{display:flex;align-items:center;gap:12px;padding:15px 18px;background:linear-gradient(0deg,#fff,#fff);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:16px;flex-wrap:wrap}
+  .disease-pick .ic{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent-deep);display:grid;place-items:center;flex-shrink:0}
+  select.disease{font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);border:0;background:none;outline:none;padding:2px 4px}
+  .disease-meta{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);background:var(--line-2);border-radius:6px;padding:3px 8px}
+
+  .section{margin-bottom:14px;overflow:hidden}
+  .section-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line-2)}
+  .section-num{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent-deep);background:var(--accent-soft);width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-weight:500;flex-shrink:0}
+  .section-head h3{font-size:14px;font-weight:600;margin:0}
+  .section-head .adapt{margin-left:auto;font-size:11px;color:var(--accent-deep);background:var(--accent-soft);border-radius:20px;padding:3px 10px;display:inline-flex;gap:5px;align-items:center}
+  .section-body{padding:18px}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+  .fields.thirds{grid-template-columns:1fr 1fr 1fr}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.wide{grid-column:1/-1}
+  label.fl{font-size:12px;color:var(--muted);font-weight:500}
+  label.fl .req{color:var(--s-confirmado)}
+  .control{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  .control:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .control input,.control select{border:0;background:none;outline:none;font-family:inherit;font-size:13.5px;color:var(--ink);width:100%}
+  .control.mono input{font-family:"IBM Plex Mono",monospace}
+  .control.ok{border-color:#B8DED4}
+  .control.err{border-color:var(--s-confirmado)}
+  .control .lead{color:var(--faint);flex-shrink:0}
+  .control .ok-i{color:var(--s-descartado);flex-shrink:0}
+  .hint{font-size:11.5px;color:var(--faint)}
+  .hint.err{color:var(--s-confirmado)}
+
+  .lookup{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .lookup .field{flex:1;min-width:180px}
+  .found{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;background:var(--accent-soft);border:1px solid #C4E4DC;border-radius:10px}
+  .found .pa{width:38px;height:38px;border-radius:10px;background:#fff;color:var(--accent-deep);display:grid;place-items:center;font-weight:600;flex-shrink:0}
+  .found .pn{font-weight:600;color:var(--ink)}
+  .found .pd{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--accent-deep);margin-top:1px}
+  .found .src{margin-left:auto;font-size:11px;color:var(--accent-deep);display:flex;align-items:center;gap:5px}
+
+  .dupe{display:flex;gap:11px;padding:12px 15px;background:#FDF4EC;border:1px solid #F0D9C2;border-radius:10px;margin-bottom:16px;align-items:flex-start}
+  .dupe .di{color:var(--s-probable);flex-shrink:0;margin-top:1px}
+  .dupe b{color:#8A4A1E}
+  .dupe .body{font-size:12.5px;color:#7A542F;line-height:1.5}
+  .dupe a{color:var(--accent-deep);font-weight:500;text-decoration:underline}
+
+  .sym-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+  .sym{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-2);padding:5px 2px}
+  .sym input{width:15px;height:15px;accent-color:var(--accent)}
+
+  /* Right rail */
+  .rail{position:sticky;top:80px;display:flex;flex-direction:column;gap:16px}
+  .rail-card{padding:16px 18px}
+  .rail-card h4{font-size:13px;font-weight:600;margin:0 0 4px}
+  .rail-card p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.55}
+  .progress{display:grid;gap:9px;margin-top:6px}
+  .pstep{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted)}
+  .pstep .pd{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line);flex-shrink:0;display:grid;place-items:center}
+  .pstep.done{color:var(--ink-2)}
+  .pstep.done .pd{background:var(--accent);border-color:var(--accent);color:#fff}
+  .pstep.cur .pd{border-color:var(--accent)}
+  .rail-actions{display:flex;flex-direction:column;gap:9px}
+  .rail-actions .btn{justify-content:center}
+
+  /* Report view */
+  .report-controls{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 18px}
+  .rc{display:flex;flex-direction:column;gap:6px}
+  .rc label{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);font-weight:600}
+  .report-out{display:grid;grid-template-columns:1fr 300px;gap:0}
+  .report-side{border-left:1px solid var(--line);padding:18px}
+  .report-side .eyebrow{margin-bottom:14px}
+  .mini-bars{display:grid;gap:11px}
+  .mb-row{display:grid;gap:5px}
+  .mb-top{display:flex;justify-content:space-between;font-size:12px}
+  .mb-top .mono{color:var(--muted)}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;box-shadow:0 8px 30px rgba(20,32,43,.25);opacity:0;pointer-events:none;transition:all .25s;z-index:100;display:flex;align-items:center;gap:9px}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:1000px){
+    .panel-grid,.form-grid,.report-out{grid-template-columns:1fr}
+    .report-side{border-left:0;border-top:1px solid var(--line)}
+    .rail{position:static}
+    .report-controls{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:760px){
+    .sidebar{position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.3)}
+    .sidebar.open{transform:none}
+    .menu-toggle{display:grid}
+    .metrics{grid-template-columns:1fr 1fr}
+    .view{padding:20px 16px 50px}
+    .fields,.fields.thirds,.sym-grid,.report-controls{grid-template-columns:1fr}
+    .se-badge{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M1 12.5 4 12.5 6 7 8.5 15 11 4 13 10.5 17 10.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">VIGÍA</div>
+        <div class="brand-sub">Vigilancia · DIRSAPOL</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label">Operación</div>
+      <button class="nav-item active" data-view="panel">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M2 9.5 5 9.5 7 5 9.5 13 12 3 14 8.5 15.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Panel
+      </button>
+      <button class="nav-item" data-view="fichas">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="2" width="12" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 6h6M5.5 9h6M5.5 12h3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Fichas
+        <span class="count">1 240</span>
+      </button>
+      <button class="nav-item" data-view="nueva">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 3.5v10M3.5 8.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Nueva ficha
+      </button>
+      <button class="nav-item" data-view="reportes">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M3 14V7M6.5 14V4M10 14v-5M13.5 14V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Reportes
+      </button>
+
+      <div class="nav-label">Catálogos</div>
+      <button class="nav-item" data-soft="Establecimientos (RENIPRESS)">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 2 3 5v9h11V5L8.5 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 14v-3h3v3" stroke="currentColor" stroke-width="1.4"/></svg>
+        Establecimientos
+      </button>
+      <button class="nav-item" data-soft="Enfermedades y fichas modelo">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 5.5v6M5.5 8.5h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Enfermedades
+      </button>
+      <button class="nav-item" data-soft="Gestión de usuarios y roles">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="6" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 14c0-2.6 2.2-4.2 5-4.2S13.5 11.4 13.5 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Usuarios
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="avatar">JC</div>
+      <div class="who">Josué C.<small>Área de Estadística</small></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menú">
+        <svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <div class="crumb"><b id="crumb">Panel</b> · vigilancia epidemiológica</div>
+      <div class="topbar-right">
+        <div class="se-badge"><span class="se-dot"></span> Semana <b>SE&nbsp;28</b> · 2026</div>
+        <button class="icon-btn" data-soft="Notificaciones" aria-label="Alertas">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6.5a4 4 0 0 1 8 0c0 3.5 1.2 4.5 1.2 4.5H2.8S4 10 4 6.5Z" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ---------- PANEL ---------- -->
+    <main class="view" id="view-panel">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Panel de vigilancia</div>
+          <div class="page-desc">Consolidado de notificaciones de las IPRESS PNP · actualizado hoy, 10:42</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="filter" data-soft="Filtro por red / establecimiento"><svg width="13" height="13" viewBox="0 0 13 13"><path d="M1.5 2.5h10L8 7v4L5 9.5V7L1.5 2.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg> Red: <b>Todas</b></button>
+        <button class="btn btn-ghost" data-soft="Exportar consolidado"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.5v7M4 6l3 3 3-3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Exportar</button>
+      </div>
+
+      <div class="grid metrics" style="margin-bottom:16px">
+        <div class="card metric"><div class="eyebrow">Fichas · SE 28</div><div class="metric-val">86</div><div class="metric-meta"><span class="delta up">▲ 12%</span> vs. SE 27</div></div>
+        <div class="card metric"><div class="eyebrow">En investigación</div><div class="metric-val">37</div><div class="metric-meta"><span class="state"><span class="dot st-open"></span> fichas abiertas</span></div></div>
+        <div class="card metric"><div class="eyebrow">Confirmados · SE 28</div><div class="metric-val">18</div><div class="metric-meta"><span class="delta up">▲ 5</span> respecto al canal</div></div>
+        <div class="card metric"><div class="eyebrow">Pend. de validación</div><div class="metric-val">9</div><div class="metric-meta"><span class="delta flat">de 4 establecimientos</span></div></div>
+      </div>
+
+      <div class="grid panel-grid">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Curva epidemiológica</h3><div class="sub">Dengue y arbovirosis · casos notificados por semana</div></div>
+            <div class="spacer"></div>
+            <div class="seg"><button class="on">14 sem</button><button>Año</button></div>
+          </div>
+          <div class="chart-wrap">
+            <svg class="epi" viewBox="0 0 760 240" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Curva epidemiológica con corredor endémico">
+              <!-- grid -->
+              <g stroke="#EEF2F5" stroke-width="1">
+                <line x1="44" y1="24" x2="740" y2="24"/><line x1="44" y1="70" x2="740" y2="70"/>
+                <line x1="44" y1="116" x2="740" y2="116"/><line x1="44" y1="162" x2="740" y2="162"/>
+              </g>
+              <g font-family="IBM Plex Mono" font-size="10" fill="#A4B0BA">
+                <text x="36" y="27" text-anchor="end">70</text><text x="36" y="73" text-anchor="end">47</text>
+                <text x="36" y="119" text-anchor="end">23</text><text x="36" y="165" text-anchor="end">0</text>
+              </g>
+              <!-- corredor endémico (banda esperada) -->
+              <path d="M44 150 C 130 147, 230 138, 330 122 S 540 92, 716 66 L 716 118 C 590 138, 470 152, 350 166 S 150 184, 44 188 Z" fill="#0E7A6E" opacity="0.07"/>
+              <path d="M44 150 C 130 147, 230 138, 330 122 S 540 92, 716 66" fill="none" stroke="#0E7A6E" stroke-width="1.2" stroke-dasharray="3 4" opacity="0.55"/>
+              <!-- bars -->
+              <g>
+                <rect x="54" y="185.2" width="30" height="20.8" rx="3" fill="#0E7A6E" opacity="0.32"/>
+                <rect x="104" y="174.8" width="30" height="31.2" rx="3" fill="#0E7A6E" opacity="0.32"/>
+                <rect x="153" y="180" width="30" height="26" rx="3" fill="#0E7A6E" opacity="0.32"/>
+                <rect x="203" y="167" width="30" height="39" rx="3" fill="#0E7A6E" opacity="0.32"/>
+                <rect x="253" y="148.8" width="30" height="57.2" rx="3" fill="#0E7A6E" opacity="0.4"/>
+                <rect x="302" y="133.2" width="30" height="72.8" rx="3" fill="#0E7A6E" opacity="0.4"/>
+                <rect x="352" y="138.4" width="30" height="67.6" rx="3" fill="#0E7A6E" opacity="0.4"/>
+                <rect x="402" y="125.4" width="30" height="80.6" rx="3" fill="#0E7A6E" opacity="0.5"/>
+                <rect x="451" y="107.2" width="30" height="98.8" rx="3" fill="#0E7A6E" opacity="0.5"/>
+                <rect x="501" y="91.6" width="30" height="114.4" rx="3" fill="#0E7A6E" opacity="0.6"/>
+                <rect x="551" y="99.4" width="30" height="106.6" rx="3" fill="#0E7A6E" opacity="0.6"/>
+                <rect x="601" y="70.8" width="30" height="135.2" rx="3" fill="#0E7A6E" opacity="0.72"/>
+                <!-- over-threshold weeks (señal) -->
+                <rect x="650" y="57.8" width="30" height="148.2" rx="3" fill="#B23B3B" opacity="0.82"/>
+                <rect x="700" y="39.6" width="30" height="166.4" rx="3" fill="#B23B3B"/>
+              </g>
+              <!-- axis -->
+              <line x1="44" y1="206" x2="740" y2="206" stroke="#D6DEE3" stroke-width="1"/>
+              <g font-family="IBM Plex Mono" font-size="10" fill="#8A97A2" text-anchor="middle">
+                <text x="69" y="222">15</text><text x="268" y="222">19</text><text x="466" y="222">23</text>
+                <text x="616" y="222">26</text><text x="715" y="222">SE 28</text>
+              </g>
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <div class="lg"><span class="sw" style="background:#0E7A6E;opacity:.55"></span> Casos notificados</div>
+            <div class="lg"><span class="sw" style="background:#B23B3B"></span> Sobre el umbral esperado</div>
+            <div class="lg"><span class="swl" style="background:#0E7A6E;opacity:.6;border-top:1px dashed #0E7A6E"></span> Corredor endémico</div>
+          </div>
+        </div>
+
+        <div class="grid" style="gap:16px">
+          <div class="card">
+            <div class="card-head"><div><h3>Por enfermedad</h3><div class="sub">SE 25 – 28</div></div></div>
+            <div class="brk">
+              <div class="brk-row"><span class="brk-name">Dengue / arbovirosis</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="brk-num">148</span></div>
+              <div class="brk-row"><span class="brk-name">Sarampión / rubéola</span><span class="bar-track"><span class="bar-fill" style="width:34%"></span></span><span class="brk-num">51</span></div>
+              <div class="brk-row"><span class="brk-name">Tos ferina</span><span class="bar-track"><span class="bar-fill" style="width:26%"></span></span><span class="brk-num">39</span></div>
+              <div class="brk-row"><span class="brk-name">Leishmaniasis</span><span class="bar-track"><span class="bar-fill" style="width:18%"></span></span><span class="brk-num">27</span></div>
+              <div class="brk-row"><span class="brk-name">ESAVI</span><span class="bar-track"><span class="bar-fill" style="width:11%"></span></span><span class="brk-num">16</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Clasificación de caso</h3></div></div>
+            <div class="class-dist">
+              <div class="cd-row"><span class="chip"><span class="dot dot-sos"></span> Sospechoso</span><span class="cd-track"><span class="cd-fill" style="width:44%;background:var(--s-sospechoso)"></span></span><span class="cd-num">128</span></div>
+              <div class="cd-row"><span class="chip"><span class="dot dot-pro"></span> Probable</span><span class="cd-track"><span class="cd-fill" style="width:22%;background:var(--s-probable)"></span></span><span class="cd-num">64</span></div>
+              <div class="cd-row"><span class="chip"><span class="dot dot-con"></span> Confirmado</span><span class="cd-track"><span class="cd-fill" style="width:30%;background:var(--s-confirmado)"></span></span><span class="cd-num">87</span></div>
+              <div class="cd-row"><span class="chip"><span class="dot dot-des"></span> Descartado</span><span class="cd-track"><span class="cd-fill" style="width:14%;background:var(--s-descartado)"></span></span><span class="cd-num">41</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ---------- FICHAS ---------- -->
+    <main class="view" id="view-fichas" hidden>
+      <div class="page-head">
+        <div>
+          <div class="page-title">Fichas registradas</div>
+          <div class="page-desc">1 240 fichas · todas las redes y establecimientos</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" data-soft="Importar desde plantilla Excel validada"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 9.5v-7M4 5.5l3-3 3 3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Importar Excel</button>
+        <button class="btn btn-primary" onclick="go('nueva')"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> Nueva ficha</button>
+      </div>
+
+      <div class="card table-card">
+        <div class="toolbar">
+          <div class="search"><svg width="15" height="15" viewBox="0 0 15 15"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="m10 10 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><input placeholder="Buscar por paciente, documento o N.° de ficha…"></div>
+          <button class="filter"><b>Enfermedad</b> · Todas <svg width="10" height="10" viewBox="0 0 10 10"><path d="m2 4 3 3 3-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg></button>
+          <button class="filter"><b>Clasificación</b> <svg width="10" height="10" viewBox="0 0 10 10"><path d="m2 4 3 3 3-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg></button>
+          <button class="filter"><b>Estado</b> <svg width="10" height="10" viewBox="0 0 10 10"><path d="m2 4 3 3 3-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg></button>
+        </div>
+        <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>N.° ficha</th><th>Paciente</th><th>Enfermedad</th><th>Establecimiento</th><th>SE</th><th>Notificación</th><th>Clasificación</th><th>Estado</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td class="mono">F-08842</td>
+              <td><div class="pt-name">Colán Peña, Maryuri A.</div><div class="pt-doc">DNI 7••••319 · F · 34a</div></td>
+              <td>Dengue<div class="cell-sub">A97.1</div></td>
+              <td>Policlínico PNP VIPOL<div class="cell-sub">Red Lima Centro</div></td>
+              <td class="mono">28</td><td class="mono">12/07/2026</td>
+              <td><span class="chip"><span class="dot dot-con"></span> Confirmado</span></td>
+              <td><span class="state"><span class="dot st-open"></span> Abierta</span></td>
+              <td><div class="row-actions"><button class="ra" title="Ver"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M1.5 7.5S3.5 3 7.5 3s6 4.5 6 4.5-2 4.5-6 4.5-6-4.5-6-4.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="7.5" cy="7.5" r="1.8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></button><button class="ra" title="Editar"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M10 2.5 12.5 5 5 12.5 2 13l.5-3L10 2.5Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td class="mono">F-08841</td>
+              <td><div class="pt-name">Quispe Ramos, Élmer J.</div><div class="pt-doc">DNI 4••••872 · M · 8a</div></td>
+              <td>Tos ferina<div class="cell-sub">A37.0</div></td>
+              <td>H.N. PNP Luis N. Sáenz<div class="cell-sub">Red Lima Norte</div></td>
+              <td class="mono">28</td><td class="mono">12/07/2026</td>
+              <td><span class="chip"><span class="dot dot-sos"></span> Sospechoso</span></td>
+              <td><span class="state"><span class="dot st-val"></span> Validación</span></td>
+              <td><div class="row-actions"><button class="ra"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M1.5 7.5S3.5 3 7.5 3s6 4.5 6 4.5-2 4.5-6 4.5-6-4.5-6-4.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="7.5" cy="7.5" r="1.8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></button><button class="ra"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M10 2.5 12.5 5 5 12.5 2 13l.5-3L10 2.5Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td class="mono">F-08838</td>
+              <td><div class="pt-name">Flores Ttito, Ana L.</div><div class="pt-doc">DNI 0••••145 · F · 27a</div></td>
+              <td>Leishmaniasis<div class="cell-sub">B55.1</div></td>
+              <td>Sanidad PNP Cusco<div class="cell-sub">Red Sur Oriente</div></td>
+              <td class="mono">27</td><td class="mono">09/07/2026</td>
+              <td><span class="chip"><span class="dot dot-pro"></span> Probable</span></td>
+              <td><span class="state"><span class="dot st-open"></span> Abierta</span></td>
+              <td><div class="row-actions"><button class="ra"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M1.5 7.5S3.5 3 7.5 3s6 4.5 6 4.5-2 4.5-6 4.5-6-4.5-6-4.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="7.5" cy="7.5" r="1.8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></button><button class="ra"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M10 2.5 12.5 5 5 12.5 2 13l.5-3L10 2.5Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td class="mono">F-08835</td>
+              <td><div class="pt-name">Huamán Soto, Diego F.</div><div class="pt-doc">DNI 7••••604 · M · 15a</div></td>
+              <td>Sarampión / rubéola<div class="cell-sub">B05</div></td>
+              <td>Policlínico PNP Chiclayo<div class="cell-sub">Red Nor Oriente</div></td>
+              <td class="mono">27</td><td class="mono">08/07/2026</td>
+              <td><span class="chip"><span class="dot dot-des"></span> Descartado</span></td>
+              <td><span class="state"><span class="dot st-closed"></span> Cerrada</span></td>
+              <td><div class="row-actions"><button class="ra"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M1.5 7.5S3.5 3 7.5 3s6 4.5 6 4.5-2 4.5-6 4.5-6-4.5-6-4.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="7.5" cy="7.5" r="1.8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></button><button class="ra"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M10 2.5 12.5 5 5 12.5 2 13l.5-3L10 2.5Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/></svg></button></div></td>
+            </tr>
+            <tr>
+              <td class="mono">F-08830</td>
+              <td><div class="pt-name">Chávez Ríos, Lucía M.</div><div class="pt-doc">DNI 4••••998 · F · 2a</div></td>
+              <td>ESAVI severo<div class="cell-sub">—</div></td>
+              <td>H.N. PNP Luis N. Sáenz<div class="cell-sub">Red Lima Norte</div></td>
+              <td class="mono">26</td><td class="mono">02/07/2026</td>
+              <td><span class="chip"><span class="dot dot-con"></span> Confirmado</span></td>
+              <td><span class="state"><span class="dot st-closed"></span> Cerrada</span></td>
+              <td><div class="row-actions"><button class="ra"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M1.5 7.5S3.5 3 7.5 3s6 4.5 6 4.5-2 4.5-6 4.5-6-4.5-6-4.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="7.5" cy="7.5" r="1.8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></button><button class="ra"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M10 2.5 12.5 5 5 12.5 2 13l.5-3L10 2.5Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/></svg></button></div></td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="table-foot">
+          <span>Mostrando 1–5 de 1 240 fichas</span>
+          <div class="pager"><button class="pg">‹</button><button class="pg on">1</button><button class="pg">2</button><button class="pg">3</button><button class="pg">248</button><button class="pg">›</button></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ---------- NUEVA FICHA ---------- -->
+    <main class="view" id="view-nueva" hidden>
+      <div class="page-head">
+        <div>
+          <div class="page-title">Nueva ficha de notificación</div>
+          <div class="page-desc">El formulario se ajusta a la ficha modelo MINSA de la enfermedad seleccionada</div>
+        </div>
+      </div>
+
+      <div class="disease-pick">
+        <div class="ic"><svg width="19" height="19" viewBox="0 0 19 19"><circle cx="9.5" cy="9.5" r="7" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M9.5 6v7M6 9.5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:2px">Enfermedad / evento bajo vigilancia</div>
+          <select class="disease" id="diseaseSel">
+            <option>Dengue y arbovirosis</option>
+            <option>Sarampión / rubéola / febriles eruptivas</option>
+            <option>Tos ferina</option>
+            <option>Leishmaniasis</option>
+            <option>ESAVI severo</option>
+            <option>Difteria</option>
+            <option>Fiebre amarilla</option>
+          </select>
+        </div>
+        <div class="disease-meta">
+          <span class="tag" id="cieTag">CIE-10 · A97</span>
+          <span class="tag">Notificación inmediata</span>
+        </div>
+      </div>
+
+      <div class="grid form-grid">
+        <div>
+          <div class="dupe">
+            <span class="di"><svg width="17" height="17" viewBox="0 0 17 17"><path d="M8.5 1.5 16 15H1L8.5 1.5Z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M8.5 6.5v3.5M8.5 12.3v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            <div class="body"><b>Posible duplicado.</b> Existe una ficha de <b>dengue</b> para el documento <span class="mono">7••••319</span> notificada en la SE 27 desde otro establecimiento. Revisa antes de continuar. <a href="#">Ver ficha F-08790</a></div>
+          </div>
+
+          <!-- 1. Notificación -->
+          <div class="card section">
+            <div class="section-head"><span class="section-num">1</span><h3>Notificación</h3></div>
+            <div class="section-body">
+              <div class="fields thirds">
+                <div class="field"><label class="fl">DIRESA / DIRIS</label><div class="control"><select><option>DIRSAPOL — Sanidad PNP</option></select></div></div>
+                <div class="field"><label class="fl">Red de salud</label><div class="control"><select><option>Seleccionar…</option><option>Red Lima Centro</option><option>Red Lima Norte</option></select></div></div>
+                <div class="field"><label class="fl">Establecimiento (EESS) <span class="req">*</span></label><div class="control"><svg class="lead" width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.5 2 4v7h10V4L7 1.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg><select><option>Policlínico PNP VIPOL</option></select></div><span class="hint">Del padrón RENIPRESS — no editable a mano</span></div>
+                <div class="field"><label class="fl">Fecha de notificación <span class="req">*</span></label><div class="control mono ok"><input value="12/07/2026"><span class="ok-i"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2.5 7.5 6 11l5.5-6.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div>
+                <div class="field"><label class="fl">Semana epidemiológica</label><div class="control mono"><input value="SE 28" readonly style="color:var(--muted)"></div><span class="hint">Calculada de la fecha</span></div>
+                <div class="field"><label class="fl">Tipo de captación</label><div class="control"><select><option>Pasiva</option><option>Activa</option></select></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Paciente -->
+          <div class="card section">
+            <div class="section-head"><span class="section-num">2</span><h3>Datos del paciente</h3></div>
+            <div class="section-body">
+              <div class="lookup">
+                <div class="field"><label class="fl">Documento (DNI / CE)</label><div class="control mono"><input placeholder="76540319" value="76540319"></div></div>
+                <button class="btn btn-ghost" onclick="document.getElementById('found').style.display='flex'"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="m9 9 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Buscar en padrón PNP</button>
+              </div>
+              <div class="found" id="found" style="display:none">
+                <div class="pa">CP</div>
+                <div><div class="pn">Colán Peña, Maryuri Astrid</div><div class="pd">DNI 76540319 · F · 34a · Titular PNP</div></div>
+                <div class="src"><svg width="13" height="13" viewBox="0 0 13 13"><path d="M2.5 6.5 5.5 9.5l5-6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Autocompletado del padrón</div>
+              </div>
+              <div class="fields thirds" style="margin-top:16px">
+                <div class="field wide"><label class="fl">Apellidos y nombres <span class="req">*</span></label><div class="control ok"><input value="Colán Peña, Maryuri Astrid"><span class="ok-i"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2.5 7.5 6 11l5.5-6.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div>
+                <div class="field"><label class="fl">Sexo</label><div class="control"><select><option>Femenino</option><option>Masculino</option></select></div></div>
+                <div class="field"><label class="fl">Fecha de nacimiento</label><div class="control mono"><input value="14/03/1992"></div></div>
+                <div class="field"><label class="fl">Edad</label><div class="control mono"><input value="34 años" readonly style="color:var(--muted)"></div></div>
+                <div class="field"><label class="fl">Gestante</label><div class="control"><select><option>No</option><option>Sí</option></select></div></div>
+              </div>
+              <div class="fields thirds" style="margin-top:14px">
+                <div class="field"><label class="fl">Departamento <span class="req">*</span></label><div class="control"><select><option>Callao</option></select></div></div>
+                <div class="field"><label class="fl">Provincia <span class="req">*</span></label><div class="control"><select><option>Callao</option></select></div></div>
+                <div class="field err"><label class="fl">Distrito <span class="req">*</span></label><div class="control err"><select><option>Seleccionar…</option><option>Bellavista</option><option>La Perla</option></select></div><span class="hint err">Selecciona el distrito para continuar</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Clínico -->
+          <div class="card section">
+            <div class="section-head"><span class="section-num">3</span><h3>Cuadro clínico</h3><span class="adapt"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> según <span id="adaptName">dengue</span></span></div>
+            <div class="section-body">
+              <div class="fields" style="margin-bottom:16px">
+                <div class="field"><label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label><div class="control mono"><input placeholder="dd/mm/aaaa"></div></div>
+                <div class="field"><label class="fl">Temperatura (°C)</label><div class="control mono"><input placeholder="38.5"></div></div>
+              </div>
+              <div class="eyebrow" style="margin-bottom:12px">Signos y síntomas</div>
+              <div class="sym-grid" id="symGrid">
+                <label class="sym"><input type="checkbox" checked> Fiebre</label>
+                <label class="sym"><input type="checkbox"> Cefalea</label>
+                <label class="sym"><input type="checkbox" checked> Mialgias</label>
+                <label class="sym"><input type="checkbox"> Dolor retroocular</label>
+                <label class="sym"><input type="checkbox"> Artralgias</label>
+                <label class="sym"><input type="checkbox"> Rash / exantema</label>
+                <label class="sym"><input type="checkbox"> Náuseas o vómitos</label>
+                <label class="sym"><input type="checkbox"> Dolor abdominal</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- collapsed remaining -->
+          <div class="card section">
+            <div class="section-head"><span class="section-num">4</span><h3>Antecedentes epidemiológicos</h3><span class="btn-quiet" style="margin-left:auto;font-size:12px;color:var(--faint)">Viajes · contactos · lugar probable</span></div>
+          </div>
+          <div class="card section">
+            <div class="section-head"><span class="section-num">5</span><h3>Laboratorio</h3><span class="btn-quiet" style="margin-left:auto;font-size:12px;color:var(--faint)">Muestras y resultados</span></div>
+          </div>
+          <div class="card section">
+            <div class="section-head"><span class="section-num">6</span><h3>Clasificación del caso</h3><span class="btn-quiet" style="margin-left:auto;font-size:12px;color:var(--faint)">Sospechoso · probable · confirmado · descartado</span></div>
+          </div>
+        </div>
+
+        <!-- Right rail -->
+        <aside class="rail">
+          <div class="card rail-card">
+            <div class="eyebrow" style="margin-bottom:12px">Avance de la ficha</div>
+            <div class="progress">
+              <div class="pstep done"><span class="pd"><svg width="9" height="9" viewBox="0 0 9 9"><path d="M1.5 4.5 4 7l3.5-4.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Notificación</div>
+              <div class="pstep done"><span class="pd"><svg width="9" height="9" viewBox="0 0 9 9"><path d="M1.5 4.5 4 7l3.5-4.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Paciente</div>
+              <div class="pstep cur"><span class="pd"></span> Cuadro clínico</div>
+              <div class="pstep"><span class="pd"></span> Epidemiológicos</div>
+              <div class="pstep"><span class="pd"></span> Laboratorio</div>
+              <div class="pstep"><span class="pd"></span> Clasificación</div>
+            </div>
+          </div>
+          <div class="card rail-card">
+            <h4>Datos limpios desde el origen</h4>
+            <p>Distritos, establecimientos y códigos CIE-10 se eligen de catálogos oficiales. La ficha valida fechas, documento y campos obligatorios antes de guardar, y avisa de posibles duplicados.</p>
+          </div>
+          <div class="rail-actions">
+            <button class="btn btn-primary" onclick="toast('Ficha registrada · F-08843')"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2.5 7.5 6 11l5.5-6.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Registrar ficha</button>
+            <button class="btn btn-ghost" onclick="toast('Borrador guardado')">Guardar borrador</button>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- ---------- REPORTES ---------- -->
+    <main class="view" id="view-reportes" hidden>
+      <div class="page-head">
+        <div>
+          <div class="page-title">Reportes</div>
+          <div class="page-desc">Consolidados dinámicos para el área — sin re-digitar Excel</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="report-controls">
+          <div class="rc"><label>Enfermedad</label><div class="control"><select><option>Dengue y arbovirosis</option><option>Todas</option></select></div></div>
+          <div class="rc"><label>Agrupar por</label><div class="control"><select><option>Establecimiento</option><option>Red</option><option>Semana epidemiológica</option><option>Clasificación</option></select></div></div>
+          <div class="rc"><label>Desde</label><div class="control mono"><input value="SE 25 · 2026"></div></div>
+          <div class="rc"><label>Hasta</label><div class="control mono"><input value="SE 28 · 2026"></div></div>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="card-head">
+          <div><h3>Dengue por establecimiento</h3><div class="sub">SE 25 – 28 · 2026</div></div>
+          <div class="spacer"></div>
+          <button class="btn-quiet" data-soft="Exportar a Excel"><svg width="15" height="15" viewBox="0 0 15 15"><rect x="2" y="2.5" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5.5 5.5l4 4M9.5 5.5l-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Excel</button>
+          <button class="btn-quiet" data-soft="Exportar a PDF"><svg width="15" height="15" viewBox="0 0 15 15"><path d="M4 1.5h5l3 3v9H4z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/></svg> PDF</button>
+        </div>
+        <div class="report-out">
+          <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Establecimiento</th><th style="text-align:right">Sospech.</th><th style="text-align:right">Probable</th><th style="text-align:right">Confirm.</th><th style="text-align:right">Descart.</th><th style="text-align:right">Total</th></tr></thead>
+            <tbody>
+              <tr><td class="pt-name">H.N. PNP Luis N. Sáenz</td><td class="mono" style="text-align:right">21</td><td class="mono" style="text-align:right">12</td><td class="mono" style="text-align:right">18</td><td class="mono" style="text-align:right">7</td><td class="mono" style="text-align:right"><b>58</b></td></tr>
+              <tr><td class="pt-name">Policlínico PNP VIPOL</td><td class="mono" style="text-align:right">17</td><td class="mono" style="text-align:right">9</td><td class="mono" style="text-align:right">14</td><td class="mono" style="text-align:right">5</td><td class="mono" style="text-align:right"><b>45</b></td></tr>
+              <tr><td class="pt-name">Policlínico PNP Chiclayo</td><td class="mono" style="text-align:right">12</td><td class="mono" style="text-align:right">6</td><td class="mono" style="text-align:right">4</td><td class="mono" style="text-align:right">3</td><td class="mono" style="text-align:right"><b>25</b></td></tr>
+              <tr><td class="pt-name">Sanidad PNP Cusco</td><td class="mono" style="text-align:right">9</td><td class="mono" style="text-align:right">4</td><td class="mono" style="text-align:right">2</td><td class="mono" style="text-align:right">5</td><td class="mono" style="text-align:right"><b>20</b></td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="report-side">
+            <div class="eyebrow">Distribución por clasificación</div>
+            <div class="mini-bars">
+              <div class="mb-row"><div class="mb-top"><span>Sospechoso</span><span class="mono">59</span></div><span class="cd-track"><span class="cd-fill" style="width:100%;background:var(--s-sospechoso)"></span></span></div>
+              <div class="mb-row"><div class="mb-top"><span>Probable</span><span class="mono">31</span></div><span class="cd-track"><span class="cd-fill" style="width:53%;background:var(--s-probable)"></span></span></div>
+              <div class="mb-row"><div class="mb-top"><span>Confirmado</span><span class="mono">38</span></div><span class="cd-track"><span class="cd-fill" style="width:64%;background:var(--s-confirmado)"></span></span></div>
+              <div class="mb-row"><div class="mb-top"><span>Descartado</span><span class="mono">20</span></div><span class="cd-track"><span class="cd-fill" style="width:34%;background:var(--s-descartado)"></span></span></div>
+            </div>
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line-2);font-size:12.5px;color:var(--muted)">Total del periodo: <b class="mono" style="color:var(--ink)">148</b> fichas · 4 establecimientos</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const crumbs={panel:'Panel',fichas:'Fichas',nueva:'Nueva ficha',reportes:'Reportes'};
+  function go(view){
+    document.querySelectorAll('.view').forEach(v=>v.hidden=true);
+    document.getElementById('view-'+view).hidden=false;
+    document.querySelectorAll('.nav-item[data-view]').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
+    document.getElementById('crumb').textContent=crumbs[view]||'';
+    document.getElementById('sidebar').classList.remove('open');
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('.nav-item[data-view]').forEach(n=>n.addEventListener('click',()=>go(n.dataset.view)));
+
+  // inert / catalog items -> honest empty-state toast
+  document.querySelectorAll('[data-soft]').forEach(el=>el.addEventListener('click',()=>toast(el.dataset.soft+' · módulo en definición')));
+
+  // disease selector drives the adaptive clinical section + CIE tag
+  const cie={'Dengue y arbovirosis':'CIE-10 · A97','Sarampión / rubéola / febriles eruptivas':'CIE-10 · B05','Tos ferina':'CIE-10 · A37','Leishmaniasis':'CIE-10 · B55','ESAVI severo':'—','Difteria':'CIE-10 · A36','Fiebre amarilla':'CIE-10 · A95'};
+  document.getElementById('diseaseSel').addEventListener('change',e=>{
+    const v=e.target.value;
+    document.getElementById('cieTag').textContent=cie[v]||'—';
+    document.getElementById('adaptName').textContent=v.split(' /')[0].toLowerCase();
+    toast('Cuadro clínico ajustado a: '+v.split(' /')[0]);
+  });
+
+  let tt;
+  function toast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.classList.add('show');
+    clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200);
+  }
+</script>
+</body>
+</html>
