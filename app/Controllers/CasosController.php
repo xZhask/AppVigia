@@ -2,10 +2,12 @@
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\ConflictoInteresException;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Flash;
+use App\Core\ReniecService;
 use App\Models\CampoDef;
 use App\Models\Caso;
 use App\Models\CasoBitacora;
@@ -19,7 +21,9 @@ use App\Models\Enfermedad;
 use App\Models\Establecimiento;
 use App\Models\GradoPnp;
 use App\Models\Distrito;
-use App\Models\Paciente;
+use App\Models\Persona;
+use App\Services\PersonaService;
+use App\Models\ReniecConsulta;
 use App\Models\SeccionDef;
 use App\Models\UnidadPnp;
 use DateTime;
@@ -40,8 +44,10 @@ class CasosController extends Controller
             'enfermedad_id' => $_GET['enfermedad_id'] ?? '',
             'clasificacion' => $_GET['clasificacion'] ?? '',
             'estado'        => $_GET['estado'] ?? '',
-            'desde'         => fechaDmyAIso(trim($_GET['desde'] ?? '')) ?? '',
-            'hasta'         => fechaDmyAIso(trim($_GET['hasta'] ?? '')) ?? '',
+            'desde'         => fechaIsoValida(trim($_GET['desde'] ?? '')) ?? '',
+            'hasta'         => fechaIsoValida(trim($_GET['hasta'] ?? '')) ?? '',
+            'privacidad_rol' => $usuario['rol'],
+            'privacidad_usuario_id' => $usuario['id'],
         ];
 
         if ($usuario['rol'] === 'REGISTRADOR') {
@@ -67,7 +73,7 @@ class CasosController extends Controller
     {
         Auth::exigirRol(...self::ROLES_REGISTRO);
 
-        $enfermedades = Enfermedad::activas();
+        $enfermedades = Enfermedad::activasConDefinicion();
         if (empty($enfermedades)) {
             Flash::set('No hay enfermedades activas para notificar. Actívalas desde Catálogos › Enfermedades.');
             header('Location: /');
@@ -93,10 +99,14 @@ class CasosController extends Controller
             'erroresCampos' => [],
             'fechaInicioSintomas' => '',
             'errorFechaInicioSintomas' => null,
+            'clasificacionActual' => 'SOSPECHOSO',
             'filasContactos' => [],
             'filasViajes'    => [],
             'filasVacunas'   => [],
             'filasMuestras'  => [],
+            'erroresViajes'  => [],
+            'erroresVacunas' => [],
+            'erroresMuestras' => [],
         ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo(), contextoUbigeo(null)));
     }
 
@@ -108,7 +118,7 @@ class CasosController extends Controller
         $usuario = Auth::usuario();
         $puedeElegirEstablecimiento = $usuario['rol'] === 'ADMIN';
 
-        $enfermedades = Enfermedad::activas();
+        $enfermedades = Enfermedad::activasConDefinicion();
         $enfermedadId = (int) ($_POST['enfermedad_id'] ?? 0);
         $enfermedad = Enfermedad::buscar($enfermedadId);
 
@@ -127,7 +137,9 @@ class CasosController extends Controller
             'fecha_notif'        => trim($_POST['fecha_notif'] ?? ''),
             'tipo_doc'           => $_POST['tipo_doc'] ?? 'DNI',
             'num_doc'            => trim($_POST['num_doc'] ?? ''),
-            'apellidos_nombres'  => trim($_POST['apellidos_nombres'] ?? ''),
+            'apellido_paterno'   => trim($_POST['apellido_paterno'] ?? ''),
+            'apellido_materno'   => trim($_POST['apellido_materno'] ?? ''),
+            'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
         ];
@@ -141,9 +153,9 @@ class CasosController extends Controller
                 : 'Tu cuenta no tiene un establecimiento asignado; pide a un administrador que lo configure.';
         }
 
-        $fechaNotifIso = fechaDmyAIso($valoresFijos['fecha_notif']);
+        $fechaNotifIso = fechaIsoValida($valoresFijos['fecha_notif']);
         if (!$fechaNotifIso) {
-            $erroresFijos['fecha_notif'] = 'Ingresa una fecha válida en formato dd/mm/aaaa.';
+            $erroresFijos['fecha_notif'] = 'Ingresa una fecha de notificación válida.';
         } elseif ($fechaNotifIso > (new DateTime())->format('Y-m-d')) {
             $erroresFijos['fecha_notif'] = 'La fecha de notificación no puede ser futura.';
         }
@@ -151,15 +163,18 @@ class CasosController extends Controller
         if ($valoresFijos['num_doc'] === '') {
             $erroresFijos['num_doc'] = 'Ingresa el número de documento.';
         }
-        if ($valoresFijos['apellidos_nombres'] === '') {
-            $erroresFijos['apellidos_nombres'] = 'Ingresa apellidos y nombres.';
+        if ($valoresFijos['apellido_paterno'] === '') {
+            $erroresFijos['apellido_paterno'] = 'Ingresa el apellido paterno.';
+        }
+        if ($valoresFijos['nombres'] === '') {
+            $erroresFijos['nombres'] = 'Ingresa los nombres.';
         }
 
         $fechaNacIso = null;
         if ($valoresFijos['fecha_nac'] !== '') {
-            $fechaNacIso = fechaDmyAIso($valoresFijos['fecha_nac']);
+            $fechaNacIso = fechaIsoValida($valoresFijos['fecha_nac']);
             if (!$fechaNacIso) {
-                $erroresFijos['fecha_nac'] = 'Ingresa una fecha válida en formato dd/mm/aaaa.';
+                $erroresFijos['fecha_nac'] = 'Ingresa una fecha de nacimiento válida.';
             }
         }
 
@@ -174,25 +189,32 @@ class CasosController extends Controller
         if ($fechaInicioSintomas === '') {
             $errorFechaInicioSintomas = 'Ingresa la fecha de inicio de síntomas.';
         } else {
-            $fechaInicioSintomasIso = fechaDmyAIso($fechaInicioSintomas);
+            $fechaInicioSintomasIso = fechaIsoValida($fechaInicioSintomas);
             if (!$fechaInicioSintomasIso) {
-                $errorFechaInicioSintomas = 'Ingresa una fecha válida en formato dd/mm/aaaa.';
+                $errorFechaInicioSintomas = 'Ingresa una fecha de inicio de síntomas válida.';
             }
         }
 
         // ---------- efectivo PNP (opcional) ----------
         $datosPnp = $this->leerDatosPnp();
 
+        // ---------- clasificación del caso ----------
+        $clasificacion = $_POST['clasificacion'] ?? 'SOSPECHOSO';
+        if (!in_array($clasificacion, ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'], true)) {
+            $clasificacion = 'SOSPECHOSO';
+        }
+
         // ---------- dinámicos: cuadro clínico según la enfermedad ----------
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId);
 
         // ---------- tablas hijas (opcionales) ----------
         $filasContactos = $this->filasContactos();
-        $filasViajes = $this->filasViajes();
-        $filasVacunas = $this->filasVacunas();
-        $filasMuestras = $this->filasMuestras();
+        [$filasViajes, $erroresViajes] = $this->filasViajes();
+        [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
+        [$filasMuestras, $erroresMuestras] = $this->filasMuestras();
 
-        $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null;
+        $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
+            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras);
 
         if ($hayErrores) {
             $semana = semanaEpidemiologica($fechaNotifIso ?: (new DateTime())->format('Y-m-d'));
@@ -210,10 +232,14 @@ class CasosController extends Controller
                 'erroresCampos' => $erroresCampos,
                 'fechaInicioSintomas' => $fechaInicioSintomas,
                 'errorFechaInicioSintomas' => $errorFechaInicioSintomas,
+                'clasificacionActual' => $clasificacion,
                 'filasContactos' => $filasContactos,
                 'filasViajes'    => $filasViajes,
                 'filasVacunas'   => $filasVacunas,
                 'filasMuestras'  => $filasMuestras,
+                'erroresViajes'  => $erroresViajes,
+                'erroresVacunas' => $erroresVacunas,
+                'erroresMuestras' => $erroresMuestras,
             ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo(), contextoUbigeo($distritoId ?: null)));
             return;
         }
@@ -227,31 +253,39 @@ class CasosController extends Controller
             $datosPaciente = array_merge([
                 'tipo_doc'          => $valoresFijos['tipo_doc'],
                 'num_doc'           => $valoresFijos['num_doc'],
-                'apellidos_nombres' => $valoresFijos['apellidos_nombres'],
+                'apellido_paterno'  => $valoresFijos['apellido_paterno'],
+                'apellido_materno'  => $valoresFijos['apellido_materno'] !== '' ? $valoresFijos['apellido_materno'] : null,
+                'nombres'           => $valoresFijos['nombres'],
                 'sexo'              => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null,
                 'fecha_nac'         => $fechaNacIso,
                 'distrito_id'       => $distritoId,
             ], $datosPnp['datos']);
 
-            $pacienteExistente = Paciente::buscarPorDocumento($valoresFijos['tipo_doc'], $valoresFijos['num_doc']);
-            if ($pacienteExistente) {
-                $pacienteId = (int) $pacienteExistente['id'];
-                Paciente::actualizar($pacienteId, $datosPaciente);
+            $personaExistente = Persona::buscarPorDocumento($valoresFijos['tipo_doc'], $valoresFijos['num_doc']);
+            if ($personaExistente) {
+                $personaId = (int) $personaExistente['id'];
+                Persona::actualizar($personaId, $datosPaciente);
             } else {
-                $pacienteId = Paciente::crear($datosPaciente);
+                $personaId = Persona::crear($datosPaciente);
+            }
+
+            // Validación de conflicto de interés
+            if ($usuario['persona_id'] !== null && $usuario['persona_id'] === $personaId) {
+                throw new ConflictoInteresException('No puedes registrar esta ficha: la persona notificada eres tú mismo/a. Pide a otro registrador o al epidemiólogo que la registre.');
             }
 
             $semana = semanaEpidemiologica($fechaNotifIso);
 
             $casoId = Caso::crearConCodigo([
                 'enfermedad_id'         => $enfermedadId,
-                'paciente_id'           => $pacienteId,
+                'persona_id'            => $personaId,
                 'establecimiento_id'    => (int) $establecimiento['id'],
                 'usuario_id'            => (int) $usuario['id'],
                 'fecha_notif'           => $fechaNotifIso,
                 'anio_epi'              => $semana['anio'],
                 'semana_epi'            => $semana['semana'],
                 'fecha_inicio_sintomas' => $fechaInicioSintomasIso,
+                'clasificacion'         => $clasificacion,
             ]);
 
             CasoValor::guardarTodos($casoId, $paraGuardar);
@@ -260,9 +294,20 @@ class CasosController extends Controller
             CasoVacuna::reemplazarTodos($casoId, $filasVacunas);
             CasoMuestra::reemplazarTodos($casoId, $filasMuestras);
 
+            $rolPrincipal = $enfermedad['multi_sujeto'] ? explode(',', $enfermedad['roles_sujeto'])[0] : 'CASO_INDICE';
+            \App\Models\CasoSujeto::guardarSujetos($casoId, [
+                $rolPrincipal => ['persona_id' => $personaId]
+            ]);
+
             CasoBitacora::registrar($casoId, (int) $usuario['id'], 'CREACION', 'Ficha registrada.');
 
             $pdo->commit();
+        } catch (ConflictoInteresException $e) {
+            $pdo->rollBack();
+            error_log('Conflicto de interés bloqueado: el usuario ' . $usuario['id'] . ' intentó registrar una ficha donde él es la persona notificada (persona_id ' . $personaId . ').');
+            Flash::set($e->getMessage());
+            header('Location: /casos/nuevo?enfermedad_id=' . $enfermedadId);
+            exit;
         } catch (Throwable $e) {
             $pdo->rollBack();
             error_log('Error al registrar ficha: ' . $e->getMessage());
@@ -303,8 +348,6 @@ class CasosController extends Controller
 
         ob_start();
         require __DIR__ . '/../Views/partials/secciones-clinicas.php';
-        $numeroSeccion ??= $numeroSeccionInicial;
-        require __DIR__ . '/../Views/partials/secciones-placeholder.php';
         $html = ob_get_clean();
 
         echo json_encode([
@@ -321,42 +364,47 @@ class CasosController extends Controller
      */
     public function buscarPaciente(): void
     {
-        Auth::exigirRol(...self::ROLES_REGISTRO);
+        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO', 'REGISTRADOR');
         header('Content-Type: application/json; charset=utf-8');
 
-        $tipoDoc = $_GET['tipo_doc'] ?? 'DNI';
+        $tipoDoc = trim($_GET['tipo_doc'] ?? '');
         $numDoc = trim($_GET['num_doc'] ?? '');
 
-        if ($numDoc === '') {
-            echo json_encode(['paciente' => null, 'duplicado' => null]);
+        if ($tipoDoc === '' || $numDoc === '') {
+            echo json_encode(['error' => 'Datos incompletos'], JSON_UNESCAPED_UNICODE);
             return;
         }
 
-        $paciente = Paciente::buscarPorDocumento($tipoDoc, $numDoc);
+        $persona = PersonaService::buscarOCrear($tipoDoc, $numDoc);
         $pacienteJson = null;
         $duplicado = null;
 
-        if ($paciente) {
-            $distrito = $paciente['distrito_id'] ? Distrito::buscarPorId($paciente['distrito_id']) : null;
+        if ($persona) {
+            $distrito = $persona['distrito_id'] ? Distrito::buscarPorId($persona['distrito_id']) : null;
 
             $pacienteJson = [
-                'apellidos_nombres' => $paciente['apellidos_nombres'],
-                'sexo'              => $paciente['sexo'],
-                'fecha_nac'         => fechaIsoADmy($paciente['fecha_nac']),
-                'edad'              => edadDesdeFecha($paciente['fecha_nac']),
-                'distrito_id'       => $paciente['distrito_id'],
+                'fuente'            => 'SISTEMA',
+                'apellido_paterno'  => $persona['apellido_paterno'],
+                'apellido_materno'  => $persona['apellido_materno'],
+                'nombres'           => $persona['nombres'],
+                'nombre_completo'   => Persona::nombreCompleto($persona),
+                'sexo'              => $persona['sexo'],
+                'fecha_nac'         => $persona['fecha_nac'] ?: null,
+                'edad'              => $persona['fecha_nac'] ? edadDesdeFecha($persona['fecha_nac']) : null,
+                'distrito_id'       => $persona['distrito_id'],
                 'provincia_id'      => $distrito['provincia_id'] ?? null,
                 'departamento_id'   => $distrito['departamento_id'] ?? null,
-                'es_pnp'            => (bool) $paciente['es_pnp'],
-                'cip'               => $paciente['cip'],
-                'situacion_pnp'     => $paciente['situacion_pnp'],
-                'grado_id'          => $paciente['grado_id'],
-                'unidad_id'         => $paciente['unidad_id'],
-                'tipo_beneficiario' => $paciente['tipo_beneficiario'],
+                'es_pnp'            => (bool) $persona['es_pnp'],
+                'cip'               => $persona['cip'] ?? null,
+                'situacion_pnp'     => $persona['situacion_pnp'] ?? null,
+                'grado_id'          => $persona['grado_id'] ?? null,
+                'categoria_pnp'     => $persona['categoria_pnp'] ?? null,
+                'unidad_id'         => $persona['unidad_id'] ?? null,
+                'tipo_beneficiario' => $persona['tipo_beneficiario'] ?? null,
             ];
 
             $enfermedadId = (int) ($_GET['enfermedad_id'] ?? 0);
-            $fechaNotifIso = fechaDmyAIso(trim($_GET['fecha_notif'] ?? ''));
+            $fechaNotifIso = fechaIsoValida(trim($_GET['fecha_notif'] ?? ''));
 
             if ($enfermedadId && $fechaNotifIso) {
                 $dup = Caso::buscarDuplicado($enfermedadId, $tipoDoc, $numDoc, $fechaNotifIso);
@@ -372,7 +420,10 @@ class CasosController extends Controller
             }
         }
 
-        echo json_encode(['paciente' => $pacienteJson, 'duplicado' => $duplicado]);
+        echo json_encode([
+            'paciente'  => $pacienteJson,
+            'duplicado' => $duplicado
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     public function ver(string $id): void
@@ -392,6 +443,13 @@ class CasosController extends Controller
 
         $secciones = SeccionDef::porEnfermedad((int) $caso['enfermedad_id']);
         $valoresCampos = CasoValor::porCaso((int) $caso['id']);
+        
+        $camposDef = CampoDef::porEnfermedad((int) $caso['enfermedad_id']);
+        $tieneSensibles = !empty(array_filter($camposDef, fn($c) => !empty($c['sensible'])));
+        $puedeVerSensibles = Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
+        if ($tieneSensibles && $puedeVerSensibles) {
+            CasoBitacora::registrar((int) $caso['id'], (int) Auth::usuario()['id'], 'CONSULTA_SENSIBLE', 'Consulta a ficha con datos sensibles.');
+        }
 
         $this->vista('fichas/ver', [
             'tituloVista' => 'Ficha ' . $caso['codigo'],
@@ -426,17 +484,27 @@ class CasosController extends Controller
         }
 
         $enfermedadId = (int) $caso['enfermedad_id'];
+        
+        $camposDef = CampoDef::porEnfermedad($enfermedadId);
+        $tieneSensibles = !empty(array_filter($camposDef, fn($c) => !empty($c['sensible'])));
+        $puedeVerSensibles = Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
+        if ($tieneSensibles && $puedeVerSensibles) {
+            CasoBitacora::registrar((int) $caso['id'], (int) Auth::usuario()['id'], 'CONSULTA_SENSIBLE', 'Consulta a ficha con datos sensibles (edición).');
+        }
+
         $valoresCamposCrudo = CasoValor::porCaso((int) $caso['id']);
         $valoresCampos = $this->expandirValoresGuardados($enfermedadId, $valoresCamposCrudo);
 
         $valoresFijos = [
             'establecimiento_id' => (string) $caso['establecimiento_id'],
-            'fecha_notif'        => fechaIsoADmy($caso['fecha_notif']),
+            'fecha_notif'        => (string) $caso['fecha_notif'],
             'tipo_doc'           => $caso['tipo_doc'],
             'num_doc'            => $caso['num_doc'],
-            'apellidos_nombres'  => $caso['apellidos_nombres'],
+            'apellido_paterno'   => $caso['apellido_paterno'],
+            'apellido_materno'   => $caso['apellido_materno'],
+            'nombres'            => $caso['nombres'],
             'sexo'               => $caso['sexo'] ?? '',
-            'fecha_nac'          => fechaIsoADmy($caso['fecha_nac']),
+            'fecha_nac'          => (string) ($caso['fecha_nac'] ?? ''),
         ];
 
         $this->vista('fichas/editar', array_merge([
@@ -448,12 +516,15 @@ class CasosController extends Controller
             'erroresFijos' => [],
             'valoresCampos' => $valoresCampos,
             'erroresCampos' => [],
-            'fechaInicioSintomas' => fechaIsoADmy($caso['fecha_inicio_sintomas']),
+            'fechaInicioSintomas' => (string) ($caso['fecha_inicio_sintomas'] ?? ''),
             'errorFechaInicioSintomas' => null,
             'filasContactos' => CasoContacto::porCaso((int) $caso['id']),
             'filasViajes'    => CasoViaje::porCaso((int) $caso['id']),
             'filasVacunas'   => CasoVacuna::porCaso((int) $caso['id']),
             'filasMuestras'  => CasoMuestra::porCaso((int) $caso['id']),
+            'erroresViajes'  => [],
+            'erroresVacunas' => [],
+            'erroresMuestras' => [],
         ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo(), contextoUbigeo($caso['distrito_id'])));
     }
 
@@ -483,27 +554,32 @@ class CasosController extends Controller
             'fecha_notif'        => trim($_POST['fecha_notif'] ?? ''),
             'tipo_doc'           => $caso['tipo_doc'],
             'num_doc'            => $caso['num_doc'],
-            'apellidos_nombres'  => trim($_POST['apellidos_nombres'] ?? ''),
+            'apellido_paterno'   => trim($_POST['apellido_paterno'] ?? ''),
+            'apellido_materno'   => trim($_POST['apellido_materno'] ?? ''),
+            'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
         ];
 
-        $fechaNotifIso = fechaDmyAIso($valoresFijos['fecha_notif']);
+        $fechaNotifIso = fechaIsoValida($valoresFijos['fecha_notif']);
         if (!$fechaNotifIso) {
-            $erroresFijos['fecha_notif'] = 'Ingresa una fecha válida en formato dd/mm/aaaa.';
+            $erroresFijos['fecha_notif'] = 'Ingresa una fecha de notificación válida.';
         } elseif ($fechaNotifIso > (new DateTime())->format('Y-m-d')) {
             $erroresFijos['fecha_notif'] = 'La fecha de notificación no puede ser futura.';
         }
 
-        if ($valoresFijos['apellidos_nombres'] === '') {
-            $erroresFijos['apellidos_nombres'] = 'Ingresa apellidos y nombres.';
+        if ($valoresFijos['apellido_paterno'] === '') {
+            $erroresFijos['apellido_paterno'] = 'Ingresa el apellido paterno.';
+        }
+        if ($valoresFijos['nombres'] === '') {
+            $erroresFijos['nombres'] = 'Ingresa los nombres.';
         }
 
         $fechaNacIso = null;
         if ($valoresFijos['fecha_nac'] !== '') {
-            $fechaNacIso = fechaDmyAIso($valoresFijos['fecha_nac']);
+            $fechaNacIso = fechaIsoValida($valoresFijos['fecha_nac']);
             if (!$fechaNacIso) {
-                $erroresFijos['fecha_nac'] = 'Ingresa una fecha válida en formato dd/mm/aaaa.';
+                $erroresFijos['fecha_nac'] = 'Ingresa una fecha de nacimiento válida.';
             }
         }
 
@@ -518,14 +594,15 @@ class CasosController extends Controller
         if ($fechaInicioSintomas === '') {
             $errorFechaInicioSintomas = 'Ingresa la fecha de inicio de síntomas.';
         } else {
-            $fechaInicioSintomasIso = fechaDmyAIso($fechaInicioSintomas);
+            $fechaInicioSintomasIso = fechaIsoValida($fechaInicioSintomas);
             if (!$fechaInicioSintomasIso) {
-                $errorFechaInicioSintomas = 'Ingresa una fecha válida en formato dd/mm/aaaa.';
+                $errorFechaInicioSintomas = 'Ingresa una fecha de inicio de síntomas válida.';
             }
         }
 
         $datosPnp = $this->leerDatosPnp();
-        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId);
+        $valoresExistentesCrudo = CasoValor::porCaso((int) $caso['id']);
+        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $valoresExistentesCrudo);
 
         $clasificacion = $_POST['clasificacion'] ?? $caso['clasificacion'];
         if (!in_array($clasificacion, ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'], true)) {
@@ -535,11 +612,12 @@ class CasosController extends Controller
         $fallecido = isset($_POST['fallecido']) ? 1 : 0;
 
         $filasContactos = $this->filasContactos();
-        $filasViajes = $this->filasViajes();
-        $filasVacunas = $this->filasVacunas();
-        $filasMuestras = $this->filasMuestras();
+        [$filasViajes, $erroresViajes] = $this->filasViajes();
+        [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
+        [$filasMuestras, $erroresMuestras] = $this->filasMuestras();
 
-        $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null;
+        $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
+            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras);
 
         if ($hayErrores) {
             $caso['clasificacion'] = $clasificacion;
@@ -561,6 +639,9 @@ class CasosController extends Controller
                 'filasViajes'    => $filasViajes,
                 'filasVacunas'   => $filasVacunas,
                 'filasMuestras'  => $filasMuestras,
+                'erroresViajes'  => $erroresViajes,
+                'erroresVacunas' => $erroresVacunas,
+                'erroresMuestras' => $erroresMuestras,
             ], $datosPnp['vista'], $this->datosMuestrasCatalogo(), contextoUbigeo($distritoId ?: null)));
             return;
         }
@@ -571,14 +652,23 @@ class CasosController extends Controller
             $pdo->beginTransaction();
 
             $datosPaciente = array_merge([
-                'apellidos_nombres' => $valoresFijos['apellidos_nombres'],
+                'apellido_paterno'  => $valoresFijos['apellido_paterno'],
+                'apellido_materno'  => $valoresFijos['apellido_materno'] !== '' ? $valoresFijos['apellido_materno'] : null,
+                'nombres'           => $valoresFijos['nombres'],
                 'sexo'              => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null,
                 'fecha_nac'         => $fechaNacIso,
                 'distrito_id'       => $distritoId,
             ], $datosPnp['datos']);
 
-            $paciente = Paciente::buscarPorDocumento($caso['tipo_doc'], $caso['num_doc']);
-            Paciente::actualizar((int) $paciente['id'], $datosPaciente);
+            $persona = Persona::buscarPorDocumento($caso['tipo_doc'], $caso['num_doc']);
+            $personaId = (int) $persona['id'];
+            
+            // Validación de conflicto de interés
+            if ($usuario['persona_id'] !== null && $usuario['persona_id'] === $personaId) {
+                throw new ConflictoInteresException('No puedes editar esta ficha: la persona notificada eres tú mismo/a. Pide a otro registrador o al epidemiólogo que la edite.');
+            }
+
+            Persona::actualizar($personaId, $datosPaciente);
 
             $semana = semanaEpidemiologica($fechaNotifIso);
 
@@ -599,6 +689,14 @@ class CasosController extends Controller
             CasoVacuna::reemplazarTodos((int) $caso['id'], $filasVacunas);
             CasoMuestra::reemplazarTodos((int) $caso['id'], $filasMuestras);
 
+            $rolPrincipal = $caso['enfermedad_multi_sujeto'] ?? false 
+                ? explode(',', $caso['enfermedad_roles_sujeto'] ?? 'CASO_INDICE')[0] 
+                : 'CASO_INDICE';
+                
+            \App\Models\CasoSujeto::guardarSujetos((int) $caso['id'], [
+                $rolPrincipal => ['persona_id' => $personaId]
+            ]);
+
             if ($clasificacion !== $caso['clasificacion']) {
                 CasoBitacora::registrar(
                     (int) $caso['id'],
@@ -610,6 +708,12 @@ class CasosController extends Controller
             CasoBitacora::registrar((int) $caso['id'], (int) $usuario['id'], 'EDICION', 'Ficha actualizada.');
 
             $pdo->commit();
+        } catch (ConflictoInteresException $e) {
+            $pdo->rollBack();
+            CasoBitacora::registrar((int) $caso['id'], (int) $usuario['id'], 'CONFLICTO_INTERES', 'Intento bloqueado: el usuario intentó editar una ficha donde él es la persona notificada.');
+            Flash::set($e->getMessage());
+            header('Location: /casos/' . $id . '/editar');
+            exit;
         } catch (Throwable $e) {
             $pdo->rollBack();
             error_log('Error al actualizar ficha: ' . $e->getMessage());
@@ -695,17 +799,26 @@ class CasosController extends Controller
     /**
      * @return array{0: array, 1: array, 2: array} [valoresCampos, erroresCampos, paraGuardar]
      */
-    private function validarCamposDinamicos(int $enfermedadId): array
+    private function validarCamposDinamicos(int $enfermedadId, array $valoresExistentesCrudo = []): array
     {
-        $camposDef = CampoDef::porEnfermedad($enfermedadId);
+        $campos = CampoDef::porEnfermedad($enfermedadId);
         $valoresCampos = [];
         $erroresCampos = [];
         $paraGuardar = [];
+        $puedeVerSensibles = Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
 
-        foreach ($camposDef as $campoId => $campo) {
-            $nombreCampo = 'campo_' . $campoId;
+        foreach ($campos as $campoId => $campo) {
             $tipo = $campo['tipo'];
-            $obligatorio = (bool) $campo['obligatorio'];
+            $obligatorio = (int) $campo['obligatorio'] === 1;
+            $sensible = !empty($campo['sensible']);
+            $nombreCampo = 'campo_' . $campoId;
+
+            if ($sensible && !$puedeVerSensibles) {
+                if (isset($valoresExistentesCrudo[$campoId])) {
+                    $paraGuardar[$campoId] = $valoresExistentesCrudo[$campoId];
+                }
+                continue;
+            }
 
             if ($tipo === 'MULTISELECT') {
                 $seleccion = array_map('strval', $_POST[$nombreCampo] ?? []);
@@ -729,6 +842,25 @@ class CasosController extends Controller
                 continue;
             }
 
+            if (in_array($tipo, ['GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true)) {
+                $valorCrudo = $_POST[$nombreCampo] ?? [];
+                if (!is_array($valorCrudo)) {
+                    $valorCrudo = [];
+                }
+                $valoresCampos[$campoId] = $valorCrudo;
+                
+                $vacio = empty(array_filter($valorCrudo, function($v) {
+                    return is_array($v) ? !empty(array_filter($v)) : trim($v) !== '';
+                }));
+
+                if ($obligatorio && $vacio) {
+                    $erroresCampos[$campoId] = 'Este campo es obligatorio.';
+                } elseif (!$vacio) {
+                    $paraGuardar[$campoId] = json_encode($valorCrudo, JSON_UNESCAPED_UNICODE);
+                }
+                continue;
+            }
+
             $valor = trim((string) ($_POST[$nombreCampo] ?? ''));
             $valoresCampos[$campoId] = $valor;
 
@@ -748,9 +880,9 @@ class CasosController extends Controller
                     }
                     break;
                 case 'FECHA':
-                    $iso = fechaDmyAIso($valor);
+                    $iso = fechaIsoValida($valor);
                     if (!$iso) {
-                        $erroresCampos[$campoId] = 'Ingresa una fecha válida en formato dd/mm/aaaa.';
+                        $erroresCampos[$campoId] = 'Ingresa una fecha válida.';
                     } else {
                         $paraGuardar[$campoId] = $iso;
                     }
@@ -787,6 +919,8 @@ class CasosController extends Controller
             $crudo = $valoresCrudo[$campoId] ?? null;
             if ($campo['tipo'] === 'MULTISELECT') {
                 $valores[$campoId] = $crudo !== null && $crudo !== '' ? explode(',', $crudo) : [];
+            } elseif (in_array($campo['tipo'], ['GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true)) {
+                $valores[$campoId] = $crudo ? json_decode($crudo, true) ?? [] : [];
             } else {
                 $valores[$campoId] = $crudo ?? '';
             }
@@ -799,10 +933,12 @@ class CasosController extends Controller
     {
         return [
             'establecimiento_id' => (string) (Auth::usuario()['establecimiento_id'] ?? ''),
-            'fecha_notif'        => fechaIsoADmy($hoyIso),
+            'fecha_notif'        => $hoyIso,
             'tipo_doc'           => 'DNI',
             'num_doc'            => '',
-            'apellidos_nombres'  => '',
+            'apellido_paterno'   => '',
+            'apellido_materno'   => '',
+            'nombres'            => '',
             'sexo'               => '',
             'fecha_nac'          => '',
         ];
@@ -873,15 +1009,62 @@ class CasosController extends Controller
         $situacion = $_POST['situacion_pnp'] ?? '';
         $tipoBeneficiario = $_POST['tipo_beneficiario'] ?? '';
         $cip = trim($_POST['cip'] ?? '');
+        $categoriaPnp = $_POST['categoria_pnp'] ?? '';
 
+        $grados = GradoPnp::todos('jerarquia');
+        
         $datos = [
             'es_pnp'            => $esPnp ? 1 : 0,
-            'cip'               => $esPnp && $cip !== '' ? $cip : null,
-            'situacion_pnp'     => $esPnp && in_array($situacion, ['ACTIVIDAD', 'RETIRO', 'DISPONIBILIDAD'], true) ? $situacion : null,
-            'grado_id'          => $esPnp && $gradoId !== '' ? (int) $gradoId : null,
-            'unidad_id'         => $esPnp && $unidadId !== '' ? (int) $unidadId : null,
-            'tipo_beneficiario' => $esPnp && in_array($tipoBeneficiario, ['TITULAR', 'DERECHOHABIENTE'], true) ? $tipoBeneficiario : null,
+            'cip'               => null,
+            'situacion_pnp'     => null,
+            'grado_id'          => null,
+            'unidad_id'         => null,
+            'tipo_beneficiario' => null,
+            'categoria_pnp'     => null,
         ];
+
+        if ($esPnp) {
+            $datos['unidad_id'] = $unidadId !== '' ? (int) $unidadId : null;
+            
+            if (in_array($tipoBeneficiario, ['TITULAR', 'DERECHOHABIENTE'], true)) {
+                $datos['tipo_beneficiario'] = $tipoBeneficiario;
+            }
+
+            // Un derechohabiente lleva es_pnp = 0 en el frontend, 
+            // pero si viene como 1 (ej. se llenó y luego se cambió sin limpiar), se sanean sus campos.
+            if ($datos['tipo_beneficiario'] === 'TITULAR') {
+                if ($gradoId !== '') {
+                    $datos['grado_id'] = (int) $gradoId;
+                    
+                    // Buscar el grado para aplicar reglas
+                    $gradoActual = null;
+                    foreach ($grados as $g) {
+                        if ((int) $g['id'] === $datos['grado_id']) {
+                            $gradoActual = $g;
+                            break;
+                        }
+                    }
+
+                    if ($gradoActual) {
+                        if (in_array($situacion, ['ACTIVIDAD', 'RETIRO', 'DISPONIBILIDAD'], true)) {
+                            $datos['situacion_pnp'] = $situacion;
+                        }
+
+                        $nivel = $gradoActual['nivel'];
+                        if (str_starts_with($nivel, 'OFICIAL_') || $nivel === 'SUBOFICIAL') {
+                            $datos['cip'] = $cip !== '' ? $cip : null;
+                            if (in_array($categoriaPnp, ['ARMAS', 'SERVICIOS', 'ASIMILADO'], true)) {
+                                $datos['categoria_pnp'] = $categoriaPnp;
+                            }
+                        } elseif ($nivel === 'CADETE' || $nivel === 'ALUMNO') {
+                            $datos['cip'] = $cip !== '' ? $cip : null;
+                        } elseif ($nivel === 'EMPLEADO_CIVIL') {
+                            // Sin categoría ni CIP
+                        }
+                    }
+                }
+            }
+        }
 
         return [
             'datos' => $datos,
@@ -893,8 +1076,9 @@ class CasosController extends Controller
                     'grado_id'          => $gradoId,
                     'unidad_id'         => $unidadId,
                     'tipo_beneficiario' => $tipoBeneficiario,
+                    'categoria_pnp'     => $categoriaPnp,
                 ],
-                'grados'   => GradoPnp::todos('jerarquia'),
+                'grados'   => $grados,
                 'unidades' => array_values(array_filter(UnidadPnp::conUbicacion(), fn($u) => (int) $u['activo'] === 1)),
             ],
         ];
@@ -933,6 +1117,13 @@ class CasosController extends Controller
         return $filas;
     }
 
+    private const ERROR_FECHA_INVALIDA = 'Ingresa una fecha válida.';
+
+    /**
+     * @return array{0: array, 1: array} [$filas, $errores] — $errores queda
+     * indexado por la misma posición que la fila en el POST, para que la
+     * vista pueda marcar el campo exacto que falló.
+     */
     private function filasViajes(): array
     {
         $lugares = $_POST['viaje_pais'] ?? [];
@@ -940,21 +1131,43 @@ class CasosController extends Controller
         $retornos = $_POST['viaje_fecha_retorno'] ?? [];
 
         $filas = [];
+        $errores = [];
         foreach ($lugares as $i => $lugar) {
             $lugar = trim((string) $lugar);
-            $salidaDmy = trim((string) ($salidas[$i] ?? ''));
-            $retornoDmy = trim((string) ($retornos[$i] ?? ''));
-            if ($lugar === '' && $salidaDmy === '' && $retornoDmy === '') {
+            $salidaTxt = trim((string) ($salidas[$i] ?? ''));
+            $retornoTxt = trim((string) ($retornos[$i] ?? ''));
+            if ($lugar === '' && $salidaTxt === '' && $retornoTxt === '') {
                 continue;
             }
+
+            // En caso de error se guarda el texto tal cual se escribió (no
+            // el ISO ni null) para que la vista lo muestre de vuelta al
+            // usuario y pueda corregirlo, en lugar de verlo desaparecer.
+            $salidaIso = null;
+            if ($salidaTxt !== '') {
+                $salidaIso = fechaIsoValida($salidaTxt);
+                if (!$salidaIso) {
+                    $errores[$i]['fecha_salida'] = self::ERROR_FECHA_INVALIDA;
+                    $salidaIso = $salidaTxt;
+                }
+            }
+            $retornoIso = null;
+            if ($retornoTxt !== '') {
+                $retornoIso = fechaIsoValida($retornoTxt);
+                if (!$retornoIso) {
+                    $errores[$i]['fecha_retorno'] = self::ERROR_FECHA_INVALIDA;
+                    $retornoIso = $retornoTxt;
+                }
+            }
+
             $filas[] = [
                 'pais'          => $lugar !== '' ? $lugar : null,
-                'fecha_salida'  => $salidaDmy !== '' ? fechaDmyAIso($salidaDmy) : null,
-                'fecha_retorno' => $retornoDmy !== '' ? fechaDmyAIso($retornoDmy) : null,
+                'fecha_salida'  => $salidaIso,
+                'fecha_retorno' => $retornoIso,
             ];
         }
 
-        return $filas;
+        return [$filas, $errores];
     }
 
     private function filasVacunas(): array
@@ -964,20 +1177,29 @@ class CasosController extends Controller
         $fechas = $_POST['vacuna_fecha'] ?? [];
 
         $filas = [];
+        $errores = [];
         foreach ($vacunas as $i => $vacuna) {
             $vacuna = trim((string) $vacuna);
             if ($vacuna === '') {
                 continue;
             }
-            $fechaDmy = trim((string) ($fechas[$i] ?? ''));
+            $fechaTxt = trim((string) ($fechas[$i] ?? ''));
+            $fechaIso = null;
+            if ($fechaTxt !== '') {
+                $fechaIso = fechaIsoValida($fechaTxt);
+                if (!$fechaIso) {
+                    $errores[$i]['fecha'] = self::ERROR_FECHA_INVALIDA;
+                    $fechaIso = $fechaTxt;
+                }
+            }
             $filas[] = [
                 'vacuna' => $vacuna,
                 'dosis'  => trim((string) ($dosis[$i] ?? '')) ?: null,
-                'fecha'  => $fechaDmy !== '' ? fechaDmyAIso($fechaDmy) : null,
+                'fecha'  => $fechaIso,
             ];
         }
 
-        return $filas;
+        return [$filas, $errores];
     }
 
     private function filasMuestras(): array
@@ -993,33 +1215,55 @@ class CasosController extends Controller
         $validosResultado = array_column(CatalogoItem::porCatalogo(3), 'valor');
 
         $filas = [];
+        $errores = [];
         foreach ($tiposMuestra as $i => $tipoMuestra) {
             $tipoMuestra = trim((string) $tipoMuestra);
             $tipoPrueba = trim((string) ($tiposPrueba[$i] ?? ''));
             $resultado = trim((string) ($resultados[$i] ?? ''));
-            $tomaDmy = trim((string) ($fechasToma[$i] ?? ''));
-            $resultDmy = trim((string) ($fechasResultado[$i] ?? ''));
+            $tomaTxt = trim((string) ($fechasToma[$i] ?? ''));
+            $resultTxt = trim((string) ($fechasResultado[$i] ?? ''));
 
-            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaDmy === '' && $resultDmy === '') {
+            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $resultTxt === '') {
                 continue;
+            }
+
+            $tomaIso = null;
+            if ($tomaTxt !== '') {
+                $tomaIso = fechaIsoValida($tomaTxt);
+                if (!$tomaIso) {
+                    $errores[$i]['fecha_toma'] = self::ERROR_FECHA_INVALIDA;
+                    $tomaIso = $tomaTxt;
+                }
+            }
+            $resultIso = null;
+            if ($resultTxt !== '') {
+                $resultIso = fechaIsoValida($resultTxt);
+                if (!$resultIso) {
+                    $errores[$i]['fecha_result'] = self::ERROR_FECHA_INVALIDA;
+                    $resultIso = $resultTxt;
+                }
             }
 
             $filas[] = [
                 'tipo_muestra' => in_array($tipoMuestra, $validosTipoMuestra, true) ? $tipoMuestra : null,
                 'tipo_prueba'  => in_array($tipoPrueba, $validosTipoPrueba, true) ? $tipoPrueba : null,
                 'resultado'    => in_array($resultado, $validosResultado, true) ? $resultado : null,
-                'fecha_toma'   => $tomaDmy !== '' ? fechaDmyAIso($tomaDmy) : null,
-                'fecha_result' => $resultDmy !== '' ? fechaDmyAIso($resultDmy) : null,
+                'fecha_toma'   => $tomaIso,
+                'fecha_result' => $resultIso,
             ];
         }
 
-        return $filas;
+        return [$filas, $errores];
     }
 
     private function puedeVerCaso(array $caso): bool
     {
         $usuario = Auth::usuario();
         if ($usuario['rol'] === 'REGISTRADOR') {
+            $esPrivada = in_array($caso['cie10'], ['B24', 'Z21']) || stripos($caso['enfermedad_nombre'], 'Violencia') !== false;
+            if ($esPrivada && (int) $caso['usuario_id'] !== (int) $usuario['id']) {
+                return false;
+            }
             return $usuario['establecimiento_id'] === (int) $caso['establecimiento_id'];
         }
 
@@ -1037,6 +1281,10 @@ class CasosController extends Controller
             return true;
         }
         if ($usuario['rol'] === 'REGISTRADOR') {
+            $esPrivada = in_array($caso['cie10'], ['B24', 'Z21']) || stripos($caso['enfermedad_nombre'], 'Violencia') !== false;
+            if ($esPrivada && (int) $caso['usuario_id'] !== (int) $usuario['id']) {
+                return false;
+            }
             return $caso['estado'] === 'ABIERTA'
                 && $usuario['establecimiento_id'] === (int) $caso['establecimiento_id'];
         }

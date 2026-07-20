@@ -5,9 +5,10 @@
  * `pais` se usa como "lugar visitado" libre (nacional o internacional);
  * no se normaliza contra distrito_id en esta fase.
  */
-$filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha_retorno' => '']): void {
-    $salidaDmy = fechaIsoADmy($fila['fecha_salida'] ?? '') ?: ($fila['fecha_salida'] ?? '');
-    $retornoDmy = fechaIsoADmy($fila['fecha_retorno'] ?? '') ?: ($fila['fecha_retorno'] ?? '');
+$erroresViajes = $erroresViajes ?? [];
+$filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha_retorno' => ''], ?array $error = null): void {
+    $errorSalida = $error['fecha_salida'] ?? null;
+    $errorRetorno = $error['fecha_retorno'] ?? null;
     ?>
   <div class="subrow">
     <div class="fields thirds" style="flex:1">
@@ -17,11 +18,13 @@ $filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha
       </div>
       <div class="field">
         <label class="fl">Fecha de salida</label>
-        <div class="control mono"><input type="text" name="viaje_fecha_salida[]" value="<?= e($salidaDmy) ?>" placeholder="dd/mm/aaaa"></div>
+        <div class="control mono <?= $errorSalida ? 'err' : '' ?>"><input type="date" name="viaje_fecha_salida[]" value="<?= e($fila['fecha_salida'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+        <?php if ($errorSalida): ?><span class="hint err"><?= e($errorSalida) ?></span><?php endif; ?>
       </div>
       <div class="field">
         <label class="fl">Fecha de retorno</label>
-        <div class="control mono"><input type="text" name="viaje_fecha_retorno[]" value="<?= e($retornoDmy) ?>" placeholder="dd/mm/aaaa"></div>
+        <div class="control mono <?= $errorRetorno ? 'err' : '' ?>"><input type="date" name="viaje_fecha_retorno[]" value="<?= e($fila['fecha_retorno'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+        <?php if ($errorRetorno): ?><span class="hint err"><?= e($errorRetorno) ?></span><?php endif; ?>
       </div>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar viaje" style="margin-top:22px">
@@ -31,7 +34,7 @@ $filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha
 <?php };
 ?>
 <div class="subrows" data-lista="viajes">
-  <?php foreach ($filasViajes as $fila): $filaViaje($fila); endforeach; ?>
+  <?php foreach ($filasViajes as $i => $fila): $filaViaje($fila, $erroresViajes[$i] ?? null); endforeach; ?>
 </div>
 <template id="plantilla-viajes"><?php $filaViaje(); ?></template>
 <button type="button" class="btn btn-ghost agregar-fila" data-plantilla="plantilla-viajes" data-lista="viajes" style="margin-top:12px">

@@ -16,6 +16,7 @@ function inicializarUbigeo(prefijo) {
       opcion.textContent = item.nombre;
       select.appendChild(opcion);
     });
+    if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(select);
   }
 
   selDep.addEventListener('change', function () {
@@ -53,12 +54,14 @@ function establecerUbigeo(prefijo, departamentoId, provinciaId, distritoId) {
   if (!selDep || !selProv || !selDist || !llenarOpciones || !departamentoId) return;
 
   selDep.value = departamentoId;
+  if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selDep);
 
   fetch('/api/provincias?departamento=' + encodeURIComponent(departamentoId))
     .then(function (resp) { return resp.json(); })
     .then(function (provincias) {
       llenarOpciones(selProv, provincias, 'Seleccionar…');
       selProv.value = provinciaId || '';
+      if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selProv);
       if (!provinciaId) return Promise.reject('sin-provincia');
 
       return fetch('/api/distritos?provincia=' + encodeURIComponent(provinciaId))
@@ -66,6 +69,7 @@ function establecerUbigeo(prefijo, departamentoId, provinciaId, distritoId) {
         .then(function (distritos) {
           llenarOpciones(selDist, distritos, 'Seleccionar…');
           selDist.value = distritoId || '';
+          if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selDist);
         });
     })
     .catch(function () { /* sin provincia/distrito previo: se deja el departamento nada más */ });

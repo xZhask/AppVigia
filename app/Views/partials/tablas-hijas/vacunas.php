@@ -3,8 +3,9 @@
  * Fila dinámica de antecedentes vacunales del caso (caso_vacuna). Variable
  * esperada: $filasVacunas (array de ['vacuna','dosis','fecha']).
  */
-$filaVacuna = function (array $fila = ['vacuna' => '', 'dosis' => '', 'fecha' => '']): void {
-    $fechaDmy = fechaIsoADmy($fila['fecha'] ?? '') ?: ($fila['fecha'] ?? '');
+$erroresVacunas = $erroresVacunas ?? [];
+$filaVacuna = function (array $fila = ['vacuna' => '', 'dosis' => '', 'fecha' => ''], ?array $error = null): void {
+    $errorFecha = $error['fecha'] ?? null;
     ?>
   <div class="subrow">
     <div class="fields thirds" style="flex:1">
@@ -18,7 +19,8 @@ $filaVacuna = function (array $fila = ['vacuna' => '', 'dosis' => '', 'fecha' =>
       </div>
       <div class="field">
         <label class="fl">Fecha de aplicación</label>
-        <div class="control mono"><input type="text" name="vacuna_fecha[]" value="<?= e($fechaDmy) ?>" placeholder="dd/mm/aaaa"></div>
+        <div class="control mono <?= $errorFecha ? 'err' : '' ?>"><input type="date" name="vacuna_fecha[]" value="<?= e($fila['fecha'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+        <?php if ($errorFecha): ?><span class="hint err"><?= e($errorFecha) ?></span><?php endif; ?>
       </div>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar vacuna" style="margin-top:22px">
@@ -28,7 +30,7 @@ $filaVacuna = function (array $fila = ['vacuna' => '', 'dosis' => '', 'fecha' =>
 <?php };
 ?>
 <div class="subrows" data-lista="vacunas">
-  <?php foreach ($filasVacunas as $fila): $filaVacuna($fila); endforeach; ?>
+  <?php foreach ($filasVacunas as $i => $fila): $filaVacuna($fila, $erroresVacunas[$i] ?? null); endforeach; ?>
 </div>
 <template id="plantilla-vacunas"><?php $filaVacuna(); ?></template>
 <button type="button" class="btn btn-ghost agregar-fila" data-plantilla="plantilla-vacunas" data-lista="vacunas" style="margin-top:12px">

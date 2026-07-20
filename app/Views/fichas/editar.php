@@ -36,52 +36,70 @@ $es = $estados[$caso['estado']];
     <div>
       <!-- 1. Notificación -->
       <div class="card section">
-        <div class="section-head"><span class="section-num">1</span><h3>Notificación</h3></div>
+        <div class="section-head">
+          <span class="section-num">1</span><h3>Notificación</h3>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+            <span class="eyebrow">SE de la ficha</span>
+            <span class="tag mono" title="Se recalcula al guardar, según la fecha de notificación">SE <?= (int) $caso['semana_epi'] ?> · <?= (int) $caso['anio_epi'] ?></span>
+          </span>
+        </div>
         <div class="section-body">
           <div class="fields thirds">
             <div class="field">
               <label class="fl">Establecimiento (EESS)</label>
-              <div class="control mono" style="color:var(--muted)">
+              <div class="control" style="color:var(--muted)" title="<?= e($caso['establecimiento_nombre']) ?>">
                 <svg class="lead" width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.5 2 4v7h10V4L7 1.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-                <?= e($caso['establecimiento_nombre']) ?>
+                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= e(capitalizarNombre($caso['establecimiento_nombre'])) ?></span>
               </div>
               <span class="hint">No editable: crea una nueva ficha si cambió de establecimiento</span>
             </div>
             <div class="field">
               <label class="fl">Fecha de notificación <span class="req">*</span></label>
               <div class="control mono <?= isset($erroresFijos['fecha_notif']) ? 'err' : '' ?>">
-                <input type="text" name="fecha_notif" value="<?= e($valoresFijos['fecha_notif']) ?>" placeholder="dd/mm/aaaa">
+                <input type="date" name="fecha_notif" value="<?= e($valoresFijos['fecha_notif']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
               </div>
-              <?php if (isset($erroresFijos['fecha_notif'])): ?><span class="hint err"><?= e($erroresFijos['fecha_notif']) ?></span><?php endif; ?>
-            </div>
-            <div class="field">
-              <label class="fl">Semana epidemiológica</label>
-              <div class="control mono"><input value="SE <?= (int) $caso['semana_epi'] ?> · <?= (int) $caso['anio_epi'] ?>" readonly style="color:var(--muted)"></div>
-              <span class="hint">Se recalcula al guardar, según la fecha de notificación</span>
+              <?php if (isset($erroresFijos['fecha_notif'])): ?>
+                <span class="hint err"><?= e($erroresFijos['fecha_notif']) ?></span>
+              <?php endif; ?>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 2. Paciente -->
+      <!-- 2. persona -->
       <div class="card section">
-        <div class="section-head"><span class="section-num">2</span><h3>Datos del paciente</h3></div>
+        <div class="section-head"><span class="section-num">2</span><h3>Datos del persona</h3></div>
         <div class="section-body">
           <div class="fields thirds">
             <div class="field">
               <label class="fl">Documento</label>
               <div class="control mono" style="color:var(--muted)"><?= e($valoresFijos['tipo_doc']) ?> <?= e($valoresFijos['num_doc']) ?></div>
-              <span class="hint">No editable: es la identidad del paciente</span>
+              <span class="hint">No editable: es la identidad del persona</span>
             </div>
           </div>
           <div class="fields thirds" style="margin-top:14px">
-            <div class="field wide">
-              <label class="fl">Apellidos y nombres <span class="req">*</span></label>
-              <div class="control <?= isset($erroresFijos['apellidos_nombres']) ? 'err' : '' ?>">
-                <input type="text" name="apellidos_nombres" value="<?= e($valoresFijos['apellidos_nombres']) ?>">
+            <div class="field">
+              <label class="fl">Apellido paterno <span class="req">*</span></label>
+              <div class="control <?= isset($erroresFijos['apellido_paterno']) ? 'err' : '' ?>">
+                <input type="text" name="apellido_paterno" value="<?= e($valoresFijos['apellido_paterno']) ?>">
               </div>
-              <?php if (isset($erroresFijos['apellidos_nombres'])): ?><span class="hint err"><?= e($erroresFijos['apellidos_nombres']) ?></span><?php endif; ?>
+              <?php if (isset($erroresFijos['apellido_paterno'])): ?><span class="hint err"><?= e($erroresFijos['apellido_paterno']) ?></span><?php endif; ?>
             </div>
+            <div class="field">
+              <label class="fl">Apellido materno</label>
+              <div class="control">
+                <input type="text" name="apellido_materno" value="<?= e($valoresFijos['apellido_materno']) ?>">
+              </div>
+            </div>
+            <div class="field">
+              <label class="fl">Nombres <span class="req">*</span></label>
+              <div class="control <?= isset($erroresFijos['nombres']) ? 'err' : '' ?>">
+                <input type="text" name="nombres" value="<?= e($valoresFijos['nombres']) ?>">
+              </div>
+              <?php if (isset($erroresFijos['nombres'])): ?><span class="hint err"><?= e($erroresFijos['nombres']) ?></span><?php endif; ?>
+            </div>
+          </div>
+          <div class="fields thirds" style="margin-top:14px">
             <div class="field">
               <label class="fl">Sexo</label>
               <div class="control">
@@ -95,12 +113,12 @@ $es = $estados[$caso['estado']];
             <div class="field">
               <label class="fl">Fecha de nacimiento</label>
               <div class="control mono <?= isset($erroresFijos['fecha_nac']) ? 'err' : '' ?>">
-                <input type="text" id="fechaNac" name="fecha_nac" value="<?= e($valoresFijos['fecha_nac']) ?>" placeholder="dd/mm/aaaa">
+                <input type="date" id="fechaNac" name="fecha_nac" value="<?= e($valoresFijos['fecha_nac']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
               </div>
               <?php if (isset($erroresFijos['fecha_nac'])): ?><span class="hint err"><?= e($erroresFijos['fecha_nac']) ?></span><?php endif; ?>
             </div>
           </div>
-          <div class="fields thirds" style="margin-top:14px">
+          <div style="margin-top:14px">
             <?php $prefijo = 'pac-ubigeo'; $errorDistrito = $erroresFijos['distrito_id'] ?? null; require __DIR__ . '/../partials/selector-ubigeo.php'; ?>
           </div>
 
@@ -194,19 +212,7 @@ $es = $estados[$caso['estado']];
       <div class="card section">
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Clasificación del caso</h3></div>
         <div class="section-body">
-          <div class="fields thirds">
-            <div class="field">
-              <label class="fl">Clasificación</label>
-              <div class="control">
-                <select name="clasificacion">
-                  <option value="SOSPECHOSO" <?= seleccionado($caso['clasificacion'], 'SOSPECHOSO') ?>>Sospechoso</option>
-                  <option value="PROBABLE" <?= seleccionado($caso['clasificacion'], 'PROBABLE') ?>>Probable</option>
-                  <option value="CONFIRMADO" <?= seleccionado($caso['clasificacion'], 'CONFIRMADO') ?>>Confirmado</option>
-                  <option value="DESCARTADO" <?= seleccionado($caso['clasificacion'], 'DESCARTADO') ?>>Descartado</option>
-                </select>
-              </div>
-            </div>
-          </div>
+          <?php $clasificacionActual = $caso['clasificacion']; require __DIR__ . '/../partials/clasificacion-chips.php'; ?>
           <div class="sym-grid" style="margin-top:14px;grid-template-columns:1fr">
             <label class="sym"><input type="checkbox" name="hospitalizado" <?= marcado($caso['hospitalizado']) ?>> Hospitalizado</label>
             <label class="sym"><input type="checkbox" name="fallecido" <?= marcado($caso['fallecido']) ?>> Fallecido</label>

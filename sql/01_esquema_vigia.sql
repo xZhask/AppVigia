@@ -2,6 +2,14 @@
 -- VIGÍA · Sistema de Vigilancia Epidemiológica — DIRSAPOL / Sanidad PNP
 -- Esquema de base de datos  ·  MySQL 8 / MariaDB 10.4+
 -- Cargar este archivo PRIMERO, luego 02_ubigeo_data.sql (datos INEI).
+--
+-- Regenerado a partir de la estructura real de la base de datos (mysqldump
+-- --no-data), para que una instalación limpia nazca con la misma estructura
+-- que ya corre en producción: identidad unificada en `persona`, nombres
+-- separados, integración RENIEC, fichas multi-sujeto y motor de fichas
+-- extendido. Los archivos sql/02 en adelante quedan como historial de cómo
+-- se llegó a esta estructura; no hace falta volver a ejecutarlos sobre una
+-- instalación que parte de este archivo.
 -- ============================================================================
 
 CREATE DATABASE IF NOT EXISTS vigia
@@ -14,295 +22,427 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ============================================================================
 -- 1) GEOGRAFÍA  (estructura INEI 2016; los datos vienen en 02_ubigeo_data.sql)
 -- ============================================================================
-CREATE TABLE departamento (
-  id      CHAR(2)     NOT NULL,
-  nombre  VARCHAR(60) NOT NULL,
-  PRIMARY KEY (id)
+CREATE TABLE `departamento` (
+  `id` char(2) NOT NULL,
+  `nombre` varchar(60) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE provincia (
-  id              CHAR(4)     NOT NULL,
-  nombre          VARCHAR(60) NOT NULL,
-  departamento_id CHAR(2)     NOT NULL,
-  PRIMARY KEY (id),
-  KEY ix_prov_dep (departamento_id),
-  CONSTRAINT fk_prov_dep FOREIGN KEY (departamento_id) REFERENCES departamento(id)
+CREATE TABLE `provincia` (
+  `id` char(4) NOT NULL,
+  `nombre` varchar(60) NOT NULL,
+  `departamento_id` char(2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_prov_dep` (`departamento_id`),
+  CONSTRAINT `fk_prov_dep` FOREIGN KEY (`departamento_id`) REFERENCES `departamento` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE distrito (
-  id              CHAR(6)     NOT NULL,
-  nombre          VARCHAR(60) NOT NULL,
-  provincia_id    CHAR(4)     NOT NULL,
-  departamento_id CHAR(2)     NOT NULL,
-  PRIMARY KEY (id),
-  KEY ix_dist_prov (provincia_id),
-  KEY ix_dist_dep  (departamento_id),
-  CONSTRAINT fk_dist_prov FOREIGN KEY (provincia_id)    REFERENCES provincia(id),
-  CONSTRAINT fk_dist_dep  FOREIGN KEY (departamento_id) REFERENCES departamento(id)
+CREATE TABLE `distrito` (
+  `id` char(6) NOT NULL,
+  `nombre` varchar(60) NOT NULL,
+  `provincia_id` char(4) NOT NULL,
+  `departamento_id` char(2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_dist_prov` (`provincia_id`),
+  KEY `ix_dist_dep` (`departamento_id`),
+  CONSTRAINT `fk_dist_dep` FOREIGN KEY (`departamento_id`) REFERENCES `departamento` (`id`),
+  CONSTRAINT `fk_dist_prov` FOREIGN KEY (`provincia_id`) REFERENCES `provincia` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 2) EXTENSIONES PNP  (grado y unidad/dependencia del efectivo)
 -- ============================================================================
-CREATE TABLE grado_pnp (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  abreviatura VARCHAR(16) NOT NULL,
-  nombre      VARCHAR(60) NOT NULL,
-  categoria   ENUM('OFICIAL_GENERAL','OFICIAL_SUPERIOR','OFICIAL_SUBALTERNO',
-                   'SUBOFICIAL','EMPLEADO_CIVIL') NOT NULL,
-  jerarquia   SMALLINT NOT NULL,          -- 1 = mayor rango
-  UNIQUE KEY uq_grado_abrev (abreviatura)
+CREATE TABLE `grado_pnp` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `abreviatura` varchar(16) NOT NULL,
+  `nombre` varchar(60) NOT NULL,
+  `nivel` enum('OFICIAL_GENERAL','OFICIAL_SUPERIOR','OFICIAL_SUBALTERNO','SUBOFICIAL','CADETE','ALUMNO','EMPLEADO_CIVIL') NOT NULL,
+  `jerarquia` smallint(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_grado_abrev` (`abreviatura`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE unidad_pnp (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  nombre      VARCHAR(160) NOT NULL,      -- comisaría, dirección, escuela, etc.
-  tipo        VARCHAR(60)  NULL,          -- Comisaría / Dirección / Unidad / Escuela
-  distrito_id CHAR(6)      NULL,
-  activo      TINYINT(1)   NOT NULL DEFAULT 1,
-  KEY ix_unid_dist (distrito_id),
-  CONSTRAINT fk_unid_dist FOREIGN KEY (distrito_id) REFERENCES distrito(id)
+CREATE TABLE `unidad_pnp` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(160) NOT NULL,
+  `tipo` varchar(60) DEFAULT NULL,
+  `distrito_id` char(6) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `ix_unid_dist` (`distrito_id`),
+  CONSTRAINT `fk_unid_dist` FOREIGN KEY (`distrito_id`) REFERENCES `distrito` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 3) ESTABLECIMIENTOS DE SALUD  (RENIPRESS)
 -- ============================================================================
-CREATE TABLE red_salud (
-  id     INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(120) NOT NULL,
-  diresa VARCHAR(120) NOT NULL DEFAULT 'DIRSAPOL'
+CREATE TABLE `red_salud` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(120) NOT NULL,
+  `diresa` varchar(120) NOT NULL DEFAULT 'DIRSAPOL',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE establecimiento (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  cod_renipress VARCHAR(8)   NULL,
-  nombre        VARCHAR(160) NOT NULL,
-  red_id        INT          NULL,
-  institucion   ENUM('MINSA','ESSALUD','FFAA_SANIDAD','PRIVADO')
-                             NOT NULL DEFAULT 'FFAA_SANIDAD',
-  distrito_id   CHAR(6)      NULL,
-  activo        TINYINT(1)   NOT NULL DEFAULT 1,
-  KEY ix_est_red  (red_id),
-  KEY ix_est_dist (distrito_id),
-  CONSTRAINT fk_est_red  FOREIGN KEY (red_id)      REFERENCES red_salud(id),
-  CONSTRAINT fk_est_dist FOREIGN KEY (distrito_id) REFERENCES distrito(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================================================
--- 4) SEGURIDAD
--- ============================================================================
-CREATE TABLE usuario (
-  id                 INT AUTO_INCREMENT PRIMARY KEY,
-  nombre             VARCHAR(120) NOT NULL,
-  email              VARCHAR(120) NOT NULL,
-  password_hash      VARCHAR(255) NOT NULL,
-  rol                ENUM('ADMIN','REGISTRADOR')
-                                  NOT NULL DEFAULT 'REGISTRADOR',
-  establecimiento_id INT          NULL,     -- registrador ligado a su EESS
-  activo             TINYINT(1)   NOT NULL DEFAULT 1,
-  creado_en          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_user_email (email),
-  KEY ix_user_est (establecimiento_id),
-  CONSTRAINT fk_user_est FOREIGN KEY (establecimiento_id) REFERENCES establecimiento(id)
+CREATE TABLE `establecimiento` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `cod_renipress` varchar(8) DEFAULT NULL,
+  `nombre` varchar(160) NOT NULL,
+  `red_id` int(11) DEFAULT NULL,
+  `institucion` enum('MINSA','ESSALUD','FFAA_SANIDAD','PRIVADO') NOT NULL DEFAULT 'FFAA_SANIDAD',
+  `distrito_id` char(6) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_est_cod_renipress` (`cod_renipress`),
+  KEY `ix_est_red` (`red_id`),
+  KEY `ix_est_dist` (`distrito_id`),
+  CONSTRAINT `fk_est_dist` FOREIGN KEY (`distrito_id`) REFERENCES `distrito` (`id`),
+  CONSTRAINT `fk_est_red` FOREIGN KEY (`red_id`) REFERENCES `red_salud` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
--- 5) MOTOR DE FICHAS  (metadatos: cada enfermedad define sus secciones/campos)
+-- 4) IDENTIDAD  (persona: quién es alguien, independiente de su rol)
 -- ============================================================================
-CREATE TABLE enfermedad (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  nombre     VARCHAR(120) NOT NULL,
-  cie10      VARCHAR(10)  NULL,
-  tipo_notif ENUM('INMEDIATA','SEMANAL') NOT NULL DEFAULT 'SEMANAL',
-  grupo      VARCHAR(40)  NULL,       -- A: caso estándar, B: binomio, C: evento...
-  activo     TINYINT(1)   NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE catalogo (
-  id     INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(80) NOT NULL,        -- 'sexo', 'tipo_muestra', 'resultado_lab'...
-  UNIQUE KEY uq_catalogo (nombre)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE catalogo_item (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  catalogo_id INT          NOT NULL,
-  valor       VARCHAR(60)  NOT NULL,
-  etiqueta    VARCHAR(120) NOT NULL,
-  orden       SMALLINT     NOT NULL DEFAULT 0,
-  KEY ix_item_cat (catalogo_id),
-  CONSTRAINT fk_item_cat FOREIGN KEY (catalogo_id) REFERENCES catalogo(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE seccion_def (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  enfermedad_id INT          NOT NULL,
-  nombre        VARCHAR(120) NOT NULL,
-  orden         SMALLINT     NOT NULL DEFAULT 0,
-  KEY ix_sec_enf (enfermedad_id),
-  CONSTRAINT fk_sec_enf FOREIGN KEY (enfermedad_id) REFERENCES enfermedad(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE campo_def (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  seccion_id  INT          NOT NULL,
-  clave       VARCHAR(60)  NOT NULL,   -- clave máquina (fiebre, dolor_abdominal...)
-  etiqueta    VARCHAR(160) NOT NULL,
-  tipo        ENUM('TEXTO','NUMERO','FECHA','BOOLEANO','SELECT','MULTISELECT','TEXTAREA')
-                           NOT NULL,
-  obligatorio TINYINT(1)   NOT NULL DEFAULT 0,
-  catalogo_id INT          NULL,       -- para SELECT/MULTISELECT
-  orden       SMALLINT     NOT NULL DEFAULT 0,
-  KEY ix_campo_sec (seccion_id),
-  KEY ix_campo_cat (catalogo_id),
-  CONSTRAINT fk_campo_sec FOREIGN KEY (seccion_id)  REFERENCES seccion_def(id) ON DELETE CASCADE,
-  CONSTRAINT fk_campo_cat FOREIGN KEY (catalogo_id) REFERENCES catalogo(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================================================
--- 6) NÚCLEO  (paciente + caso + valores de campos)
--- ============================================================================
-CREATE TABLE paciente (
-  id                INT AUTO_INCREMENT PRIMARY KEY,
-  tipo_doc          ENUM('DNI','CE','PTP','PAS','OTRO') NOT NULL DEFAULT 'DNI',
-  num_doc           VARCHAR(20)  NOT NULL,
-  apellidos_nombres VARCHAR(160) NOT NULL,
-  sexo              ENUM('M','F') NULL,
-  fecha_nac         DATE         NULL,
-  distrito_id       CHAR(6)      NULL,          -- domicilio actual
+CREATE TABLE `persona` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `codigo_interno` varchar(20) DEFAULT NULL,
+  `tipo_doc` enum('DNI','CE','PTP','PAS','SIN_DOCUMENTO') NOT NULL DEFAULT 'DNI',
+  `num_doc` varchar(20) DEFAULT NULL,
+  `apellido_paterno` varchar(60) DEFAULT NULL,
+  `apellido_materno` varchar(60) DEFAULT NULL,
+  `nombres` varchar(80) DEFAULT NULL,
+  `sexo` enum('M','F') DEFAULT NULL,
+  `fecha_nac` date DEFAULT NULL,
+  `distrito_id` char(6) DEFAULT NULL,
   -- ----- Datos PNP -----
-  es_pnp            TINYINT(1)   NOT NULL DEFAULT 0,
-  cip               VARCHAR(12)  NULL,          -- Carné de Identidad Personal
-  situacion_pnp     ENUM('ACTIVIDAD','RETIRO','DISPONIBILIDAD') NULL,
-  grado_id          INT          NULL,
-  unidad_id         INT          NULL,          -- dependencia donde presta servicio
-  tipo_beneficiario ENUM('TITULAR','DERECHOHABIENTE') NULL,
-  creado_en         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_paciente_doc (tipo_doc, num_doc),   -- clave para detectar duplicados
-  KEY ix_pac_dist   (distrito_id),
-  KEY ix_pac_grado  (grado_id),
-  KEY ix_pac_unidad (unidad_id),
-  KEY ix_pac_cip    (cip),
-  CONSTRAINT fk_pac_dist   FOREIGN KEY (distrito_id) REFERENCES distrito(id),
-  CONSTRAINT fk_pac_grado  FOREIGN KEY (grado_id)    REFERENCES grado_pnp(id),
-  CONSTRAINT fk_pac_unidad FOREIGN KEY (unidad_id)   REFERENCES unidad_pnp(id)
+  `es_pnp` tinyint(1) NOT NULL DEFAULT 0,
+  `cip` varchar(12) DEFAULT NULL,
+  `situacion_pnp` enum('ACTIVIDAD','RETIRO','DISPONIBILIDAD') DEFAULT NULL,
+  `grado_id` int(11) DEFAULT NULL,
+  `categoria_pnp` enum('ARMAS','SERVICIOS','ASIMILADO') DEFAULT NULL,
+  `unidad_id` int(11) DEFAULT NULL,
+  `tipo_beneficiario` enum('TITULAR','DERECHOHABIENTE') DEFAULT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_persona_doc` (`tipo_doc`,`num_doc`),
+  UNIQUE KEY `uq_persona_codigo` (`codigo_interno`),
+  KEY `ix_pac_dist` (`distrito_id`),
+  KEY `ix_pac_grado` (`grado_id`),
+  KEY `ix_pac_unidad` (`unidad_id`),
+  KEY `ix_pac_cip` (`cip`),
+  KEY `ix_pac_apellidos` (`apellido_paterno`,`apellido_materno`),
+  KEY `ix_pac_categoria` (`categoria_pnp`),
+  CONSTRAINT `fk_pac_dist` FOREIGN KEY (`distrito_id`) REFERENCES `distrito` (`id`),
+  CONSTRAINT `fk_pac_grado` FOREIGN KEY (`grado_id`) REFERENCES `grado_pnp` (`id`),
+  CONSTRAINT `fk_pac_unidad` FOREIGN KEY (`unidad_id`) REFERENCES `unidad_pnp` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE caso (
-  id                    INT AUTO_INCREMENT PRIMARY KEY,
-  codigo                VARCHAR(20) NOT NULL,        -- F-08843
-  enfermedad_id         INT NOT NULL,
-  paciente_id           INT NOT NULL,
-  establecimiento_id    INT NOT NULL,
-  usuario_id            INT NOT NULL,                -- quién registró
-  fecha_notif           DATE NOT NULL,
-  anio_epi              SMALLINT NULL,
-  semana_epi            SMALLINT NULL,
-  fecha_inicio_sintomas DATE NULL,
-  clasificacion         ENUM('SOSPECHOSO','PROBABLE','CONFIRMADO','DESCARTADO')
-                                    NOT NULL DEFAULT 'SOSPECHOSO',
-  estado                ENUM('ABIERTA','VALIDACION','CERRADA')
-                                    NOT NULL DEFAULT 'ABIERTA',
-  hospitalizado         TINYINT(1) NOT NULL DEFAULT 0,
-  fallecido             TINYINT(1) NOT NULL DEFAULT 0,
-  creado_en             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  actualizado_en        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                  ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_caso_codigo (codigo),
-  KEY ix_caso_enf    (enfermedad_id),
-  KEY ix_caso_pac    (paciente_id),
-  KEY ix_caso_est    (establecimiento_id),
-  KEY ix_caso_user   (usuario_id),
-  KEY ix_caso_se     (anio_epi, semana_epi),
-  KEY ix_caso_clasif (clasificacion),
-  CONSTRAINT fk_caso_enf  FOREIGN KEY (enfermedad_id)      REFERENCES enfermedad(id),
-  CONSTRAINT fk_caso_pac  FOREIGN KEY (paciente_id)        REFERENCES paciente(id),
-  CONSTRAINT fk_caso_est  FOREIGN KEY (establecimiento_id) REFERENCES establecimiento(id),
-  CONSTRAINT fk_caso_user FOREIGN KEY (usuario_id)         REFERENCES usuario(id)
+-- ============================================================================
+-- 5) SEGURIDAD  (usuario: credenciales y rol de acceso de una persona)
+-- ============================================================================
+CREATE TABLE `usuario` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `persona_id` int(11) DEFAULT NULL,
+  `perfil_incompleto` tinyint(1) NOT NULL DEFAULT 0,
+  `nombre` varchar(120) NOT NULL,
+  `email` varchar(120) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `rol` enum('ADMIN','REGISTRADOR') NOT NULL DEFAULT 'REGISTRADOR',
+  `establecimiento_id` int(11) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_user_email` (`email`),
+  UNIQUE KEY `uq_user_persona` (`persona_id`),
+  KEY `ix_user_est` (`establecimiento_id`),
+  CONSTRAINT `fk_user_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_user_persona` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 6) ACCESO  (bloqueo temporal por intentos fallidos + restablecer contraseña)
+-- ============================================================================
+CREATE TABLE `login_intento` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email` varchar(120) NOT NULL,
+  `ip` varchar(45) NOT NULL,
+  `exitoso` tinyint(1) NOT NULL,
+  `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `ix_login_email_fecha` (`email`,`fecha`),
+  KEY `ix_login_ip_fecha` (`ip`,`fecha`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `password_reset_token` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  `expira_en` timestamp NOT NULL,
+  `usado_en` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_prt_hash` (`token_hash`),
+  KEY `ix_prt_usuario` (`usuario_id`),
+  CONSTRAINT `fk_prt_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 7) INTEGRACIÓN RENIEC  (trazabilidad de consultas por documento)
+-- ============================================================================
+CREATE TABLE `reniec_consulta` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) NOT NULL,
+  `dni` varchar(8) NOT NULL,
+  `encontrado` tinyint(1) NOT NULL,
+  `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `ix_reniec_usuario` (`usuario_id`),
+  KEY `ix_reniec_dni` (`dni`),
+  CONSTRAINT `fk_reniec_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 8) MOTOR DE FICHAS  (metadatos: cada enfermedad define sus secciones/campos)
+-- ============================================================================
+CREATE TABLE `enfermedad` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(120) NOT NULL,
+  `nombre_corto` varchar(100) DEFAULT NULL,
+  `palabras_clave` varchar(255) DEFAULT NULL,
+  `cie10` varchar(10) DEFAULT NULL,
+  `tipo_notif` enum('INMEDIATA','SEMANAL') NOT NULL DEFAULT 'SEMANAL',
+  `grupo` varchar(40) DEFAULT NULL,
+  `familia` varchar(100) DEFAULT NULL,
+  `usa_contactos` tinyint(1) NOT NULL DEFAULT 0,
+  `usa_muestras` tinyint(1) NOT NULL DEFAULT 0,
+  `usa_viajes` tinyint(1) NOT NULL DEFAULT 0,
+  `usa_vacunas` tinyint(1) NOT NULL DEFAULT 0,
+  `multi_sujeto` tinyint(1) DEFAULT 0,
+  `roles_sujeto` varchar(255) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `catalogo` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(80) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_catalogo` (`nombre`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `catalogo_item` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `catalogo_id` int(11) NOT NULL,
+  `valor` varchar(60) NOT NULL,
+  `etiqueta` varchar(120) NOT NULL,
+  `orden` smallint(6) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `ix_item_cat` (`catalogo_id`),
+  CONSTRAINT `fk_item_cat` FOREIGN KEY (`catalogo_id`) REFERENCES `catalogo` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `seccion_def` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `enfermedad_id` int(11) NOT NULL,
+  `nombre` varchar(120) NOT NULL,
+  `orden` smallint(6) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `ix_sec_enf` (`enfermedad_id`),
+  CONSTRAINT `fk_sec_enf` FOREIGN KEY (`enfermedad_id`) REFERENCES `enfermedad` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `campo_def` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `seccion_id` int(11) NOT NULL,
+  `clave` varchar(60) NOT NULL,
+  `etiqueta` varchar(160) NOT NULL,
+  `tipo` enum('TEXTO','NUMERO','FECHA','BOOLEANO','SELECT','MULTISELECT','TEXTAREA','GRUPO_SI_NO','SI_NO_FECHA','MATRIZ','CRONOLOGIA') NOT NULL,
+  `obligatorio` tinyint(1) NOT NULL DEFAULT 0,
+  `rol_sujeto` varchar(50) DEFAULT 'CASO_INDICE',
+  `sensible` tinyint(1) NOT NULL DEFAULT 0,
+  `catalogo_id` int(11) DEFAULT NULL,
+  `config` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config`)),
+  `orden` smallint(6) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `ix_campo_sec` (`seccion_id`),
+  KEY `ix_campo_cat` (`catalogo_id`),
+  CONSTRAINT `fk_campo_cat` FOREIGN KEY (`catalogo_id`) REFERENCES `catalogo` (`id`),
+  CONSTRAINT `fk_campo_sec` FOREIGN KEY (`seccion_id`) REFERENCES `seccion_def` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 9) NÚCLEO  (caso + valores de campos)
+-- Una persona *es* paciente cuando tiene un caso asociado: no hay tabla
+-- `paciente` separada.
+-- ============================================================================
+CREATE TABLE `caso` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `codigo` varchar(20) NOT NULL,
+  `enfermedad_id` int(11) NOT NULL,
+  `persona_id` int(11) NOT NULL,
+  `establecimiento_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `fecha_notif` date NOT NULL,
+  `anio_epi` smallint(6) DEFAULT NULL,
+  `semana_epi` smallint(6) DEFAULT NULL,
+  `fecha_inicio_sintomas` date DEFAULT NULL,
+  `clasificacion` enum('SOSPECHOSO','PROBABLE','CONFIRMADO','DESCARTADO') NOT NULL DEFAULT 'SOSPECHOSO',
+  `estado` enum('ABIERTA','VALIDACION','CERRADA') NOT NULL DEFAULT 'ABIERTA',
+  `anulado` tinyint(1) NOT NULL DEFAULT 0,
+  `motivo_anulacion` varchar(255) DEFAULT NULL,
+  `hospitalizado` tinyint(1) NOT NULL DEFAULT 0,
+  `fallecido` tinyint(1) NOT NULL DEFAULT 0,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_caso_codigo` (`codigo`),
+  KEY `ix_caso_enf` (`enfermedad_id`),
+  KEY `ix_caso_pac` (`persona_id`),
+  KEY `ix_caso_est` (`establecimiento_id`),
+  KEY `ix_caso_user` (`usuario_id`),
+  KEY `ix_caso_se` (`anio_epi`,`semana_epi`),
+  KEY `ix_caso_clasif` (`clasificacion`),
+  KEY `ix_caso_anulado` (`anulado`),
+  KEY `ix_caso_fecha_notif` (`fecha_notif`,`id`),
+  CONSTRAINT `fk_caso_enf` FOREIGN KEY (`enfermedad_id`) REFERENCES `enfermedad` (`id`),
+  CONSTRAINT `fk_caso_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_caso_persona` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`),
+  CONSTRAINT `fk_caso_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Valores de los campos propios de cada enfermedad (EAV)
-CREATE TABLE caso_valor (
-  id           BIGINT AUTO_INCREMENT PRIMARY KEY,
-  caso_id      INT  NOT NULL,
-  campo_def_id INT  NOT NULL,
-  valor        TEXT NULL,
-  UNIQUE KEY uq_cv (caso_id, campo_def_id),
-  KEY ix_cv_campo (campo_def_id),
-  CONSTRAINT fk_cv_caso  FOREIGN KEY (caso_id)      REFERENCES caso(id)      ON DELETE CASCADE,
-  CONSTRAINT fk_cv_campo FOREIGN KEY (campo_def_id) REFERENCES campo_def(id)
+CREATE TABLE `caso_valor` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `caso_id` int(11) NOT NULL,
+  `campo_def_id` int(11) NOT NULL,
+  `valor` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_cv` (`caso_id`,`campo_def_id`),
+  KEY `ix_cv_campo` (`campo_def_id`),
+  CONSTRAINT `fk_cv_campo` FOREIGN KEY (`campo_def_id`) REFERENCES `campo_def` (`id`),
+  CONSTRAINT `fk_cv_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
--- 7) TABLAS HIJAS REPETITIVAS  (1:N sobre el caso)
+-- 10) SUJETOS DE UNA FICHA  (fichas multi-sujeto: madre, recién nacido, etc.)
+-- Cada fila liga un rol (CASO_INDICE, MADRE, ...) a una persona empadronada
+-- o a datos desnormalizados cuando el sujeto no está en `persona`.
 -- ============================================================================
-CREATE TABLE caso_contacto (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  caso_id     INT NOT NULL,
-  nombres     VARCHAR(160) NULL,
-  parentesco  VARCHAR(60)  NULL,
-  doc         VARCHAR(20)  NULL,
-  celular     VARCHAR(20)  NULL,
-  KEY ix_cont_caso (caso_id),
-  CONSTRAINT fk_cont_caso FOREIGN KEY (caso_id) REFERENCES caso(id) ON DELETE CASCADE
+CREATE TABLE `caso_sujeto` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `caso_id` int(11) NOT NULL,
+  `persona_id` int(11) DEFAULT NULL,
+  `rol` enum('CASO_INDICE','MADRE','RECIEN_NACIDO','NINO_EXPUESTO','AGRESOR','CONDUCTOR','OTRO') NOT NULL,
+  `apellidos` varchar(120) DEFAULT NULL,
+  `nombres` varchar(80) DEFAULT NULL,
+  `doc` varchar(20) DEFAULT NULL,
+  `sexo` enum('M','F') DEFAULT NULL,
+  `edad` smallint(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_cs_caso` (`caso_id`),
+  KEY `ix_cs_pac` (`persona_id`),
+  CONSTRAINT `fk_cs_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cs_persona` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE caso_muestra (
-  id           INT AUTO_INCREMENT PRIMARY KEY,
-  caso_id      INT NOT NULL,
-  tipo_muestra VARCHAR(80) NULL,
-  tipo_prueba  VARCHAR(80) NULL,
-  resultado    VARCHAR(40) NULL,
-  fecha_toma   DATE NULL,
-  fecha_result DATE NULL,
-  KEY ix_mues_caso (caso_id),
-  CONSTRAINT fk_mues_caso FOREIGN KEY (caso_id) REFERENCES caso(id) ON DELETE CASCADE
+-- ============================================================================
+-- 11) TABLAS HIJAS REPETITIVAS  (1:N sobre el caso)
+-- ============================================================================
+CREATE TABLE `caso_contacto` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `caso_id` int(11) NOT NULL,
+  `nombres` varchar(160) DEFAULT NULL,
+  `parentesco` varchar(60) DEFAULT NULL,
+  `doc` varchar(20) DEFAULT NULL,
+  `celular` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_cont_caso` (`caso_id`),
+  CONSTRAINT `fk_cont_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE caso_viaje (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  caso_id       INT NOT NULL,
-  pais          VARCHAR(60) NULL,        -- para viajes al exterior
-  distrito_id   CHAR(6)     NULL,        -- para viajes dentro del país
-  fecha_salida  DATE NULL,
-  fecha_retorno DATE NULL,
-  KEY ix_viaj_caso (caso_id),
-  KEY ix_viaj_dist (distrito_id),
-  CONSTRAINT fk_viaj_caso FOREIGN KEY (caso_id)     REFERENCES caso(id) ON DELETE CASCADE,
-  CONSTRAINT fk_viaj_dist FOREIGN KEY (distrito_id) REFERENCES distrito(id)
+CREATE TABLE `caso_muestra` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `caso_id` int(11) NOT NULL,
+  `tipo_muestra` varchar(80) DEFAULT NULL,
+  `tipo_prueba` varchar(80) DEFAULT NULL,
+  `resultado` varchar(40) DEFAULT NULL,
+  `fecha_toma` date DEFAULT NULL,
+  `fecha_result` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_mues_caso` (`caso_id`),
+  CONSTRAINT `fk_mues_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE caso_vacuna (
-  id      INT AUTO_INCREMENT PRIMARY KEY,
-  caso_id INT NOT NULL,
-  vacuna  VARCHAR(80) NULL,
-  dosis   VARCHAR(40) NULL,
-  fecha   DATE NULL,
-  KEY ix_vac_caso (caso_id),
-  CONSTRAINT fk_vac_caso FOREIGN KEY (caso_id) REFERENCES caso(id) ON DELETE CASCADE
+CREATE TABLE `caso_viaje` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `caso_id` int(11) NOT NULL,
+  `pais` varchar(60) DEFAULT NULL,
+  `distrito_id` char(6) DEFAULT NULL,
+  `fecha_salida` date DEFAULT NULL,
+  `fecha_retorno` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_viaj_caso` (`caso_id`),
+  KEY `ix_viaj_dist` (`distrito_id`),
+  CONSTRAINT `fk_viaj_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_viaj_dist` FOREIGN KEY (`distrito_id`) REFERENCES `distrito` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE caso_bitacora (
-  id         BIGINT AUTO_INCREMENT PRIMARY KEY,
-  caso_id    INT NOT NULL,
-  usuario_id INT NULL,
-  accion     VARCHAR(60) NOT NULL,      -- CREACION / EDICION / CLASIFICACION / CIERRE
-  detalle    VARCHAR(255) NULL,
-  fecha      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY ix_bit_caso (caso_id),
-  KEY ix_bit_user (usuario_id),
-  CONSTRAINT fk_bit_caso FOREIGN KEY (caso_id)    REFERENCES caso(id) ON DELETE CASCADE,
-  CONSTRAINT fk_bit_user FOREIGN KEY (usuario_id) REFERENCES usuario(id)
+CREATE TABLE `caso_vacuna` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `caso_id` int(11) NOT NULL,
+  `vacuna` varchar(80) DEFAULT NULL,
+  `dosis` varchar(40) DEFAULT NULL,
+  `fecha` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_vac_caso` (`caso_id`),
+  CONSTRAINT `fk_vac_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `caso_bitacora` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `caso_id` int(11) NOT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `accion` varchar(60) NOT NULL,
+  `detalle` varchar(255) DEFAULT NULL,
+  `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `ix_bit_caso` (`caso_id`),
+  KEY `ix_bit_user` (`usuario_id`),
+  CONSTRAINT `fk_bit_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_bit_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 12) IMPORTACIÓN MASIVA  (registro de cada lote de Excel/CSV importado)
+-- ============================================================================
+CREATE TABLE `lote_importacion` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `enfermedad_id` int(11) NOT NULL,
+  `establecimiento_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `nombre_archivo` varchar(255) NOT NULL,
+  `total_filas` int(11) NOT NULL,
+  `filas_importadas` int(11) NOT NULL,
+  `filas_error` int(11) NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `ix_lote_enf` (`enfermedad_id`),
+  KEY `ix_lote_est` (`establecimiento_id`),
+  KEY `ix_lote_user` (`usuario_id`),
+  CONSTRAINT `fk_lote_enf` FOREIGN KEY (`enfermedad_id`) REFERENCES `enfermedad` (`id`),
+  CONSTRAINT `fk_lote_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_lote_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================================
--- 8) DATOS SEMILLA
+-- 13) DATOS SEMILLA  (catálogo mínimo de ejemplo; no es un volcado de datos
+--     de producción — el padrón completo de establecimientos, enfermedades y
+--     grados PNP se administra desde la aplicación)
 -- ============================================================================
 
 -- --- Grados PNP (jerarquía 1 = mayor rango; ajusta a la escala vigente) ---
-INSERT INTO grado_pnp (id, abreviatura, nombre, categoria, jerarquia) VALUES
+INSERT INTO grado_pnp (id, abreviatura, nombre, nivel, jerarquia) VALUES
  (1,'Gral. Pol.','General de Policía',        'OFICIAL_GENERAL',   1),
  (2,'Tnte. Gral.','Teniente General',         'OFICIAL_GENERAL',   2),
  (3,'Gral.','General',                         'OFICIAL_GENERAL',   3),
@@ -370,5 +510,8 @@ INSERT INTO establecimiento (id, cod_renipress, nombre, red_id, institucion) VAL
  (3,NULL,'Sanidad PNP Cusco',3,'FFAA_SANIDAD');
 
 -- --- Usuario administrador inicial (reemplaza el hash antes de usar) ---
+-- Sin persona_id: al iniciar sesión por primera vez, perfil_incompleto = 0
+-- exime de la pantalla de completado; si prefieres forzarla, crea la fila
+-- con perfil_incompleto = 1 y persona_id NULL.
 INSERT INTO usuario (id, nombre, email, password_hash, rol, establecimiento_id) VALUES
  (1,'Administrador','admin@dirsapol.gob.pe','$2y$10$REEMPLAZAR_ESTE_HASH_BCRYPT','ADMIN',NULL);

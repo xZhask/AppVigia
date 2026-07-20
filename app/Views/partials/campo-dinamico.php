@@ -11,6 +11,10 @@ $plantillasPorTipo = [
     'SELECT'      => 'select',
     'MULTISELECT' => 'multiselect',
     'TEXTAREA'    => 'textarea',
+    'GRUPO_SI_NO' => 'grupo-si-no',
+    'SI_NO_FECHA' => 'si-no-fecha',
+    'MATRIZ'      => 'matriz',
+    'CRONOLOGIA'  => 'cronologia',
 ];
 
 $plantilla = $plantillasPorTipo[$campo['tipo']] ?? null;

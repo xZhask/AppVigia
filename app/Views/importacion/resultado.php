@@ -30,7 +30,7 @@ $totalError = count($filasConError);
     <div class="card-head"><div><h3>Fichas importadas</h3></div></div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>N.° ficha</th><th>Paciente</th></tr></thead>
+        <thead><tr><th>N.° ficha</th><th>persona</th></tr></thead>
         <tbody>
           <?php foreach ($filasImportadas as $fila): ?>
             <tr>

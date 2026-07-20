@@ -56,10 +56,10 @@ class UsuariosController extends Controller
         }
 
         $datos['password_hash'] = password_hash($datos['clave'], PASSWORD_BCRYPT);
-        unset($datos['clave']);
+        unset($datos['clave'], $datos['tipo_doc'], $datos['num_doc'], $datos['apellido_paterno'], $datos['apellido_materno'], $datos['nombres'], $datos['mostrar_manual']);
 
         Usuario::crear($datos);
-        Flash::set('Usuario registrado: ' . $datos['nombre']);
+        Flash::set('Usuario registrado.');
         header('Location: /catalogos/usuarios');
         exit;
     }
@@ -74,6 +74,10 @@ class UsuariosController extends Controller
             header('Location: /catalogos/usuarios');
             exit;
         }
+        
+        $persona = \App\Models\Persona::buscar((int)$usuario['persona_id']);
+        $usuario['tipo_doc'] = $persona['tipo_doc'] ?? '';
+        $usuario['num_doc'] = $persona['num_doc'] ?? '';
 
         $this->vista('catalogos/usuarios/formulario', [
             'tituloVista' => 'Editar usuario',
@@ -105,10 +109,10 @@ class UsuariosController extends Controller
         if (!empty($datos['clave'])) {
             $datos['password_hash'] = password_hash($datos['clave'], PASSWORD_BCRYPT);
         }
-        unset($datos['clave']);
+        unset($datos['clave'], $datos['tipo_doc'], $datos['num_doc'], $datos['apellido_paterno'], $datos['apellido_materno'], $datos['nombres'], $datos['mostrar_manual']);
 
         Usuario::actualizar((int) $id, $datos);
-        Flash::set('Usuario actualizado: ' . $datos['nombre']);
+        Flash::set('Usuario actualizado.');
         header('Location: /catalogos/usuarios');
         exit;
     }
@@ -137,7 +141,8 @@ class UsuariosController extends Controller
     private function validar(array $entrada, ?int $idActual): array
     {
         $datos = [
-            'nombre'             => trim($entrada['nombre'] ?? ''),
+            'tipo_doc'           => trim($entrada['tipo_doc'] ?? ''),
+            'num_doc'            => trim($entrada['num_doc'] ?? ''),
             'email'              => trim($entrada['email'] ?? ''),
             'rol'                => $entrada['rol'] ?? '',
             'establecimiento_id' => $entrada['establecimiento_id'] !== '' ? (int) $entrada['establecimiento_id'] : null,
@@ -145,21 +150,50 @@ class UsuariosController extends Controller
             'clave'              => (string) ($entrada['clave'] ?? ''),
         ];
 
+        $datos['apellido_paterno'] = trim($entrada['apellido_paterno'] ?? '');
+        $datos['apellido_materno'] = trim($entrada['apellido_materno'] ?? '');
+        $datos['nombres'] = trim($entrada['nombres'] ?? '');
+        $datos['mostrar_manual'] = false;
+
         $errores = [];
-        if ($datos['nombre'] === '') {
-            $errores['nombre'] = 'El nombre es obligatorio.';
+        if ($datos['tipo_doc'] === '' || $datos['num_doc'] === '') {
+            $errores['documento'] = 'El documento es obligatorio.';
+        } else {
+            $persona = \App\Services\PersonaService::buscarOCrear($datos['tipo_doc'], $datos['num_doc']);
+
+            if (!$persona && $datos['apellido_paterno'] !== '' && $datos['nombres'] !== '') {
+                $persona = \App\Services\PersonaService::crearManual($datos['tipo_doc'], $datos['num_doc'], [
+                    'apellido_paterno' => $datos['apellido_paterno'],
+                    'apellido_materno' => $datos['apellido_materno'],
+                    'nombres'          => $datos['nombres'],
+                ]);
+            }
+
+            if (!$persona) {
+                $errores['documento'] = 'El documento no existe en RENIEC ni en el padrón local. Completa los apellidos y nombres para registrarlo manualmente.';
+                $datos['mostrar_manual'] = true;
+            } else {
+                $datos['persona_id'] = $persona['id'];
+                if (Usuario::existePersona($datos['persona_id'], $idActual)) {
+                    $errores['documento'] = 'Ya existe un usuario asociado a este documento.';
+                }
+            }
         }
+
         if ($datos['email'] === '' || !filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
             $errores['email'] = 'Ingresa un correo electrónico válido.';
         } elseif (Usuario::existeEmail($datos['email'], $idActual)) {
             $errores['email'] = 'Ya existe un usuario con este correo.';
         }
+
         if (!in_array($datos['rol'], self::ROLES, true)) {
             $errores['rol'] = 'Selecciona un rol válido.';
         }
+
         if ($datos['rol'] === 'REGISTRADOR' && $datos['establecimiento_id'] === null) {
             $errores['establecimiento_id'] = 'El rol Registrador debe tener un establecimiento asignado.';
         }
+
         if ($idActual === null && strlen($datos['clave']) < 8) {
             $errores['clave'] = 'La contraseña debe tener al menos 8 caracteres.';
         } elseif ($idActual !== null && $datos['clave'] !== '' && strlen($datos['clave']) < 8) {

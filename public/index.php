@@ -10,6 +10,7 @@ use App\Controllers\GradosController;
 use App\Controllers\ImportacionController;
 use App\Controllers\PanelController;
 use App\Controllers\RedesController;
+use App\Controllers\ReniecController;
 use App\Controllers\ReportesController;
 use App\Controllers\UbigeoController;
 use App\Controllers\UnidadesController;
@@ -23,6 +24,10 @@ $config = require __DIR__ . '/../config/config.php';
 error_reporting(E_ALL);
 ini_set('display_errors', $config['app']['debug'] ? '1' : '0');
 
+// Cabecera por defecto para respuestas HTML; los controladores JSON/CSV
+// la sobreescriben explícitamente (header() reemplaza por nombre).
+header('Content-Type: text/html; charset=UTF-8');
+
 set_exception_handler(function (\Throwable $e): void {
     error_log('Excepción no capturada: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
     if (!headers_sent()) {
@@ -34,16 +39,34 @@ set_exception_handler(function (\Throwable $e): void {
 Session::iniciar();
 
 $rutaSolicitada = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '', '/');
-$rutasPublicas = ['login'];
+$rutasPublicas = ['login', 'login/olvide', 'login/restablecer'];
 
 if (!in_array($rutaSolicitada, $rutasPublicas, true) && !Auth::estaAutenticado()) {
+    // Se guarda la URL que el usuario quería abrir para volver ahí después de
+    // iniciar sesión. Solo en GET: no tiene sentido "repetir" un POST, y el
+    // valor sale siempre de la ruta ya interpretada por este mismo router
+    // (nunca de un parámetro externo), así que es una ruta interna por
+    // construcción.
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && $rutaSolicitada !== '') {
+        $query = $_SERVER['QUERY_STRING'] ?? '';
+        $_SESSION['_url_deseada'] = '/' . $rutaSolicitada . ($query !== '' ? '?' . $query : '');
+    }
     header('Location: /login');
     exit;
 }
 
+if (Auth::estaAutenticado()) {
+    $usuario = Auth::usuario();
+    $esRutaPermitidaIncompleto = in_array($rutaSolicitada, ['perfil/completar', 'logout']) || str_starts_with($rutaSolicitada, 'api/reniec/');
+    if ($usuario['perfil_incompleto'] && !$esRutaPermitidaIncompleto) {
+        header('Location: /perfil/completar');
+        exit;
+    }
+}
+
 $router = new Router();
 
-// ---------- Autenticación ----------
+// ---------- Autenticación y Perfil ----------
 $router->get('/login', function () {
     (new AuthController())->mostrarLogin();
 });
@@ -52,6 +75,25 @@ $router->post('/login', function () {
 });
 $router->post('/logout', function () {
     (new AuthController())->logout();
+});
+$router->get('/login/olvide', function () {
+    (new AuthController())->mostrarOlvide();
+});
+$router->post('/login/olvide', function () {
+    (new AuthController())->procesarOlvide();
+});
+$router->get('/login/restablecer', function () {
+    (new AuthController())->mostrarRestablecer();
+});
+$router->post('/login/restablecer', function () {
+    (new AuthController())->procesarRestablecer();
+});
+
+$router->get('/perfil/completar', function () {
+    (new \App\Controllers\PerfilController())->mostrarCompletar();
+});
+$router->post('/perfil/completar', function () {
+    (new \App\Controllers\PerfilController())->procesarCompletar();
 });
 
 // ---------- Operación ----------
@@ -249,6 +291,11 @@ $router->get('/api/provincias', function () {
 });
 $router->get('/api/distritos', function () {
     (new UbigeoController())->distritos();
+});
+
+// ---------- API RENIEC (proxy del servidor; nunca directo desde el navegador) ----------
+$router->get('/api/reniec/{dni}', function ($dni) {
+    (new ReniecController())->buscar($dni);
 });
 
 $router->despachar($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

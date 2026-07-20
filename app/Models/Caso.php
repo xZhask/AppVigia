@@ -40,7 +40,7 @@ class Caso extends Model
         $parametros = [];
 
         if (!empty($filtros['q'])) {
-            $condiciones[] = '(c.codigo LIKE :q1 OR p.num_doc LIKE :q2 OR p.apellidos_nombres LIKE :q3)';
+            $condiciones[] = "(c.codigo LIKE :q1 OR p.num_doc LIKE :q2 OR CONCAT_WS(' ', p.apellido_paterno, p.apellido_materno, p.nombres) LIKE :q3)";
             $comodin = '%' . $filtros['q'] . '%';
             $parametros['q1'] = $comodin;
             $parametros['q2'] = $comodin;
@@ -70,11 +70,16 @@ class Caso extends Model
             $condiciones[] = 'c.establecimiento_id = :establecimiento_id';
             $parametros['establecimiento_id'] = (int) $filtros['establecimiento_id'];
         }
+        
+        if (($filtros['privacidad_rol'] ?? '') === 'REGISTRADOR') {
+            $condiciones[] = '(e.cie10 NOT IN ("B24", "Z21") AND e.nombre NOT LIKE "%Violencia%" OR c.usuario_id = :priv_uid)';
+            $parametros['priv_uid'] = (int) $filtros['privacidad_usuario_id'];
+        }
 
         $where = implode(' AND ', $condiciones);
         $pdo = Database::conexion();
 
-        $sqlTotal = "SELECT COUNT(*) FROM caso c JOIN paciente p ON p.id = c.paciente_id WHERE $where";
+        $sqlTotal = "SELECT COUNT(*) FROM caso c JOIN persona p ON p.id = c.persona_id JOIN enfermedad e ON e.id = c.enfermedad_id WHERE $where";
         $consultaTotal = $pdo->prepare($sqlTotal);
         $consultaTotal->execute($parametros);
         $total = (int) $consultaTotal->fetchColumn();
@@ -84,11 +89,11 @@ class Caso extends Model
         $pagina = max(1, min($pagina, $totalPaginas));
         $offset = ($pagina - 1) * $porPagina;
 
-        $sql = "SELECT c.*, p.tipo_doc, p.num_doc, p.apellidos_nombres, p.sexo, p.fecha_nac,
+        $sql = "SELECT c.*, p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                        e.nombre AS enfermedad_nombre, e.cie10,
                        est.nombre AS establecimiento_nombre, r.nombre AS red_nombre
                   FROM caso c
-                  JOIN paciente p        ON p.id = c.paciente_id
+                  JOIN persona p         ON p.id = c.persona_id
                   JOIN enfermedad e      ON e.id = c.enfermedad_id
                   JOIN establecimiento est ON est.id = c.establecimiento_id
              LEFT JOIN red_salud r       ON r.id = est.red_id
@@ -108,15 +113,17 @@ class Caso extends Model
     }
 
     /**
-     * Detalle completo de un caso para Ver/Editar: cabecera + paciente +
+     * Detalle completo de un caso para Ver/Editar: cabecera + persona +
+     * datos_clinicos (EAV) + contactos + muestras + vacunas + viajes.
      * enfermedad + establecimiento + quién lo registró.
      */
     public static function conDetalle(int $id): ?array
     {
-        $sql = 'SELECT c.*, p.tipo_doc, p.num_doc, p.apellidos_nombres, p.sexo, p.fecha_nac,
+        $sql = 'SELECT c.*, p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                        p.distrito_id, p.es_pnp, p.cip, p.situacion_pnp, p.grado_id, p.unidad_id,
                        p.tipo_beneficiario,
                        e.nombre AS enfermedad_nombre, e.cie10, e.tipo_notif,
+                       e.multi_sujeto AS enfermedad_multi_sujeto, e.roles_sujeto AS enfermedad_roles_sujeto,
                        est.nombre AS establecimiento_nombre, est.id AS establecimiento_id,
                        r.nombre AS red_nombre,
                        u.nombre AS usuario_nombre,
@@ -124,7 +131,7 @@ class Caso extends Model
                        un.nombre AS unidad_nombre,
                        d.nombre AS distrito_nombre
                   FROM caso c
-                  JOIN paciente p        ON p.id = c.paciente_id
+                  JOIN persona p         ON p.id = c.persona_id
                   JOIN enfermedad e      ON e.id = c.enfermedad_id
                   JOIN establecimiento est ON est.id = c.establecimiento_id
              LEFT JOIN red_salud r       ON r.id = est.red_id
@@ -155,7 +162,7 @@ class Caso extends Model
     ): ?array {
         $sql = "SELECT c.id, c.codigo, c.semana_epi, c.anio_epi, c.fecha_notif, est.nombre AS establecimiento_nombre
                   FROM caso c
-                  JOIN paciente p ON p.id = c.paciente_id
+                  JOIN persona p ON p.id = c.persona_id
                   JOIN establecimiento est ON est.id = c.establecimiento_id
                  WHERE c.enfermedad_id = :enfermedad_id
                    AND p.tipo_doc = :tipo_doc AND p.num_doc = :num_doc
@@ -454,6 +461,23 @@ class Caso extends Model
                          WHERE " . implode(' AND ', $condiciones) . "
                       GROUP BY c.clasificacion
                       ORDER BY FIELD(c.clasificacion, 'SOSPECHOSO','PROBABLE','CONFIRMADO','DESCARTADO')";
+                break;
+            case 'categoria_pnp':
+                $sql = "SELECT COALESCE(p.categoria_pnp, 'Sin categoría PNP') AS etiqueta, $sumaClasificacion
+                          FROM caso c
+                          JOIN persona p ON p.id = c.persona_id
+                         WHERE " . implode(' AND ', $condiciones) . "
+                      GROUP BY p.categoria_pnp
+                      ORDER BY total DESC";
+                break;
+            case 'nivel':
+                $sql = "SELECT COALESCE(g.nivel, 'Sin grado PNP') AS etiqueta, $sumaClasificacion
+                          FROM caso c
+                          JOIN persona p ON p.id = c.persona_id
+                     LEFT JOIN grado_pnp g ON g.id = p.grado_id
+                         WHERE " . implode(' AND ', $condiciones) . "
+                      GROUP BY g.nivel
+                      ORDER BY total DESC";
                 break;
             case 'establecimiento':
             default:

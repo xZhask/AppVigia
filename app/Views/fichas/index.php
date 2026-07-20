@@ -1,4 +1,6 @@
 <?php
+use App\Models\Persona;
+
 $clasificaciones = [
     'SOSPECHOSO' => ['dot' => 'dot-sos', 'etiqueta' => 'Sospechoso'],
     'PROBABLE'   => ['dot' => 'dot-pro', 'etiqueta' => 'Probable'],
@@ -71,11 +73,11 @@ $estados = [
       </div>
       <div class="filter">
         <b>Desde</b>
-        <input type="text" name="desde" value="<?= e($filtros['desde'] ?? '') ?>" placeholder="dd/mm/aaaa" style="width:92px;border:0;background:none;font:inherit;font-size:12.5px;color:var(--ink-2)">
+        <input type="date" name="desde" value="<?= e($filtros['desde'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>" style="width:145px;border:0;background:none;font:inherit;font-size:12.5px;color:var(--ink-2)">
       </div>
       <div class="filter">
         <b>Hasta</b>
-        <input type="text" name="hasta" value="<?= e($filtros['hasta'] ?? '') ?>" placeholder="dd/mm/aaaa" style="width:92px;border:0;background:none;font:inherit;font-size:12.5px;color:var(--ink-2)">
+        <input type="date" name="hasta" value="<?= e($filtros['hasta'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>" style="width:145px;border:0;background:none;font:inherit;font-size:12.5px;color:var(--ink-2)">
       </div>
       <button type="submit" class="btn btn-ghost">Filtrar</button>
       <?php if (!empty(array_filter($filtros))): ?>
@@ -99,7 +101,7 @@ $estados = [
           <tr<?= $ficha['anulado'] ? ' style="opacity:.55"' : '' ?>>
             <td class="mono"><?= e($ficha['codigo']) ?></td>
             <td>
-              <div class="pt-name"><?= e($ficha['apellidos_nombres']) ?></div>
+              <div class="pt-name"><?= e(Persona::nombreCompletoPnp($ficha)) ?></div>
               <div class="pt-doc"><?= e($ficha['tipo_doc']) ?> <?= e(enmascararDocumento($ficha['num_doc'])) ?> · <?= e($ficha['sexo'] ?? '—') ?><?= $edad !== null ? ' · ' . $edad . 'a' : '' ?></div>
             </td>
             <td><?= e($ficha['enfermedad_nombre']) ?><div class="cell-sub"><?= e($ficha['cie10'] ?? '—') ?></div></td>

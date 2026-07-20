@@ -19,7 +19,7 @@ use App\Models\Enfermedad;
 use App\Models\Establecimiento;
 use App\Models\GradoPnp;
 use App\Models\LoteImportacion;
-use App\Models\Paciente;
+use App\Models\Persona;
 use App\Models\UnidadPnp;
 use DateTime;
 use RuntimeException;
@@ -31,7 +31,7 @@ class ImportacionController extends Controller
 
     /** Encabezados fijos de la plantilla, en orden. */
     private const COLUMNAS_FIJAS = [
-        'fecha_notif', 'tipo_doc', 'num_doc', 'apellidos_nombres', 'sexo', 'fecha_nac',
+        'fecha_notif', 'tipo_doc', 'num_doc', 'apellido_paterno', 'apellido_materno', 'nombres', 'sexo', 'fecha_nac',
         'ubigeo', 'fecha_inicio_sintomas', 'es_pnp', 'grado', 'situacion_pnp', 'cip',
         'unidad', 'tipo_beneficiario',
     ];
@@ -76,7 +76,7 @@ class ImportacionController extends Controller
 
         $encabezados = self::COLUMNAS_FIJAS;
         $ejemplo = [
-            '15/07/2026', 'DNI', '76540319', 'Pérez García, Juan', 'M', '01/01/1990',
+            '15/07/2026', 'DNI', '76540319', 'Pérez', 'García', 'Juan', 'M', '01/01/1990',
             '150101', '12/07/2026', 'NO', '', '', '', '', '',
         ];
         $indicesTexto = array_keys(array_intersect(self::COLUMNAS_FIJAS, self::COLUMNAS_FIJAS_TEXTO));
@@ -218,21 +218,21 @@ class ImportacionController extends Controller
             ]);
 
             foreach ($filasValidas as $datos) {
-                $pacienteExistente = Paciente::buscarPorDocumento($datos['tipo_doc'], $datos['num_doc']);
-                $datosPaciente = $datos['paciente'];
+                $personaExistente = Persona::buscarPorDocumento($datos['tipo_doc'], $datos['num_doc']);
+                $datosPersona = $datos['persona'];
 
-                if ($pacienteExistente) {
-                    $pacienteId = (int) $pacienteExistente['id'];
-                    Paciente::actualizar($pacienteId, $datosPaciente);
+                if ($personaExistente) {
+                    $personaId = (int) $personaExistente['id'];
+                    Persona::actualizar($personaId, $datosPersona);
                 } else {
-                    $pacienteId = Paciente::crear($datosPaciente);
+                    $personaId = Persona::crear($datosPersona);
                 }
 
                 $semana = semanaEpidemiologica($datos['fecha_notif_iso']);
 
                 $casoId = Caso::crearConCodigo([
                     'enfermedad_id'         => $enfermedadId,
-                    'paciente_id'           => $pacienteId,
+                    'persona_id'            => $personaId,
                     'establecimiento_id'    => $establecimientoId,
                     'usuario_id'            => (int) $usuario['id'],
                     'fecha_notif'           => $datos['fecha_notif_iso'],
@@ -244,7 +244,7 @@ class ImportacionController extends Controller
                 CasoValor::guardarTodos($casoId, $datos['para_guardar']);
                 CasoBitacora::registrar($casoId, (int) $usuario['id'], 'CREACION', "Importado del lote #$loteId.");
 
-                $codigosImportados[] = ['codigo' => sprintf('F-%05d', $casoId), 'nombre' => $datos['paciente']['apellidos_nombres']];
+                $codigosImportados[] = ['codigo' => sprintf('F-%05d', $casoId), 'nombre' => Persona::nombreCompleto($datos['persona'])];
             }
 
             $pdo->commit();
@@ -312,9 +312,14 @@ class ImportacionController extends Controller
             $errores[] = 'num_doc: el DNI debe tener 8 dígitos (revisa que la columna esté en formato Texto en Excel; parece haber perdido un cero inicial).';
         }
 
-        $apellidosNombres = trim($obtener('apellidos_nombres')['valor']);
-        if ($apellidosNombres === '') {
-            $errores[] = 'apellidos_nombres: obligatorio.';
+        $apellidoPaterno = trim($obtener('apellido_paterno')['valor']);
+        if ($apellidoPaterno === '') {
+            $errores[] = 'apellido_paterno: obligatorio.';
+        }
+        $apellidoMaterno = trim($obtener('apellido_materno')['valor']) ?: null;
+        $nombres = trim($obtener('nombres')['valor']);
+        if ($nombres === '') {
+            $errores[] = 'nombres: obligatorio.';
         }
 
         $sexoCelda = trim(mb_strtoupper($obtener('sexo')['valor']));
@@ -516,10 +521,12 @@ class ImportacionController extends Controller
             'fecha_notif_iso'  => $fechaNotif['iso'],
             'fecha_inicio_sintomas_iso' => $fechaInicioSintomas['iso'],
             'para_guardar'     => $paraGuardar,
-            'paciente'         => [
+            'persona'         => [
                 'tipo_doc'          => $tipoDoc,
                 'num_doc'           => $numDoc,
-                'apellidos_nombres' => $apellidosNombres,
+                'apellido_paterno'  => $apellidoPaterno,
+                'apellido_materno'  => $apellidoMaterno,
+                'nombres'           => $nombres,
                 'sexo'              => $sexo,
                 'fecha_nac'         => $fechaNac['iso'],
                 'distrito_id'       => $distrito['id'],

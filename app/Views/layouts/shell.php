@@ -59,6 +59,14 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/dark.css">
+<script>
+  (function(){
+    var t = document.cookie.match(/(^|; )theme=([^;]+)/);
+    t = t ? t[2] : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  })();
+</script>
 </head>
 <body<?= $mensajeFlash !== null ? ' data-flash="' . e($mensajeFlash) . '"' : '' ?>>
 <div class="app">
@@ -76,6 +84,7 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
     </div>
 
     <nav class="nav">
+      <?php if (!$usuarioActual['perfil_incompleto']): ?>
       <div class="nav-label">Operación</div>
       <a class="nav-item<?= $rutaActual === '' ? ' active' : '' ?>" href="/">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M2 9.5 5 9.5 7 5 9.5 13 12 3 14 8.5 15.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -110,6 +119,7 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
         Usuarios
       </a>
       <?php endif; ?>
+      <?php endif; ?>
     </nav>
 
     <div class="sidebar-foot">
@@ -132,7 +142,18 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
       </button>
       <div class="crumb"><b><?= htmlspecialchars($crumbActual) ?></b> · vigilancia epidemiológica</div>
       <div class="topbar-right">
+        <?php if (($usuarioActual['rol'] ?? '') !== 'ADMIN' && !empty($usuarioActual['establecimiento_nombre'])): ?>
+          <div class="se-badge" title="<?= e($usuarioActual['establecimiento_nombre']) ?>">
+            <span class="se-dot"></span>
+            <svg width="14" height="14" viewBox="0 0 14 14" style="margin-right:4px;vertical-align:-2px"><path d="M7 1.5 2 4v7h10V4L7 1.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+            <?= e(mb_strlen($usuarioActual['establecimiento_nombre']) > 28 ? mb_substr($usuarioActual['establecimiento_nombre'], 0, 27) . '…' : $usuarioActual['establecimiento_nombre']) ?>
+          </div>
+        <?php endif; ?>
         <div class="se-badge"><span class="se-dot"></span> Semana <b class="mono">SE&nbsp;<?= $semanaEpi ?></b> · <?= $anioEpi ?></div>
+        <button class="icon-btn" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <svg class="ic-moon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 10.5a6.5 6.5 0 0 1-8.5-8.5A7 7 0 1 0 14 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="ic-sun" width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:none"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 2V1M8 15v-1M2 8H1M15 8h-1M4 4l-.5-.5M12.5 12.5l-.5-.5M4 12l-.5.5M12.5 3.5l-.5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
         <button class="icon-btn" aria-label="Alertas" disabled title="Disponible en una próxima fase">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6.5a4 4 0 0 1 8 0c0 3.5 1.2 4.5 1.2 4.5H2.8S4 10 4 6.5Z" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3"/></svg>
         </button>
@@ -149,6 +170,7 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
 <div class="toast" id="toast"></div>
 
 <script src="/js/shell.js"></script>
+<script src="/js/selector-busqueda.js"></script>
 <script src="/js/ubigeo.js"></script>
 <script src="/js/filtro-tabla.js"></script>
 <script src="/js/filas-dinamicas.js"></script>

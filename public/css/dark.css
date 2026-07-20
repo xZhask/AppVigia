@@ -1,0 +1,50 @@
+/* Dark theme overrides */
+[data-theme="dark"] {
+    --paper: #0b1115;
+    --surface: #14202B;
+    --ink: #EEF2F5;
+    --ink-2: #DCE4EA;
+    --muted: #8A97A2;
+    --faint: #5F6E7A;
+    --line: #26333E;
+    --line-2: #1C2A35;
+    --accent: #2abfb0;
+    --accent-soft: rgba(42, 191, 176, 0.15);
+    --accent-deep: #25a497;
+    --sidebar: #0b1115;
+    --sidebar-2: #14202B;
+    --sidebar-line: #1c2a35;
+    --sidebar-text: #8A97A2;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.4);
+    --shadow-soft: 0 1px 2px rgba(0,0,0,.3);
+}
+
+/* Icon toggles */
+[data-theme="dark"] #themeToggle .ic-moon { display: none !important; }
+[data-theme="dark"] #themeToggle .ic-sun { display: block !important; }
+
+/* Topbar override for dark mode */
+[data-theme="dark"] .topbar {
+    background: rgba(11, 17, 21, 0.85);
+}
+
+/* Fix some subtle contrast issues */
+[data-theme="dark"] select,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] textarea {
+    color: var(--ink);
+    background-color: var(--surface);
+}
+
+[data-theme="dark"] option {
+    background-color: var(--surface);
+}
+
+/* Que el selector de calendario nativo (icono y ventana emergente) siga el
+   tema oscuro en vez del claro por defecto del navegador. */
+[data-theme="dark"] input[type="date"] {
+    color-scheme: dark;
+}

@@ -15,13 +15,47 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
     <form method="post" action="<?= e($accion) ?>">
       <?= Csrf::campoOculto() ?>
       <div class="fields">
-        <div class="field wide">
-          <label class="fl">Nombre completo <span class="req">*</span></label>
-          <div class="control <?= isset($errores['nombre']) ? 'err' : '' ?>">
-            <input type="text" name="nombre" value="<?= e($usuario['nombre']) ?>" required>
+        <div class="field">
+          <label class="fl">Tipo de documento <span class="req">*</span></label>
+          <div class="control <?= isset($errores['documento']) ? 'err' : '' ?>">
+            <select name="tipo_doc">
+              <option value="DNI" <?= seleccionado($usuario['tipo_doc'] ?? '', 'DNI') ?>>DNI (RENIEC)</option>
+              <option value="CE" <?= seleccionado($usuario['tipo_doc'] ?? '', 'CE') ?>>Carnet de Extranjería</option>
+              <option value="PAS" <?= seleccionado($usuario['tipo_doc'] ?? '', 'PAS') ?>>Pasaporte</option>
+              <option value="PTP" <?= seleccionado($usuario['tipo_doc'] ?? '', 'PTP') ?>>PTP</option>
+            </select>
           </div>
-          <?php if (isset($errores['nombre'])): ?><span class="hint err"><?= e($errores['nombre']) ?></span><?php endif; ?>
         </div>
+        <div class="field">
+          <label class="fl">N.° de documento <span class="req">*</span></label>
+          <div class="control <?= isset($errores['documento']) ? 'err' : '' ?>">
+            <input type="text" name="num_doc" value="<?= e($usuario['num_doc'] ?? '') ?>" required>
+          </div>
+          <?php if (isset($errores['documento'])): ?><span class="hint err"><?= e($errores['documento']) ?></span><?php endif; ?>
+        </div>
+        <?php if (!empty($usuario['mostrar_manual'])): ?>
+        <div class="field" style="flex-basis:100%;">
+          <p class="hint">No se encontró este documento en RENIEC ni en el padrón local. Completa los datos para registrarlo manualmente.</p>
+        </div>
+        <div class="field">
+          <label class="fl">Apellido paterno <span class="req">*</span></label>
+          <div class="control">
+            <input type="text" name="apellido_paterno" value="<?= e($usuario['apellido_paterno'] ?? '') ?>" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="fl">Apellido materno</label>
+          <div class="control">
+            <input type="text" name="apellido_materno" value="<?= e($usuario['apellido_materno'] ?? '') ?>">
+          </div>
+        </div>
+        <div class="field">
+          <label class="fl">Nombres <span class="req">*</span></label>
+          <div class="control">
+            <input type="text" name="nombres" value="<?= e($usuario['nombres'] ?? '') ?>" required>
+          </div>
+        </div>
+        <?php endif; ?>
         <div class="field">
           <label class="fl">Correo electrónico <span class="req">*</span></label>
           <div class="control mono <?= isset($errores['email']) ? 'err' : '' ?>">

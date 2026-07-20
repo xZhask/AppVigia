@@ -305,3 +305,286 @@
   .textarea-control{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:13.5px;color:var(--ink);resize:vertical;min-height:72px;transition:border-color .15s,box-shadow .15s}
   .textarea-control:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);outline:none}
   .textarea-control.err{border-color:var(--s-confirmado)}
+
+  /* ---------- Cambios post Fase 4: clasificación del caso como chips seleccionables ---------- */
+  /* .chip es un span decorativo (tablas, panel); aquí se envuelve en un label
+     con un radio accesible para permitir seleccionarlo sin redefinir .chip. */
+  .chip-select{display:flex;gap:8px;flex-wrap:wrap}
+  .chip-option{position:relative;display:inline-flex}
+  .chip-option input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+  .chip-option .chip{cursor:pointer;transition:border-color .15s,box-shadow .15s,background-color .15s}
+  .chip-option input:checked + .chip{background:var(--accent-soft);border-color:var(--accent-deep);color:var(--ink)}
+  .chip-option input:focus-visible + .chip{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ---------- Cambios post Fase 4: selector con búsqueda (todo <select>) ---------- */
+  /* Envuelve un <select> existente: éste queda oculto pero se sigue enviando
+     con el formulario. El campo de texto reutiliza el hueco visual de su
+     contenedor (.control, .filter, etc.) en vez de imponer un estilo propio.
+     Se aplica a todos los <select> de la app (sin importar el número de
+     opciones) para que todos se vean y se comporten igual. */
+  .sel-wrap{position:relative}
+  .sel-row{display:flex;align-items:center;gap:8px}
+  .sel-row .chev{flex-shrink:0;color:var(--faint);transition:transform .15s ease}
+  .sel-row:has(input[aria-expanded="true"]) .chev{transform:rotate(180deg);color:var(--accent)}
+  input.sel-input{border:0;background:none;outline:none;font-family:inherit;font-size:13.5px;color:var(--ink);width:100%;padding:0;cursor:text}
+  input.sel-input::placeholder{color:var(--faint)}
+  .disease-pick input.sel-input.disease{font-size:15px;font-weight:600;color:var(--ink)}
+  /* position:fixed (no absolute) a propósito: .section tiene overflow:hidden
+     en el bloque congelado de arriba, y esta lista necesita poder salirse de
+     esa tarjeta. La posición real (left/top/width) la calcula selector-busqueda.js
+     con getBoundingClientRect() de cada campo al abrir. */
+  .sel-list{position:fixed;z-index:90;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);max-height:220px;overflow-y:auto;overscroll-behavior:contain;padding:0;display:flex;flex-direction:column;gap:1px}
+  .sel-list::before, .sel-list::after {content:'';flex:0 0 6px}
+  /* el atributo [hidden] es una regla de la hoja de estilos del navegador
+     (origen "user agent"); una regla de autor como ".sel-list{display:flex}"
+     de arriba la gana siempre, sin importar especificidad, así que sin esto
+     la lista nunca se ocultaba al cerrar. */
+  .sel-list[hidden]{display:none}
+  /* la lista pasa de display:none (atributo hidden) a visible en cada apertura,
+     por lo que la animación se reinicia sola sin necesidad de JS adicional. */
+  .sel-list:not([hidden]){animation:selPop .14s ease-out}
+  @keyframes selPop{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+  /* scrollbar propia: fina y coherente con el tema (webkit + firefox) */
+  .sel-list{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .sel-list::-webkit-scrollbar{width:8px}
+  .sel-list::-webkit-scrollbar-track{background:transparent;margin-block:4px}
+  .sel-list::-webkit-scrollbar-thumb{background-color:var(--line);border-radius:20px;border:2px solid var(--surface);background-clip:padding-box}
+  .sel-list::-webkit-scrollbar-thumb:hover{background-color:var(--faint)}
+  .sel-option{padding:8px 10px 8px 13px;font-size:13.5px;color:var(--ink);border-radius:7px;cursor:pointer;transition:background-color .1s ease,box-shadow .1s ease}
+  /* el fondo tenue (accent-soft / line-2 en oscuro) puede casi no distinguirse
+     de la superficie del panel; el borde de acento a la izquierda sí se nota
+     siempre, en ambos temas. */
+  .sel-option:hover,.sel-option.active{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+  .sel-option mark{background:none;color:var(--accent-deep);font-weight:600}
+  .sel-option.seleccionada{color:var(--accent-deep);font-weight:600}
+  .sel-option.seleccionada mark{color:inherit}
+  .sel-empty{padding:14px 10px;font-size:12.5px;color:var(--faint);text-align:center}
+  /* encabezados de optgroup (sticky): fondo semi-opaco con desenfoque para que
+     el texto que se desplaza por debajo no se note al pasar por el borde */
+  .sel-list .eyebrow{backdrop-filter:blur(4px);border-bottom:1px solid var(--line-2);margin-bottom:2px}
+
+  /* ---------- Tema Oscuro ---------- */
+  html[data-theme="dark"] {
+    --paper: #0A1015;
+    --surface: #141E27;
+    --ink: #E3E9EE;
+    --ink-2: #C9D4DB;
+    --muted: #8A97A2;
+    --faint: #5F6E7A;
+    --line: #26333E;
+    --line-2: #1C2A35;
+    
+    --accent: #17B2A1;
+    --accent-soft: #08332D;
+    --accent-deep: #43C6B7;
+    
+    --sidebar: #060A0D;
+    --sidebar-2: #10181F;
+    --sidebar-line: #1C2A35;
+    --sidebar-text: #768897;
+    
+    /* Rampa de severidad (ajustada para contraste en fondo oscuro) */
+    --s-sospechoso: #D4A552;
+    --s-probable: #DE7B45;
+    --s-confirmado: #D86363;
+    --s-descartado: #4FA08D;
+    
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.5);
+    --shadow-soft: 0 1px 2px rgba(0,0,0,.4);
+  }
+
+  /* Sobrescrituras de colores duros (hardcoded) para modo oscuro */
+  html[data-theme="dark"] .topbar { background: rgba(10,16,21,.85); }
+  html[data-theme="dark"] .btn-primary { box-shadow: 0 1px 2px rgba(0,0,0,.3); color: #060A0D; font-weight: 600; }
+  html[data-theme="dark"] .btn-ghost:hover { background: var(--line-2); border-color: var(--muted); }
+  
+  html[data-theme="dark"] .delta.up { background: rgba(216,99,99,.15); }
+  html[data-theme="dark"] .delta.down { background: rgba(79,160,141,.15); }
+  html[data-theme="dark"] .seg button.on { background: var(--line); color: var(--ink); box-shadow: var(--shadow-soft); }
+  
+  html[data-theme="dark"] .chip, html[data-theme="dark"] .pg { background: var(--surface); }
+  html[data-theme="dark"] tbody tr:hover { background: var(--line-2); }
+  html[data-theme="dark"] .disease-pick { background: var(--surface); }
+  
+  html[data-theme="dark"] .found { background: var(--accent-soft); border-color: var(--accent-deep); }
+  html[data-theme="dark"] .found .pa { background: var(--surface); color: var(--accent-deep); }
+  
+  html[data-theme="dark"] .dupe { background: #26160B; border-color: #4A2B14; }
+  html[data-theme="dark"] .dupe b { color: #E5A36A; }
+  html[data-theme="dark"] .dupe .body { color: #C48E60; }
+  
+  html[data-theme="dark"] .toast { background: #FFF; color: #14202B; }
+  
+  html[data-theme="dark"] .nav-label { color: #445461; }
+  html[data-theme="dark"] .nav-item:hover { background: var(--sidebar-2); color: #FFF; }
+  html[data-theme="dark"] .avatar { background: #1C2A35; color: #93A2AD; }
+  html[data-theme="dark"] .who { color: #E3E9EE; }
+  html[data-theme="dark"] .who small { color: #8A97A2; }
+  
+  html[data-theme="dark"] .control.ok { border-color: var(--s-descartado); }
+  html[data-theme="dark"] .icon-btn:hover { border-color: var(--muted); }
+  
+  /* El selector oscuro de búsqueda (.sel-wrap) heredará los fondos y bordes correctamente */
+  html[data-theme="dark"] .sel-option:hover, html[data-theme="dark"] .sel-option.active { background: var(--line-2); }
+  
+  html[data-theme="dark"] .ic-moon { display: none !important; }
+  html[data-theme="dark"] .ic-sun { display: block !important; }
+/* Utilidades input-group */
+.input-group {
+  display: flex;
+  padding: 0 !important;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: var(--surface);
+}
+.input-group:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.input-group .addon {
+  flex: 0 0 auto;
+  border-right: 1px solid var(--line);
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+.input-group .addon.sel-wrap {
+  width: 100%;
+}
+.input-group .addon input.sel-input {
+  padding-left: 11px !important;
+  padding-right: 0 !important;
+}
+.input-group .addon input,
+.input-group .addon select {
+  color: white !important;
+  border: none !important;
+  background: transparent !important;
+}
+.input-group .addon .chev {
+  color: white !important;
+  margin-right: 11px;
+}
+.input-group .input-main {
+  flex: 1;
+}
+.input-group .input-main input {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 9px 11px !important;
+}
+
+/* Grupo tipo/número de documento (único caso donde .control e .input-group
+   se combinan): .control fija align-items:center, lo que deja el addon
+   (select DNI/CE/...) centrado con hueco arriba/abajo en vez de ocupar
+   todo el alto del contenedor. Se estira aquí para que ocupe el alto
+   completo, delegando el espaciado interno a sus propios controles. */
+.doc-id-group {
+  padding: 0;
+  align-items: stretch;
+}
+
+/* ============================================================
+   REDISENO_LOGIN.md — layout de la pantalla de acceso.
+   Copiado de vigia-login-mockup_1.html. No redefine nada existente:
+   solo añade el layout de dos paneles (.auth-*).
+   ============================================================ */
+.auth{display:grid;grid-template-columns:1.15fr 1fr;min-height:100vh}
+
+/* --- Panel de identidad (izquierda) --- */
+.auth-brand{
+  position:relative;overflow:hidden;background:var(--sidebar);color:#fff;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:44px 56px;
+}
+.auth-brand-top{display:flex;align-items:center;gap:13px;position:relative;z-index:2}
+.auth-mark{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(150deg,var(--accent) 0%,var(--accent-deep) 100%);
+  display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.10);
+}
+.auth-wordmark{font-family:"IBM Plex Serif",serif;font-weight:600;font-size:24px;letter-spacing:.16em;line-height:1}
+.auth-wordmark-sub{font-size:11px;letter-spacing:.05em;color:#8A97A2;margin-top:4px}
+
+.auth-statement{position:relative;z-index:2;max-width:520px}
+.auth-statement h1{
+  font-family:"IBM Plex Serif",serif;font-weight:400;font-size:clamp(30px,3.1vw,46px);
+  line-height:1.18;letter-spacing:-.015em;margin:0 0 18px;color:#fff;
+}
+.auth-statement h1 em{font-style:normal;color:#6FCBB9}
+.auth-statement p{font-size:15px;line-height:1.6;color:#93A2AD;margin:0;max-width:44ch}
+
+.auth-foot{position:relative;z-index:2;display:flex;gap:22px;flex-wrap:wrap;
+  font-size:12px;color:#5A6B77}
+.auth-foot b{color:#8A97A2;font-weight:500}
+
+/* La curva epidemiológica como elemento de identidad, no adorno */
+.auth-curve{
+  position:absolute;left:0;right:0;bottom:0;width:100%;height:auto;
+  z-index:1;pointer-events:none;
+}
+
+/* --- Panel de formulario (derecha) --- */
+.auth-form-side{
+  display:flex;align-items:center;justify-content:center;
+  padding:40px 32px;background:var(--paper);position:relative;
+}
+.auth-tools{position:absolute;top:22px;right:26px;display:flex;gap:8px}
+.auth-form{width:100%;max-width:384px}
+.auth-form h2{
+  font-family:"IBM Plex Serif",serif;font-weight:500;font-size:27px;
+  letter-spacing:-.01em;margin:0 0 6px;color:var(--ink);
+}
+.auth-form .lead{color:var(--muted);font-size:14px;margin:0 0 28px;line-height:1.55}
+.auth-field{margin-bottom:18px}
+.auth-field .control{padding:11px 13px}
+.pw-wrap{position:relative}
+.pw-toggle{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:32px;height:32px;border:0;background:none;border-radius:7px;
+  display:grid;place-items:center;color:var(--faint);
+}
+.pw-toggle:hover{color:var(--ink);background:var(--line-2)}
+.auth-row{display:flex;align-items:center;justify-content:space-between;margin:-4px 0 22px}
+.auth-link{font-size:13px;color:var(--accent-deep);font-weight:500}
+.auth-link:hover{text-decoration:underline}
+.auth-submit{width:100%;justify-content:center;padding:12px 15px;font-size:14.5px}
+
+/* Aviso de error — genérico, nunca revela si el correo existe */
+.auth-alert{
+  display:flex;gap:11px;align-items:flex-start;padding:12px 14px;margin-bottom:20px;
+  background:#FBEDED;border:1px solid #EFCFCF;border-radius:10px;
+  font-size:13px;line-height:1.5;color:#8A3030;
+}
+.auth-alert svg{flex-shrink:0;margin-top:1px;color:var(--s-confirmado)}
+.auth-note{
+  margin-top:26px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--faint);line-height:1.6;
+}
+
+/* Aviso de éxito — mismo layout que .auth-alert, en verde */
+.auth-alert-ok{
+  display:flex;gap:11px;align-items:flex-start;padding:12px 14px;margin-bottom:20px;
+  background:var(--accent-soft);border:1px solid #C4E4DC;border-radius:10px;
+  font-size:13px;line-height:1.5;color:var(--accent-deep);
+}
+.auth-alert-ok svg{flex-shrink:0;margin-top:1px;color:var(--accent-deep)}
+
+@media (max-width:980px){
+  .auth{grid-template-columns:1fr;min-height:100vh}
+  .auth-brand{padding:26px 28px 0;min-height:auto}
+  .auth-statement{display:none}
+  .auth-foot{display:none}
+  .auth-curve{opacity:.5}
+  .auth-brand-top{padding-bottom:26px}
+  .auth-form-side{padding:36px 24px 60px}
+}
+@media (min-width:1600px){
+  .auth-brand{padding:56px 72px}
+  .auth-form{max-width:404px}
+}

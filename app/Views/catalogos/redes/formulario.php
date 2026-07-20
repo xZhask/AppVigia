@@ -21,13 +21,6 @@ $accion = $esEdicion ? '/catalogos/redes/' . (int) $red['id'] : '/catalogos/rede
             <input type="text" name="nombre" value="<?= e($red['nombre']) ?>" required>
           </div>
           <?php if (isset($errores['nombre'])): ?><span class="hint err"><?= e($errores['nombre']) ?></span><?php endif; ?>
-        </div>
-        <div class="field">
-          <label class="fl">DIRESA / DIRIS</label>
-          <div class="control">
-            <input type="text" name="diresa" value="<?= e($red['diresa']) ?>">
-          </div>
-        </div>
       </div>
 
       <div style="display:flex;gap:10px;margin-top:20px">

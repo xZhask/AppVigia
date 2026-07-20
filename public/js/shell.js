@@ -16,6 +16,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var mensajeFlash = document.body.getAttribute('data-flash');
   if (mensajeFlash) toast(mensajeFlash);
+
+  var btnTema = document.getElementById('themeToggle');
+  if (btnTema) {
+    btnTema.addEventListener('click', function () {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      var nuevo = isDark ? 'light' : 'dark';
+      if (nuevo === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+      document.cookie = 'theme=' + nuevo + '; path=/; max-age=31536000';
+    });
+  }
 });
 
 var _toastTimeout;

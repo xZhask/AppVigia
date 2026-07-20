@@ -53,6 +53,16 @@ function marcado(mixed $valor): string
     return $valor ? 'checked' : '';
 }
 
+/**
+ * Normaliza un nombre propio guardado en mayúsculas sostenidas (ej. nombres
+ * de establecimiento en el padrón RENIPRESS) a capitalización de título,
+ * para no mostrarlo "GRITANDO" en la interfaz.
+ */
+function capitalizarNombre(string $texto): string
+{
+    return mb_convert_case(mb_strtolower($texto, 'UTF-8'), MB_CASE_TITLE, 'UTF-8');
+}
+
 function iniciales(string $nombreCompleto): string
 {
     $palabras = preg_split('/\s+/', trim($nombreCompleto));
@@ -88,6 +98,35 @@ function fechaDmyAIso(string $dmy): ?string
     }
 
     return sprintf('%04d-%02d-%02d', $anio, $mes, $dia);
+}
+
+/**
+ * Valida una fecha aaaa-mm-dd (formato nativo de <input type="date">).
+ * Devuelve la misma cadena si es una fecha real, o null si no lo es
+ * (incluye 31/02, o cualquier texto fuera de formato que llegue a un POST
+ * manipulado a mano, ya que el navegador no garantiza el formato).
+ *
+ * También rechaza años fuera de [1900, año actual + 1]: checkdate() por sí
+ * solo acepta cualquier año (1500, 2206...) como "fecha real". Los atributos
+ * min/max del <input type="date"> ya evitan esto al usar el navegador; este
+ * límite es la misma regla aplicada en el servidor, por si el POST no pasó
+ * por el control del navegador.
+ */
+function fechaIsoValida(?string $iso): ?string
+{
+    $iso = trim((string) $iso);
+    if (!preg_match('#^(\d{4})-(\d{2})-(\d{2})$#', $iso, $m)) {
+        return null;
+    }
+    [, $anio, $mes, $dia] = $m;
+    if (!checkdate((int) $mes, (int) $dia, (int) $anio)) {
+        return null;
+    }
+    if ((int) $anio < 1900 || (int) $anio > ((int) date('Y') + 1)) {
+        return null;
+    }
+
+    return $iso;
 }
 
 function fechaIsoADmy(?string $iso): string

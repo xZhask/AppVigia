@@ -4,6 +4,8 @@ $agrupaciones = [
     'red'             => 'Red',
     'semana'          => 'Semana epidemiológica',
     'clasificacion'   => 'Clasificación',
+    'categoria_pnp'   => 'Categoría PNP',
+    'nivel'           => 'Nivel de grado PNP',
 ];
 $queryFiltros = http_build_query([
     'enfermedad_id' => $enfermedadId ?? '',

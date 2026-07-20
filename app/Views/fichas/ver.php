@@ -71,7 +71,9 @@ $accionEtiquetas = [
       <div class="section-head"><span class="section-num">2</span><h3>Datos del paciente</h3></div>
       <div class="section-body">
         <div class="fields thirds">
-          <div class="field wide"><label class="fl">Apellidos y nombres</label><div class="control" style="background:var(--paper)"><?= e($caso['apellidos_nombres']) ?></div></div>
+          <div class="field"><label class="fl">Apellido paterno</label><div class="control" style="background:var(--paper)"><?= e($caso['apellido_paterno'] ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Apellido materno</label><div class="control" style="background:var(--paper)"><?= e($caso['apellido_materno'] ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Nombres</label><div class="control" style="background:var(--paper)"><?= e($caso['nombres'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Documento</label><div class="control mono" style="background:var(--paper)"><?= e($caso['tipo_doc']) ?> <?= e($caso['num_doc']) ?></div></div>
           <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
           <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= $edad !== null ? $edad . ' años' : '—' ?></div></div>
@@ -80,9 +82,7 @@ $accionEtiquetas = [
         <?php if ($caso['es_pnp']): ?>
           <div class="eyebrow" style="margin:18px 0 10px">Datos PNP</div>
           <div class="fields thirds">
-            <div class="field"><label class="fl">Grado</label><div class="control" style="background:var(--paper)"><?= e($caso['grado_nombre'] ?? '—') ?></div></div>
-            <div class="field"><label class="fl">Situación</label><div class="control" style="background:var(--paper)"><?= e($situacionEtiquetas[$caso['situacion_pnp']] ?? '—') ?></div></div>
-            <div class="field"><label class="fl">CIP</label><div class="control mono" style="background:var(--paper)"><?= e($caso['cip'] ?? '—') ?></div></div>
+            <div class="field wide"><label class="fl">Efectivo PNP</label><div class="control" style="background:var(--paper)"><?= e(\App\Models\Persona::detallePnp($caso) ?: '—') ?></div></div>
             <div class="field wide"><label class="fl">Unidad / dependencia</label><div class="control" style="background:var(--paper)"><?= e($caso['unidad_nombre'] ?? '—') ?></div></div>
             <div class="field"><label class="fl">Tipo de beneficiario</label><div class="control" style="background:var(--paper)"><?= e($beneficiarioEtiquetas[$caso['tipo_beneficiario']] ?? '—') ?></div></div>
           </div>

@@ -5,9 +5,10 @@
  * ['tipo_muestra','tipo_prueba','resultado','fecha_toma','fecha_result']),
  * $opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado (catalogo_item).
  */
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_result' => '']) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado): void {
-    $tomaDmy = fechaIsoADmy($fila['fecha_toma'] ?? '') ?: ($fila['fecha_toma'] ?? '');
-    $resultDmy = fechaIsoADmy($fila['fecha_result'] ?? '') ?: ($fila['fecha_result'] ?? '');
+$erroresMuestras = $erroresMuestras ?? [];
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_result' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado): void {
+    $errorToma = $error['fecha_toma'] ?? null;
+    $errorResult = $error['fecha_result'] ?? null;
     ?>
   <div class="subrow">
     <div class="fields thirds" style="flex:1">
@@ -46,11 +47,13 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
       </div>
       <div class="field">
         <label class="fl">Fecha de toma</label>
-        <div class="control mono"><input type="text" name="muestra_fecha_toma[]" value="<?= e($tomaDmy) ?>" placeholder="dd/mm/aaaa"></div>
+        <div class="control mono <?= $errorToma ? 'err' : '' ?>"><input type="date" name="muestra_fecha_toma[]" value="<?= e($fila['fecha_toma'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+        <?php if ($errorToma): ?><span class="hint err"><?= e($errorToma) ?></span><?php endif; ?>
       </div>
       <div class="field">
         <label class="fl">Fecha de resultado</label>
-        <div class="control mono"><input type="text" name="muestra_fecha_result[]" value="<?= e($resultDmy) ?>" placeholder="dd/mm/aaaa"></div>
+        <div class="control mono <?= $errorResult ? 'err' : '' ?>"><input type="date" name="muestra_fecha_result[]" value="<?= e($fila['fecha_result'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+        <?php if ($errorResult): ?><span class="hint err"><?= e($errorResult) ?></span><?php endif; ?>
       </div>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar muestra" style="margin-top:22px">
@@ -60,7 +63,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
 <?php };
 ?>
 <div class="subrows" data-lista="muestras">
-  <?php foreach ($filasMuestras as $fila): $filaMuestra($fila); endforeach; ?>
+  <?php foreach ($filasMuestras as $i => $fila): $filaMuestra($fila, $erroresMuestras[$i] ?? null); endforeach; ?>
 </div>
 <template id="plantilla-muestras"><?php $filaMuestra(); ?></template>
 <button type="button" class="btn btn-ghost agregar-fila" data-plantilla="plantilla-muestras" data-lista="muestras" style="margin-top:12px">

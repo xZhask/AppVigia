@@ -7,13 +7,15 @@ use App\Models\Enfermedad;
 
 class ReportesController extends Controller
 {
-    private const AGRUPACIONES_VALIDAS = ['establecimiento', 'red', 'semana', 'clasificacion'];
+    private const AGRUPACIONES_VALIDAS = ['establecimiento', 'red', 'semana', 'clasificacion', 'categoria_pnp', 'nivel'];
 
     private const ETIQUETAS_AGRUPACION = [
         'establecimiento' => 'Establecimiento',
         'red'             => 'Red de salud',
         'semana'          => 'Semana epidemiológica',
         'clasificacion'   => 'Clasificación',
+        'categoria_pnp'   => 'Categoría PNP',
+        'nivel'           => 'Nivel de grado PNP',
     ];
 
     public function index(): void
