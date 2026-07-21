@@ -25,7 +25,7 @@ $numeroSeccion = $numeroSeccionInicial;
 
 $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos): void {
     $campos = CampoDef::porSeccion($seccionId);
-    $puedeVerSensibles = \App\Core\Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
+    $puedeVerSensibles = \App\Core\Auth::tieneRol('ADMIN');
     $campos = array_filter($campos, fn($c) => empty($c['sensible']) || $puedeVerSensibles);
     
     $camposBooleanos = array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO');
@@ -33,7 +33,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
 
     if (!empty($camposOtros)): ?>
         <div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
-          <?php 
+          <?php
           $tipoAnterior = null;
           foreach ($camposOtros as $campo):
             $campo['obligatorio'] = (int) $campo['obligatorio'];
@@ -45,7 +45,13 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $opciones = $opcionesPorCatalogo[$campo['catalogo_id']];
             }
             $esSubgrupo = ($campo['tipo'] === 'GRUPO_SI_NO' && $tipoAnterior === 'GRUPO_SI_NO');
+            $tieneDependencia = !empty($campo['depende_de']);
+            if ($tieneDependencia):
+                $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);
+                ?><div class="dep-wrap" data-depende-de="campo_<?= (int) $campo['depende_de'] ?>" data-valor-activador="<?= e($campo['valor_activador']) ?>" <?= $oculto ? 'hidden' : '' ?>><?php
+            endif;
             require __DIR__ . '/campo-dinamico.php';
+            if ($tieneDependencia): ?></div><?php endif;
             $tipoAnterior = $campo['tipo'];
           endforeach; ?>
         </div>
@@ -59,7 +65,13 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             $valor = $valoresCampos[$campo['id']] ?? '';
             $error = $erroresCampos[$campo['id']] ?? null;
             $opciones = [];
+            $tieneDependencia = !empty($campo['depende_de']);
+            if ($tieneDependencia):
+                $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);
+                ?><div class="dep-wrap" data-depende-de="campo_<?= (int) $campo['depende_de'] ?>" data-valor-activador="<?= e($campo['valor_activador']) ?>" <?= $oculto ? 'hidden' : '' ?>><?php
+            endif;
             require __DIR__ . '/campo-dinamico.php';
+            if ($tieneDependencia): ?></div><?php endif;
           endforeach; ?>
         </div>
     <?php endif;

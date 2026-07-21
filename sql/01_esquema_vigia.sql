@@ -113,14 +113,22 @@ CREATE TABLE `persona` (
   `sexo` enum('M','F') DEFAULT NULL,
   `fecha_nac` date DEFAULT NULL,
   `distrito_id` char(6) DEFAULT NULL,
-  -- ----- Datos PNP -----
-  `es_pnp` tinyint(1) NOT NULL DEFAULT 0,
+  `celular` varchar(20) DEFAULT NULL,
+  `nacionalidad` varchar(60) DEFAULT 'Peruana',
+  `direccion` varchar(160) DEFAULT NULL,
+  `localidad` varchar(120) DEFAULT NULL,
+  `etnia` enum('MESTIZO','ANDINO','ASIATICO_DESCENDIENTE','AFRODESCENDIENTE','INDIGENA_AMAZONICO','OTRO') DEFAULT NULL,
+  `gestante` tinyint(1) DEFAULT NULL,
+  `semanas_gestacion` smallint(6) DEFAULT NULL,
+  -- ----- Condición del paciente -----
+  `condicion` enum('EFECTIVO','DERECHOHABIENTE','PARTICULAR') NOT NULL DEFAULT 'PARTICULAR',
+  `titular_id` int(11) DEFAULT NULL,
+  `vinculo_titular` enum('CONYUGE','CONVIVIENTE','HIJO','PADRE','MADRE','OTRO') DEFAULT NULL,
   `cip` varchar(12) DEFAULT NULL,
   `situacion_pnp` enum('ACTIVIDAD','RETIRO','DISPONIBILIDAD') DEFAULT NULL,
   `grado_id` int(11) DEFAULT NULL,
   `categoria_pnp` enum('ARMAS','SERVICIOS','ASIMILADO') DEFAULT NULL,
   `unidad_id` int(11) DEFAULT NULL,
-  `tipo_beneficiario` enum('TITULAR','DERECHOHABIENTE') DEFAULT NULL,
   `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_persona_doc` (`tipo_doc`,`num_doc`),
@@ -131,9 +139,12 @@ CREATE TABLE `persona` (
   KEY `ix_pac_cip` (`cip`),
   KEY `ix_pac_apellidos` (`apellido_paterno`,`apellido_materno`),
   KEY `ix_pac_categoria` (`categoria_pnp`),
+  KEY `ix_persona_condicion` (`condicion`),
+  KEY `ix_persona_titular` (`titular_id`),
   CONSTRAINT `fk_pac_dist` FOREIGN KEY (`distrito_id`) REFERENCES `distrito` (`id`),
   CONSTRAINT `fk_pac_grado` FOREIGN KEY (`grado_id`) REFERENCES `grado_pnp` (`id`),
-  CONSTRAINT `fk_pac_unidad` FOREIGN KEY (`unidad_id`) REFERENCES `unidad_pnp` (`id`)
+  CONSTRAINT `fk_pac_unidad` FOREIGN KEY (`unidad_id`) REFERENCES `unidad_pnp` (`id`),
+  CONSTRAINT `fk_persona_titular` FOREIGN KEY (`titular_id`) REFERENCES `persona` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
@@ -216,8 +227,10 @@ CREATE TABLE `enfermedad` (
   `usa_muestras` tinyint(1) NOT NULL DEFAULT 0,
   `usa_viajes` tinyint(1) NOT NULL DEFAULT 0,
   `usa_vacunas` tinyint(1) NOT NULL DEFAULT 0,
+  `usa_lugar_infeccion` tinyint(1) NOT NULL DEFAULT 0,
   `multi_sujeto` tinyint(1) DEFAULT 0,
   `roles_sujeto` varchar(255) DEFAULT NULL,
+  `opciones_clasificacion` varchar(80) DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -260,13 +273,17 @@ CREATE TABLE `campo_def` (
   `rol_sujeto` varchar(50) DEFAULT 'CASO_INDICE',
   `sensible` tinyint(1) NOT NULL DEFAULT 0,
   `catalogo_id` int(11) DEFAULT NULL,
+  `depende_de` int(11) DEFAULT NULL,
+  `valor_activador` varchar(60) DEFAULT NULL,
   `config` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config`)),
+  `origen` enum('FICHA_MINSA','INTERNO') NOT NULL DEFAULT 'FICHA_MINSA',
   `orden` smallint(6) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `ix_campo_sec` (`seccion_id`),
   KEY `ix_campo_cat` (`catalogo_id`),
   CONSTRAINT `fk_campo_cat` FOREIGN KEY (`catalogo_id`) REFERENCES `catalogo` (`id`),
-  CONSTRAINT `fk_campo_sec` FOREIGN KEY (`seccion_id`) REFERENCES `seccion_def` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_campo_sec` FOREIGN KEY (`seccion_id`) REFERENCES `seccion_def` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_campo_depende` FOREIGN KEY (`depende_de`) REFERENCES `campo_def` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
@@ -285,7 +302,13 @@ CREATE TABLE `caso` (
   `anio_epi` smallint(6) DEFAULT NULL,
   `semana_epi` smallint(6) DEFAULT NULL,
   `fecha_inicio_sintomas` date DEFAULT NULL,
+  `investigador_nombre` varchar(160) DEFAULT NULL,
+  `investigador_cargo` varchar(100) DEFAULT NULL,
+  `fecha_investigacion` date DEFAULT NULL,
   `clasificacion` enum('SOSPECHOSO','PROBABLE','CONFIRMADO','DESCARTADO') NOT NULL DEFAULT 'SOSPECHOSO',
+  `tipo_captacion` enum('ACTIVA','PASIVA') DEFAULT NULL,
+  `lugar_captacion` enum('INSTITUCIONAL','COMUNIDAD') DEFAULT NULL,
+  `clasificacion_captacion` enum('CONFIRMADO','PROBABLE','SOSPECHOSO') DEFAULT NULL,
   `estado` enum('ABIERTA','VALIDACION','CERRADA') NOT NULL DEFAULT 'ABIERTA',
   `anulado` tinyint(1) NOT NULL DEFAULT 0,
   `motivo_anulacion` varchar(255) DEFAULT NULL,
@@ -352,6 +375,11 @@ CREATE TABLE `caso_contacto` (
   `caso_id` int(11) NOT NULL,
   `nombres` varchar(160) DEFAULT NULL,
   `parentesco` varchar(60) DEFAULT NULL,
+  `edad` smallint(6) DEFAULT NULL,
+  `sexo` enum('M','F') DEFAULT NULL,
+  `vacunado` enum('SI','NO','IGNORADO') DEFAULT NULL,
+  `fecha_vacunacion` date DEFAULT NULL,
+  `profilaxis` enum('SI','NO') DEFAULT NULL,
   `doc` varchar(20) DEFAULT NULL,
   `celular` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -364,12 +392,27 @@ CREATE TABLE `caso_muestra` (
   `caso_id` int(11) NOT NULL,
   `tipo_muestra` varchar(80) DEFAULT NULL,
   `tipo_prueba` varchar(80) DEFAULT NULL,
+  `recibio_antibiotico` tinyint(1) DEFAULT NULL,
   `resultado` varchar(40) DEFAULT NULL,
   `fecha_toma` date DEFAULT NULL,
   `fecha_result` date DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `ix_mues_caso` (`caso_id`),
   CONSTRAINT `fk_mues_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `caso_lugar_infeccion` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `caso_id` int(11) NOT NULL,
+  `lugar_institucion` varchar(160) DEFAULT NULL,
+  `localidad_texto` varchar(160) DEFAULT NULL,
+  `distrito_id` char(6) DEFAULT NULL,
+  `permanencia_dias` smallint(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_lugin_caso` (`caso_id`),
+  KEY `ix_lugin_dist` (`distrito_id`),
+  CONSTRAINT `fk_lugin_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_lugin_dist` FOREIGN KEY (`distrito_id`) REFERENCES `distrito` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `caso_viaje` (

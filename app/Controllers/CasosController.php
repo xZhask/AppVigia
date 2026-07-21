@@ -12,6 +12,7 @@ use App\Models\CampoDef;
 use App\Models\Caso;
 use App\Models\CasoBitacora;
 use App\Models\CasoContacto;
+use App\Models\CasoLugarInfeccion;
 use App\Models\CasoMuestra;
 use App\Models\CasoValor;
 use App\Models\CasoVacuna;
@@ -25,7 +26,6 @@ use App\Models\Persona;
 use App\Services\PersonaService;
 use App\Models\ReniecConsulta;
 use App\Models\SeccionDef;
-use App\Models\UnidadPnp;
 use DateTime;
 use Throwable;
 
@@ -99,14 +99,16 @@ class CasosController extends Controller
             'erroresCampos' => [],
             'fechaInicioSintomas' => '',
             'errorFechaInicioSintomas' => null,
-            'clasificacionActual' => 'SOSPECHOSO',
+            'clasificacionActual' => opcionesClasificacionPara($enfermedad)[0],
             'filasContactos' => [],
             'filasViajes'    => [],
             'filasVacunas'   => [],
             'filasMuestras'  => [],
+            'filasLugarInfeccion' => [],
             'erroresViajes'  => [],
             'erroresVacunas' => [],
             'erroresMuestras' => [],
+            'erroresLugarInfeccion' => [],
         ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo(), contextoUbigeo(null)));
     }
 
@@ -142,6 +144,19 @@ class CasosController extends Controller
             'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
+            'celular'            => trim($_POST['celular'] ?? ''),
+            'nacionalidad'       => trim($_POST['nacionalidad'] ?? '') ?: 'Peruana',
+            'direccion'          => trim($_POST['direccion'] ?? ''),
+            'localidad'          => trim($_POST['localidad'] ?? ''),
+            'etnia'              => $_POST['etnia'] ?? '',
+            'gestante'           => $_POST['gestante'] ?? '',
+            'semanas_gestacion'  => trim($_POST['semanas_gestacion'] ?? ''),
+            'tipo_captacion'         => $_POST['tipo_captacion'] ?? '',
+            'lugar_captacion'        => $_POST['lugar_captacion'] ?? '',
+            'clasificacion_captacion' => $_POST['clasificacion_captacion'] ?? '',
+            'investigador_nombre'    => trim($_POST['investigador_nombre'] ?? ''),
+            'investigador_cargo'     => trim($_POST['investigador_cargo'] ?? ''),
+            'fecha_investigacion'    => trim($_POST['fecha_investigacion'] ?? ''),
         ];
 
         $establecimiento = $valoresFijos['establecimiento_id'] !== ''
@@ -199,9 +214,10 @@ class CasosController extends Controller
         $datosPnp = $this->leerDatosPnp();
 
         // ---------- clasificación del caso ----------
-        $clasificacion = $_POST['clasificacion'] ?? 'SOSPECHOSO';
-        if (!in_array($clasificacion, ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'], true)) {
-            $clasificacion = 'SOSPECHOSO';
+        $opcionesClasificacion = opcionesClasificacionPara($enfermedad);
+        $clasificacion = $_POST['clasificacion'] ?? $opcionesClasificacion[0];
+        if (!in_array($clasificacion, $opcionesClasificacion, true)) {
+            $clasificacion = $opcionesClasificacion[0];
         }
 
         // ---------- dinámicos: cuadro clínico según la enfermedad ----------
@@ -212,9 +228,10 @@ class CasosController extends Controller
         [$filasViajes, $erroresViajes] = $this->filasViajes();
         [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
         [$filasMuestras, $erroresMuestras] = $this->filasMuestras();
+        [$filasLugarInfeccion, $erroresLugarInfeccion] = $this->filasLugarInfeccion();
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
-            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras);
+            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras) || !empty($erroresLugarInfeccion);
 
         if ($hayErrores) {
             $semana = semanaEpidemiologica($fechaNotifIso ?: (new DateTime())->format('Y-m-d'));
@@ -237,9 +254,11 @@ class CasosController extends Controller
                 'filasViajes'    => $filasViajes,
                 'filasVacunas'   => $filasVacunas,
                 'filasMuestras'  => $filasMuestras,
+                'filasLugarInfeccion' => $filasLugarInfeccion,
                 'erroresViajes'  => $erroresViajes,
                 'erroresVacunas' => $erroresVacunas,
                 'erroresMuestras' => $erroresMuestras,
+                'erroresLugarInfeccion' => $erroresLugarInfeccion,
             ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo(), contextoUbigeo($distritoId ?: null)));
             return;
         }
@@ -250,6 +269,8 @@ class CasosController extends Controller
         try {
             $pdo->beginTransaction();
 
+            $nucleo = $this->sanearCamposNucleo($valoresFijos);
+
             $datosPaciente = array_merge([
                 'tipo_doc'          => $valoresFijos['tipo_doc'],
                 'num_doc'           => $valoresFijos['num_doc'],
@@ -259,7 +280,7 @@ class CasosController extends Controller
                 'sexo'              => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null,
                 'fecha_nac'         => $fechaNacIso,
                 'distrito_id'       => $distritoId,
-            ], $datosPnp['datos']);
+            ], $nucleo['persona'], $datosPnp['datos']);
 
             $personaExistente = Persona::buscarPorDocumento($valoresFijos['tipo_doc'], $valoresFijos['num_doc']);
             if ($personaExistente) {
@@ -276,7 +297,7 @@ class CasosController extends Controller
 
             $semana = semanaEpidemiologica($fechaNotifIso);
 
-            $casoId = Caso::crearConCodigo([
+            $casoId = Caso::crearConCodigo(array_merge([
                 'enfermedad_id'         => $enfermedadId,
                 'persona_id'            => $personaId,
                 'establecimiento_id'    => (int) $establecimiento['id'],
@@ -286,13 +307,14 @@ class CasosController extends Controller
                 'semana_epi'            => $semana['semana'],
                 'fecha_inicio_sintomas' => $fechaInicioSintomasIso,
                 'clasificacion'         => $clasificacion,
-            ]);
+            ], $nucleo['caso']));
 
             CasoValor::guardarTodos($casoId, $paraGuardar);
             CasoContacto::reemplazarTodos($casoId, $filasContactos);
             CasoViaje::reemplazarTodos($casoId, $filasViajes);
             CasoVacuna::reemplazarTodos($casoId, $filasVacunas);
             CasoMuestra::reemplazarTodos($casoId, $filasMuestras);
+            CasoLugarInfeccion::reemplazarTodos($casoId, $filasLugarInfeccion);
 
             $rolPrincipal = $enfermedad['multi_sujeto'] ? explode(',', $enfermedad['roles_sujeto'])[0] : 'CASO_INDICE';
             \App\Models\CasoSujeto::guardarSujetos($casoId, [
@@ -364,7 +386,7 @@ class CasosController extends Controller
      */
     public function buscarPaciente(): void
     {
-        Auth::exigirRol('ADMIN', 'EPIDEMIOLOGO', 'REGISTRADOR');
+        Auth::exigirRol('ADMIN', 'REGISTRADOR');
         header('Content-Type: application/json; charset=utf-8');
 
         $tipoDoc = trim($_GET['tipo_doc'] ?? '');
@@ -394,13 +416,13 @@ class CasosController extends Controller
                 'distrito_id'       => $persona['distrito_id'],
                 'provincia_id'      => $distrito['provincia_id'] ?? null,
                 'departamento_id'   => $distrito['departamento_id'] ?? null,
-                'es_pnp'            => (bool) $persona['es_pnp'],
+                'condicion'         => $persona['condicion'] ?? 'PARTICULAR',
                 'cip'               => $persona['cip'] ?? null,
                 'situacion_pnp'     => $persona['situacion_pnp'] ?? null,
                 'grado_id'          => $persona['grado_id'] ?? null,
                 'categoria_pnp'     => $persona['categoria_pnp'] ?? null,
-                'unidad_id'         => $persona['unidad_id'] ?? null,
-                'tipo_beneficiario' => $persona['tipo_beneficiario'] ?? null,
+                'vinculo_titular'   => $persona['vinculo_titular'] ?? null,
+                'titular_id'        => $persona['titular_id'] ?? null,
             ];
 
             $enfermedadId = (int) ($_GET['enfermedad_id'] ?? 0);
@@ -446,8 +468,8 @@ class CasosController extends Controller
         
         $camposDef = CampoDef::porEnfermedad((int) $caso['enfermedad_id']);
         $tieneSensibles = !empty(array_filter($camposDef, fn($c) => !empty($c['sensible'])));
-        $puedeVerSensibles = Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
-        if ($tieneSensibles && $puedeVerSensibles) {
+        $puedeVerSensibles = Auth::tieneRol('ADMIN');
+        if (($tieneSensibles && $puedeVerSensibles) || Caso::esPrivada($caso)) {
             CasoBitacora::registrar((int) $caso['id'], (int) Auth::usuario()['id'], 'CONSULTA_SENSIBLE', 'Consulta a ficha con datos sensibles.');
         }
 
@@ -461,6 +483,7 @@ class CasosController extends Controller
             'viajes'      => CasoViaje::porCaso((int) $caso['id']),
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),
             'muestras'    => CasoMuestra::porCaso((int) $caso['id']),
+            'lugaresInfeccion' => CasoLugarInfeccion::porCaso((int) $caso['id']),
             'bitacora'    => CasoBitacora::porCaso((int) $caso['id']),
             'puedeEditar' => $this->puedeEditarCaso($caso),
             'puedeCerrar' => Auth::tieneRol(...self::ROLES_CIERRE),
@@ -484,11 +507,12 @@ class CasosController extends Controller
         }
 
         $enfermedadId = (int) $caso['enfermedad_id'];
-        
+        $enfermedad = Enfermedad::buscar($enfermedadId);
+
         $camposDef = CampoDef::porEnfermedad($enfermedadId);
         $tieneSensibles = !empty(array_filter($camposDef, fn($c) => !empty($c['sensible'])));
-        $puedeVerSensibles = Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
-        if ($tieneSensibles && $puedeVerSensibles) {
+        $puedeVerSensibles = Auth::tieneRol('ADMIN');
+        if (($tieneSensibles && $puedeVerSensibles) || Caso::esPrivada($caso)) {
             CasoBitacora::registrar((int) $caso['id'], (int) Auth::usuario()['id'], 'CONSULTA_SENSIBLE', 'Consulta a ficha con datos sensibles (edición).');
         }
 
@@ -505,13 +529,26 @@ class CasosController extends Controller
             'nombres'            => $caso['nombres'],
             'sexo'               => $caso['sexo'] ?? '',
             'fecha_nac'          => (string) ($caso['fecha_nac'] ?? ''),
+            'celular'            => (string) ($caso['celular'] ?? ''),
+            'nacionalidad'       => (string) ($caso['nacionalidad'] ?? ''),
+            'direccion'          => (string) ($caso['direccion'] ?? ''),
+            'localidad'          => (string) ($caso['localidad'] ?? ''),
+            'etnia'              => (string) ($caso['etnia'] ?? ''),
+            'gestante'           => $caso['gestante'] !== null ? (string) $caso['gestante'] : '',
+            'semanas_gestacion'  => (string) ($caso['semanas_gestacion'] ?? ''),
+            'tipo_captacion'         => (string) ($caso['tipo_captacion'] ?? ''),
+            'lugar_captacion'        => (string) ($caso['lugar_captacion'] ?? ''),
+            'clasificacion_captacion' => (string) ($caso['clasificacion_captacion'] ?? ''),
+            'investigador_nombre'    => (string) ($caso['investigador_nombre'] ?? ''),
+            'investigador_cargo'     => (string) ($caso['investigador_cargo'] ?? ''),
+            'fecha_investigacion'    => (string) ($caso['fecha_investigacion'] ?? ''),
         ];
 
         $this->vista('fichas/editar', array_merge([
             'tituloVista' => 'Editar ficha ' . $caso['codigo'],
             'rutaActual'  => 'casos',
             'caso'        => $caso,
-            'enfermedad'  => ['id' => $caso['enfermedad_id'], 'nombre' => $caso['enfermedad_nombre']],
+            'enfermedad'  => $enfermedad,
             'valoresFijos' => $valoresFijos,
             'erroresFijos' => [],
             'valoresCampos' => $valoresCampos,
@@ -522,8 +559,10 @@ class CasosController extends Controller
             'filasViajes'    => CasoViaje::porCaso((int) $caso['id']),
             'filasVacunas'   => CasoVacuna::porCaso((int) $caso['id']),
             'filasMuestras'  => CasoMuestra::porCaso((int) $caso['id']),
+            'filasLugarInfeccion' => CasoLugarInfeccion::porCaso((int) $caso['id']),
             'erroresViajes'  => [],
             'erroresVacunas' => [],
+            'erroresLugarInfeccion' => [],
             'erroresMuestras' => [],
         ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo(), contextoUbigeo($caso['distrito_id'])));
     }
@@ -559,6 +598,19 @@ class CasosController extends Controller
             'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
+            'celular'            => trim($_POST['celular'] ?? ''),
+            'nacionalidad'       => trim($_POST['nacionalidad'] ?? '') ?: 'Peruana',
+            'direccion'          => trim($_POST['direccion'] ?? ''),
+            'localidad'          => trim($_POST['localidad'] ?? ''),
+            'etnia'              => $_POST['etnia'] ?? '',
+            'gestante'           => $_POST['gestante'] ?? '',
+            'semanas_gestacion'  => trim($_POST['semanas_gestacion'] ?? ''),
+            'tipo_captacion'         => $_POST['tipo_captacion'] ?? '',
+            'lugar_captacion'        => $_POST['lugar_captacion'] ?? '',
+            'clasificacion_captacion' => $_POST['clasificacion_captacion'] ?? '',
+            'investigador_nombre'    => trim($_POST['investigador_nombre'] ?? ''),
+            'investigador_cargo'     => trim($_POST['investigador_cargo'] ?? ''),
+            'fecha_investigacion'    => trim($_POST['fecha_investigacion'] ?? ''),
         ];
 
         $fechaNotifIso = fechaIsoValida($valoresFijos['fecha_notif']);
@@ -604,8 +656,9 @@ class CasosController extends Controller
         $valoresExistentesCrudo = CasoValor::porCaso((int) $caso['id']);
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $valoresExistentesCrudo);
 
+        $opcionesClasificacion = opcionesClasificacionPara($enfermedad);
         $clasificacion = $_POST['clasificacion'] ?? $caso['clasificacion'];
-        if (!in_array($clasificacion, ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'], true)) {
+        if (!in_array($clasificacion, $opcionesClasificacion, true)) {
             $clasificacion = $caso['clasificacion'];
         }
         $hospitalizado = isset($_POST['hospitalizado']) ? 1 : 0;
@@ -615,9 +668,10 @@ class CasosController extends Controller
         [$filasViajes, $erroresViajes] = $this->filasViajes();
         [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
         [$filasMuestras, $erroresMuestras] = $this->filasMuestras();
+        [$filasLugarInfeccion, $erroresLugarInfeccion] = $this->filasLugarInfeccion();
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
-            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras);
+            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras) || !empty($erroresLugarInfeccion);
 
         if ($hayErrores) {
             $caso['clasificacion'] = $clasificacion;
@@ -628,7 +682,7 @@ class CasosController extends Controller
                 'tituloVista' => 'Editar ficha ' . $caso['codigo'],
                 'rutaActual'  => 'casos',
                 'caso'        => $caso,
-                'enfermedad'  => ['id' => $caso['enfermedad_id'], 'nombre' => $caso['enfermedad_nombre']],
+                'enfermedad'  => $enfermedad,
                 'valoresFijos' => $valoresFijos,
                 'erroresFijos' => $erroresFijos,
                 'valoresCampos' => $valoresCampos,
@@ -639,9 +693,11 @@ class CasosController extends Controller
                 'filasViajes'    => $filasViajes,
                 'filasVacunas'   => $filasVacunas,
                 'filasMuestras'  => $filasMuestras,
+                'filasLugarInfeccion' => $filasLugarInfeccion,
                 'erroresViajes'  => $erroresViajes,
                 'erroresVacunas' => $erroresVacunas,
                 'erroresMuestras' => $erroresMuestras,
+                'erroresLugarInfeccion' => $erroresLugarInfeccion,
             ], $datosPnp['vista'], $this->datosMuestrasCatalogo(), contextoUbigeo($distritoId ?: null)));
             return;
         }
@@ -651,6 +707,8 @@ class CasosController extends Controller
         try {
             $pdo->beginTransaction();
 
+            $nucleo = $this->sanearCamposNucleo($valoresFijos);
+
             $datosPaciente = array_merge([
                 'apellido_paterno'  => $valoresFijos['apellido_paterno'],
                 'apellido_materno'  => $valoresFijos['apellido_materno'] !== '' ? $valoresFijos['apellido_materno'] : null,
@@ -658,11 +716,11 @@ class CasosController extends Controller
                 'sexo'              => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null,
                 'fecha_nac'         => $fechaNacIso,
                 'distrito_id'       => $distritoId,
-            ], $datosPnp['datos']);
+            ], $nucleo['persona'], $datosPnp['datos']);
 
             $persona = Persona::buscarPorDocumento($caso['tipo_doc'], $caso['num_doc']);
             $personaId = (int) $persona['id'];
-            
+
             // Validación de conflicto de interés
             if ($usuario['persona_id'] !== null && $usuario['persona_id'] === $personaId) {
                 throw new ConflictoInteresException('No puedes editar esta ficha: la persona notificada eres tú mismo/a. Pide a otro registrador o al epidemiólogo que la edite.');
@@ -672,7 +730,7 @@ class CasosController extends Controller
 
             $semana = semanaEpidemiologica($fechaNotifIso);
 
-            Caso::actualizar((int) $caso['id'], [
+            Caso::actualizar((int) $caso['id'], array_merge([
                 'fecha_notif'           => $fechaNotifIso,
                 'anio_epi'              => $semana['anio'],
                 'semana_epi'            => $semana['semana'],
@@ -680,7 +738,7 @@ class CasosController extends Controller
                 'clasificacion'         => $clasificacion,
                 'hospitalizado'         => $hospitalizado,
                 'fallecido'             => $fallecido,
-            ]);
+            ], $nucleo['caso']));
 
             CasoValor::eliminarPorCaso((int) $caso['id']);
             CasoValor::guardarTodos((int) $caso['id'], $paraGuardar);
@@ -688,6 +746,7 @@ class CasosController extends Controller
             CasoViaje::reemplazarTodos((int) $caso['id'], $filasViajes);
             CasoVacuna::reemplazarTodos((int) $caso['id'], $filasVacunas);
             CasoMuestra::reemplazarTodos((int) $caso['id'], $filasMuestras);
+            CasoLugarInfeccion::reemplazarTodos((int) $caso['id'], $filasLugarInfeccion);
 
             $rolPrincipal = $caso['enfermedad_multi_sujeto'] ?? false 
                 ? explode(',', $caso['enfermedad_roles_sujeto'] ?? 'CASO_INDICE')[0] 
@@ -805,7 +864,7 @@ class CasosController extends Controller
         $valoresCampos = [];
         $erroresCampos = [];
         $paraGuardar = [];
-        $puedeVerSensibles = Auth::tieneRol('ADMIN', 'EPIDEMIOLOGO');
+        $puedeVerSensibles = Auth::tieneRol('ADMIN');
 
         foreach ($campos as $campoId => $campo) {
             $tipo = $campo['tipo'];
@@ -817,6 +876,15 @@ class CasosController extends Controller
                 if (isset($valoresExistentesCrudo[$campoId])) {
                     $paraGuardar[$campoId] = $valoresExistentesCrudo[$campoId];
                 }
+                continue;
+            }
+
+            // Campo condicional oculto: no se valida su obligatoriedad y se
+            // guarda vacío aunque el cliente haya enviado algo (el valor se
+            // limpia en el navegador al ocultarse, pero no hay que confiar
+            // en eso del lado servidor).
+            if (!empty($campo['depende_de']) && !campoVisiblePorDependencia($campo, $valoresCampos)) {
+                $valoresCampos[$campoId] = in_array($tipo, ['MULTISELECT', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true) ? [] : '';
                 continue;
             }
 
@@ -941,6 +1009,19 @@ class CasosController extends Controller
             'nombres'            => '',
             'sexo'               => '',
             'fecha_nac'          => '',
+            'celular'            => '',
+            'nacionalidad'       => 'Peruana',
+            'direccion'          => '',
+            'localidad'          => '',
+            'etnia'              => '',
+            'gestante'           => '',
+            'semanas_gestacion'  => '',
+            'tipo_captacion'         => '',
+            'lugar_captacion'        => '',
+            'clasificacion_captacion' => '',
+            'investigador_nombre'    => Auth::usuario()['nombre'] ?? '',
+            'investigador_cargo'     => '',
+            'fecha_investigacion'    => $hoyIso,
         ];
     }
 
@@ -963,16 +1044,67 @@ class CasosController extends Controller
     }
 
     /**
-     * Datos y catálogos para los campos de efectivo PNP en "Nueva ficha"
-     * (checkbox + grado/situación/CIP/unidad), con valores en blanco.
+     * Sanea los campos núcleo de captación/paciente/investigador
+     * (AUDITORIA_FICHA_DIFTERIA.md, punto 2 y 8) a partir de lo ya capturado
+     * en $valoresFijos. Gestante solo se guarda si sexo=F, y semanas de
+     * gestación solo si gestante=Sí — igual que el toggle en ficha.js, pero
+     * revalidado del lado servidor.
+     *
+     * @return array{persona: array, caso: array}
+     */
+    private function sanearCamposNucleo(array $valoresFijos): array
+    {
+        $etnias = ['MESTIZO', 'ANDINO', 'ASIATICO_DESCENDIENTE', 'AFRODESCENDIENTE', 'INDIGENA_AMAZONICO', 'OTRO'];
+        $etnia = in_array($valoresFijos['etnia'], $etnias, true) ? $valoresFijos['etnia'] : null;
+
+        $gestante = null;
+        $semanasGestacion = null;
+        if ($valoresFijos['sexo'] === 'F' && in_array($valoresFijos['gestante'], ['0', '1'], true)) {
+            $gestante = (int) $valoresFijos['gestante'];
+            if ($gestante === 1 && is_numeric($valoresFijos['semanas_gestacion'])) {
+                $semanasGestacion = (int) $valoresFijos['semanas_gestacion'];
+            }
+        }
+
+        $tipoCaptacion = in_array($valoresFijos['tipo_captacion'], ['ACTIVA', 'PASIVA'], true) ? $valoresFijos['tipo_captacion'] : null;
+        $lugarCaptacion = in_array($valoresFijos['lugar_captacion'], ['INSTITUCIONAL', 'COMUNIDAD'], true) ? $valoresFijos['lugar_captacion'] : null;
+        $clasificacionCaptacion = in_array($valoresFijos['clasificacion_captacion'], ['CONFIRMADO', 'PROBABLE', 'SOSPECHOSO'], true) ? $valoresFijos['clasificacion_captacion'] : null;
+
+        return [
+            'persona' => [
+                'celular'           => $valoresFijos['celular'] !== '' ? $valoresFijos['celular'] : null,
+                'nacionalidad'      => $valoresFijos['nacionalidad'] !== '' ? $valoresFijos['nacionalidad'] : null,
+                'direccion'         => $valoresFijos['direccion'] !== '' ? $valoresFijos['direccion'] : null,
+                'localidad'         => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
+                'etnia'             => $etnia,
+                'gestante'          => $gestante,
+                'semanas_gestacion' => $semanasGestacion,
+            ],
+            'caso' => [
+                'tipo_captacion'          => $tipoCaptacion,
+                'lugar_captacion'         => $lugarCaptacion,
+                'clasificacion_captacion' => $clasificacionCaptacion,
+                'investigador_nombre'     => $valoresFijos['investigador_nombre'] !== '' ? $valoresFijos['investigador_nombre'] : null,
+                'investigador_cargo'      => $valoresFijos['investigador_cargo'] !== '' ? $valoresFijos['investigador_cargo'] : null,
+                'fecha_investigacion'     => $valoresFijos['fecha_investigacion'] !== '' ? fechaIsoValida($valoresFijos['fecha_investigacion']) : null,
+            ],
+        ];
+    }
+
+    /**
+     * Datos y catálogos para la condición del paciente en "Nueva ficha"
+     * (radio EFECTIVO/DERECHOHABIENTE/PARTICULAR + campos por condición),
+     * con valores en blanco.
      */
     private function datosPnp(): array
     {
         return [
-            'esPnp'            => false,
-            'valoresPnp'       => ['cip' => '', 'situacion_pnp' => '', 'grado_id' => '', 'unidad_id' => '', 'tipo_beneficiario' => ''],
-            'grados'           => GradoPnp::todos('jerarquia'),
-            'unidades'         => array_values(array_filter(UnidadPnp::conUbicacion(), fn($u) => (int) $u['activo'] === 1)),
+            'condicionPaciente' => 'PARTICULAR',
+            'valoresPnp'        => [
+                'cip' => '', 'situacion_pnp' => '', 'grado_id' => '', 'categoria_pnp' => '',
+                'vinculo_titular' => '', 'doc_titular' => '', 'titular_id' => '', 'titular_nombre' => '',
+            ],
+            'grados' => GradoPnp::todos('jerarquia'),
         ];
     }
 
@@ -983,85 +1115,102 @@ class CasosController extends Controller
     private function datosPnpEdicion(array $caso): array
     {
         $datos = $this->datosPnp();
-        $datos['esPnp'] = (bool) $caso['es_pnp'];
+        $datos['condicionPaciente'] = $caso['condicion'] ?? 'PARTICULAR';
+
+        $titularNombre = '';
+        if (!empty($caso['titular_id'])) {
+            $titularNombre = Persona::nombreCompletoPnp([
+                'apellido_paterno'  => $caso['titular_apellido_paterno'] ?? '',
+                'apellido_materno'  => $caso['titular_apellido_materno'] ?? '',
+                'nombres'           => $caso['titular_nombres'] ?? '',
+                'grado_abreviatura' => $caso['titular_grado_abreviatura'] ?? '',
+            ]);
+        }
+
         $datos['valoresPnp'] = [
-            'cip'               => $caso['cip'] ?? '',
-            'situacion_pnp'     => $caso['situacion_pnp'] ?? '',
-            'grado_id'          => $caso['grado_id'] ?? '',
-            'unidad_id'         => $caso['unidad_id'] ?? '',
-            'tipo_beneficiario' => $caso['tipo_beneficiario'] ?? '',
+            'cip'             => $caso['cip'] ?? '',
+            'situacion_pnp'   => $caso['situacion_pnp'] ?? '',
+            'grado_id'        => $caso['grado_id'] ?? '',
+            'categoria_pnp'   => $caso['categoria_pnp'] ?? '',
+            'vinculo_titular' => $caso['vinculo_titular'] ?? '',
+            'doc_titular'     => '',
+            'titular_id'      => $caso['titular_id'] ?? '',
+            'titular_nombre'  => $titularNombre,
         ];
 
         return $datos;
     }
 
     /**
-     * Lee del POST los campos de efectivo PNP del paciente. Si no marcó
-     * "Es efectivo PNP" se guarda todo en null (no se fuerza a completar).
+     * Lee del POST la condición del paciente y sus campos dependientes.
+     * Sanea del lado servidor: solo persiste grado/situación/categoría/CIP
+     * cuando la condición es EFECTIVO, y solo vínculo/titular cuando es
+     * DERECHOHABIENTE — cualquier combinación imposible se descarta en vez
+     * de guardarse.
      *
      * @return array{datos: array, vista: array}
      */
     private function leerDatosPnp(): array
     {
-        $esPnp = isset($_POST['es_pnp']);
+        $condicion = $_POST['condicion'] ?? 'PARTICULAR';
+        if (!in_array($condicion, ['EFECTIVO', 'DERECHOHABIENTE', 'PARTICULAR'], true)) {
+            $condicion = 'PARTICULAR';
+        }
+
         $gradoId = $_POST['grado_id'] ?? '';
-        $unidadId = $_POST['unidad_id'] ?? '';
         $situacion = $_POST['situacion_pnp'] ?? '';
-        $tipoBeneficiario = $_POST['tipo_beneficiario'] ?? '';
         $cip = trim($_POST['cip'] ?? '');
         $categoriaPnp = $_POST['categoria_pnp'] ?? '';
+        $vinculoTitular = $_POST['vinculo_titular'] ?? '';
+        $titularId = $_POST['titular_id'] ?? '';
 
         $grados = GradoPnp::todos('jerarquia');
-        
+
         $datos = [
-            'es_pnp'            => $esPnp ? 1 : 0,
-            'cip'               => null,
-            'situacion_pnp'     => null,
-            'grado_id'          => null,
-            'unidad_id'         => null,
-            'tipo_beneficiario' => null,
-            'categoria_pnp'     => null,
+            'condicion'       => $condicion,
+            'cip'             => null,
+            'situacion_pnp'   => null,
+            'grado_id'        => null,
+            'categoria_pnp'   => null,
+            'titular_id'      => null,
+            'vinculo_titular' => null,
         ];
 
-        if ($esPnp) {
-            $datos['unidad_id'] = $unidadId !== '' ? (int) $unidadId : null;
-            
-            if (in_array($tipoBeneficiario, ['TITULAR', 'DERECHOHABIENTE'], true)) {
-                $datos['tipo_beneficiario'] = $tipoBeneficiario;
+        if ($condicion === 'EFECTIVO' && $gradoId !== '') {
+            $datos['grado_id'] = (int) $gradoId;
+
+            $gradoActual = null;
+            foreach ($grados as $g) {
+                if ((int) $g['id'] === $datos['grado_id']) {
+                    $gradoActual = $g;
+                    break;
+                }
             }
 
-            // Un derechohabiente lleva es_pnp = 0 en el frontend, 
-            // pero si viene como 1 (ej. se llenó y luego se cambió sin limpiar), se sanean sus campos.
-            if ($datos['tipo_beneficiario'] === 'TITULAR') {
-                if ($gradoId !== '') {
-                    $datos['grado_id'] = (int) $gradoId;
-                    
-                    // Buscar el grado para aplicar reglas
-                    $gradoActual = null;
-                    foreach ($grados as $g) {
-                        if ((int) $g['id'] === $datos['grado_id']) {
-                            $gradoActual = $g;
-                            break;
-                        }
-                    }
+            if ($gradoActual) {
+                if (in_array($situacion, ['ACTIVIDAD', 'RETIRO', 'DISPONIBILIDAD'], true)) {
+                    $datos['situacion_pnp'] = $situacion;
+                }
 
-                    if ($gradoActual) {
-                        if (in_array($situacion, ['ACTIVIDAD', 'RETIRO', 'DISPONIBILIDAD'], true)) {
-                            $datos['situacion_pnp'] = $situacion;
-                        }
-
-                        $nivel = $gradoActual['nivel'];
-                        if (str_starts_with($nivel, 'OFICIAL_') || $nivel === 'SUBOFICIAL') {
-                            $datos['cip'] = $cip !== '' ? $cip : null;
-                            if (in_array($categoriaPnp, ['ARMAS', 'SERVICIOS', 'ASIMILADO'], true)) {
-                                $datos['categoria_pnp'] = $categoriaPnp;
-                            }
-                        } elseif ($nivel === 'CADETE' || $nivel === 'ALUMNO') {
-                            $datos['cip'] = $cip !== '' ? $cip : null;
-                        } elseif ($nivel === 'EMPLEADO_CIVIL') {
-                            // Sin categoría ni CIP
-                        }
+                $nivel = $gradoActual['nivel'];
+                if (str_starts_with($nivel, 'OFICIAL_') || $nivel === 'SUBOFICIAL') {
+                    $datos['cip'] = $cip !== '' ? $cip : null;
+                    if (in_array($categoriaPnp, ['ARMAS', 'SERVICIOS', 'ASIMILADO'], true)) {
+                        $datos['categoria_pnp'] = $categoriaPnp;
                     }
+                } elseif ($nivel === 'CADETE' || $nivel === 'ALUMNO') {
+                    $datos['cip'] = $cip !== '' ? $cip : null;
+                }
+                // EMPLEADO_CIVIL: sin categoría ni CIP.
+            }
+        } elseif ($condicion === 'DERECHOHABIENTE') {
+            if (in_array($vinculoTitular, ['CONYUGE', 'CONVIVIENTE', 'HIJO', 'PADRE', 'MADRE', 'OTRO'], true)) {
+                $datos['vinculo_titular'] = $vinculoTitular;
+            }
+            if ($titularId !== '') {
+                $titular = Persona::buscar((int) $titularId);
+                if ($titular && ($titular['condicion'] ?? '') === 'EFECTIVO') {
+                    $datos['titular_id'] = (int) $titularId;
                 }
             }
         }
@@ -1069,19 +1218,55 @@ class CasosController extends Controller
         return [
             'datos' => $datos,
             'vista' => [
-                'esPnp' => $esPnp,
+                'condicionPaciente' => $condicion,
                 'valoresPnp' => [
-                    'cip'               => $cip,
-                    'situacion_pnp'     => $situacion,
-                    'grado_id'          => $gradoId,
-                    'unidad_id'         => $unidadId,
-                    'tipo_beneficiario' => $tipoBeneficiario,
-                    'categoria_pnp'     => $categoriaPnp,
+                    'cip'             => $cip,
+                    'situacion_pnp'   => $situacion,
+                    'grado_id'        => $gradoId,
+                    'categoria_pnp'   => $categoriaPnp,
+                    'vinculo_titular' => $vinculoTitular,
+                    'doc_titular'     => trim($_POST['doc_titular'] ?? ''),
+                    'titular_id'      => $datos['titular_id'] ?? '',
+                    'titular_nombre'  => trim($_POST['titular_nombre'] ?? ''),
                 ],
-                'grados'   => $grados,
-                'unidades' => array_values(array_filter(UnidadPnp::conUbicacion(), fn($u) => (int) $u['activo'] === 1)),
+                'grados' => $grados,
             ],
         ];
+    }
+
+    /**
+     * Endpoint AJAX del botón "Buscar titular" (derechohabiente): busca una
+     * persona ya registrada como EFECTIVO por documento. No crea nada nuevo
+     * ni consulta RENIEC — si no se encuentra, el campo se deja vacío.
+     */
+    public function buscarTitular(): void
+    {
+        Auth::exigirRol('ADMIN', 'REGISTRADOR');
+        header('Content-Type: application/json; charset=utf-8');
+
+        $tipoDoc = trim($_GET['tipo_doc'] ?? '');
+        $numDoc = trim($_GET['num_doc'] ?? '');
+
+        if ($tipoDoc === '' || $numDoc === '') {
+            echo json_encode(['encontrado' => false], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $persona = Persona::buscarPorDocumento($tipoDoc, $numDoc);
+        if (!$persona || ($persona['condicion'] ?? '') !== 'EFECTIVO') {
+            echo json_encode(['encontrado' => false], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $grado = $persona['grado_id'] ? GradoPnp::buscar((int) $persona['grado_id']) : null;
+
+        echo json_encode([
+            'encontrado' => true,
+            'titular_id' => (int) $persona['id'],
+            'nombre'     => Persona::nombreCompletoPnp(array_merge($persona, [
+                'grado_abreviatura' => $grado['abreviatura'] ?? '',
+            ])),
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     private function datosMuestrasCatalogo(): array
@@ -1097,6 +1282,11 @@ class CasosController extends Controller
     {
         $nombres = $_POST['contacto_nombres'] ?? [];
         $parentescos = $_POST['contacto_parentesco'] ?? [];
+        $edades = $_POST['contacto_edad'] ?? [];
+        $sexos = $_POST['contacto_sexo'] ?? [];
+        $vacunados = $_POST['contacto_vacunado'] ?? [];
+        $fechasVacunacion = $_POST['contacto_fecha_vacunacion'] ?? [];
+        $profilaxis = $_POST['contacto_profilaxis'] ?? [];
         $docs = $_POST['contacto_doc'] ?? [];
         $celulares = $_POST['contacto_celular'] ?? [];
 
@@ -1106,11 +1296,22 @@ class CasosController extends Controller
             if ($nombre === '') {
                 continue;
             }
+            $edad = trim((string) ($edades[$i] ?? ''));
+            $sexo = $sexos[$i] ?? '';
+            $vacunado = $vacunados[$i] ?? '';
+            $fechaVacunacion = trim((string) ($fechasVacunacion[$i] ?? ''));
+            $profilaxisFila = $profilaxis[$i] ?? '';
+
             $filas[] = [
-                'nombres'    => $nombre,
-                'parentesco' => trim((string) ($parentescos[$i] ?? '')) ?: null,
-                'doc'        => trim((string) ($docs[$i] ?? '')) ?: null,
-                'celular'    => trim((string) ($celulares[$i] ?? '')) ?: null,
+                'nombres'          => $nombre,
+                'parentesco'       => trim((string) ($parentescos[$i] ?? '')) ?: null,
+                'edad'             => $edad !== '' && is_numeric($edad) ? (int) $edad : null,
+                'sexo'             => in_array($sexo, ['M', 'F'], true) ? $sexo : null,
+                'vacunado'         => in_array($vacunado, ['SI', 'NO', 'IGNORADO'], true) ? $vacunado : null,
+                'fecha_vacunacion' => $fechaVacunacion !== '' ? fechaIsoValida($fechaVacunacion) : null,
+                'profilaxis'       => in_array($profilaxisFila, ['SI', 'NO'], true) ? $profilaxisFila : null,
+                'doc'              => trim((string) ($docs[$i] ?? '')) ?: null,
+                'celular'          => trim((string) ($celulares[$i] ?? '')) ?: null,
             ];
         }
 
@@ -1206,6 +1407,7 @@ class CasosController extends Controller
     {
         $tiposMuestra = $_POST['muestra_tipo_muestra'] ?? [];
         $tiposPrueba = $_POST['muestra_tipo_prueba'] ?? [];
+        $recibioAntibiotico = $_POST['muestra_recibio_antibiotico'] ?? [];
         $resultados = $_POST['muestra_resultado'] ?? [];
         $fechasToma = $_POST['muestra_fecha_toma'] ?? [];
         $fechasResultado = $_POST['muestra_fecha_result'] ?? [];
@@ -1244,12 +1446,54 @@ class CasosController extends Controller
                 }
             }
 
+            $antibiotico = $recibioAntibiotico[$i] ?? '';
+
             $filas[] = [
-                'tipo_muestra' => in_array($tipoMuestra, $validosTipoMuestra, true) ? $tipoMuestra : null,
-                'tipo_prueba'  => in_array($tipoPrueba, $validosTipoPrueba, true) ? $tipoPrueba : null,
-                'resultado'    => in_array($resultado, $validosResultado, true) ? $resultado : null,
-                'fecha_toma'   => $tomaIso,
-                'fecha_result' => $resultIso,
+                'tipo_muestra'        => in_array($tipoMuestra, $validosTipoMuestra, true) ? $tipoMuestra : null,
+                'tipo_prueba'         => in_array($tipoPrueba, $validosTipoPrueba, true) ? $tipoPrueba : null,
+                'recibio_antibiotico' => in_array($antibiotico, ['0', '1'], true) ? (int) $antibiotico : null,
+                'resultado'           => in_array($resultado, $validosResultado, true) ? $resultado : null,
+                'fecha_toma'          => $tomaIso,
+                'fecha_result'        => $resultIso,
+            ];
+        }
+
+        return [$filas, $errores];
+    }
+
+    /**
+     * @return array{0: array, 1: array} [$filas, $errores]
+     */
+    private function filasLugarInfeccion(): array
+    {
+        $lugares = $_POST['lugarinf_institucion'] ?? [];
+        $localidades = $_POST['lugarinf_localidad'] ?? [];
+        $permanencias = $_POST['lugarinf_permanencia'] ?? [];
+
+        $filas = [];
+        $errores = [];
+        foreach ($lugares as $i => $lugar) {
+            $lugar = trim((string) $lugar);
+            $localidad = trim((string) ($localidades[$i] ?? ''));
+            $permanenciaTxt = trim((string) ($permanencias[$i] ?? ''));
+
+            if ($lugar === '' && $localidad === '' && $permanenciaTxt === '') {
+                continue;
+            }
+
+            $permanencia = null;
+            if ($permanenciaTxt !== '') {
+                if (!is_numeric($permanenciaTxt)) {
+                    $errores[$i]['permanencia_dias'] = 'Ingresa un número de días válido.';
+                } else {
+                    $permanencia = (int) $permanenciaTxt;
+                }
+            }
+
+            $filas[] = [
+                'lugar_institucion' => $lugar ?: null,
+                'localidad_texto'   => $localidad ?: null,
+                'permanencia_dias'  => $permanencia,
             ];
         }
 
@@ -1260,7 +1504,7 @@ class CasosController extends Controller
     {
         $usuario = Auth::usuario();
         if ($usuario['rol'] === 'REGISTRADOR') {
-            $esPrivada = in_array($caso['cie10'], ['B24', 'Z21']) || stripos($caso['enfermedad_nombre'], 'Violencia') !== false;
+            $esPrivada = Caso::esPrivada($caso);
             if ($esPrivada && (int) $caso['usuario_id'] !== (int) $usuario['id']) {
                 return false;
             }
@@ -1281,7 +1525,7 @@ class CasosController extends Controller
             return true;
         }
         if ($usuario['rol'] === 'REGISTRADOR') {
-            $esPrivada = in_array($caso['cie10'], ['B24', 'Z21']) || stripos($caso['enfermedad_nombre'], 'Violencia') !== false;
+            $esPrivada = Caso::esPrivada($caso);
             if ($esPrivada && (int) $caso['usuario_id'] !== (int) $usuario['id']) {
                 return false;
             }

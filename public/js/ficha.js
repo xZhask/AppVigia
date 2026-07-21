@@ -19,6 +19,71 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   renumerarSeccionesSiguientes();
 
+  // ---------- Motor de dependencias condicionales entre campos ----------
+  // (AUDITORIA_FICHA_DIFTERIA.md, punto 4): un .dep-wrap con
+  // data-depende-de="campo_ID" se oculta mientras ese campo padre no tenga
+  // el valor de data-valor-activador. Al ocultarse, limpia su valor.
+  function leerValorCampoPorNombre(nombre) {
+    var grupo = document.querySelectorAll('input[name="' + nombre + '[]"]:checked');
+    if (grupo.length) return Array.prototype.map.call(grupo, function (el) { return el.value; });
+
+    var checkbox = document.querySelector('input[name="' + nombre + '"][type="checkbox"]');
+    if (checkbox) return checkbox.checked ? '1' : '0';
+
+    var el = document.querySelector('[name="' + nombre + '"]');
+    return el ? el.value : null;
+  }
+
+  function evaluarDependencias() {
+    document.querySelectorAll('.dep-wrap[data-depende-de]').forEach(function (wrap) {
+      var nombrePadre = wrap.getAttribute('data-depende-de');
+      var activador = wrap.getAttribute('data-valor-activador');
+      var valorActual = leerValorCampoPorNombre(nombrePadre);
+      var visible = Array.isArray(valorActual) ? valorActual.indexOf(activador) !== -1 : valorActual === activador;
+
+      if (visible === !wrap.hidden) return;
+      wrap.hidden = !visible;
+
+      if (!visible) {
+        wrap.querySelectorAll('input, select, textarea').forEach(function (el) {
+          if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = false;
+          } else {
+            el.value = '';
+          }
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(el);
+        });
+      }
+    });
+  }
+  evaluarDependencias();
+  document.addEventListener('input', evaluarDependencias);
+  document.addEventListener('change', evaluarDependencias);
+
+  // ---------- Núcleo: gestante solo si sexo=F, semanas solo si gestante=Sí ----------
+  var sexoSel = document.querySelector('[name="sexo"]');
+  var gestanteSel = document.getElementById('gestanteSel');
+  var campoGestante = document.getElementById('campoGestante');
+  var campoSemanas = document.getElementById('campoSemanasGestacion');
+
+  function actualizarGestante() {
+    if (!campoGestante || !campoSemanas) return;
+    var esFemenino = sexoSel && sexoSel.value === 'F';
+    campoGestante.hidden = !esFemenino;
+    if (!esFemenino && gestanteSel) gestanteSel.value = '';
+
+    var esGestante = esFemenino && gestanteSel && gestanteSel.value === '1';
+    campoSemanas.hidden = !esGestante;
+    if (!esGestante) {
+      var semanas = document.getElementById('semanasGestacion');
+      if (semanas) semanas.value = '';
+    }
+  }
+  if (sexoSel) sexoSel.addEventListener('change', actualizarGestante);
+  if (gestanteSel) gestanteSel.addEventListener('change', actualizarGestante);
+  actualizarGestante();
+
   if (selectorEnfermedad && contenedorClinico) {
     selectorEnfermedad.addEventListener('change', function () {
       var enfermedadId = selectorEnfermedad.value;
@@ -32,6 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
           renumerarSeccionesSiguientes();
           if (window.SelectorBusqueda) window.SelectorBusqueda.escanear(contenedorClinico);
           if (typeof inicializarGruposSiNo === 'function') inicializarGruposSiNo();
+          evaluarDependencias();
 
           var tagCie = document.getElementById('cieTag');
           if (tagCie) tagCie.textContent = 'CIE-10 · ' + datos.cie10;
@@ -156,76 +222,109 @@ document.addEventListener('DOMContentLoaded', function () {
   if (fechaNac) fechaNac.addEventListener('change', calcularEdad);
   calcularEdad();
 
-  // ---------- Es efectivo PNP: mostrar/ocultar campos ----------
-  var esPnp = document.getElementById('esPnp');
-  var pnpFields = document.getElementById('pnpFields');
+  // ---------- Condición del paciente: EFECTIVO / DERECHOHABIENTE / PARTICULAR ----------
+  var radiosCondicion = document.querySelectorAll('input[name="condicion"]');
   var gradoId = document.getElementById('gradoId');
-  var tipoBeneficiario = document.getElementById('tipoBeneficiario');
-  
-  var cGrado = document.getElementById('campoGrado');
-  var cSituacion = document.getElementById('campoSituacion');
   var cCategoria = document.getElementById('campoCategoria');
   var cCip = document.getElementById('campoCip');
-  
-  function cleanVal(id) {
-    var el = document.getElementById(id);
-    if (el && el.value !== '') {
-      el.value = '';
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
+
+  var panelesCondicion = {
+    EFECTIVO: document.getElementById('p-efectivo'),
+    DERECHOHABIENTE: document.getElementById('p-derecho'),
+    PARTICULAR: document.getElementById('p-particular'),
+  };
+  var etiquetasCondicion = {
+    EFECTIVO: 'efectivo', DERECHOHABIENTE: 'derechohabiente', PARTICULAR: 'particular',
+  };
+
+  function limpiarPanel(panel) {
+    if (!panel) return false;
+    var huboDatos = false;
+    panel.querySelectorAll('input, select').forEach(function (el) {
+      if (el.type === 'radio' || el.type === 'hidden') return;
+      if (el.value !== '') {
+        huboDatos = true;
+        el.value = '';
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(el);
+      }
+    });
+    var titularId = document.getElementById('titularId');
+    if (titularId && titularId.value !== '') { huboDatos = true; titularId.value = ''; }
+    var titularHint = document.getElementById('titularEncontrado');
+    if (titularHint) titularHint.textContent = 'Vincular al titular permite detectar conglomerados familiares. Es opcional: si no se conoce, puede dejarse vacío.';
+    return huboDatos;
   }
 
-  function actPnp() {
-    if (!esPnp.checked) {
-      pnpFields.hidden = true;
-      return;
-    }
-    pnpFields.hidden = false;
-    
-    var tb = tipoBeneficiario ? tipoBeneficiario.value : '';
-    if (tb === 'DERECHOHABIENTE') {
-      if (cGrado) cGrado.hidden = true;
-      if (cSituacion) cSituacion.hidden = true;
-      if (cCategoria) cCategoria.hidden = true;
-      if (cCip) cCip.hidden = true;
-      
-      cleanVal('gradoId');
-      cleanVal('situacionPnp');
-      cleanVal('categoriaPnp');
-      cleanVal('cip');
-      return;
-    }
-    
-    if (cGrado) cGrado.hidden = false;
-    if (cSituacion) cSituacion.hidden = false;
-    
-    // Obtener nivel del grado seleccionado
+  function actualizarCategoriaCip() {
+    if (!gradoId || !cCategoria || !cCip) return;
     var selectedOption = gradoId.options[gradoId.selectedIndex];
     var nivel = selectedOption && selectedOption.value ? selectedOption.getAttribute('data-nivel') : '';
-    
+
     if (nivel === 'CADETE' || nivel === 'ALUMNO') {
-      if (cCategoria) cCategoria.hidden = true;
-      cleanVal('categoriaPnp');
-      if (cCip) cCip.hidden = false;
+      cCategoria.hidden = true;
+      cCip.hidden = false;
     } else if (nivel === 'EMPLEADO_CIVIL') {
-      if (cCategoria) cCategoria.hidden = true;
-      cleanVal('categoriaPnp');
-      if (cCip) cCip.hidden = true;
-      cleanVal('cip');
+      cCategoria.hidden = true;
+      cCip.hidden = true;
     } else {
-      // OFICIAL_*, SUBOFICIAL, o vacío
-      if (cCategoria) cCategoria.hidden = false;
-      if (cCip) cCip.hidden = false;
+      cCategoria.hidden = false;
+      cCip.hidden = false;
     }
   }
 
-  if (esPnp && pnpFields) {
-    esPnp.addEventListener('change', actPnp);
-    if (gradoId) gradoId.addEventListener('change', actPnp);
-    if (tipoBeneficiario) tipoBeneficiario.addEventListener('change', actPnp);
-    
-    // Ejecutar al inicio por si viene cargado de PHP
-    setTimeout(actPnp, 50); // pequeño retraso para asegurar que los custom selects se inicializaron
+  var condicionAnterior = null;
+  function actCondicion(esCambioDeUsuario) {
+    var seleccionado = document.querySelector('input[name="condicion"]:checked');
+    var valor = seleccionado ? seleccionado.value : 'PARTICULAR';
+
+    if (esCambioDeUsuario && condicionAnterior && condicionAnterior !== valor) {
+      var huboDatos = limpiarPanel(panelesCondicion[condicionAnterior]);
+      if (huboDatos) toast('Se descartaron los datos de ' + etiquetasCondicion[condicionAnterior] + '.');
+    }
+    condicionAnterior = valor;
+
+    Object.keys(panelesCondicion).forEach(function (key) {
+      if (panelesCondicion[key]) panelesCondicion[key].hidden = (key !== valor);
+    });
+
+    if (valor === 'EFECTIVO') actualizarCategoriaCip();
+  }
+
+  if (radiosCondicion.length) {
+    radiosCondicion.forEach(function (r) {
+      r.addEventListener('change', function () { actCondicion(true); });
+    });
+    if (gradoId) gradoId.addEventListener('change', actualizarCategoriaCip);
+    actCondicion(false);
+  }
+
+  // ---------- Buscar titular (derechohabiente) ----------
+  var btnBuscarTitular = document.getElementById('btnBuscarTitular');
+  if (btnBuscarTitular) {
+    btnBuscarTitular.addEventListener('click', function () {
+      var doc = document.getElementById('docTitular').value.trim();
+      var hint = document.getElementById('titularEncontrado');
+      var titularId = document.getElementById('titularId');
+      if (!doc) { toast('Ingresa el documento del titular primero.'); return; }
+
+      btnBuscarTitular.disabled = true;
+      fetch('/casos/nuevo/titular?' + new URLSearchParams({ tipo_doc: 'DNI', num_doc: doc }).toString())
+        .then(function (resp) { return resp.json(); })
+        .then(function (datos) {
+          if (datos.encontrado) {
+            titularId.value = datos.titular_id;
+            if (hint) { hint.textContent = 'Vinculado a: ' + datos.nombre; hint.style.color = 'var(--accent, #0E7A6E)'; }
+          } else {
+            titularId.value = '';
+            if (hint) { hint.textContent = 'No se encontró un efectivo PNP con ese documento. Puedes dejarlo vacío.'; hint.style.color = 'var(--s-confirmado, #B23B3B)'; }
+          }
+        })
+        .catch(function () {
+          if (hint) { hint.textContent = 'No se pudo consultar el titular. Puedes dejarlo vacío.'; hint.style.color = 'var(--s-confirmado, #B23B3B)'; }
+        })
+        .then(function () { btnBuscarTitular.disabled = false; });
+    });
   }
 
   // ---------- Buscar en padrón + RENIEC + duplicados ----------
@@ -396,19 +495,26 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('sexo').value = p.sexo || '';
     if (fechaNac) { fechaNac.value = p.fecha_nac || ''; calcularEdad(); }
 
-    document.getElementById('esPnp').checked = !!p.es_pnp;
-    if (pnpFields) pnpFields.hidden = !p.es_pnp;
+    var condicion = p.condicion || 'PARTICULAR';
+    var radioCondicion = document.querySelector('input[name="condicion"][value="' + condicion + '"]');
+    if (radioCondicion) { radioCondicion.checked = true; actCondicion(false); }
+
     document.getElementById('cip').value = p.cip || '';
     document.getElementById('situacionPnp').value = p.situacion_pnp || '';
+    document.getElementById('categoriaPnp').value = p.categoria_pnp || '';
     var gradoId = document.getElementById('gradoId');
-    var unidadId = document.getElementById('unidadId');
     gradoId.value = p.grado_id || '';
-    unidadId.value = p.unidad_id || '';
-    document.getElementById('tipoBeneficiario').value = p.tipo_beneficiario || '';
+    var vinculoTitular = document.getElementById('vinculoTitular');
+    if (vinculoTitular) vinculoTitular.value = p.vinculo_titular || '';
+    var titularId = document.getElementById('titularId');
+    if (titularId) titularId.value = p.titular_id || '';
     if (window.SelectorBusqueda) {
       window.SelectorBusqueda.actualizar(gradoId);
-      window.SelectorBusqueda.actualizar(unidadId);
+      window.SelectorBusqueda.actualizar(document.getElementById('categoriaPnp'));
+      window.SelectorBusqueda.actualizar(document.getElementById('situacionPnp'));
+      if (vinculoTitular) window.SelectorBusqueda.actualizar(vinculoTitular);
     }
+    actualizarCategoriaCip();
 
     if (p.departamento_id && typeof establecerUbigeo === 'function') {
       establecerUbigeo('pac-ubigeo', p.departamento_id, p.provincia_id, p.distrito_id);

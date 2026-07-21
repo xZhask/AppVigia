@@ -1,12 +1,12 @@
 <?php
 /**
  * Fila dinámica de muestras de laboratorio del caso (caso_muestra). Variables
- * esperadas: $filasMuestras (array de
- * ['tipo_muestra','tipo_prueba','resultado','fecha_toma','fecha_result']),
+ * esperadas: $filasMuestras (array de ['tipo_muestra','tipo_prueba',
+ * 'recibio_antibiotico','resultado','fecha_toma','fecha_result']),
  * $opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado (catalogo_item).
  */
 $erroresMuestras = $erroresMuestras ?? [];
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_result' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado): void {
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_result' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado): void {
     $errorToma = $error['fecha_toma'] ?? null;
     $errorResult = $error['fecha_result'] ?? null;
     ?>
@@ -54,6 +54,16 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <label class="fl">Fecha de resultado</label>
         <div class="control mono <?= $errorResult ? 'err' : '' ?>"><input type="date" name="muestra_fecha_result[]" value="<?= e($fila['fecha_result'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         <?php if ($errorResult): ?><span class="hint err"><?= e($errorResult) ?></span><?php endif; ?>
+      </div>
+      <div class="field">
+        <label class="fl">¿Recibió antibiótico?</label>
+        <div class="control">
+          <select name="muestra_recibio_antibiotico[]" data-nosearch="true">
+            <option value="">Seleccionar…</option>
+            <option value="1" <?= seleccionado($fila['recibio_antibiotico'] ?? '', '1') ?>>Sí</option>
+            <option value="0" <?= seleccionado($fila['recibio_antibiotico'] ?? '', '0') ?>>No</option>
+          </select>
+        </div>
       </div>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar muestra" style="margin-top:22px">

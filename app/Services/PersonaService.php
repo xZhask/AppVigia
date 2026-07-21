@@ -36,7 +36,7 @@ class PersonaService
                     'apellido_paterno' => $datosReniec['apellido_paterno'],
                     'apellido_materno' => $datosReniec['apellido_materno'],
                     'nombres'          => $datosReniec['nombres'],
-                    'es_pnp'           => 0
+                    'condicion'        => 'PARTICULAR',
                 ]);
                 return Persona::buscar($id);
             }
@@ -64,7 +64,7 @@ class PersonaService
             'apellido_paterno' => $datos['apellido_paterno'],
             'apellido_materno' => $datos['apellido_materno'] !== '' ? $datos['apellido_materno'] : null,
             'nombres'          => $datos['nombres'],
-            'es_pnp'           => 0,
+            'condicion'        => 'PARTICULAR',
         ]);
 
         return Persona::buscar($id);

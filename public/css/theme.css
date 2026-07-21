@@ -588,3 +588,47 @@
   .auth-brand{padding:56px 72px}
   .auth-form{max-width:404px}
 }
+
+/* ============================================================
+   Condición del paciente (CAMBIOS_CONDICION_PACIENTE.md)
+   ============================================================ */
+.field.half{grid-column:span 2}
+.cond-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+.cond-opt{position:relative}
+.cond-opt input{position:absolute;opacity:0;width:0;height:0}
+.cond-opt label{
+  display:flex;align-items:flex-start;gap:10px;padding:12px 13px;cursor:pointer;
+  border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  transition:border-color .15s,background .15s,box-shadow .15s;height:100%;
+}
+.cond-opt label:hover{border-color:#CFD7DD}
+.cond-opt input:checked + label{
+  border-color:var(--accent);background:var(--accent-soft);
+  box-shadow:0 0 0 1px var(--accent);
+}
+.cond-opt input:focus-visible + label{outline:2px solid var(--accent);outline-offset:2px}
+.cond-radio{
+  width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line);
+  flex-shrink:0;margin-top:1px;display:grid;place-items:center;background:var(--surface);
+  transition:border-color .15s;
+}
+.cond-opt input:checked + label .cond-radio{border-color:var(--accent);border-width:5px}
+.cond-txt{min-width:0}
+.cond-name{font-size:13.5px;font-weight:500;color:var(--ink);line-height:1.3}
+.cond-desc{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.cond-opt input:checked + label .cond-desc{color:var(--accent-deep)}
+
+.cond-panel{margin-top:18px}
+.cond-panel[hidden]{display:none}
+.cond-title{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.cond-title .eyebrow{margin:0}
+.cond-title .rule{flex:1;height:1px;background:var(--line-2)}
+
+@media (max-width:720px){
+  .cond-pick{grid-template-columns:1fr}
+  .field.half{grid-column:auto}
+}
+
+/* Motor de dependencias condicionales entre campos (AUDITORIA_FICHA_DIFTERIA.md) */
+.dep-wrap{display:contents}
+.dep-wrap[hidden]{display:none}

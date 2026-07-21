@@ -2,7 +2,6 @@
 $pestanas = [
     ['ruta' => 'catalogos/usuarios', 'etiqueta' => 'Usuarios'],
     ['ruta' => 'catalogos/grados',   'etiqueta' => 'Grados PNP'],
-    ['ruta' => 'catalogos/unidades', 'etiqueta' => 'Unidades PNP'],
 ];
 ?>
 <div class="page-head">

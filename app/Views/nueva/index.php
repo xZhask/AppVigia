@@ -89,6 +89,7 @@ if ($puedeElegirEstablecimiento) {
               <?php endif; ?>
             </div>
           </div>
+          <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
         </div>
       </div>
 
@@ -116,7 +117,7 @@ if ($puedeElegirEstablecimiento) {
             <div class="field">
               <label class="fl">Sexo</label>
               <div class="control">
-                <select id="sexo" name="sexo">
+                <select id="sexo" name="sexo" data-nosearch="true">
                   <option value="">Seleccionar…</option>
                   <option value="F" <?= seleccionado($valoresFijos['sexo'], 'F') ?>>Femenino</option>
                   <option value="M" <?= seleccionado($valoresFijos['sexo'], 'M') ?>>Masculino</option>
@@ -167,91 +168,10 @@ if ($puedeElegirEstablecimiento) {
             <?php $prefijo = 'pac-ubigeo'; $errorDistrito = $erroresFijos['distrito_id'] ?? null; require __DIR__ . '/../partials/selector-ubigeo.php'; ?>
           </div>
 
+          <?php require __DIR__ . '/../partials/datos-paciente-nucleo.php'; ?>
+
           <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
-            <label class="sym" style="padding:0 0 10px">
-              <input type="checkbox" id="esPnp" name="es_pnp" <?= marcado($esPnp) ?>>
-              Es efectivo PNP
-            </label>
-            <div class="fields thirds" id="pnpFields" <?= $esPnp ? '' : 'hidden' ?>>
-              <div class="field" id="campoGrado">
-                <label class="fl">Grado</label>
-                <div class="control">
-                  <select id="gradoId" name="grado_id">
-                    <option value="">Seleccionar…</option>
-                    <?php 
-                    $nombresNiveles = [
-                      'OFICIAL_GENERAL' => 'Oficiales generales',
-                      'OFICIAL_SUPERIOR' => 'Oficiales superiores',
-                      'OFICIAL_SUBALTERNO' => 'Oficiales subalternos',
-                      'SUBOFICIAL' => 'Suboficiales',
-                      'CADETE' => 'Personal en formación',
-                      'ALUMNO' => 'Personal en formación',
-                      'EMPLEADO_CIVIL' => 'Empleados civiles'
-                    ];
-                    $grupoActual = '';
-                    foreach ($grados as $grado): 
-                      $nombreGrupo = $nombresNiveles[$grado['nivel']] ?? $grado['nivel'];
-                      if ($nombreGrupo !== $grupoActual):
-                        if ($grupoActual !== '') echo '</optgroup>';
-                        $grupoActual = $nombreGrupo;
-                        echo '<optgroup label="' . e($grupoActual) . '">';
-                      endif;
-                    ?>
-                      <option value="<?= (int) $grado['id'] ?>" data-nivel="<?= e($grado['nivel']) ?>" <?= seleccionado($valoresPnp['grado_id'], $grado['id']) ?>><?= e($grado['nombre']) ?></option>
-                    <?php endforeach; 
-                    if ($grupoActual !== '') echo '</optgroup>';
-                    ?>
-                  </select>
-                </div>
-              </div>
-              <div class="field" id="campoSituacion">
-                <label class="fl">Situación</label>
-                <div class="control">
-                  <select id="situacionPnp" name="situacion_pnp">
-                    <option value="">Seleccionar…</option>
-                    <option value="ACTIVIDAD" <?= seleccionado($valoresPnp['situacion_pnp'], 'ACTIVIDAD') ?>>Actividad</option>
-                    <option value="RETIRO" <?= seleccionado($valoresPnp['situacion_pnp'], 'RETIRO') ?>>Retiro</option>
-                    <option value="DISPONIBILIDAD" <?= seleccionado($valoresPnp['situacion_pnp'], 'DISPONIBILIDAD') ?>>Disponibilidad</option>
-                  </select>
-                </div>
-              </div>
-              <div class="field" id="campoCategoria">
-                <label class="fl">Categoría</label>
-                <div class="control">
-                  <select id="categoriaPnp" name="categoria_pnp" data-nosearch="true">
-                    <option value="">Seleccionar…</option>
-                    <option value="ARMAS" <?= seleccionado($valoresPnp['categoria_pnp'], 'ARMAS') ?>>Armas</option>
-                    <option value="SERVICIOS" <?= seleccionado($valoresPnp['categoria_pnp'], 'SERVICIOS') ?>>Servicios</option>
-                    <option value="ASIMILADO" <?= seleccionado($valoresPnp['categoria_pnp'], 'ASIMILADO') ?>>Asimilado</option>
-                  </select>
-                </div>
-              </div>
-              <div class="field" id="campoCip">
-                <label class="fl">CIP</label>
-                <div class="control mono"><input type="text" id="cip" name="cip" value="<?= e($valoresPnp['cip']) ?>" maxlength="12"></div>
-              </div>
-              <div class="field wide" id="campoUnidad">
-                <label class="fl">Unidad / dependencia</label>
-                <div class="control">
-                  <select id="unidadId" name="unidad_id">
-                    <option value="">Seleccionar…</option>
-                    <?php foreach ($unidades as $unidad): ?>
-                      <option value="<?= (int) $unidad['id'] ?>" <?= seleccionado($valoresPnp['unidad_id'], $unidad['id']) ?>><?= e($unidad['nombre']) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-              </div>
-              <div class="field" id="campoBeneficiario">
-                <label class="fl">Tipo de beneficiario</label>
-                <div class="control">
-                  <select id="tipoBeneficiario" name="tipo_beneficiario">
-                    <option value="">Seleccionar…</option>
-                    <option value="TITULAR" <?= seleccionado($valoresPnp['tipo_beneficiario'], 'TITULAR') ?>>Titular</option>
-                    <option value="DERECHOHABIENTE" <?= seleccionado($valoresPnp['tipo_beneficiario'], 'DERECHOHABIENTE') ?>>Derechohabiente</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            <?php require __DIR__ . '/../partials/condicion-paciente.php'; ?>
           </div>
         </div>
       </div>
@@ -281,6 +201,11 @@ if ($puedeElegirEstablecimiento) {
             <div class="eyebrow" style="margin:22px 0 10px">Antecedentes vacunales</div>
             <?php require __DIR__ . '/../partials/tablas-hijas/vacunas.php'; ?>
           <?php endif; ?>
+
+          <?php if ((int)($enfermedad['usa_lugar_infeccion'] ?? 0) === 1): ?>
+            <div class="eyebrow" style="margin:22px 0 10px">Lugar probable de infección</div>
+            <?php require __DIR__ . '/../partials/tablas-hijas/lugar-infeccion.php'; ?>
+          <?php endif; ?>
         </div>
       </div>
       <?php $numeroSeccion++; ?>
@@ -295,6 +220,15 @@ if ($puedeElegirEstablecimiento) {
         </div>
         <?php $numeroSeccion++; ?>
       <?php endif; ?>
+
+      <!-- Investigador -->
+      <div class="card section">
+        <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Investigador</h3></div>
+        <div class="section-body">
+          <?php require __DIR__ . '/../partials/investigador.php'; ?>
+        </div>
+      </div>
+      <?php $numeroSeccion++; ?>
 
       <!-- Clasificación del caso -->
       <div class="card section">

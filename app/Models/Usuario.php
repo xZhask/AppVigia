@@ -14,9 +14,9 @@ class Usuario extends Model
             SELECT u.*, e.nombre AS establecimiento_nombre,
                    p.tipo_doc AS persona_tipo_doc, p.num_doc AS persona_num_doc,
                    p.apellido_paterno, p.apellido_materno,
-                   p.nombres AS persona_nombres, p.es_pnp,
+                   p.nombres AS persona_nombres, p.condicion,
                    p.grado_id, p.categoria_pnp, p.situacion_pnp, p.cip,
-                   p.unidad_id, p.tipo_beneficiario,
+                   p.unidad_id,
                    g.abreviatura AS grado_abreviatura, g.nombre AS grado_nombre
               FROM usuario u
          LEFT JOIN establecimiento e ON e.id = u.establecimiento_id
@@ -73,9 +73,9 @@ class Usuario extends Model
         $sql = 'SELECT u.*, e.nombre AS establecimiento_nombre,
                        p.tipo_doc AS persona_tipo_doc, p.num_doc AS persona_num_doc,
                        p.apellido_paterno, p.apellido_materno,
-                       p.nombres AS persona_nombres, p.es_pnp,
+                       p.nombres AS persona_nombres, p.condicion,
                        p.grado_id, p.categoria_pnp, p.situacion_pnp, p.cip,
-                       p.unidad_id, p.tipo_beneficiario,
+                       p.unidad_id,
                        g.abreviatura AS grado_abreviatura, g.nombre AS grado_nombre
                   FROM usuario u
              LEFT JOIN establecimiento e ON e.id = u.establecimiento_id

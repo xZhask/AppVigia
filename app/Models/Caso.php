@@ -8,6 +8,23 @@ class Caso extends Model
 {
     protected static string $tabla = 'caso';
 
+    /**
+     * CIE-10 de las fichas de confidencialidad reforzada (VIH/SIDA, gestante
+     * con VIH). Debe coincidir con el literal SQL usado en listarPaginado().
+     * Violencia familiar se identifica por nombre, no tiene CIE-10 fijo aquí.
+     */
+    public const CIE10_PRIVADOS = ['B24', 'Z21'];
+
+    /**
+     * Una ficha es "privada": un REGISTRADOR solo puede listar, ver o editar
+     * las que él mismo registró; ADMIN no tiene esta restricción.
+     */
+    public static function esPrivada(array $caso): bool
+    {
+        return in_array($caso['cie10'] ?? null, self::CIE10_PRIVADOS, true)
+            || stripos($caso['enfermedad_nombre'] ?? '', 'Violencia') !== false;
+    }
+
     public static function contarTodos(): int
     {
         return (int) Database::conexion()->query('SELECT COUNT(*) FROM caso')->fetchColumn();
@@ -120,8 +137,9 @@ class Caso extends Model
     public static function conDetalle(int $id): ?array
     {
         $sql = 'SELECT c.*, p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
-                       p.distrito_id, p.es_pnp, p.cip, p.situacion_pnp, p.grado_id, p.unidad_id,
-                       p.tipo_beneficiario,
+                       p.distrito_id, p.condicion, p.cip, p.situacion_pnp, p.grado_id, p.categoria_pnp, p.unidad_id,
+                       p.titular_id, p.vinculo_titular,
+                       p.celular, p.nacionalidad, p.direccion, p.localidad, p.etnia, p.gestante, p.semanas_gestacion,
                        e.nombre AS enfermedad_nombre, e.cie10, e.tipo_notif,
                        e.multi_sujeto AS enfermedad_multi_sujeto, e.roles_sujeto AS enfermedad_roles_sujeto,
                        est.nombre AS establecimiento_nombre, est.id AS establecimiento_id,
@@ -129,7 +147,11 @@ class Caso extends Model
                        u.nombre AS usuario_nombre,
                        g.nombre AS grado_nombre,
                        un.nombre AS unidad_nombre,
-                       d.nombre AS distrito_nombre
+                       d.nombre AS distrito_nombre,
+                       t.apellido_paterno AS titular_apellido_paterno,
+                       t.apellido_materno AS titular_apellido_materno,
+                       t.nombres AS titular_nombres,
+                       tg.abreviatura AS titular_grado_abreviatura
                   FROM caso c
                   JOIN persona p         ON p.id = c.persona_id
                   JOIN enfermedad e      ON e.id = c.enfermedad_id
@@ -139,6 +161,8 @@ class Caso extends Model
              LEFT JOIN grado_pnp g       ON g.id = p.grado_id
              LEFT JOIN unidad_pnp un     ON un.id = p.unidad_id
              LEFT JOIN distrito d        ON d.id = p.distrito_id
+             LEFT JOIN persona t         ON t.id = p.titular_id
+             LEFT JOIN grado_pnp tg      ON tg.id = t.grado_id
                  WHERE c.id = :id';
 
         $consulta = Database::conexion()->prepare($sql);

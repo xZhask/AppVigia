@@ -47,7 +47,8 @@ if (!in_array($rutaSolicitada, $rutasPublicas, true) && !Auth::estaAutenticado()
     // valor sale siempre de la ruta ya interpretada por este mismo router
     // (nunca de un parámetro externo), así que es una ruta interna por
     // construcción.
-    if ($_SERVER['REQUEST_METHOD'] === 'GET' && $rutaSolicitada !== '') {
+    $esAsset = preg_match('/\.(ico|png|jpg|jpeg|gif|css|js|map|woff|woff2|ttf|svg)$/i', $rutaSolicitada);
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && $rutaSolicitada !== '' && !$esAsset) {
         $query = $_SERVER['QUERY_STRING'] ?? '';
         $_SESSION['_url_deseada'] = '/' . $rutaSolicitada . ($query !== '' ? '?' . $query : '');
     }
@@ -119,6 +120,10 @@ $router->get('/casos/nuevo/secciones-clinicas', function () {
 
 $router->get('/casos/nuevo/paciente', function () {
     (new CasosController())->buscarPaciente();
+});
+
+$router->get('/casos/nuevo/titular', function () {
+    (new CasosController())->buscarTitular();
 });
 
 $router->get('/casos/importar', function () {

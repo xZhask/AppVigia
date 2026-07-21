@@ -20,7 +20,6 @@ use App\Models\Establecimiento;
 use App\Models\GradoPnp;
 use App\Models\LoteImportacion;
 use App\Models\Persona;
-use App\Models\UnidadPnp;
 use DateTime;
 use RuntimeException;
 use Throwable;
@@ -32,8 +31,8 @@ class ImportacionController extends Controller
     /** Encabezados fijos de la plantilla, en orden. */
     private const COLUMNAS_FIJAS = [
         'fecha_notif', 'tipo_doc', 'num_doc', 'apellido_paterno', 'apellido_materno', 'nombres', 'sexo', 'fecha_nac',
-        'ubigeo', 'fecha_inicio_sintomas', 'es_pnp', 'grado', 'situacion_pnp', 'cip',
-        'unidad', 'tipo_beneficiario',
+        'ubigeo', 'fecha_inicio_sintomas', 'condicion', 'grado', 'situacion_pnp', 'categoria_pnp', 'cip',
+        'vinculo_titular', 'doc_titular',
     ];
 
     /** Columnas fijas que deben forzarse a texto en el .xlsx (documentos/códigos/fechas). */
@@ -77,7 +76,7 @@ class ImportacionController extends Controller
         $encabezados = self::COLUMNAS_FIJAS;
         $ejemplo = [
             '15/07/2026', 'DNI', '76540319', 'Pérez', 'García', 'Juan', 'M', '01/01/1990',
-            '150101', '12/07/2026', 'NO', '', '', '', '', '',
+            '150101', '12/07/2026', 'PARTICULAR', '', '', '', '', '', '',
         ];
         $indicesTexto = array_keys(array_intersect(self::COLUMNAS_FIJAS, self::COLUMNAS_FIJAS_TEXTO));
 
@@ -367,20 +366,22 @@ class ImportacionController extends Controller
             $errores[] = 'fecha_inicio_sintomas: formato de fecha inválido (usa dd/mm/aaaa).';
         }
 
-        // ---------- efectivo PNP (opcional) ----------
-        $esPnpCelda = trim(mb_strtoupper($obtener('es_pnp')['valor']));
-        $esPnp = false;
-        if ($esPnpCelda !== '') {
-            if (!in_array($esPnpCelda, ['SI', 'SÍ', 'NO'], true)) {
-                $errores[] = 'es_pnp: debe ser SI o NO.';
+        // ---------- condición del paciente (opcional) ----------
+        $condicionCelda = trim(mb_strtoupper($obtener('condicion')['valor']));
+        $condicion = 'PARTICULAR';
+        if ($condicionCelda !== '') {
+            if (!in_array($condicionCelda, ['EFECTIVO', 'DERECHOHABIENTE', 'PARTICULAR'], true)) {
+                $errores[] = 'condicion: debe ser EFECTIVO, DERECHOHABIENTE o PARTICULAR.';
             } else {
-                $esPnp = in_array($esPnpCelda, ['SI', 'SÍ'], true);
+                $condicion = $condicionCelda;
             }
         }
+        $esEfectivo = $condicion === 'EFECTIVO';
+        $esDerechohabiente = $condicion === 'DERECHOHABIENTE';
 
         $grado = null;
         $gradoCelda = trim($obtener('grado')['valor']);
-        if ($esPnp && $gradoCelda !== '') {
+        if ($esEfectivo && $gradoCelda !== '') {
             $grado = GradoPnp::buscarPorAbreviatura($gradoCelda);
             if (!$grado) {
                 $errores[] = 'grado: abreviatura no reconocida.';
@@ -389,7 +390,7 @@ class ImportacionController extends Controller
 
         $situacionPnp = null;
         $situacionCelda = trim(mb_strtoupper($obtener('situacion_pnp')['valor']));
-        if ($esPnp && $situacionCelda !== '') {
+        if ($esEfectivo && $situacionCelda !== '') {
             if (!in_array($situacionCelda, ['ACTIVIDAD', 'RETIRO', 'DISPONIBILIDAD'], true)) {
                 $errores[] = 'situacion_pnp: debe ser ACTIVIDAD, RETIRO o DISPONIBILIDAD.';
             } else {
@@ -397,25 +398,35 @@ class ImportacionController extends Controller
             }
         }
 
-        $cip = $esPnp ? (trim($obtener('cip')['valor']) ?: null) : null;
-
-        $unidad = null;
-        $unidadCelda = trim($obtener('unidad')['valor']);
-        if ($esPnp && $unidadCelda !== '') {
-            $unidad = UnidadPnp::buscarPorNombre($unidadCelda);
-            if (!$unidad) {
-                $errores[] = 'unidad: no encontrada (debe coincidir exactamente con el nombre registrado).';
+        $categoriaPnp = null;
+        $categoriaCelda = trim(mb_strtoupper($obtener('categoria_pnp')['valor']));
+        if ($esEfectivo && $categoriaCelda !== '') {
+            if (!in_array($categoriaCelda, ['ARMAS', 'SERVICIOS', 'ASIMILADO'], true)) {
+                $errores[] = 'categoria_pnp: debe ser ARMAS, SERVICIOS o ASIMILADO.';
+            } else {
+                $categoriaPnp = $categoriaCelda;
             }
         }
 
-        $tipoBeneficiario = null;
-        $beneficiarioCelda = trim(mb_strtoupper($obtener('tipo_beneficiario')['valor']));
-        if ($esPnp && $beneficiarioCelda !== '') {
-            if (!in_array($beneficiarioCelda, ['TITULAR', 'DERECHOHABIENTE'], true)) {
-                $errores[] = 'tipo_beneficiario: debe ser TITULAR o DERECHOHABIENTE.';
+        $cip = $esEfectivo ? (trim($obtener('cip')['valor']) ?: null) : null;
+
+        $vinculoTitular = null;
+        $titularId = null;
+        $vinculoCelda = trim(mb_strtoupper($obtener('vinculo_titular')['valor']));
+        if ($esDerechohabiente && $vinculoCelda !== '') {
+            if (!in_array($vinculoCelda, ['CONYUGE', 'CONVIVIENTE', 'HIJO', 'PADRE', 'MADRE', 'OTRO'], true)) {
+                $errores[] = 'vinculo_titular: debe ser CONYUGE, CONVIVIENTE, HIJO, PADRE, MADRE u OTRO.';
             } else {
-                $tipoBeneficiario = $beneficiarioCelda;
+                $vinculoTitular = $vinculoCelda;
             }
+        }
+        $docTitularCelda = trim($obtener('doc_titular')['valor']);
+        if ($esDerechohabiente && $docTitularCelda !== '') {
+            $titular = Persona::buscarPorDocumento('DNI', $docTitularCelda);
+            if ($titular && ($titular['condicion'] ?? '') === 'EFECTIVO') {
+                $titularId = (int) $titular['id'];
+            }
+            // Si no se encuentra, se deja vacío: es opcional (ver DEFINICION en CAMBIOS_CONDICION_PACIENTE.md).
         }
 
         // ---------- campos dinámicos de la enfermedad ----------
@@ -530,12 +541,13 @@ class ImportacionController extends Controller
                 'sexo'              => $sexo,
                 'fecha_nac'         => $fechaNac['iso'],
                 'distrito_id'       => $distrito['id'],
-                'es_pnp'            => $esPnp ? 1 : 0,
+                'condicion'         => $condicion,
                 'cip'               => $cip,
                 'situacion_pnp'     => $situacionPnp,
+                'categoria_pnp'     => $categoriaPnp,
                 'grado_id'          => $grado['id'] ?? null,
-                'unidad_id'         => $unidad['id'] ?? null,
-                'tipo_beneficiario' => $tipoBeneficiario,
+                'titular_id'        => $titularId,
+                'vinculo_titular'   => $vinculoTitular,
             ],
         ];
 

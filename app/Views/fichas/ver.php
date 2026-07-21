@@ -18,7 +18,10 @@ $es = $estados[$caso['estado']];
 $edad = edadDesdeFecha($caso['fecha_nac']);
 
 $situacionEtiquetas = ['ACTIVIDAD' => 'Actividad', 'RETIRO' => 'Retiro', 'DISPONIBILIDAD' => 'Disponibilidad'];
-$beneficiarioEtiquetas = ['TITULAR' => 'Titular', 'DERECHOHABIENTE' => 'Derechohabiente'];
+$etniaEtiquetas = [
+    'MESTIZO' => 'Mestizo', 'ANDINO' => 'Andino', 'ASIATICO_DESCENDIENTE' => 'Asiático descendiente',
+    'AFRODESCENDIENTE' => 'Afrodescendiente', 'INDIGENA_AMAZONICO' => 'Indígena amazónico', 'OTRO' => 'Otro',
+];
 $accionEtiquetas = [
     'CREACION'      => 'Creación',
     'EDICION'       => 'Edición',
@@ -63,6 +66,14 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Registrado por</label><div class="control" style="background:var(--paper)"><?= e($caso['usuario_nombre']) ?></div></div>
           <div class="field"><label class="fl">Fecha de registro</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['creado_en'])) ?></div></div>
         </div>
+        <?php if ($caso['tipo_captacion'] || $caso['lugar_captacion'] || $caso['clasificacion_captacion']): ?>
+          <div class="eyebrow" style="margin:18px 0 10px">Captación</div>
+          <div class="fields thirds">
+            <div class="field"><label class="fl">Tipo de captación</label><div class="control" style="background:var(--paper)"><?= $caso['tipo_captacion'] === 'ACTIVA' ? 'Activa' : ($caso['tipo_captacion'] === 'PASIVA' ? 'Pasiva' : '—') ?></div></div>
+            <div class="field"><label class="fl">Lugar de captación</label><div class="control" style="background:var(--paper)"><?= $caso['lugar_captacion'] === 'INSTITUCIONAL' ? 'Institucional' : ($caso['lugar_captacion'] === 'COMUNIDAD' ? 'Comunidad' : '—') ?></div></div>
+            <div class="field"><label class="fl">Clasificación en la captación</label><div class="control" style="background:var(--paper)"><?= e(ucfirst(strtolower((string) $caso['clasificacion_captacion'])) ?: '—') ?></div></div>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -78,13 +89,22 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
           <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= $edad !== null ? $edad . ' años' : '—' ?></div></div>
           <div class="field"><label class="fl">Distrito de domicilio</label><div class="control" style="background:var(--paper)"><?= e($caso['distrito_nombre'] ?? '—') ?></div></div>
+          <div class="field"><label class="fl">N.° de celular</label><div class="control mono" style="background:var(--paper)"><?= e($caso['celular'] ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Nacionalidad</label><div class="control" style="background:var(--paper)"><?= e($caso['nacionalidad'] ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Localidad</label><div class="control" style="background:var(--paper)"><?= e($caso['localidad'] ?: '—') ?></div></div>
+          <div class="field wide"><label class="fl">Domicilio actual</label><div class="control" style="background:var(--paper)"><?= e($caso['direccion'] ?: '—') ?></div></div>
+          <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
+            <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') ?></div></div>
+          <?php endif; ?>
+          <?php if ($caso['gestante']): ?>
+            <div class="field"><label class="fl">Gestante</label><div class="control" style="background:var(--paper)">Sí<?= $caso['semanas_gestacion'] ? ' · ' . (int) $caso['semanas_gestacion'] . ' semanas' : '' ?></div></div>
+          <?php endif; ?>
         </div>
-        <?php if ($caso['es_pnp']): ?>
-          <div class="eyebrow" style="margin:18px 0 10px">Datos PNP</div>
+        <?php if (($caso['condicion'] ?? 'PARTICULAR') !== 'PARTICULAR'): ?>
+          <div class="eyebrow" style="margin:18px 0 10px">Condición del paciente</div>
           <div class="fields thirds">
-            <div class="field wide"><label class="fl">Efectivo PNP</label><div class="control" style="background:var(--paper)"><?= e(\App\Models\Persona::detallePnp($caso) ?: '—') ?></div></div>
-            <div class="field wide"><label class="fl">Unidad / dependencia</label><div class="control" style="background:var(--paper)"><?= e($caso['unidad_nombre'] ?? '—') ?></div></div>
-            <div class="field"><label class="fl">Tipo de beneficiario</label><div class="control" style="background:var(--paper)"><?= e($beneficiarioEtiquetas[$caso['tipo_beneficiario']] ?? '—') ?></div></div>
+            <div class="field"><label class="fl">Condición</label><div class="control" style="background:var(--paper)"><?= $caso['condicion'] === 'EFECTIVO' ? 'Efectivo PNP' : 'Derechohabiente' ?></div></div>
+            <div class="field wide"><label class="fl"><?= $caso['condicion'] === 'EFECTIVO' ? 'Detalle' : 'Vínculo' ?></label><div class="control" style="background:var(--paper)"><?= e(\App\Models\Persona::descripcionPnp($caso) ?: '—') ?></div></div>
           </div>
         <?php endif; ?>
       </div>
@@ -123,6 +143,11 @@ $accionEtiquetas = [
           <div class="subrow"><div class="fields thirds" style="flex:1">
             <div class="field"><label class="fl">Nombres</label><div class="control" style="background:var(--paper)"><?= e($ct['nombres']) ?></div></div>
             <div class="field"><label class="fl">Parentesco</label><div class="control" style="background:var(--paper)"><?= e($ct['parentesco'] ?? '—') ?></div></div>
+            <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= e($ct['edad'] ?? '—') ?></div></div>
+            <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $ct['sexo'] === 'F' ? 'Femenino' : ($ct['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
+            <div class="field"><label class="fl">Vacunado</label><div class="control" style="background:var(--paper)"><?= e(ucfirst(strtolower((string) ($ct['vacunado'] ?? ''))) ?: '—') ?></div></div>
+            <div class="field"><label class="fl">Fecha de vacunación</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($ct['fecha_vacunacion']) ?: '—') ?></div></div>
+            <div class="field"><label class="fl">Profilaxis</label><div class="control" style="background:var(--paper)"><?= e(ucfirst(strtolower((string) ($ct['profilaxis'] ?? ''))) ?: '—') ?></div></div>
             <div class="field"><label class="fl">Documento</label><div class="control mono" style="background:var(--paper)"><?= e($ct['doc'] ?? '—') ?></div></div>
             <div class="field"><label class="fl">Celular</label><div class="control mono" style="background:var(--paper)"><?= e($ct['celular'] ?? '—') ?></div></div>
           </div></div>
@@ -149,27 +174,55 @@ $accionEtiquetas = [
             <div class="field"><label class="fl">Fecha</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vc['fecha']) ?: '—') ?></div></div>
           </div></div>
         <?php endforeach; endif; ?>
+
+        <?php if (!empty($lugaresInfeccion)): ?>
+          <div class="eyebrow" style="margin:18px 0 10px">Lugar probable de infección</div>
+          <?php foreach ($lugaresInfeccion as $li): ?>
+            <div class="subrow"><div class="fields thirds" style="flex:1">
+              <div class="field"><label class="fl">Lugar o institución</label><div class="control" style="background:var(--paper)"><?= e($li['lugar_institucion'] ?? '—') ?></div></div>
+              <div class="field"><label class="fl">Localidad</label><div class="control" style="background:var(--paper)"><?= e($li['localidad_texto'] ?? '—') ?></div></div>
+              <div class="field"><label class="fl">Permanencia (días)</label><div class="control mono" style="background:var(--paper)"><?= e($li['permanencia_dias'] ?? '—') ?></div></div>
+            </div></div>
+          <?php endforeach; ?>
+        <?php endif; ?>
       </div>
     </div>
     <?php $numeroSeccion++; ?>
 
     <!-- Laboratorio -->
+    <?php if (!empty($muestras)): ?>
     <div class="card section">
       <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>
       <div class="section-body">
-        <?php if (empty($muestras)): ?>
-          <p style="color:var(--muted);font-size:13px;margin:0">No se registraron muestras.</p>
-        <?php else: foreach ($muestras as $ms): ?>
+        <?php foreach ($muestras as $ms): ?>
           <div class="subrow"><div class="fields thirds" style="flex:1">
             <div class="field"><label class="fl">Tipo de muestra</label><div class="control" style="background:var(--paper)"><?= e($ms['tipo_muestra'] ?? '—') ?></div></div>
             <div class="field"><label class="fl">Tipo de prueba</label><div class="control" style="background:var(--paper)"><?= e($ms['tipo_prueba'] ?? '—') ?></div></div>
+            <div class="field"><label class="fl">¿Recibió antibiótico?</label><div class="control" style="background:var(--paper)"><?= $ms['recibio_antibiotico'] === null ? '—' : ($ms['recibio_antibiotico'] ? 'Sí' : 'No') ?></div></div>
             <div class="field"><label class="fl">Resultado</label><div class="control" style="background:var(--paper)"><?= e($ms['resultado'] ?? 'Pendiente') ?></div></div>
             <div class="field"><label class="fl">Fecha de toma</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($ms['fecha_toma']) ?: '—') ?></div></div>
             <div class="field"><label class="fl">Fecha de resultado</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($ms['fecha_result']) ?: '—') ?></div></div>
           </div></div>
-        <?php endforeach; endif; ?>
+        <?php endforeach; ?>
       </div>
     </div>
+    <?php $numeroSeccion++; ?>
+    <?php endif; ?>
+
+    <!-- Investigador -->
+    <?php if ($caso['investigador_nombre'] || $caso['investigador_cargo'] || $caso['fecha_investigacion']): ?>
+    <div class="card section">
+      <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Investigador</h3></div>
+      <div class="section-body">
+        <div class="fields thirds">
+          <div class="field"><label class="fl">Investigador / responsable</label><div class="control" style="background:var(--paper)"><?= e($caso['investigador_nombre'] ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Cargo</label><div class="control" style="background:var(--paper)"><?= e($caso['investigador_cargo'] ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Fecha de investigación</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_investigacion']) ?: '—') ?></div></div>
+        </div>
+      </div>
+    </div>
+    <?php $numeroSeccion++; ?>
+    <?php endif; ?>
   </div>
 
   <!-- Right rail -->

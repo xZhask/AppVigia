@@ -4,7 +4,6 @@ use App\Core\Auth;
 $pestanas = [
     ['ruta' => 'catalogos/usuarios', 'etiqueta' => 'Usuarios'],
     ['ruta' => 'catalogos/grados',   'etiqueta' => 'Grados PNP'],
-    ['ruta' => 'catalogos/unidades', 'etiqueta' => 'Unidades PNP'],
 ];
 $etiquetasRol = [
     'ADMIN' => 'Administrador', 'REGISTRADOR' => 'Registrador/a',

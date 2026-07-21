@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datos del paciente · VIGÍA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== SISTEMA DE DISEÑO VIGÍA (extracto de theme.css) ===== */
+:root{
+  --paper:#F4F6F8; --surface:#FFFFFF; --ink:#14202B; --ink-2:#243441;
+  --muted:#5F6E7A; --faint:#8A97A2; --line:#E5EAEE; --line-2:#EEF2F5;
+  --accent:#0E7A6E; --accent-soft:#E3F1EE; --accent-deep:#0A5A51;
+  --s-confirmado:#B23B3B;
+  --radius:11px; --radius-sm:8px;
+  --shadow-soft:0 1px 2px rgba(20,32,43,.04);
+}
+*{box-sizing:border-box}
+body{margin:0;padding:28px;font-family:"IBM Plex Sans",system-ui,sans-serif;
+  background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:880px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-soft);overflow:hidden}
+.section-head{display:flex;align-items:center;gap:12px;padding:14px 18px;
+  border-bottom:1px solid var(--line-2)}
+.section-num{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent-deep);
+  background:var(--accent-soft);width:24px;height:24px;border-radius:7px;
+  display:grid;place-items:center;font-weight:500;flex-shrink:0}
+.section-head h3{font-size:14px;font-weight:600;margin:0}
+.section-body{padding:18px}
+.eyebrow{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint);font-weight:600}
+.fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1/-1}
+.field.half{grid-column:span 2}
+label.fl{font-size:12px;color:var(--muted);font-weight:500}
+label.fl .req{color:var(--s-confirmado)}
+.control{display:flex;align-items:center;gap:8px;background:var(--surface);
+  border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;
+  color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.control:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.control input,.control select{border:0;background:none;outline:none;font-family:inherit;
+  font-size:13.5px;color:var(--ink);width:100%}
+.control.mono input{font-family:"IBM Plex Mono",monospace}
+.hint{font-size:11.5px;color:var(--faint)}
+.divider{height:1px;background:var(--line-2);margin:20px 0}
+
+/* ============================================================
+   CLASES NUEVAS — agregar al final de theme.css
+   ============================================================ */
+.cond-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+.cond-opt{position:relative}
+.cond-opt input{position:absolute;opacity:0;width:0;height:0}
+.cond-opt label{
+  display:flex;align-items:flex-start;gap:10px;padding:12px 13px;cursor:pointer;
+  border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  transition:border-color .15s,background .15s,box-shadow .15s;height:100%;
+}
+.cond-opt label:hover{border-color:#CFD7DD}
+.cond-opt input:checked + label{
+  border-color:var(--accent);background:var(--accent-soft);
+  box-shadow:0 0 0 1px var(--accent);
+}
+.cond-opt input:focus-visible + label{outline:2px solid var(--accent);outline-offset:2px}
+.cond-radio{
+  width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line);
+  flex-shrink:0;margin-top:1px;display:grid;place-items:center;background:#fff;
+  transition:border-color .15s;
+}
+.cond-opt input:checked + label .cond-radio{border-color:var(--accent);border-width:5px}
+.cond-txt{min-width:0}
+.cond-name{font-size:13.5px;font-weight:500;color:var(--ink);line-height:1.3}
+.cond-desc{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.cond-opt input:checked + label .cond-desc{color:var(--accent-deep)}
+
+.cond-panel{margin-top:18px}
+.cond-panel[hidden]{display:none}
+.cond-title{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.cond-title .eyebrow{margin:0}
+.cond-title .rule{flex:1;height:1px;background:var(--line-2)}
+
+@media (max-width:720px){
+  .fields{grid-template-columns:1fr}
+  .field.half{grid-column:auto}
+  .cond-pick{grid-template-columns:1fr}
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="section-head">
+      <span class="section-num">2</span><h3>Datos del paciente</h3>
+    </div>
+    <div class="section-body">
+
+      <!-- ---------- Identificación ---------- -->
+      <div class="fields">
+        <div class="field">
+          <label class="fl">Tipo de documento</label>
+          <div class="control"><select><option>DNI</option><option>Carné de extranjería</option><option>Pasaporte</option><option>Sin documento</option></select></div>
+        </div>
+        <div class="field">
+          <label class="fl">N.° de documento <span class="req">*</span></label>
+          <div class="control mono"><input value="76540319"></div>
+        </div>
+        <div class="field" style="justify-content:flex-end">
+          <button class="control" style="justify-content:center;gap:7px;color:var(--ink-2);font-weight:500">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.3"/><path d="m9 9 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Buscar
+          </button>
+        </div>
+
+        <div class="field"><label class="fl">Apellido paterno <span class="req">*</span></label><div class="control"><input value="Chávez"></div></div>
+        <div class="field"><label class="fl">Apellido materno</label><div class="control"><input value="Ríos"></div></div>
+        <div class="field"><label class="fl">Nombres <span class="req">*</span></label><div class="control"><input value="Mario Alberto"></div></div>
+
+        <div class="field"><label class="fl">Sexo</label><div class="control"><select><option>Masculino</option><option>Femenino</option></select></div></div>
+        <div class="field"><label class="fl">Fecha de nacimiento</label><div class="control mono"><input value="14/03/1988"></div></div>
+        <div class="field"><label class="fl">Edad</label><div class="control mono"><input value="38 años" readonly style="color:var(--muted)"></div></div>
+
+        <div class="field"><label class="fl">Departamento <span class="req">*</span></label><div class="control"><select><option>Callao</option></select></div></div>
+        <div class="field"><label class="fl">Provincia <span class="req">*</span></label><div class="control"><select><option>Callao</option></select></div></div>
+        <div class="field"><label class="fl">Distrito <span class="req">*</span></label><div class="control"><select><option>Bellavista</option></select></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ---------- Condición del paciente ---------- -->
+      <div class="eyebrow" style="margin-bottom:11px">Condición del paciente</div>
+
+      <div class="cond-pick">
+        <div class="cond-opt">
+          <input type="radio" name="condicion" id="c-efectivo" value="EFECTIVO" checked>
+          <label for="c-efectivo">
+            <span class="cond-radio"></span>
+            <span class="cond-txt">
+              <span class="cond-name">Efectivo PNP</span>
+              <span class="cond-desc">Titular de la Sanidad PNP</span>
+            </span>
+          </label>
+        </div>
+        <div class="cond-opt">
+          <input type="radio" name="condicion" id="c-derecho" value="DERECHOHABIENTE">
+          <label for="c-derecho">
+            <span class="cond-radio"></span>
+            <span class="cond-txt">
+              <span class="cond-name">Derechohabiente</span>
+              <span class="cond-desc">Familiar de un efectivo</span>
+            </span>
+          </label>
+        </div>
+        <div class="cond-opt">
+          <input type="radio" name="condicion" id="c-particular" value="PARTICULAR">
+          <label for="c-particular">
+            <span class="cond-radio"></span>
+            <span class="cond-txt">
+              <span class="cond-name">Particular</span>
+              <span class="cond-desc">Sin vínculo con la PNP</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Panel: efectivo -->
+      <div class="cond-panel" id="p-efectivo">
+        <div class="cond-title"><span class="eyebrow">Datos del efectivo</span><span class="rule"></span></div>
+        <div class="fields">
+          <div class="field half">
+            <label class="fl">Grado <span class="req">*</span></label>
+            <div class="control">
+              <select id="gradoSel">
+                <optgroup label="Oficiales generales">
+                  <option>General de Policía</option><option>Teniente General</option><option>General</option>
+                </optgroup>
+                <optgroup label="Oficiales superiores">
+                  <option>Coronel</option><option>Comandante</option><option>Mayor</option>
+                </optgroup>
+                <optgroup label="Oficiales subalternos">
+                  <option selected>Capitán</option><option>Teniente</option><option>Alférez</option>
+                </optgroup>
+                <optgroup label="Suboficiales">
+                  <option>Suboficial Superior</option><option>Suboficial Brigadier</option>
+                  <option>Suboficial Técnico de Primera</option><option>Suboficial de Primera</option>
+                </optgroup>
+                <optgroup label="Personal en formación">
+                  <option>Cadete</option><option>Alumno</option>
+                </optgroup>
+                <optgroup label="Empleados civiles">
+                  <option>Empleado Civil</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+          <div class="field" id="fCategoria">
+            <label class="fl">Categoría</label>
+            <div class="control"><select><option>Seleccionar…</option><option>De armas</option><option>De servicios</option><option>Asimilado</option></select></div>
+            <span class="hint">Solo para oficiales y suboficiales</span>
+          </div>
+          <div class="field">
+            <label class="fl">Situación <span class="req">*</span></label>
+            <div class="control"><select><option>Actividad</option><option>Retiro</option><option>Disponibilidad</option></select></div>
+          </div>
+          <div class="field half">
+            <label class="fl">CIP</label>
+            <div class="control mono"><input placeholder="12345678"></div>
+            <span class="hint">Carné de Identidad Personal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: derechohabiente -->
+      <div class="cond-panel" id="p-derecho" hidden>
+        <div class="cond-title"><span class="eyebrow">Titular del que depende</span><span class="rule"></span></div>
+        <div class="fields">
+          <div class="field">
+            <label class="fl">Vínculo con el titular <span class="req">*</span></label>
+            <div class="control"><select><option>Seleccionar…</option><option>Cónyuge</option><option>Conviviente</option><option>Hijo(a)</option><option>Padre</option><option>Madre</option><option>Otro</option></select></div>
+          </div>
+          <div class="field">
+            <label class="fl">Documento del titular</label>
+            <div class="control mono"><input placeholder="DNI del efectivo"></div>
+          </div>
+          <div class="field" style="justify-content:flex-end">
+            <button class="control" style="justify-content:center;gap:7px;color:var(--ink-2);font-weight:500">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.3"/><path d="m9 9 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Buscar titular
+            </button>
+          </div>
+          <div class="field wide">
+            <span class="hint">Vincular al titular permite detectar conglomerados familiares. Es opcional: si no se conoce, puede dejarse vacío.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: particular -->
+      <div class="cond-panel" id="p-particular" hidden>
+        <div class="fields">
+          <div class="field wide">
+            <span class="hint">Sin datos institucionales adicionales. La ficha se registra igual y entra en los reportes.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const paneles = {
+    EFECTIVO: document.getElementById('p-efectivo'),
+    DERECHOHABIENTE: document.getElementById('p-derecho'),
+    PARTICULAR: document.getElementById('p-particular')
+  };
+  document.querySelectorAll('input[name="condicion"]').forEach(r => {
+    r.addEventListener('change', () => {
+      Object.values(paneles).forEach(p => p.hidden = true);
+      paneles[r.value].hidden = false;
+    });
+  });
+
+  // La categoría solo aplica a oficiales y suboficiales
+  const sinCategoria = ['Cadete','Alumno','Empleado Civil'];
+  const gradoSel = document.getElementById('gradoSel');
+  const fCategoria = document.getElementById('fCategoria');
+  gradoSel.addEventListener('change', () => {
+    fCategoria.style.visibility = sinCategoria.includes(gradoSel.value) ? 'hidden' : 'visible';
+  });
+</script>
+</body>
+</html>

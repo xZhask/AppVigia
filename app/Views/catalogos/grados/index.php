@@ -2,7 +2,6 @@
 $pestanas = [
     ['ruta' => 'catalogos/usuarios', 'etiqueta' => 'Usuarios'],
     ['ruta' => 'catalogos/grados',   'etiqueta' => 'Grados PNP'],
-    ['ruta' => 'catalogos/unidades', 'etiqueta' => 'Unidades PNP'],
 ];
 $etiquetasCategoria = [
     'OFICIAL_GENERAL' => 'Oficial general', 'OFICIAL_SUPERIOR' => 'Oficial superior',

@@ -1,6 +1,7 @@
 <?php
 // Funciones de ayuda para las vistas. Sin namespace: de uso global.
 
+use App\Models\CampoDef;
 use App\Models\CatalogoItem;
 use App\Models\Departamento;
 use App\Models\Distrito;
@@ -51,6 +52,52 @@ function seleccionado(mixed $actual, mixed $opcion): string
 function marcado(mixed $valor): string
 {
     return $valor ? 'checked' : '';
+}
+
+/**
+ * Valores de clasificación final permitidos para una ficha: por defecto las
+ * 4 genéricas, o el subconjunto propio que defina
+ * enfermedad.opciones_clasificacion (CSV) — ej. difteria solo admite
+ * Confirmado/Descartado (AUDITORIA_FICHA_DIFTERIA.md, punto 7).
+ *
+ * @return string[]
+ */
+function opcionesClasificacionPara(array $enfermedad): array
+{
+    $genericas = ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'];
+    $restriccion = trim($enfermedad['opciones_clasificacion'] ?? '');
+    if ($restriccion === '') {
+        return $genericas;
+    }
+
+    $permitidas = array_map('trim', explode(',', $restriccion));
+    return array_values(array_intersect($genericas, $permitidas));
+}
+
+/**
+ * Evalúa si un campo con `depende_de` debe mostrarse, según el valor ya
+ * asignado a su campo padre en $valoresCampos (mismo formato que usa
+ * partials/secciones-clinicas.php: MULTISELECT como array, el resto como
+ * string). Sin dependencia, siempre visible.
+ */
+function campoVisiblePorDependencia(array $campo, array $valoresCampos): bool
+{
+    if (empty($campo['depende_de'])) {
+        return true;
+    }
+
+    $padre = CampoDef::buscar((int) $campo['depende_de']);
+    if (!$padre) {
+        return true; // dependencia rota (dato inconsistente): no ocultar por error ajeno al usuario
+    }
+
+    $valorPadre = $valoresCampos[(int) $padre['id']] ?? null;
+
+    if ($padre['tipo'] === 'MULTISELECT') {
+        return is_array($valorPadre) && in_array($campo['valor_activador'], $valorPadre, true);
+    }
+
+    return (string) $valorPadre === (string) $campo['valor_activador'];
 }
 
 /**
