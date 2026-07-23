@@ -883,7 +883,11 @@ class CasosController extends Controller
             // guarda vacío aunque el cliente haya enviado algo (el valor se
             // limpia en el navegador al ocultarse, pero no hay que confiar
             // en eso del lado servidor).
-            if (!empty($campo['depende_de']) && !campoVisiblePorDependencia($campo, $valoresCampos)) {
+            $seccionOculta = !empty($campo['seccion_depende_de']) && !campoVisiblePorDependencia(
+                ['depende_de' => $campo['seccion_depende_de'], 'valor_activador' => $campo['seccion_valor_activador']],
+                $valoresCampos
+            );
+            if ($seccionOculta || (!empty($campo['depende_de']) && !campoVisiblePorDependencia($campo, $valoresCampos))) {
                 $valoresCampos[$campoId] = in_array($tipo, ['MULTISELECT', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true) ? [] : '';
                 continue;
             }
@@ -1289,6 +1293,10 @@ class CasosController extends Controller
         $profilaxis = $_POST['contacto_profilaxis'] ?? [];
         $docs = $_POST['contacto_doc'] ?? [];
         $celulares = $_POST['contacto_celular'] ?? [];
+        $fechasContacto = $_POST['contacto_fecha_contacto'] ?? [];
+        $lugaresContacto = $_POST['contacto_lugar_contacto'] ?? [];
+        $fechasInicioErupcion = $_POST['contacto_fecha_inicio_erupcion'] ?? [];
+        $vacunados72h = $_POST['contacto_vacunado_72h'] ?? [];
 
         $filas = [];
         foreach ($nombres as $i => $nombre) {
@@ -1301,17 +1309,24 @@ class CasosController extends Controller
             $vacunado = $vacunados[$i] ?? '';
             $fechaVacunacion = trim((string) ($fechasVacunacion[$i] ?? ''));
             $profilaxisFila = $profilaxis[$i] ?? '';
+            $fechaContacto = trim((string) ($fechasContacto[$i] ?? ''));
+            $fechaInicioErupcion = trim((string) ($fechasInicioErupcion[$i] ?? ''));
+            $vacunado72h = $vacunados72h[$i] ?? '';
 
             $filas[] = [
-                'nombres'          => $nombre,
-                'parentesco'       => trim((string) ($parentescos[$i] ?? '')) ?: null,
-                'edad'             => $edad !== '' && is_numeric($edad) ? (int) $edad : null,
-                'sexo'             => in_array($sexo, ['M', 'F'], true) ? $sexo : null,
-                'vacunado'         => in_array($vacunado, ['SI', 'NO', 'IGNORADO'], true) ? $vacunado : null,
-                'fecha_vacunacion' => $fechaVacunacion !== '' ? fechaIsoValida($fechaVacunacion) : null,
-                'profilaxis'       => in_array($profilaxisFila, ['SI', 'NO'], true) ? $profilaxisFila : null,
-                'doc'              => trim((string) ($docs[$i] ?? '')) ?: null,
-                'celular'          => trim((string) ($celulares[$i] ?? '')) ?: null,
+                'nombres'               => $nombre,
+                'parentesco'            => trim((string) ($parentescos[$i] ?? '')) ?: null,
+                'edad'                  => $edad !== '' && is_numeric($edad) ? (int) $edad : null,
+                'sexo'                  => in_array($sexo, ['M', 'F'], true) ? $sexo : null,
+                'vacunado'              => in_array($vacunado, ['SI', 'NO', 'IGNORADO'], true) ? $vacunado : null,
+                'fecha_vacunacion'      => $fechaVacunacion !== '' ? fechaIsoValida($fechaVacunacion) : null,
+                'profilaxis'            => in_array($profilaxisFila, ['SI', 'NO'], true) ? $profilaxisFila : null,
+                'doc'                   => trim((string) ($docs[$i] ?? '')) ?: null,
+                'celular'               => trim((string) ($celulares[$i] ?? '')) ?: null,
+                'fecha_contacto'        => $fechaContacto !== '' ? fechaIsoValida($fechaContacto) : null,
+                'lugar_contacto'        => trim((string) ($lugaresContacto[$i] ?? '')) ?: null,
+                'fecha_inicio_erupcion' => $fechaInicioErupcion !== '' ? fechaIsoValida($fechaInicioErupcion) : null,
+                'vacunado_72h'          => in_array($vacunado72h, ['SI', 'NO', 'DESCONOCIDO'], true) ? $vacunado72h : null,
             ];
         }
 
@@ -1376,6 +1391,12 @@ class CasosController extends Controller
         $vacunas = $_POST['vacuna_nombre'] ?? [];
         $dosis = $_POST['vacuna_dosis'] ?? [];
         $fechas = $_POST['vacuna_fecha'] ?? [];
+        $fabricantes = $_POST['vacuna_fabricante'] ?? [];
+        $lotes = $_POST['vacuna_lote'] ?? [];
+        $vias = $_POST['vacuna_via'] ?? [];
+        $sitios = $_POST['vacuna_sitio'] ?? [];
+        $fechasVencimiento = $_POST['vacuna_fecha_vencimiento'] ?? [];
+        $establecimientos = $_POST['vacuna_establecimiento'] ?? [];
 
         $filas = [];
         $errores = [];
@@ -1393,10 +1414,17 @@ class CasosController extends Controller
                     $fechaIso = $fechaTxt;
                 }
             }
+            $fechaVencimientoTxt = trim((string) ($fechasVencimiento[$i] ?? ''));
             $filas[] = [
-                'vacuna' => $vacuna,
-                'dosis'  => trim((string) ($dosis[$i] ?? '')) ?: null,
-                'fecha'  => $fechaIso,
+                'vacuna'            => $vacuna,
+                'dosis'             => trim((string) ($dosis[$i] ?? '')) ?: null,
+                'fecha'             => $fechaIso,
+                'fabricante'        => trim((string) ($fabricantes[$i] ?? '')) ?: null,
+                'lote'              => trim((string) ($lotes[$i] ?? '')) ?: null,
+                'via'               => trim((string) ($vias[$i] ?? '')) ?: null,
+                'sitio'             => trim((string) ($sitios[$i] ?? '')) ?: null,
+                'fecha_vencimiento' => $fechaVencimientoTxt !== '' ? fechaIsoValida($fechaVencimientoTxt) : null,
+                'establecimiento'   => trim((string) ($establecimientos[$i] ?? '')) ?: null,
             ];
         }
 

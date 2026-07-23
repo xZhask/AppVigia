@@ -143,7 +143,11 @@ foreach ($secciones as $s) {
     $seccionesPorEnfermedad[$s['enfermedad_id']][] = $s;
 }
 
-$campos = $pdo->query('SELECT id, seccion_id, clave, etiqueta, tipo, catalogo_id, orden FROM campo_def ORDER BY seccion_id, orden, id')->fetchAll();
+$campos = $pdo->query('SELECT id, seccion_id, clave, etiqueta, tipo, catalogo_id, sensible, depende_de, valor_activador, orden FROM campo_def ORDER BY seccion_id, orden, id')->fetchAll();
+$etiquetaPorCampoId = [];
+foreach ($campos as $c) {
+    $etiquetaPorCampoId[$c['id']] = $c['etiqueta'];
+}
 $camposPorSeccion = [];
 foreach ($campos as $c) {
     $camposPorSeccion[$c['seccion_id']][] = $c;
@@ -257,6 +261,8 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
             'campos_sobrantes' => [],
             'tipos_incorrectos' => [],
             'catalogos_incorrectos' => [],
+            'sensible_incorrecto' => [],
+            'dependencia_incorrecta' => [],
         ];
 
         foreach ($matchCampos['faltantes'] as $ic) {
@@ -278,7 +284,8 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
             $campoBd = $camposBd[$if];
             $tipoEsperado = $campoManifiesto['tipo'];
             $tipoEncontrado = $campoBd['tipo'];
-            if ($tipoEsperado !== $tipoEncontrado) {
+            $tipoOk = $tipoEsperado === $tipoEncontrado;
+            if (!$tipoOk) {
                 $diffSeccion['tipos_incorrectos'][] = [
                     'etiqueta' => $campoManifiesto['etiqueta'],
                     'etiqueta_bd' => $campoBd['etiqueta'],
@@ -287,6 +294,41 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
                     'tipo_encontrado' => $tipoEncontrado,
                     'campo_id' => (int) $campoBd['id'],
                 ];
+            }
+
+            // sensible y depende_de/valor_activador son independientes del
+            // tipo: se chequean aunque el tipo esté mal (CIERRE_RECARGA_Y_FASE5.md
+            // Parte 0 — la Fase 3 los perdió en silencio para varias fichas).
+            $sensibleEsperado = !empty($campoManifiesto['sensible']);
+            $sensibleEncontrado = !empty($campoBd['sensible']);
+            if ($sensibleEsperado !== $sensibleEncontrado) {
+                $diffSeccion['sensible_incorrecto'][] = [
+                    'etiqueta' => $campoManifiesto['etiqueta'],
+                    'clave_bd' => $campoBd['clave'],
+                    'campo_id' => (int) $campoBd['id'],
+                    'esperado' => $sensibleEsperado,
+                    'encontrado' => $sensibleEncontrado,
+                ];
+            }
+
+            $dependeDeEsperado = $campoManifiesto['depende_de'] ?? null;
+            $valorActivadorEsperado = $campoManifiesto['valor_activador'] ?? null;
+            $dependeDeEncontradoId = $campoBd['depende_de'];
+            $dependeDeEncontrado = $dependeDeEncontradoId !== null ? ($etiquetaPorCampoId[$dependeDeEncontradoId] ?? "(campo_def.id={$dependeDeEncontradoId}, no encontrado)") : null;
+            $valorActivadorEncontrado = $campoBd['valor_activador'];
+            if ($dependeDeEsperado !== $dependeDeEncontrado || $valorActivadorEsperado !== $valorActivadorEncontrado) {
+                $diffSeccion['dependencia_incorrecta'][] = [
+                    'etiqueta' => $campoManifiesto['etiqueta'],
+                    'clave_bd' => $campoBd['clave'],
+                    'campo_id' => (int) $campoBd['id'],
+                    'depende_de_esperado' => $dependeDeEsperado,
+                    'valor_activador_esperado' => $valorActivadorEsperado,
+                    'depende_de_encontrado' => $dependeDeEncontrado,
+                    'valor_activador_encontrado' => $valorActivadorEncontrado,
+                ];
+            }
+
+            if (!$tipoOk) {
                 continue; // tipo ya está mal: no tiene sentido auditar su catálogo
             }
 
@@ -345,7 +387,7 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
             }
         }
 
-        if ($diffSeccion['campos_faltantes'] || $diffSeccion['campos_sobrantes'] || $diffSeccion['tipos_incorrectos'] || $diffSeccion['catalogos_incorrectos']) {
+        if ($diffSeccion['campos_faltantes'] || $diffSeccion['campos_sobrantes'] || $diffSeccion['tipos_incorrectos'] || $diffSeccion['catalogos_incorrectos'] || $diffSeccion['sensible_incorrecto'] || $diffSeccion['dependencia_incorrecta']) {
             $item['diferencias_por_seccion'][] = $diffSeccion;
         }
     }
@@ -381,7 +423,7 @@ $fechaHoy = date('Y-m-d');
 echo "# REPORTE_VERIFICACION.md\n\n";
 echo "Generado por `verificar_fichas.php` el {$fechaHoy} comparando la base de datos contra `manifiesto_fichas.json`.\n\n";
 echo "No se modificó ninguna definición de ficha ni la base de datos: esta es una corrida de solo lectura.\n\n";
-echo "**Metodología.** Las secciones y campos se emparejan por nombre/etiqueta normalizada (sin tildes, mayúsculas ni signos de puntuación), primero por coincidencia exacta y luego por similitud aproximada (contención o distancia de Levenshtein relativa ≤ 0.30). Para los campos SELECT/MULTISELECT/GRUPO_SI_NO/CRONOLOGIA (los mismos tipos que `cargar_fichas.php` exige con catálogo), además se verifica: que `catalogo_id` no sea NULL, que ese catálogo tenga al menos un `catalogo_item`, y que sus opciones (emparejadas con la misma normalización) coincidan con las del manifiesto — desde RECARGA_FICHAS.md Fase 4 (antes era una limitación conocida, ver INFORME_CARGADOR.md hallazgo A.2b). Limitación que sigue vigente: si una ficha consolida en la BD varias secciones del manifiesto en una sola (o al revés), puede reportarse una 'sección faltante' que en realidad solo cambió de nombre/agrupación — revisar el detalle antes de asumir contenido perdido.\n\n";
+echo "**Metodología.** Las secciones y campos se emparejan por nombre/etiqueta normalizada (sin tildes, mayúsculas ni signos de puntuación), primero por coincidencia exacta y luego por similitud aproximada (contención o distancia de Levenshtein relativa ≤ 0.30). Para los campos SELECT/MULTISELECT/GRUPO_SI_NO/CRONOLOGIA (los mismos tipos que `cargar_fichas.php` exige con catálogo), además se verifica: que `catalogo_id` no sea NULL, que ese catálogo tenga al menos un `catalogo_item`, y que sus opciones (emparejadas con la misma normalización) coincidan con las del manifiesto — desde RECARGA_FICHAS.md Fase 4 (antes era una limitación conocida, ver INFORME_CARGADOR.md hallazgo A.2b). Desde CIERRE_RECARGA_Y_FASE5.md Parte 0, también se verifica que `campo_def.sensible` y la dependencia condicional (`depende_de`/`valor_activador`) coincidan con el manifiesto — la recarga de la Fase 3 los perdía en silencio porque no formaban parte del esquema del manifiesto todavía. Limitación que sigue vigente: si una ficha consolida en la BD varias secciones del manifiesto en una sola (o al revés), puede reportarse una 'sección faltante' que en realidad solo cambió de nombre/agrupación — revisar el detalle antes de asumir contenido perdido.\n\n";
 echo "---\n\n";
 
 echo "## Resumen\n\n";
@@ -488,6 +530,22 @@ foreach ($resultado as $item) {
                         echo "    - Opciones sobrantes (en el catálogo, no en el manifiesto): " . implode(', ', $c['opciones_sobrantes']) . "\n";
                     }
                 }
+            }
+        }
+        if ($diff['sensible_incorrecto']) {
+            echo "- Marca `sensible` incorrecta:\n";
+            foreach ($diff['sensible_incorrecto'] as $c) {
+                $esp = $c['esperado'] ? 'sensible' : 'no sensible';
+                $enc = $c['encontrado'] ? 'sensible' : 'no sensible';
+                echo "  - «{$c['etiqueta']}» (campo_def.id={$c['campo_id']}, clave `{$c['clave_bd']}`) — se esperaba {$esp}, se encontró {$enc}\n";
+            }
+        }
+        if ($diff['dependencia_incorrecta']) {
+            echo "- Dependencia condicional (`depende_de`/`valor_activador`) incorrecta:\n";
+            foreach ($diff['dependencia_incorrecta'] as $c) {
+                $esp = $c['depende_de_esperado'] !== null ? "depende de «{$c['depende_de_esperado']}» = {$c['valor_activador_esperado']}" : 'sin dependencia';
+                $enc = $c['depende_de_encontrado'] !== null ? "depende de «{$c['depende_de_encontrado']}» = {$c['valor_activador_encontrado']}" : 'sin dependencia';
+                echo "  - «{$c['etiqueta']}» (campo_def.id={$c['campo_id']}, clave `{$c['clave_bd']}`) — se esperaba {$esp}, se encontró {$enc}\n";
             }
         }
         echo "\n";

@@ -25,6 +25,13 @@
  *      ficha. Los catálogos genéricos (Sí/No, Sí/No/Ignorado, etc.) se
  *      nombran "Compartido: ..." para que se note que no son de una sola
  *      ficha.
+ *   6. Campos condicionales: un campo puede traer "depende_de" (la etiqueta
+ *      de OTRO campo de la misma ficha) y "valor_activador" (el código de
+ *      catálogo -mismo formato que catalogo_item.valor- que lo activa).
+ *      Se resuelve en una segunda pasada, una vez insertados todos los
+ *      campos de la ficha (CIERRE_RECARGA_Y_FASE5.md Parte 0: la Fase 3
+ *      original no lo soportaba y perdió en silencio los 5 pares que
+ *      existían antes de la recarga).
  *
  * MODO DE USO
  * -----------
@@ -156,6 +163,12 @@ function esCatalogoCompartido(array $opciones): bool
 function validarManifiesto(array $manifiesto): void
 {
     foreach ($manifiesto['fichas'] as $cie10 => $ficha) {
+        $etiquetasFicha = [];
+        foreach ($ficha['secciones'] as $seccion) {
+            foreach ($seccion['campos'] as $campo) {
+                $etiquetasFicha[$campo['etiqueta']] = true;
+            }
+        }
         foreach ($ficha['secciones'] as $seccion) {
             foreach ($seccion['campos'] as $campo) {
                 $tipo = $campo['tipo'] ?? null;
@@ -168,6 +181,26 @@ function validarManifiesto(array $manifiesto): void
                 }
                 if ($tipo === 'MATRIZ' && empty($campo['columnas'])) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" es MATRIZ pero no trae \"columnas\".");
+                }
+                if (!empty($campo['depende_de'])) {
+                    if (empty($campo['valor_activador'])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"depende_de\" sin \"valor_activador\".");
+                    }
+                    if (!isset($etiquetasFicha[$campo['depende_de']])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" depende de \"{$campo['depende_de']}\", que no existe como campo de esta misma ficha.");
+                    }
+                    if ($campo['depende_de'] === $etiqueta) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" depende de sí mismo.");
+                    }
+                }
+            }
+            if (!empty($seccion['depende_de'])) {
+                $nombreSeccion = $seccion['nombre'] ?? '(sin nombre)';
+                if (empty($seccion['valor_activador'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / sección \"{$nombreSeccion}\" trae \"depende_de\" sin \"valor_activador\".");
+                }
+                if (!isset($etiquetasFicha[$seccion['depende_de']])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / sección \"{$nombreSeccion}\" depende de \"{$seccion['depende_de']}\", que no existe como campo de esta misma ficha.");
                 }
             }
         }
@@ -248,8 +281,11 @@ function precargarCatalogos(PDO $pdo, array &$nombresUsados): array
 
 /**
  * Inserta un campo_def (y su catálogo si aplica) dentro de la sección dada.
+ * Devuelve el id insertado (lo necesita procesarFicha() para resolver
+ * "depende_de" en una segunda pasada, una vez que todos los campos de la
+ * ficha ya tienen id).
  */
-function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, int $orden, string $rolSujeto, array &$clavesUsadas, array &$catalogCache, array &$nombresCatalogo, array &$reporte): void
+function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, int $orden, string $rolSujeto, array &$clavesUsadas, array &$catalogCache, array &$nombresCatalogo, array &$reporte): int
 {
     $tipo = $campo['tipo'];
     $etiqueta = $campo['etiqueta'];
@@ -277,8 +313,10 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
          VALUES (?,?,?,?,0,?,?,?,?,\'FICHA_MINSA\',?)'
     );
     $stmt->execute([$seccionId, $clave, $etiqueta, $tipo, $rolSujeto, $sensible, $catalogoId, $config, $orden]);
+    $campoId = (int) $pdo->lastInsertId();
 
     $reporte['campos_creados'][] = ['clave' => $clave, 'etiqueta' => $etiqueta, 'tipo' => $tipo];
+    return $campoId;
 }
 
 /**
@@ -337,11 +375,20 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         // borra antes que ellos, el DELETE en cascada de seccion_def choca
         // contra esa FK. Se rompen esas referencias primero.
         $pdo->prepare("UPDATE campo_def SET depende_de = NULL WHERE seccion_id IN ({$in})")->execute($seccionesViejas);
+
+        // Mismo problema, pero con seccion_def.depende_de -> campo_def.id
+        // (CIERRE_RECARGA_Y_FASE5.md Parte 1.5): si la sección disparadora
+        // se borra en cascada antes que la sección dependiente, el DELETE de
+        // seccion_def choca contra esa FK. Se rompe primero también.
+        $pdo->prepare('UPDATE seccion_def SET depende_de = NULL WHERE enfermedad_id = ?')->execute([$enfermedadId]);
     }
 
     $pdo->prepare('DELETE FROM seccion_def WHERE enfermedad_id = ?')->execute([$enfermedadId]);
 
     $ordenSeccion = 1;
+    $idPorEtiqueta = [];
+    $pendientesDependencia = []; // [campoId => ['depende_de' => etiqueta, 'valor_activador' => valor]]
+    $pendientesDependenciaSeccion = []; // [seccionId => ['depende_de' => etiqueta, 'valor_activador' => valor]]
     foreach ($fichaManifiesto['secciones'] as $seccion) {
         if (empty($seccion['campos'])) {
             continue; // seccion informativa (contenido vive en tabla hija o queda pendiente): no genera seccion_def
@@ -350,15 +397,47 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         $stmt->execute([$enfermedadId, $seccion['nombre'], $ordenSeccion]);
         $seccionId = (int) $pdo->lastInsertId();
         $reporte['secciones_creadas'][] = $seccion['nombre'];
+        if (!empty($seccion['depende_de'])) {
+            $pendientesDependenciaSeccion[$seccionId] = [
+                'depende_de' => $seccion['depende_de'],
+                'valor_activador' => $seccion['valor_activador'],
+            ];
+        }
 
         $rolSujeto = $seccion['rol_sujeto'] ?? 'CASO_INDICE';
         $clavesUsadas = [];
         $ordenCampo = 1;
         foreach ($seccion['campos'] as $campo) {
-            insertarCampo($pdo, $seccionId, $cie10, $campo, $ordenCampo, $rolSujeto, $clavesUsadas, $catalogCache, $nombresCatalogo, $reporte);
+            $campoId = insertarCampo($pdo, $seccionId, $cie10, $campo, $ordenCampo, $rolSujeto, $clavesUsadas, $catalogCache, $nombresCatalogo, $reporte);
+            $idPorEtiqueta[$campo['etiqueta']] = $campoId;
+            if (!empty($campo['depende_de'])) {
+                $pendientesDependencia[$campoId] = [
+                    'depende_de' => $campo['depende_de'],
+                    'valor_activador' => $campo['valor_activador'],
+                ];
+            }
             $ordenCampo++;
         }
         $ordenSeccion++;
+    }
+
+    // Segunda pasada: recién ahora existen los id de TODOS los campos de la
+    // ficha, así que se puede resolver "depende_de" (validarManifiesto() ya
+    // garantizó que la etiqueta referenciada existe en esta misma ficha).
+    if ($pendientesDependencia) {
+        $stmtDep = $pdo->prepare('UPDATE campo_def SET depende_de = ?, valor_activador = ? WHERE id = ?');
+        foreach ($pendientesDependencia as $campoId => $dep) {
+            $padreId = $idPorEtiqueta[$dep['depende_de']];
+            $stmtDep->execute([$padreId, $dep['valor_activador'], $campoId]);
+        }
+    }
+
+    if ($pendientesDependenciaSeccion) {
+        $stmtDepSeccion = $pdo->prepare('UPDATE seccion_def SET depende_de = ?, valor_activador = ? WHERE id = ?');
+        foreach ($pendientesDependenciaSeccion as $seccionId => $dep) {
+            $padreId = $idPorEtiqueta[$dep['depende_de']];
+            $stmtDepSeccion->execute([$padreId, $dep['valor_activador'], $seccionId]);
+        }
     }
 
     return $reporte;

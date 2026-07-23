@@ -2,14 +2,19 @@
 /**
  * Fila dinámica de contactos del caso (caso_contacto). Variable esperada:
  * $filasContactos (array de ['nombres','parentesco','edad','sexo','vacunado',
- * 'fecha_vacunacion','profilaxis','doc','celular']). Las columnas clínicas
- * se agregaron para el censo de contactos domiciliarios (difteria y otras
- * fichas similares — AUDITORIA_FICHA_DIFTERIA.md, punto 6); se muestran
- * siempre, aunque una ficha no las necesite todas, por simplicidad.
+ * 'fecha_vacunacion','profilaxis','doc','celular','fecha_contacto',
+ * 'lugar_contacto','fecha_inicio_erupcion','vacunado_72h']). Las columnas
+ * clínicas se agregaron para el censo de contactos domiciliarios (difteria y
+ * otras fichas similares — AUDITORIA_FICHA_DIFTERIA.md, punto 6); las
+ * últimas 4 son de la cadena de transmisión de sarampión
+ * (CIERRE_RECARGA_Y_FASE5.md Parte 1.4). Se muestran siempre, aunque una
+ * ficha no las necesite todas, por simplicidad -- no existe todavía un
+ * mecanismo de configuración de columnas por ficha (ver HALLAZGOS_RECARGA_FICHAS.md).
  */
 $filaContacto = function (array $fila = [
     'nombres' => '', 'parentesco' => '', 'edad' => '', 'sexo' => '', 'vacunado' => '',
     'fecha_vacunacion' => '', 'profilaxis' => '', 'doc' => '', 'celular' => '',
+    'fecha_contacto' => '', 'lugar_contacto' => '', 'fecha_inicio_erupcion' => '', 'vacunado_72h' => '',
 ]): void { ?>
   <div class="subrow">
     <div class="fields thirds" style="flex:1">
@@ -67,6 +72,29 @@ $filaContacto = function (array $fila = [
       <div class="field">
         <label class="fl">Celular</label>
         <div class="control mono"><input type="text" name="contacto_celular[]" value="<?= e($fila['celular']) ?>"></div>
+      </div>
+      <div class="field">
+        <label class="fl">Fecha de contacto</label>
+        <div class="control mono"><input type="date" name="contacto_fecha_contacto[]" value="<?= e($fila['fecha_contacto'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+      </div>
+      <div class="field">
+        <label class="fl">Lugar de contacto / exposición</label>
+        <div class="control"><input type="text" name="contacto_lugar_contacto[]" value="<?= e($fila['lugar_contacto'] ?? '') ?>"></div>
+      </div>
+      <div class="field">
+        <label class="fl">Fecha de inicio de erupción</label>
+        <div class="control mono"><input type="date" name="contacto_fecha_inicio_erupcion[]" value="<?= e($fila['fecha_inicio_erupcion'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+      </div>
+      <div class="field">
+        <label class="fl">Vacunado dentro de 72h del contacto</label>
+        <div class="control">
+          <select name="contacto_vacunado_72h[]" data-nosearch="true">
+            <option value="">Seleccionar…</option>
+            <option value="SI" <?= seleccionado($fila['vacunado_72h'] ?? '', 'SI') ?>>Sí</option>
+            <option value="NO" <?= seleccionado($fila['vacunado_72h'] ?? '', 'NO') ?>>No</option>
+            <option value="DESCONOCIDO" <?= seleccionado($fila['vacunado_72h'] ?? '', 'DESCONOCIDO') ?>>Desconocido</option>
+          </select>
+        </div>
       </div>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar contacto" style="margin-top:22px">

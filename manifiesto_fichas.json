@@ -133,7 +133,7 @@
             {"etiqueta": "Fecha de alta", "tipo": "FECHA"},
             {"etiqueta": "Dx de egreso", "tipo": "TEXTO"},
             {"etiqueta": "¿Presenta alguna comorbilidad?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
-            {"etiqueta": "Comorbilidad (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "Comorbilidad (especificar)", "tipo": "TEXTO", "depende_de": "¿Presenta alguna comorbilidad?", "valor_activador": "SI", "_corregido": "restaurado campo_def.depende_de/valor_activador, perdidos en la recarga (CIERRE_RECARGA_Y_FASE5.md Parte 0); valor_activador usa el codigo de catalogo (mismo formato que catalogo_item.valor), no la etiqueta"},
             {"etiqueta": "¿Se diagnosticaron otras infecciones por laboratorio?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"], "_corregido": "v1.0 tenía BOOLEANO; el PDF muestra Sí(especificar)/No/Desconocido"},
             {"etiqueta": "Otras infecciones (especificar)", "tipo": "TEXTO"},
             {"etiqueta": "Fecha de diagnóstico de otras infecciones", "tipo": "FECHA"},
@@ -398,9 +398,10 @@
             {"etiqueta": "Condición de egreso", "tipo": "SELECT", "opciones": ["Alta / Recuperado", "Fallecido"]},
             {"etiqueta": "Dx de egreso", "tipo": "TEXTO"},
             {"etiqueta": "Fecha de egreso", "tipo": "FECHA"},
-            {"etiqueta": "Necropsia", "tipo": "BOOLEANO"},
-            {"etiqueta": "Dx macroscópico", "tipo": "TEXTO"},
-            {"etiqueta": "Dx microscópico", "tipo": "TEXTO"}
+            {"etiqueta": "Necropsia", "tipo": "BOOLEANO", "depende_de": "Condición de egreso", "valor_activador": "FALLECIDO", "_corregido": "restaurado campo_def.depende_de/valor_activador, perdido en la recarga (CIERRE_RECARGA_Y_FASE5.md Parte 0)"},
+            {"etiqueta": "Dx macroscópico", "tipo": "TEXTO", "depende_de": "Condición de egreso", "valor_activador": "FALLECIDO"},
+            {"etiqueta": "Dx microscópico", "tipo": "TEXTO", "depende_de": "Condición de egreso", "valor_activador": "FALLECIDO"},
+            {"etiqueta": "Fecha de necropsia", "tipo": "FECHA", "depende_de": "Condición de egreso", "valor_activador": "FALLECIDO", "_corregido": "campo faltante, agregado: el PDF (pág. 26-27) trae una segunda fecha bajo Dx microscópico, distinta de 'Fecha de egreso' -- se había perdido en la reconstrucción del manifiesto v2.0/2.1, ver CIERRE_RECARGA_Y_FASE5.md Parte 0"}
           ]
         },
         {
@@ -543,7 +544,8 @@
           "nombre": "Clasificación final",
           "campos": [
             {"etiqueta": "Clasificación final", "tipo": "SELECT", "opciones": ["Chagas agudo - confirmado", "Chagas crónico - confirmado", "Chagas congénito - confirmado", "Chagas agudo - descartado", "Chagas crónico - descartado", "Chagas congénito - descartado"], "_nota": "el PDF modela esto como una tabla forma x (confirmado/descartado), cada una con su propia fecha; se simplifica a una sola SELECT combinada"},
-            {"etiqueta": "Fecha de clasificación", "tipo": "FECHA"}
+            {"etiqueta": "Fecha de clasificación", "tipo": "FECHA"},
+            {"etiqueta": "Criterio de descarte", "tipo": "TEXTO", "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 1.6: la tabla del PDF trae 'CRITERIO DE DESCARTE' junto a 'CASO DESCARTADO', además de la fecha; se había perdido en la simplificación a SELECT combinada. Se agrega como campo propio, siempre visible (igual que 'Dx de descarte' en Fiebre amarilla y 'Criterio de clasificación' en PFA/Fiebre amarilla): el mecanismo depende_de solo soporta un único valor activador, y ninguna de esas otras fichas condiciona su campo de descarte, así que no se introduce esa asimetría aquí tampoco."}
           ]
         }
       ]
@@ -1006,6 +1008,7 @@
         "caso_viaje": true,
         "caso_vacuna": true
       },
+      "_observaciones_tablas_hija": "Cadena de transmisión (CIERRE_RECARGA_Y_FASE5.md Parte 1.4): fecha del contacto, lugar de contacto, fecha de inicio de erupción y vacunación dentro de 72h del contacto viven en caso_contacto (columnas fecha_contacto/lugar_contacto/fecha_inicio_erupcion/vacunado_72h, agregadas en sql/35_fase5_ampliar_tablas_hija.sql), no en campo_def -- son datos repetibles por contacto, igual que el resto de caso_contacto.",
       "secciones": [
         {
           "nombre": "Cuadro clínico",
@@ -1118,59 +1121,60 @@
         "caso_viaje": false,
         "caso_vacuna": false
       },
+      "_nota_sensible": "Antes de la recarga (RECARGA_FICHAS.md Fase 3), el 100% de los campos de esta ficha (45/45) estaban marcados campo_def.sensible=1 en la BD -- coherente con que toda la ficha trata de estado VIH de gestante y niño. La v2.1 no había trasladado esa marca al manifiesto (hallazgo de CIERRE_RECARGA_Y_FASE5.md Parte 0); se restaura aquí en todos los campos.",
       "secciones": [
         {
           "nombre": "Sección I — Gestante con VIH",
           "rol_sujeto": "MADRE",
           "campos": [
-            {"etiqueta": "Código", "tipo": "TEXTO"},
-            {"etiqueta": "Fecha de reporte de la ficha de investigación epidemiológica", "tipo": "FECHA"},
-            {"etiqueta": "Momento de diagnóstico de infección por VIH", "tipo": "SELECT", "opciones": ["Previo a la gestación actual", "Durante la actual gestación"]},
-            {"etiqueta": "Año de diagnóstico", "tipo": "NUMERO"},
-            {"etiqueta": "Momento durante la gestación", "tipo": "SELECT", "opciones": ["Atención prenatal (APN)", "Trabajo de parto", "Puerperio", "Posterior al puerperio", "Por aborto"]},
-            {"etiqueta": "Prueba de tamizaje N.° 1", "tipo": "FECHA"},
-            {"etiqueta": "Prueba de tamizaje N.° 2", "tipo": "FECHA"},
-            {"etiqueta": "Prueba confirmatoria", "tipo": "FECHA"},
-            {"etiqueta": "FUR", "tipo": "FECHA"},
-            {"etiqueta": "¿Recibió APN?", "tipo": "BOOLEANO"},
-            {"etiqueta": "¿Embarazo múltiple?", "tipo": "BOOLEANO"},
-            {"etiqueta": "¿Recibió ARV?", "tipo": "BOOLEANO"},
-            {"etiqueta": "Fecha de inicio de ARV", "tipo": "FECHA"},
-            {"etiqueta": "¿Abandonó terapia ARV?", "tipo": "BOOLEANO"},
-            {"etiqueta": "¿Recibe terapia triple / TARGA?", "tipo": "BOOLEANO"},
-            {"etiqueta": "N.° de nacidos vivos", "tipo": "NUMERO"},
-            {"etiqueta": "N.° de óbitos fetales", "tipo": "NUMERO"},
-            {"etiqueta": "Aborto", "tipo": "BOOLEANO"},
-            {"etiqueta": "¿Parto por cesárea?", "tipo": "BOOLEANO"},
-            {"etiqueta": "Institución del EE.SS. del parto", "tipo": "SELECT", "opciones": ["MINSA", "EsSalud", "FFAA/FFPP", "Privado", "Otro"], "_corregido": "faltaba en v1.0 (solo tenía el nombre del EE.SS. como texto)"},
-            {"etiqueta": "Nombre del EE.SS. del parto", "tipo": "TEXTO"},
-            {"etiqueta": "Fecha del parto", "tipo": "FECHA"},
-            {"etiqueta": "¿Carga viral indetectable?", "tipo": "BOOLEANO"},
-            {"etiqueta": "¿Abandona seguimiento?", "tipo": "BOOLEANO"},
-            {"etiqueta": "¿La gestante fallece?", "tipo": "BOOLEANO"}
+            {"etiqueta": "Código", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "Fecha de reporte de la ficha de investigación epidemiológica", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Momento de diagnóstico de infección por VIH", "tipo": "SELECT", "opciones": ["Previo a la gestación actual", "Durante la actual gestación"], "sensible": true},
+            {"etiqueta": "Año de diagnóstico", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "Momento durante la gestación", "tipo": "SELECT", "opciones": ["Atención prenatal (APN)", "Trabajo de parto", "Puerperio", "Posterior al puerperio", "Por aborto"], "sensible": true},
+            {"etiqueta": "Prueba de tamizaje N.° 1", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Prueba de tamizaje N.° 2", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Prueba confirmatoria", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "FUR", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "¿Recibió APN?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "¿Embarazo múltiple?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "¿Recibió ARV?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Fecha de inicio de ARV", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "¿Abandonó terapia ARV?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "¿Recibe terapia triple / TARGA?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "N.° de nacidos vivos", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "N.° de óbitos fetales", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "Aborto", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "¿Parto por cesárea?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Institución del EE.SS. del parto", "tipo": "SELECT", "opciones": ["MINSA", "EsSalud", "FFAA/FFPP", "Privado", "Otro"], "_corregido": "faltaba en v1.0 (solo tenía el nombre del EE.SS. como texto)", "sensible": true},
+            {"etiqueta": "Nombre del EE.SS. del parto", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "Fecha del parto", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "¿Carga viral indetectable?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "¿Abandona seguimiento?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "¿La gestante fallece?", "tipo": "BOOLEANO", "sensible": true}
           ]
         },
         {
           "nombre": "Sección II — Niño nacido expuesto al VIH",
           "rol_sujeto": "NINO_EXPUESTO",
           "campos": [
-            {"etiqueta": "Código del niño", "tipo": "TEXTO"},
-            {"etiqueta": "DNI del niño", "tipo": "TEXTO"},
-            {"etiqueta": "Código de la madre", "tipo": "TEXTO"},
-            {"etiqueta": "DNI de la madre", "tipo": "TEXTO"},
-            {"etiqueta": "¿Recibió ARV?", "tipo": "BOOLEANO"},
-            {"etiqueta": "Fecha de inicio de ARV", "tipo": "FECHA"},
-            {"etiqueta": "¿Abandonó terapia ARV?", "tipo": "BOOLEANO"},
-            {"etiqueta": "ARV recibido", "tipo": "SELECT", "opciones": ["AZT", "AZT + NVP", "Otro"]},
-            {"etiqueta": "N.° de días que tomó ARV", "tipo": "NUMERO"},
-            {"etiqueta": "¿Profilaxis ARV de acuerdo a NT vigente?", "tipo": "BOOLEANO"},
-            {"etiqueta": "¿Sucedáneos de leche materna?", "tipo": "BOOLEANO"},
-            {"etiqueta": "N.° de meses que recibió sucedáneos", "tipo": "NUMERO"},
-            {"etiqueta": "¿Tomó leche materna?", "tipo": "BOOLEANO"},
-            {"etiqueta": "Estado serológico final", "tipo": "SELECT", "opciones": ["Infectado por VIH", "No infectado por VIH", "Estado indeterminado"]},
-            {"etiqueta": "Motivo de estado indeterminado", "tipo": "SELECT", "opciones": ["Continúa en seguimiento", "Fallecido antes de poder determinar su estado serológico", "Abandonó el seguimiento / seguimiento irregular", "Referido"]},
-            {"etiqueta": "Pruebas diagnósticas", "tipo": "MATRIZ", "filas": ["1.er PCR", "2.° PCR", "Prueba de ELISA", "Prueba confirmatoria"], "columnas": ["Fecha de toma de muestra", "Resultado"]},
-            {"etiqueta": "Observaciones", "tipo": "TEXTAREA"}
+            {"etiqueta": "Código del niño", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "DNI del niño", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "Código de la madre", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "DNI de la madre", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "¿Recibió ARV?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Fecha de inicio de ARV", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "¿Abandonó terapia ARV?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "ARV recibido", "tipo": "SELECT", "opciones": ["AZT", "AZT + NVP", "Otro"], "sensible": true},
+            {"etiqueta": "N.° de días que tomó ARV", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "¿Profilaxis ARV de acuerdo a NT vigente?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "¿Sucedáneos de leche materna?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "N.° de meses que recibió sucedáneos", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "¿Tomó leche materna?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Estado serológico final", "tipo": "SELECT", "opciones": ["Infectado por VIH", "No infectado por VIH", "Estado indeterminado"], "sensible": true},
+            {"etiqueta": "Motivo de estado indeterminado", "tipo": "SELECT", "opciones": ["Continúa en seguimiento", "Fallecido antes de poder determinar su estado serológico", "Abandonó el seguimiento / seguimiento irregular", "Referido"], "sensible": true},
+            {"etiqueta": "Pruebas diagnósticas", "tipo": "MATRIZ", "filas": ["1.er PCR", "2.° PCR", "Prueba de ELISA", "Prueba confirmatoria"], "columnas": ["Fecha de toma de muestra", "Resultado"], "sensible": true},
+            {"etiqueta": "Observaciones", "tipo": "TEXTAREA", "sensible": true}
           ]
         }
       ]
@@ -1219,8 +1223,11 @@
         },
         {
           "nombre": "Vía de transmisión",
+          "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 1.6: v2.1 aplanaba esto en un solo SELECT de 11 valores, lo que rompe reportes (\"casos por vía sexual\" exigía sumar 4 opciones en vez de filtrar una). Se revierte a vía + subtipo encadenados. El motor depende_de solo admite UN valor activador por campo, así que en vez de un único campo 'Subtipo' se modelan DOS subtipos, cada uno depende_de 'Vía de transmisión' con su propio valor_activador -- funcionalmente igual a lo que pedía el documento (el subtipo correcto se muestra según la vía elegida), pero expresable con el mecanismo que ya existe.",
           "campos": [
-            {"etiqueta": "Vía de transmisión", "tipo": "SELECT", "opciones": ["Heterosexual", "Homosexual", "Bisexual", "No determinado (sexual)", "Transfusión de sangre y/o derivados", "Compartir agujas / UDI", "Accidente con material contaminado", "Trasplante de órganos o tejidos", "No determinado (parenteral)", "Madre-niño (vertical)", "Desconocida"], "sensible": true}
+            {"etiqueta": "Vía de transmisión", "tipo": "SELECT", "opciones": ["Sexual", "Parenteral", "Madre-niño (vertical)", "Desconocida"], "sensible": true},
+            {"etiqueta": "Subtipo (vía sexual)", "tipo": "SELECT", "opciones": ["Heterosexual", "Homosexual", "Bisexual", "No determinado"], "sensible": true, "depende_de": "Vía de transmisión", "valor_activador": "SEXUAL"},
+            {"etiqueta": "Subtipo (vía parenteral)", "tipo": "SELECT", "opciones": ["Transfusión de sangre y/o derivados", "Compartir agujas / UDI", "Accidente con material contaminado", "Trasplante de órganos o tejidos", "No determinado"], "sensible": true, "depende_de": "Vía de transmisión", "valor_activador": "PARENTERAL"}
           ]
         },
         {
@@ -1411,17 +1418,9 @@
         },
         {
           "nombre": "Datos de la vacunación",
+          "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 2: nombre de vacuna/dosis/vía/sitio/fecha/EE.SS. que vacunó/fabricante/lote/fecha de expiración se retiran de campo_def -- ahora viven en caso_vacuna (columnas ampliadas en sql/35_fase5_ampliar_tablas_hija.sql). Solo queda 'Adyuvante', que no tiene columna equivalente en caso_vacuna. Contrapartida real: en el PDF estos eran SELECT de catálogo cerrado con códigos institucionales (ej. '06 Pentavalente'); caso_vacuna es una tabla compartida por todas las fichas y sus columnas son texto libre, así que se pierde la validación de catálogo al mover el contenido -- se acepta a propósito porque el objetivo explícito de esta fase es dejar de duplicar la vacunación en campo_def, no preservar el catálogo cerrado.",
           "campos": [
-            {"etiqueta": "Nombre de vacuna", "tipo": "SELECT", "opciones": ["01 BCG", "02 DPT", "03 APO", "04 Hepatitis B", "05 Hib", "06 Pentavalente", "07 SPR", "08 Fiebre amarilla", "09 SR", "10 DT", "11 Influenza estacional", "12 Antisarampión", "13 Contra neumococo", "14 Contra rotavirus", "15 Contra VPH", "16 IPV", "17 Contra varicela", "18 dTpa", "19 Anti COVID-19", "20 Otro"]},
-            {"etiqueta": "Adyuvante", "tipo": "SELECT", "opciones": ["01 Sí", "02 No"]},
-            {"etiqueta": "Dosis", "tipo": "SELECT", "opciones": ["01 Primera", "02 Segunda", "03 Tercera", "04 Adicional", "05 Única", "06 Refuerzo"]},
-            {"etiqueta": "Vía", "tipo": "SELECT", "opciones": ["01 Oral", "02 Intradérmica", "03 Subcutánea", "04 Intramuscular"]},
-            {"etiqueta": "Sitio", "tipo": "SELECT", "opciones": ["01 Hombro derecho", "02 Hombro izquierdo", "03 Brazo derecho", "04 Brazo izquierdo", "05 Vasto externo de muslo derecho", "06 Vasto externo de muslo izquierdo", "09 Oral"]},
-            {"etiqueta": "Fecha y hora de vacunación", "tipo": "FECHA"},
-            {"etiqueta": "EE.SS. que vacunó", "tipo": "TEXTO"},
-            {"etiqueta": "Fabricante", "tipo": "TEXTO"},
-            {"etiqueta": "Lote", "tipo": "TEXTO"},
-            {"etiqueta": "Fecha de expiración", "tipo": "FECHA"}
+            {"etiqueta": "Adyuvante", "tipo": "SELECT", "opciones": ["01 Sí", "02 No"]}
           ]
         },
         {
@@ -1834,6 +1833,14 @@
             {"etiqueta": "Fecha de muerte", "tipo": "FECHA"},
             {"etiqueta": "Hora de muerte", "tipo": "TEXTO"},
             {"etiqueta": "Peso al nacer (gramos)", "tipo": "NUMERO"}
+          ]
+        },
+        {
+          "nombre": "Datos de la madre",
+          "rol_sujeto": "MADRE",
+          "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 2: 'RESIDENCIA HABITUAL DE LA MADRE' es una columna real de la tabla del PDF (pág. 28) que se había omitido por completo (CAMBIOS_MANIFIESTO.md la había dado por completa sin serlo). El documento de cierre sugería moverla a caso_sujeto.direccion, pero caso_sujeto hoy solo guarda un renglón de identidad para el sujeto principal (CasosController::guardarSujetos) y no tiene ningún formulario de captura por rol -- el mecanismo que sí funciona hoy para datos de un sujeto secundario es campo_def.rol_sujeto (el mismo patrón que usa Z21 para MADRE/NINO_EXPUESTO), así que se modela igual acá en vez de depender de una UI de caso_sujeto que no existe.",
+          "campos": [
+            {"etiqueta": "Residencia habitual de la madre", "tipo": "TEXTO"}
           ]
         },
         {

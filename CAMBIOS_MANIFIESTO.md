@@ -192,24 +192,34 @@ contenido del manifiesto desde v1.0.
 
 ---
 
-## Lo que queda para revisión del usuario antes de la Fase 2
+## Lo que quedaba para revisión del usuario antes de la Fase 2
 
-1. **PFA**: decidir si se amplía el catálogo de clasificación final a los 5
-   valores del PDF o si la reducción a 3 fue una decisión de producto
-   deliberada que hay que documentar en vez de "corregir".
-2. **Tos ferina**: decidir si `usa_contactos` debe seguir en 1 sin que la
-   ficha tenga un censo de contactos nombrado, o si es un flag sobrante.
-3. **Parotiditis**: decidir si `usa_muestras` debe bajar a 0 (el PDF no
-   trae sección de laboratorio para esta ficha).
-4. **Sarampión**: decidir si se implementa la sección "Cadena de
-   transmisión" (`caso_contacto`) que hoy falta por completo.
-5. **ESAVI Anexo 6.2**: el contenido ya existe (PDF pág. 7-8); falta decidir
-   si vale la pena construir la capacidad de "sección condicional" del
-   motor para cargarlo, o dejarlo pendiente como hasta ahora.
-6. Confirmar que las simplificaciones señaladas (Chagas: clasificación
-   combinada en una sola SELECT en vez de tabla forma×fecha; VIH/SIDA: vía
-   de transmisión aplanada a una lista) son aceptables o si se prefiere
-   modelarlas más fielmente al PDF (p. ej. como MATRIZ).
+**Las 6 quedaron resueltas en `CIERRE_RECARGA_Y_FASE5.md` (2026-07-23)** —
+detalle completo en `HALLAZGOS_RECARGA_FICHAS.md`. Se deja el enunciado
+original de cada una, más la resolución:
+
+1. **PFA**: los 5 valores del PDF ya vivían en el campo propio de la ficha
+   (v2.0); faltaba restringir el núcleo. Resuelto:
+   `enfermedad.opciones_clasificacion = 'CONFIRMADO,PROBABLE,DESCARTADO'`
+   (`sql/34_cierre_flags_nucleo.sql`).
+2. **Tos ferina**: confirmado contra el PDF (pág. 1-2) que sí trae una
+   tabla nominal de contactos familiares (pregunta 61) — `usa_contactos=1`
+   es correcto, sin cambios.
+3. **Parotiditis**: confirmado que no hay sección de laboratorio (pág. 4).
+   `usa_muestras` bajado a 0 (`sql/34_cierre_flags_nucleo.sql`).
+4. **Sarampión**: implementada. `caso_contacto` ampliada con
+   `fecha_contacto`/`lugar_contacto`/`fecha_inicio_erupcion`/`vacunado_72h`
+   (`sql/35_fase5_ampliar_tablas_hija.sql`); widget, controlador y modelo
+   actualizados.
+5. **ESAVI Anexo 6.2**: se construyó la capacidad de sección condicional
+   (`seccion_def.depende_de`/`valor_activador`, `sql/36_seccion_condicional.sql`,
+   más soporte en `cargar_fichas.php` y en la vista). El contenido del Anexo
+   6.2 en sí sigue diferido a una sesión aparte.
+6. **Chagas**: se agregó "Criterio de descarte" como campo propio (siempre
+   visible, igual que "Dx de descarte" en Fiebre amarilla). **VIH/SIDA**: se
+   revirtió el aplanamiento a "Vía de transmisión" (4 valores) + dos campos
+   "Subtipo" encadenados (uno por vía sexual, otro por vía parenteral, cada
+   uno con su propio `depende_de`/`valor_activador` sobre la vía).
 
 Con esas seis decisiones, `manifiesto_fichas.json` queda listo para ser la
 entrada del cargador único de la Fase 2. **No se avanzó a Fase 2 ni se tocó

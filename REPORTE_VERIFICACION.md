@@ -4,7 +4,7 @@ Generado por `verificar_fichas.php` el 2026-07-23 comparando la base de datos co
 
 No se modificó ninguna definición de ficha ni la base de datos: esta es una corrida de solo lectura.
 
-**Metodología.** Las secciones y campos se emparejan por nombre/etiqueta normalizada (sin tildes, mayúsculas ni signos de puntuación), primero por coincidencia exacta y luego por similitud aproximada (contención o distancia de Levenshtein relativa ≤ 0.30). Para los campos SELECT/MULTISELECT/GRUPO_SI_NO/CRONOLOGIA (los mismos tipos que `cargar_fichas.php` exige con catálogo), además se verifica: que `catalogo_id` no sea NULL, que ese catálogo tenga al menos un `catalogo_item`, y que sus opciones (emparejadas con la misma normalización) coincidan con las del manifiesto — desde RECARGA_FICHAS.md Fase 4 (antes era una limitación conocida, ver INFORME_CARGADOR.md hallazgo A.2b). Limitación que sigue vigente: si una ficha consolida en la BD varias secciones del manifiesto en una sola (o al revés), puede reportarse una 'sección faltante' que en realidad solo cambió de nombre/agrupación — revisar el detalle antes de asumir contenido perdido.
+**Metodología.** Las secciones y campos se emparejan por nombre/etiqueta normalizada (sin tildes, mayúsculas ni signos de puntuación), primero por coincidencia exacta y luego por similitud aproximada (contención o distancia de Levenshtein relativa ≤ 0.30). Para los campos SELECT/MULTISELECT/GRUPO_SI_NO/CRONOLOGIA (los mismos tipos que `cargar_fichas.php` exige con catálogo), además se verifica: que `catalogo_id` no sea NULL, que ese catálogo tenga al menos un `catalogo_item`, y que sus opciones (emparejadas con la misma normalización) coincidan con las del manifiesto — desde RECARGA_FICHAS.md Fase 4 (antes era una limitación conocida, ver INFORME_CARGADOR.md hallazgo A.2b). Desde CIERRE_RECARGA_Y_FASE5.md Parte 0, también se verifica que `campo_def.sensible` y la dependencia condicional (`depende_de`/`valor_activador`) coincidan con el manifiesto — la recarga de la Fase 3 los perdía en silencio porque no formaban parte del esquema del manifiesto todavía. Limitación que sigue vigente: si una ficha consolida en la BD varias secciones del manifiesto en una sola (o al revés), puede reportarse una 'sección faltante' que en realidad solo cambió de nombre/agrupación — revisar el detalle antes de asumir contenido perdido.
 
 ---
 
@@ -17,9 +17,9 @@ No se modificó ninguna definición de ficha ni la base de datos: esta es una co
 | B01 | Varicela con complicaciones | 5 / 5 | 22 / 22 | ✅ OK |
 | B26 | Parotiditis con complicaciones | 4 / 4 | 25 / 25 | ✅ OK |
 | A36 | Difteria | 3 / 3 | 19 / 19 | ✅ OK |
-| A95 | Fiebre amarilla | 5 / 5 | 36 / 36 | ✅ OK |
+| A95 | Fiebre amarilla | 5 / 5 | 37 / 37 | ✅ OK |
 | B55 | Leishmaniasis | 6 / 6 | 26 / 26 | ✅ OK |
-| B57 | Enfermedad de Chagas | 5 / 5 | 26 / 26 | ✅ OK |
+| B57 | Enfermedad de Chagas | 5 / 5 | 27 / 27 | ✅ OK |
 | A44 | Enfermedad de Carrión (bartonelosis) | 9 / 9 | 28 / 28 | ✅ OK |
 | B04X | Viruela del mono (Mpox) | 6 / 6 | 41 / 41 | ✅ OK |
 | A00 | EDA grave / cólera | 6 / 6 | 34 / 34 | ✅ OK |
@@ -28,14 +28,14 @@ No se modificó ninguna definición de ficha ni la base de datos: esta es una co
 | A80 | Parálisis flácida aguda (PFA) | 7 / 7 | 45 / 45 | ✅ OK |
 | B05 | Sarampión / rubéola / febriles eruptivas | 7 / 7 | 57 / 57 | ✅ OK |
 | Z21 | Gestante con VIH y niño expuesto | 2 / 2 | 42 / 42 | ✅ OK |
-| B24 | VIH / SIDA — notificación individual | 8 / 8 | 24 / 24 | ✅ OK |
+| B24 | VIH / SIDA — notificación individual | 8 / 8 | 26 / 26 | ✅ OK |
 | A50 | Sífilis materna y congénita | 3 / 3 | 25 / 25 | ✅ OK |
 | P35.0 | Síndrome de rubéola congénita (SRC) | 5 / 5 | 27 / 27 | ✅ OK |
-| Y59.0 | ESAVI severo | 9 / 9 | 43 / 43 | ✅ OK |
+| Y59.0 | ESAVI severo | 9 / 9 | 34 / 34 | ✅ OK |
 | Y07 | Violencia familiar | 6 / 6 | 25 / 25 | ✅ OK |
 | V99 | Lesiones por accidentes de tránsito | 7 / 7 | 27 / 27 | ✅ OK |
 | O95 | Muerte materna (Anexo 1 y 2) | 16 / 16 | 83 / 83 | ✅ OK |
-| P96 | Muerte fetal y neonatal | 4 / 4 | 13 / 13 | ✅ OK |
+| P96 | Muerte fetal y neonatal | 5 / 5 | 14 / 14 | ✅ OK |
 
 ---
 

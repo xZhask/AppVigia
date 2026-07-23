@@ -24,7 +24,8 @@ class CampoDef extends Model
      */
     public static function porEnfermedad(int $enfermedadId): array
     {
-        $sql = 'SELECT cd.* FROM campo_def cd
+        $sql = 'SELECT cd.*, sd.depende_de AS seccion_depende_de, sd.valor_activador AS seccion_valor_activador
+                  FROM campo_def cd
                   JOIN seccion_def sd ON sd.id = cd.seccion_id
                  WHERE sd.enfermedad_id = :enf
                  ORDER BY sd.orden, sd.id, cd.orden, cd.id';

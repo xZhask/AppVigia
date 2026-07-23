@@ -99,11 +99,30 @@ $mostrarSeparadorSujeto = function(int $seccionId) use (&$rolPrevio) {
 };
 ?>
 
+<?php
+/**
+ * Sección condicional a nivel de seccion_def (CIERRE_RECARGA_Y_FASE5.md
+ * Parte 1.5): reutiliza el mismo mecanismo .dep-wrap/data-depende-de que
+ * public/js/ficha.js ya aplica a campos individuales, pero envolviendo la
+ * tarjeta entera de la sección en vez de un campo.
+ */
+$atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): string {
+    if (empty($seccion['depende_de'])) {
+        return '';
+    }
+    $oculto = !campoVisiblePorDependencia(
+        ['depende_de' => $seccion['depende_de'], 'valor_activador' => $seccion['valor_activador']],
+        $valoresCampos
+    );
+    return ' dep-wrap" data-depende-de="campo_' . (int) $seccion['depende_de'] . '" data-valor-activador="' . e($seccion['valor_activador']) . '"' . ($oculto ? ' hidden' : '');
+};
+?>
+
 <?php if (!empty($secciones)): ?>
   <?php $mostrarSeparadorSujeto((int) $secciones[0]['id']); ?>
 <?php endif; ?>
 
-<div class="card section">
+<div class="card section<?= $atributosDependenciaSeccion($secciones[0] ?? []) ?>">
   <div class="section-head">
     <span class="section-num"><?= $numeroSeccion ?></span>
     <h3><?= e($secciones[0]['nombre'] ?? 'Cuadro clínico') ?></h3>
@@ -136,7 +155,7 @@ $mostrarSeparadorSujeto = function(int $seccionId) use (&$rolPrevio) {
 
 <?php foreach (array_slice($secciones, 1) as $seccion): ?>
   <?php $mostrarSeparadorSujeto((int) $seccion['id']); ?>
-  <div class="card section">
+  <div class="card section<?= $atributosDependenciaSeccion($seccion) ?>">
     <div class="section-head">
       <span class="section-num"><?= $numeroSeccion ?></span>
       <h3><?= e($seccion['nombre']) ?></h3>
