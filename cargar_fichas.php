@@ -100,6 +100,17 @@ if ($manifiesto === null) {
 const TIPOS_CON_OPCIONES = ['SELECT', 'MULTISELECT', 'GRUPO_SI_NO', 'CRONOLOGIA'];
 const TIPOS_VALIDOS = ['TEXTO', 'NUMERO', 'FECHA', 'BOOLEANO', 'SELECT', 'MULTISELECT', 'TEXTAREA', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'];
 
+// Columnas reales de cada tabla hija que se pueden activar/desactivar por
+// ficha (PENDIENTES_POST_FASE5.md punto 3) -- "nombres"/"vacuna"/
+// "vacuna_otro"/"fecha" no están acá porque los widgets las muestran
+// siempre (ver CasosController::COLUMNAS_HIJA_DEFECTO).
+const COLUMNAS_TABLA_HIJA_VALIDAS = [
+    'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h'],
+    'caso_vacuna'   => ['dosis', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
+    'caso_viaje'    => ['pais', 'fecha_salida', 'fecha_retorno'],
+    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result'],
+];
+
 // Listas de opciones tan genéricas que se comparten entre fichas en vez de
 // crear un catálogo por ficha (se detectan por contenido exacto, no por
 // nombre — cualquier campo con exactamente esta lista de opciones cae acá).
@@ -201,6 +212,19 @@ function validarManifiesto(array $manifiesto): void
                 }
                 if (!isset($etiquetasFicha[$seccion['depende_de']])) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / sección \"{$nombreSeccion}\" depende de \"{$seccion['depende_de']}\", que no existe como campo de esta misma ficha.");
+                }
+            }
+        }
+
+        if (!empty($ficha['columnas_tablas_hija'])) {
+            foreach ($ficha['columnas_tablas_hija'] as $tabla => $columnas) {
+                if (!isset(COLUMNAS_TABLA_HIJA_VALIDAS[$tabla])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija tiene una tabla desconocida: \"{$tabla}\".");
+                }
+                foreach ($columnas as $col) {
+                    if (!in_array($col, COLUMNAS_TABLA_HIJA_VALIDAS[$tabla], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} incluye \"{$col}\", que no es una columna configurable de esa tabla.");
+                    }
                 }
             }
         }
@@ -343,6 +367,22 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         'catalogos_creados' => [],
         'catalogos_reutilizados' => [],
     ];
+
+    // Configuración de columnas de tabla hija (PENDIENTES_POST_FASE5.md
+    // punto 3): no toca campo_def/seccion_def, así que se aplica siempre,
+    // incluso si la ficha termina bloqueada por caso_valor más abajo. El
+    // manifiesto es la fuente de verdad: si una ficha no declara
+    // "columnas_tablas_hija" para una tabla, se deja NULL explícitamente
+    // (el widget cae al mínimo por defecto), no se conserva lo que hubiera
+    // quedado de una corrida anterior.
+    $columnasDeclaradas = $fichaManifiesto['columnas_tablas_hija'] ?? [];
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ? WHERE id = ?')->execute([
+        isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
+        isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
+        isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
+        isset($columnasDeclaradas['caso_vacuna']) ? json_encode($columnasDeclaradas['caso_vacuna'], JSON_UNESCAPED_UNICODE) : null,
+        $enfermedadId,
+    ]);
 
     $stmt = $pdo->prepare(
         'SELECT COUNT(*) FROM caso_valor cv

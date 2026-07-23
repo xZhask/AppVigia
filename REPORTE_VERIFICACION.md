@@ -31,11 +31,11 @@ No se modificó ninguna definición de ficha ni la base de datos: esta es una co
 | B24 | VIH / SIDA — notificación individual | 8 / 8 | 26 / 26 | ✅ OK |
 | A50 | Sífilis materna y congénita | 3 / 3 | 25 / 25 | ✅ OK |
 | P35.0 | Síndrome de rubéola congénita (SRC) | 5 / 5 | 27 / 27 | ✅ OK |
-| Y59.0 | ESAVI severo | 9 / 9 | 34 / 34 | ✅ OK |
+| Y59.0 | ESAVI severo | 8 / 8 | 33 / 33 | ✅ OK |
 | Y07 | Violencia familiar | 6 / 6 | 25 / 25 | ✅ OK |
 | V99 | Lesiones por accidentes de tránsito | 7 / 7 | 27 / 27 | ✅ OK |
 | O95 | Muerte materna (Anexo 1 y 2) | 16 / 16 | 83 / 83 | ✅ OK |
-| P96 | Muerte fetal y neonatal | 5 / 5 | 14 / 14 | ✅ OK |
+| P96 | Muerte fetal y neonatal | 4 / 4 | 13 / 13 | ✅ OK |
 
 ---
 

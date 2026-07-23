@@ -1,9 +1,149 @@
 # HALLAZGOS_RECARGA_FICHAS.md
 
-Registro consolidado de hallazgos por fase de `RECARGA_FICHAS.md` y de
-`CIERRE_RECARGA_Y_FASE5.md`. Cada fase tiene su propio entregable detallado
-(referenciado abajo); este documento es el índice de "qué se encontró" para
-no tener que reconstruirlo leyendo cinco archivos distintos.
+Registro consolidado de hallazgos por fase de `RECARGA_FICHAS.md`,
+`CIERRE_RECARGA_Y_FASE5.md` y `PENDIENTES_POST_FASE5.md`. Cada fase tiene su
+propio entregable detallado (referenciado abajo); este documento es el
+índice de "qué se encontró" para no tener que reconstruirlo leyendo cinco
+archivos distintos.
+
+---
+
+## PENDIENTES_POST_FASE5.md
+
+### Punto 1 — Sensibilidad: Sífilis corregida, SRC evaluado y NO aplicado
+
+**Sífilis materna y congénita (`A50`)**: tenía 0/25 campos `sensible`.
+Corregido: 23/25 (todo lo clínico y de clasificación de las secciones II y
+III); se dejaron fuera los 2 campos administrativos del "Encabezado"
+("Investigación de", "Nivel del establecimiento") por ser clasificación
+organizacional, no dato clínico ni identificatorio del paciente. Recargada
+y verificada.
+
+**Síndrome de rubéola congénita (`P35.0`) — recomendación, sin aplicar**:
+el documento pidió evaluar si el mismo criterio aplica. Revisando
+`DEFINICION_FICHAS_B_C_D.md` sección 0.b, la lista de fichas que exige
+`sensible=1` es explícita y cerrada: VIH/SIDA, sífilis, violencia familiar y
+antecedentes de muerte materna. La rubéola congénita **no está en esa
+lista** — es una enfermedad prevenible por vacuna, no de transmisión
+sexual, y no comparte el motivo de confidencialidad de las otras cuatro
+(estigma social/legal asociado a ITS o violencia). **Recomendación: no
+marcar P35.0 como sensible** salvo que haya otra razón institucional no
+documentada en el criterio 0.b (ej. protección genérica de datos de
+recién nacidos) — de haberla, es una decisión de producto que corresponde
+confirmar explícitamente antes de aplicarla, no inferirla de este criterio.
+
+### Punto 2 — Catálogo de `caso_vacuna`; `caso_muestra` revisado (ya estaba bien)
+
+`caso_vacuna.vacuna/dosis/via/sitio` eran texto libre desde la Fase 5. Se
+creó un catálogo compartido por columna (`vacuna_minsa` 20 ítems,
+`dosis_vacuna` 6, `via_vacuna` 4, `sitio_vacuna` 7, `adyuvante_vacuna` 2 —
+`sql/37_catalogos_vacuna_compartidos.sql`) y se agregó una columna
+`adyuvante` (el único campo de vacunación de ESAVI que seguía en
+`campo_def` por no tener dónde ir — ya no queda ninguno).
+
+**Desviación deliberada del ALTER TABLE que sugería el documento**: no se
+agregaron columnas `_id` con FK a `catalogo_item`. En vez de eso se siguió
+el patrón que **ya usaba `caso_muestra`** desde antes (columnas `varchar`
+llenadas por `<select>` con el `valor` del catálogo, no por texto libre) —
+mismo resultado (agrupa bien en reportes, sin "Pentavalente"/"pentavalente"),
+menos columnas e índices nuevos. Se agregó `CatalogoItem::porNombreCatalogo()`
+porque estos catálogos nuevos no tienen id fijo (a diferencia de
+sexo/si_no/resultado_lab/tipo_muestra/tipo_prueba, sembrados con id
+explícito en `01_esquema_vigia.sql`).
+
+"Vacuna" es la única columna con opción "Otro": se agregó un campo
+`vacuna_otro` de texto libre que, si se completa, reemplaza al código
+elegido — es la única opción del PDF que lo pedía.
+
+**`caso_muestra` revisado, no tenía el problema**: sus 3 columnas de
+catálogo (`tipo_muestra`, `tipo_prueba`, `resultado`) ya se llenan con
+`<select>` respaldados por catálogos fijos (ids 3/4/5,
+`CasosController::datosMuestrasCatalogo()`) desde antes de esta sesión —
+nunca fueron texto libre. No se tocó nada ahí.
+
+### Punto 3 — Configuración de columnas por ficha (construida desde cero)
+
+Confirmado (ya lo había encontrado en la sesión anterior): no existía
+ningún mecanismo de esto. Se construyó:
+
+- **Schema**: `enfermedad.columnas_contacto/muestra/viaje/vacuna` (JSON,
+  `sql/38_columnas_tabla_hija_por_ficha.sql`).
+- **Manifiesto**: cada ficha puede declarar opcionalmente
+  `"columnas_tablas_hija": {"caso_contacto": [...], ...}`.
+  `cargar_fichas.php` valida las columnas contra una lista fija de
+  columnas configurables por tabla (`COLUMNAS_TABLA_HIJA_VALIDAS`) y
+  actualiza `enfermedad.columnas_*` en cada corrida — si una ficha no lo
+  declara, lo deja en `NULL` explícito (no conserva lo de una corrida
+  anterior; el manifiesto manda).
+- **Controlador**: `CasosController::datosColumnasTablaHija()` resuelve el
+  JSON guardado o un mínimo por defecto (`COLUMNAS_HIJA_DEFECTO`) — el
+  mínimo, no todas, para que una ficha sin configurar no herede de golpe
+  columnas de otra.
+- **Widgets**: `contactos.php` y `vacunas.php` ahora envuelven cada campo
+  "de más" en un `if (in_array(...))`. `viajes.php` y `muestras.php` **no
+  se tocaron** — sus columnas no cambiaron en la Fase 5 (viajes tiene las
+  mismas 3 de siempre tras corregir el punto de abajo; muestras nunca tuvo
+  columnas nuevas), así que no había nada que ocultar todavía.
+- **Configurado**: Difteria, Mpox, Sarampión y Tos ferina (contactos) con
+  las columnas que de verdad les corresponden. El documento sugería
+  columnas que no existen en el esquema (`direccion`, `tipo_exposicion` en
+  contactos; la fila de PFA mezclaba columnas de vacuna con contactos, que
+  PFA ni siquiera usa) — se dejaron fuera en vez de inventar columnas
+  nuevas para calzar con esos nombres. `caso_vacuna` se quedó en el mínimo
+  por defecto para todas las fichas: el documento no llegó a especificar
+  columnas por ficha para vacuna, queda abierto para una próxima revisión
+  del PDF.
+- **De paso, corregido**: la nota de Tos ferina decía "no hay campos que
+  llenar en caso_contacto para esta ficha" — era el mismo error que ya se
+  había corregido en la Fase 1.2 de `CIERRE_RECARGA_Y_FASE5.md` (sí hay una
+  tabla nominal, pregunta 61 del PDF) pero `tablas_hijas.caso_contacto`
+  había quedado en `false` en el manifiesto pese a que `usa_contactos=1` en
+  la BD era correcto. Corregido a `true` para que coincidan.
+
+**Bug propio encontrado y corregido de paso**: al investigar esto se
+encontró que `sql/35_fase5_ampliar_tablas_hija.sql` (Fase 5 original) había
+agregado `lugar_institucion`/`permanencia_dias` a `caso_viaje` copiando el
+ALTER TABLE de `CIERRE_RECARGA_Y_FASE5.md` sin revisar antes si esa
+necesidad ya tenía dueño. Sí lo tenía: `caso_lugar_infeccion` ya traía esas
+mismas columnas (más `localidad_texto`/`distrito_id`) y ya estaba conectada
+de punta a punta desde antes (controlador, modelo, vista). Las columnas de
+`caso_viaje` nunca se usaron en ningún controlador/vista (verificado con
+grep) y la tabla tenía 0 filas — se revirtieron
+(`sql/39_fix_caso_viaje_duplicado.sql`), sin pérdida de dato real.
+
+**Hallazgo aparte, no corregido** (fuera del alcance de los 4 puntos):
+`caso_lugar_infeccion` tiene su propio flag `enfermedad.usa_lugar_infeccion`,
+independiente de `usa_viajes` y no rastreado en absoluto por el manifiesto.
+Difteria y Fiebre amarilla lo tienen en 1 (correcto); Chagas y Carrión lo
+tienen en 0 pese a que `CIERRE_RECARGA_Y_FASE5.md` las mencionó como fichas
+con "Lugar probable de infección". No se tocó — no estaba entre los 4
+puntos pedidos y merece su propia revisión contra el PDF antes de decidir.
+
+### Punto 4 — Residencia de la madre (P96): movida a `caso_sujeto`, con UBIGEO
+
+Se retiró "Residencia habitual de la madre" de `campo_def` (donde había
+quedado como solución provisional en `CIERRE_RECARGA_Y_FASE5.md`, ver nota
+de esa fecha) y se capturó como estaba previsto desde el principio: en
+`caso_sujeto` (rol `MADRE`: `distrito_id` + `direccion`), con selector de
+UBIGEO en vez de texto libre.
+
+Esto requerió construir la UI que en la sesión anterior se había
+confirmado que no existía:
+- `CasoSujeto::guardarSujetos()` ahora acepta `distrito_id`/`direccion` por
+  rol (antes solo guardaba `persona_id`).
+- `selector-ubigeo.php` tenía el `name="distrito_id"` fijo — solo se podía
+  usar una vez por página. Se le agregaron `$nombreCampoDistrito` (default
+  `'distrito_id'`, no rompe los 2 usos existentes) y `$distritoRequerido`,
+  para poder tener un segundo selector (residencia de la madre) sin que
+  choque con el del domicilio del paciente.
+- Nuevo parcial `residencia-madre.php`, incluido solo cuando
+  `enfermedad.cie10 === 'P96'` (no se generalizó a un mecanismo por rol
+  para todas las fichas multi-sujeto — es la única que lo necesita hoy).
+- `fichas/ver.php` resuelve y muestra el nombre del distrito (no el
+  código) para la vista de solo lectura.
+
+Probado de punta a punta (guardar + leer) dentro de una transacción de
+prueba con `ROLLBACK`, sin dejar nada escrito en la base real.
 
 ---
 

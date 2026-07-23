@@ -206,6 +206,10 @@ if ($puedeElegirEstablecimiento) {
             <div class="eyebrow" style="margin:22px 0 10px">Lugar probable de infección</div>
             <?php require __DIR__ . '/../partials/tablas-hijas/lugar-infeccion.php'; ?>
           <?php endif; ?>
+
+          <?php if (($enfermedad['cie10'] ?? null) === 'P96'): ?>
+            <?php require __DIR__ . '/../partials/tablas-hijas/residencia-madre.php'; ?>
+          <?php endif; ?>
         </div>
       </div>
       <?php $numeroSeccion++; ?>

@@ -14,6 +14,7 @@ use App\Models\CasoBitacora;
 use App\Models\CasoContacto;
 use App\Models\CasoLugarInfeccion;
 use App\Models\CasoMuestra;
+use App\Models\CasoSujeto;
 use App\Models\CasoValor;
 use App\Models\CasoVacuna;
 use App\Models\CasoViaje;
@@ -109,7 +110,8 @@ class CasosController extends Controller
             'erroresVacunas' => [],
             'erroresMuestras' => [],
             'erroresLugarInfeccion' => [],
-        ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo(), contextoUbigeo(null)));
+            'sujetoMadre' => [],
+        ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo(), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
     }
 
     public function crear(): void
@@ -259,7 +261,8 @@ class CasosController extends Controller
                 'erroresVacunas' => $erroresVacunas,
                 'erroresMuestras' => $erroresMuestras,
                 'erroresLugarInfeccion' => $erroresLugarInfeccion,
-            ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo(), contextoUbigeo($distritoId ?: null)));
+                'sujetoMadre' => ($enfermedad['cie10'] ?? null) === 'P96' ? $this->datosResidenciaMadre() : [],
+            ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo(), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
         }
 
@@ -317,9 +320,11 @@ class CasosController extends Controller
             CasoLugarInfeccion::reemplazarTodos($casoId, $filasLugarInfeccion);
 
             $rolPrincipal = $enfermedad['multi_sujeto'] ? explode(',', $enfermedad['roles_sujeto'])[0] : 'CASO_INDICE';
-            \App\Models\CasoSujeto::guardarSujetos($casoId, [
-                $rolPrincipal => ['persona_id' => $personaId]
-            ]);
+            $sujetos = [$rolPrincipal => ['persona_id' => $personaId]];
+            if (($enfermedad['cie10'] ?? null) === 'P96') {
+                $sujetos['MADRE'] = $this->datosResidenciaMadre();
+            }
+            CasoSujeto::guardarSujetos($casoId, $sujetos);
 
             CasoBitacora::registrar($casoId, (int) $usuario['id'], 'CREACION', 'Ficha registrada.');
 
@@ -484,6 +489,7 @@ class CasosController extends Controller
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),
             'muestras'    => CasoMuestra::porCaso((int) $caso['id']),
             'lugaresInfeccion' => CasoLugarInfeccion::porCaso((int) $caso['id']),
+            'sujetoMadre' => $this->sujetoMadreConDistrito($caso),
             'bitacora'    => CasoBitacora::porCaso((int) $caso['id']),
             'puedeEditar' => $this->puedeEditarCaso($caso),
             'puedeCerrar' => Auth::tieneRol(...self::ROLES_CIERRE),
@@ -564,7 +570,8 @@ class CasosController extends Controller
             'erroresVacunas' => [],
             'erroresLugarInfeccion' => [],
             'erroresMuestras' => [],
-        ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo(), contextoUbigeo($caso['distrito_id'])));
+            'sujetoMadre' => CasoSujeto::porCaso((int) $caso['id'])['MADRE'] ?? [],
+        ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo(), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($caso['distrito_id'])));
     }
 
     public function actualizar(string $id): void
@@ -698,7 +705,8 @@ class CasosController extends Controller
                 'erroresVacunas' => $erroresVacunas,
                 'erroresMuestras' => $erroresMuestras,
                 'erroresLugarInfeccion' => $erroresLugarInfeccion,
-            ], $datosPnp['vista'], $this->datosMuestrasCatalogo(), contextoUbigeo($distritoId ?: null)));
+                'sujetoMadre' => ($enfermedad['cie10'] ?? null) === 'P96' ? $this->datosResidenciaMadre() : [],
+            ], $datosPnp['vista'], $this->datosMuestrasCatalogo(), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
         }
 
@@ -748,13 +756,15 @@ class CasosController extends Controller
             CasoMuestra::reemplazarTodos((int) $caso['id'], $filasMuestras);
             CasoLugarInfeccion::reemplazarTodos((int) $caso['id'], $filasLugarInfeccion);
 
-            $rolPrincipal = $caso['enfermedad_multi_sujeto'] ?? false 
-                ? explode(',', $caso['enfermedad_roles_sujeto'] ?? 'CASO_INDICE')[0] 
+            $rolPrincipal = $caso['enfermedad_multi_sujeto'] ?? false
+                ? explode(',', $caso['enfermedad_roles_sujeto'] ?? 'CASO_INDICE')[0]
                 : 'CASO_INDICE';
-                
-            \App\Models\CasoSujeto::guardarSujetos((int) $caso['id'], [
-                $rolPrincipal => ['persona_id' => $personaId]
-            ]);
+
+            $sujetos = [$rolPrincipal => ['persona_id' => $personaId]];
+            if (($enfermedad['cie10'] ?? null) === 'P96') {
+                $sujetos['MADRE'] = $this->datosResidenciaMadre();
+            }
+            CasoSujeto::guardarSujetos((int) $caso['id'], $sujetos);
 
             if ($clasificacion !== $caso['clasificacion']) {
                 CasoBitacora::registrar(
@@ -1282,6 +1292,93 @@ class CasosController extends Controller
         ];
     }
 
+    /**
+     * Catálogos compartidos de caso_vacuna (PENDIENTES_POST_FASE5.md punto 2):
+     * mismo patrón que datosMuestrasCatalogo(), el widget llena <select> con
+     * estas opciones en vez de aceptar texto libre.
+     */
+    private function datosVacunasCatalogo(): array
+    {
+        return [
+            'opcionesVacuna'    => CatalogoItem::porNombreCatalogo('vacuna_minsa'),
+            'opcionesViaVacuna' => CatalogoItem::porNombreCatalogo('via_vacuna'),
+            'opcionesSitio'     => CatalogoItem::porNombreCatalogo('sitio_vacuna'),
+            'opcionesDosis'     => CatalogoItem::porNombreCatalogo('dosis_vacuna'),
+            'opcionesAdyuvante' => CatalogoItem::porNombreCatalogo('adyuvante_vacuna'),
+        ];
+    }
+
+    /**
+     * Columnas mínimas de cada tabla hija cuando la ficha no declara
+     * `columnas_tablas_hija` en el manifiesto (PENDIENTES_POST_FASE5.md
+     * punto 3) -- deliberadamente no son "todas las columnas", para que una
+     * ficha nueva sin configurar no herede de golpe las columnas de otra.
+     * "nombres"/"vacuna"/"vacuna_otro"/"fecha" no aparecen acá porque los
+     * widgets de contactos.php/vacunas.php las muestran siempre (son la
+     * identidad de la fila, no tiene sentido ocultarlas). `viaje` y
+     * `muestra` no tienen columnas de más que ocultar -- sus widgets no
+     * cambiaron en la Fase 5, así que el valor por defecto es "todas las
+     * que ya existían" para no dar marcha atrás en lo que ya se veía.
+     */
+    private const COLUMNAS_HIJA_DEFECTO = [
+        'contacto' => ['parentesco', 'doc', 'celular'],
+        'vacuna'   => ['dosis'],
+        'viaje'    => ['pais', 'fecha_salida', 'fecha_retorno'],
+        'muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result'],
+    ];
+
+    /**
+     * Resuelve, para la enfermedad dada, qué columnas mostrar en cada
+     * widget de tabla hija: lo que traiga `enfermedad.columnas_*` (JSON
+     * cargado desde el manifiesto por cargar_fichas.php), o el mínimo por
+     * defecto si es NULL.
+     */
+    private function datosColumnasTablaHija(array $enfermedad): array
+    {
+        $resolver = function (?string $json, string $tabla): array {
+            if ($json === null) {
+                return self::COLUMNAS_HIJA_DEFECTO[$tabla];
+            }
+            $decodificado = json_decode($json, true);
+            return is_array($decodificado) ? $decodificado : self::COLUMNAS_HIJA_DEFECTO[$tabla];
+        };
+
+        return [
+            'columnasContacto' => $resolver($enfermedad['columnas_contacto'] ?? null, 'contacto'),
+            'columnasVacuna'   => $resolver($enfermedad['columnas_vacuna'] ?? null, 'vacuna'),
+            'columnasViaje'    => $resolver($enfermedad['columnas_viaje'] ?? null, 'viaje'),
+            'columnasMuestra'  => $resolver($enfermedad['columnas_muestra'] ?? null, 'muestra'),
+        ];
+    }
+
+    /**
+     * Sujeto MADRE de un caso, con el nombre del distrito resuelto (para la
+     * vista de solo lectura -- el formulario de edición usa el selector de
+     * UBIGEO, que no necesita el nombre, solo el id).
+     */
+    private function sujetoMadreConDistrito(array $caso): array
+    {
+        $sujeto = CasoSujeto::porCaso((int) $caso['id'])['MADRE'] ?? [];
+        if (!empty($sujeto['distrito_id'])) {
+            $distrito = Distrito::buscarPorId($sujeto['distrito_id']);
+            $sujeto['distrito_nombre'] = $distrito['nombre'] ?? $sujeto['distrito_id'];
+        }
+        return $sujeto;
+    }
+
+    /**
+     * "Residencia habitual de la madre" para muerte fetal y neonatal (P96) --
+     * PENDIENTES_POST_FASE5.md punto 4: se captura en caso_sujeto (rol
+     * MADRE), con selector de UBIGEO, en vez de un campo_def de texto libre.
+     */
+    private function datosResidenciaMadre(): array
+    {
+        return [
+            'distrito_id' => trim((string) ($_POST['madre_distrito_id'] ?? '')) ?: null,
+            'direccion'   => trim((string) ($_POST['madre_direccion'] ?? '')) ?: null,
+        ];
+    }
+
     private function filasContactos(): array
     {
         $nombres = $_POST['contacto_nombres'] ?? [];
@@ -1386,23 +1483,42 @@ class CasosController extends Controller
         return [$filas, $errores];
     }
 
+    /**
+     * Valida un código contra un catálogo compartido de caso_vacuna: si el
+     * cliente manda algo que no es uno de los `valor` del catálogo, se
+     * descarta (no se confía en lo que envía el navegador). Vacío es válido
+     * (campo opcional).
+     */
+    private function codigoValidoDeCatalogo(string $codigo, string $nombreCatalogo): ?string
+    {
+        if ($codigo === '') {
+            return null;
+        }
+        $validos = array_column(CatalogoItem::porNombreCatalogo($nombreCatalogo), 'valor');
+        return in_array($codigo, $validos, true) ? $codigo : null;
+    }
+
     private function filasVacunas(): array
     {
         $vacunas = $_POST['vacuna_nombre'] ?? [];
+        $vacunasOtro = $_POST['vacuna_otro'] ?? [];
         $dosis = $_POST['vacuna_dosis'] ?? [];
         $fechas = $_POST['vacuna_fecha'] ?? [];
         $fabricantes = $_POST['vacuna_fabricante'] ?? [];
         $lotes = $_POST['vacuna_lote'] ?? [];
         $vias = $_POST['vacuna_via'] ?? [];
         $sitios = $_POST['vacuna_sitio'] ?? [];
+        $adyuvantes = $_POST['vacuna_adyuvante'] ?? [];
         $fechasVencimiento = $_POST['vacuna_fecha_vencimiento'] ?? [];
         $establecimientos = $_POST['vacuna_establecimiento'] ?? [];
 
         $filas = [];
         $errores = [];
-        foreach ($vacunas as $i => $vacuna) {
-            $vacuna = trim((string) $vacuna);
-            if ($vacuna === '') {
+        $totalFilas = max(count($vacunas), count($vacunasOtro));
+        for ($i = 0; $i < $totalFilas; $i++) {
+            $codigo = trim((string) ($vacunas[$i] ?? ''));
+            $otro = trim((string) ($vacunasOtro[$i] ?? ''));
+            if ($codigo === '' && $otro === '') {
                 continue;
             }
             $fechaTxt = trim((string) ($fechas[$i] ?? ''));
@@ -1415,14 +1531,17 @@ class CasosController extends Controller
                 }
             }
             $fechaVencimientoTxt = trim((string) ($fechasVencimiento[$i] ?? ''));
+            // "Otro (especificar)" reemplaza al código elegido si se completó.
+            $vacuna = $otro !== '' ? $otro : $this->codigoValidoDeCatalogo($codigo, 'vacuna_minsa');
             $filas[] = [
                 'vacuna'            => $vacuna,
-                'dosis'             => trim((string) ($dosis[$i] ?? '')) ?: null,
+                'dosis'             => $this->codigoValidoDeCatalogo(trim((string) ($dosis[$i] ?? '')), 'dosis_vacuna'),
                 'fecha'             => $fechaIso,
                 'fabricante'        => trim((string) ($fabricantes[$i] ?? '')) ?: null,
                 'lote'              => trim((string) ($lotes[$i] ?? '')) ?: null,
-                'via'               => trim((string) ($vias[$i] ?? '')) ?: null,
-                'sitio'             => trim((string) ($sitios[$i] ?? '')) ?: null,
+                'via'               => $this->codigoValidoDeCatalogo(trim((string) ($vias[$i] ?? '')), 'via_vacuna'),
+                'sitio'             => $this->codigoValidoDeCatalogo(trim((string) ($sitios[$i] ?? '')), 'sitio_vacuna'),
+                'adyuvante'         => $this->codigoValidoDeCatalogo(trim((string) ($adyuvantes[$i] ?? '')), 'adyuvante_vacuna'),
                 'fecha_vencimiento' => $fechaVencimientoTxt !== '' ? fechaIsoValida($fechaVencimientoTxt) : null,
                 'establecimiento'   => trim((string) ($establecimientos[$i] ?? '')) ?: null,
             ];

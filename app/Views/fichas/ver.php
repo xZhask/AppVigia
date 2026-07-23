@@ -182,6 +182,7 @@ $accionEtiquetas = [
             <div class="field"><label class="fl">Sitio</label><div class="control" style="background:var(--paper)"><?= e($vc['sitio'] ?? '—') ?></div></div>
             <div class="field"><label class="fl">Fecha de vencimiento</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vc['fecha_vencimiento'] ?? null) ?: '—') ?></div></div>
             <div class="field"><label class="fl">EE.SS. que vacunó</label><div class="control" style="background:var(--paper)"><?= e($vc['establecimiento'] ?? '—') ?></div></div>
+            <div class="field"><label class="fl">Adyuvante</label><div class="control" style="background:var(--paper)"><?= e($vc['adyuvante'] ?? '—') ?></div></div>
           </div></div>
         <?php endforeach; endif; ?>
 
@@ -194,6 +195,14 @@ $accionEtiquetas = [
               <div class="field"><label class="fl">Permanencia (días)</label><div class="control mono" style="background:var(--paper)"><?= e($li['permanencia_dias'] ?? '—') ?></div></div>
             </div></div>
           <?php endforeach; ?>
+        <?php endif; ?>
+
+        <?php if (($caso['cie10'] ?? null) === 'P96' && !empty($sujetoMadre)): ?>
+          <div class="eyebrow" style="margin:18px 0 10px">Residencia habitual de la madre</div>
+          <div class="subrow"><div class="fields thirds" style="flex:1">
+            <div class="field wide"><label class="fl">Dirección</label><div class="control" style="background:var(--paper)"><?= e($sujetoMadre['direccion'] ?? '—') ?></div></div>
+            <div class="field"><label class="fl">Distrito</label><div class="control" style="background:var(--paper)"><?= e($sujetoMadre['distrito_nombre'] ?? '—') ?></div></div>
+          </div></div>
         <?php endif; ?>
       </div>
     </div>

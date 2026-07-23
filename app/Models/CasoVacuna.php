@@ -11,12 +11,11 @@ class CasoVacuna extends Model
     /**
      * Reemplaza todas las filas de antecedentes vacunales de un caso. $filas
      * ya validada: cada elemento es ['vacuna','dosis','fecha','fabricante',
-     * 'lote','via','sitio','fecha_vencimiento','establecimiento'] (fechas ISO
-     * o null). Las últimas 6 columnas se agregaron en
-     * sql/35_fase5_ampliar_tablas_hija.sql (CIERRE_RECARGA_Y_FASE5.md Parte 2)
-     * para poder retirar de campo_def los campos sueltos de vacunación de
-     * ESAVI, tos ferina y difteria. Debe ejecutarse dentro de la transacción
-     * abierta por el llamador.
+     * 'lote','via','sitio','fecha_vencimiento','establecimiento','adyuvante']
+     * (fechas ISO o null). `vacuna`/`dosis`/`via`/`sitio`/`adyuvante` guardan
+     * el `valor` de un catalogo_item compartido (PENDIENTES_POST_FASE5.md
+     * punto 2), no texto libre -- mismo patrón que caso_muestra. Debe
+     * ejecutarse dentro de la transacción abierta por el llamador.
      */
     public static function reemplazarTodos(int $casoId, array $filas): void
     {
@@ -24,8 +23,8 @@ class CasoVacuna extends Model
         $pdo->prepare('DELETE FROM caso_vacuna WHERE caso_id = :caso')->execute(['caso' => $casoId]);
 
         $consulta = $pdo->prepare(
-            'INSERT INTO caso_vacuna (caso_id, vacuna, dosis, fecha, fabricante, lote, via, sitio, fecha_vencimiento, establecimiento)
-             VALUES (:caso, :vacuna, :dosis, :fecha, :fabricante, :lote, :via, :sitio, :fecha_vencimiento, :establecimiento)'
+            'INSERT INTO caso_vacuna (caso_id, vacuna, dosis, fecha, fabricante, lote, via, sitio, fecha_vencimiento, establecimiento, adyuvante)
+             VALUES (:caso, :vacuna, :dosis, :fecha, :fabricante, :lote, :via, :sitio, :fecha_vencimiento, :establecimiento, :adyuvante)'
         );
 
         foreach ($filas as $fila) {
@@ -40,6 +39,7 @@ class CasoVacuna extends Model
                 'sitio'             => $fila['sitio'] ?? null,
                 'fecha_vencimiento' => $fila['fecha_vencimiento'] ?? null,
                 'establecimiento'   => $fila['establecimiento'] ?? null,
+                'adyuvante'         => $fila['adyuvante'] ?? null,
             ]);
         }
     }

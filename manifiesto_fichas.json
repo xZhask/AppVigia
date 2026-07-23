@@ -87,9 +87,12 @@
         "caso_muestra": true,
         "caso_viaje": true,
         "caso_vacuna": true,
-        "caso_contacto": false
+        "caso_contacto": true
       },
-      "_observaciones_tablas_hija": "La BD tiene usa_contactos=1 para esta ficha, pero el PDF (secc. VII) solo pide conteos agregados por lugar (matriz), no un censo de contactos nombrados como en difteria. No hay campos que llenar en caso_contacto para esta ficha tal como está el PDF — revisar si usa_contactos debería ser 0, o si se está anticipando una versión futura del formato.",
+      "columnas_tablas_hija": {
+        "caso_contacto": ["parentesco", "celular", "doc", "lugar_contacto"]
+      },
+      "_observaciones_tablas_hija": "CORREGIDO (PENDIENTES_POST_FASE5.md punto 1.2/3): esta nota decía que no había campos que llenar en caso_contacto -- era un error. Verificado contra el PDF (pág. 1-2): la pregunta 61 SÍ trae una tabla nominal (N.° / Apellidos y Nombres / Parentesco / Celular / Doc. identidad / Lugar de exposición) para familiares con tos prolongada, además de la matriz agregada por lugar (esa sí es campo_def, 'Contactos por lugar'). usa_contactos=1 es correcto; tablas_hijas.caso_contacto pasa de false a true para que coincida.",
       "secciones": [
         {
           "nombre": "Cuadro clínico",
@@ -300,6 +303,9 @@
         "caso_muestra": true,
         "caso_viaje": true,
         "caso_vacuna": true
+      },
+      "columnas_tablas_hija": {
+        "caso_contacto": ["edad", "sexo", "vacunado", "fecha_vacunacion", "profilaxis"]
       },
       "secciones": [
         {
@@ -646,6 +652,10 @@
         "caso_viaje": true,
         "caso_vacuna": true
       },
+      "columnas_tablas_hija": {
+        "caso_contacto": ["parentesco", "celular", "doc", "lugar_contacto"]
+      },
+      "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion', pero caso_contacto no tiene esa columna (no existe en el esquema) -- se deja fuera en vez de inventar una columna nueva para esto.",
       "secciones": [
         {
           "nombre": "Datos del paciente (adicionales)",
@@ -1009,6 +1019,10 @@
         "caso_vacuna": true
       },
       "_observaciones_tablas_hija": "Cadena de transmisión (CIERRE_RECARGA_Y_FASE5.md Parte 1.4): fecha del contacto, lugar de contacto, fecha de inicio de erupción y vacunación dentro de 72h del contacto viven en caso_contacto (columnas fecha_contacto/lugar_contacto/fecha_inicio_erupcion/vacunado_72h, agregadas en sql/35_fase5_ampliar_tablas_hija.sql), no en campo_def -- son datos repetibles por contacto, igual que el resto de caso_contacto.",
+      "columnas_tablas_hija": {
+        "caso_contacto": ["edad", "celular", "fecha_contacto", "lugar_contacto", "fecha_inicio_erupcion", "fecha_vacunacion", "vacunado_72h"]
+      },
+      "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'direccion', pero caso_contacto no tiene esa columna -- se deja fuera en vez de inventar una columna nueva para esto.",
       "secciones": [
         {
           "nombre": "Cuadro clínico",
@@ -1283,36 +1297,37 @@
         {
           "nombre": "Sección II — Sífilis materna",
           "rol_sujeto": "MADRE",
+          "_corregido": "PENDIENTES_POST_FASE5.md punto 1: DEFINICION_FICHAS_B_C_D.md sección 0.b exige sensible=1 para sífilis, igual que VIH/violencia. Se marca toda esta sección y la de sífilis congénita (clínicas); el 'Encabezado' (investigación de / nivel del establecimiento) queda fuera por ser clasificación administrativa, no dato clínico ni identificatorio.",
           "campos": [
-            {"etiqueta": "FUR", "tipo": "FECHA"},
-            {"etiqueta": "¿Recibió atención prenatal?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
-            {"etiqueta": "Fecha de primer control prenatal", "tipo": "FECHA"},
-            {"etiqueta": "Edad gestacional en el primer control prenatal", "tipo": "NUMERO"},
-            {"etiqueta": "Pruebas no treponémicas (RPR, VDRL)", "tipo": "MATRIZ", "filas": ["Primera (a)", "Más reciente (b)"], "columnas": ["Fecha", "Resultado (Reactivo/No reactivo/Desconocido)", "Título", "Momento (Gestación/Parto/Puerperio)"]},
-            {"etiqueta": "Pruebas treponémicas (TPHA, TPPA, FTA Abs, ELISA, Rápida o Dual)", "tipo": "MATRIZ", "filas": ["Primera (a)", "Más reciente (b)"], "columnas": ["Fecha", "Tipo de prueba", "Resultado", "Momento"]},
-            {"etiqueta": "¿Fue la madre adecuadamente tratada durante el embarazo?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
-            {"etiqueta": "Motivo (si no fue tratada)", "tipo": "SELECT", "opciones": ["Tratamiento sin penicilina", "Tratamiento durante los 30 días previos al parto", "No inició tratamiento durante la gestación", "Tratamiento incompleto (1 ó 2 dosis)"]},
-            {"etiqueta": "Contacto(s) sexual(es) tratado(s)", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
-            {"etiqueta": "N.° de contactos sexuales tratados", "tipo": "NUMERO"},
-            {"etiqueta": "Clasificación de caso de sífilis en la gestante", "tipo": "SELECT", "opciones": ["Probable", "Confirmado", "Descartado (Falso positivo)", "Descartado (Sífilis Memoria)"]}
+            {"etiqueta": "FUR", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "¿Recibió atención prenatal?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"], "sensible": true},
+            {"etiqueta": "Fecha de primer control prenatal", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Edad gestacional en el primer control prenatal", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "Pruebas no treponémicas (RPR, VDRL)", "tipo": "MATRIZ", "filas": ["Primera (a)", "Más reciente (b)"], "columnas": ["Fecha", "Resultado (Reactivo/No reactivo/Desconocido)", "Título", "Momento (Gestación/Parto/Puerperio)"], "sensible": true},
+            {"etiqueta": "Pruebas treponémicas (TPHA, TPPA, FTA Abs, ELISA, Rápida o Dual)", "tipo": "MATRIZ", "filas": ["Primera (a)", "Más reciente (b)"], "columnas": ["Fecha", "Tipo de prueba", "Resultado", "Momento"], "sensible": true},
+            {"etiqueta": "¿Fue la madre adecuadamente tratada durante el embarazo?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"], "sensible": true},
+            {"etiqueta": "Motivo (si no fue tratada)", "tipo": "SELECT", "opciones": ["Tratamiento sin penicilina", "Tratamiento durante los 30 días previos al parto", "No inició tratamiento durante la gestación", "Tratamiento incompleto (1 ó 2 dosis)"], "sensible": true},
+            {"etiqueta": "Contacto(s) sexual(es) tratado(s)", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"], "sensible": true},
+            {"etiqueta": "N.° de contactos sexuales tratados", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "Clasificación de caso de sífilis en la gestante", "tipo": "SELECT", "opciones": ["Probable", "Confirmado", "Descartado (Falso positivo)", "Descartado (Sífilis Memoria)"], "sensible": true}
           ]
         },
         {
           "nombre": "Sección III — Sífilis congénita",
           "rol_sujeto": "RECIEN_NACIDO",
           "campos": [
-            {"etiqueta": "Fecha de parto / culminación del embarazo", "tipo": "FECHA"},
-            {"etiqueta": "Lugar del parto", "tipo": "SELECT", "opciones": ["Establecimiento de salud", "Domicilio"]},
-            {"etiqueta": "Estado vital", "tipo": "SELECT", "opciones": ["Vivo", "Nació vivo, luego falleció", "Mortinato", "Aborto"]},
-            {"etiqueta": "Fecha de fallecimiento", "tipo": "FECHA"},
-            {"etiqueta": "Peso al nacimiento (gramos)", "tipo": "NUMERO"},
-            {"etiqueta": "Edad gestacional estimada (semanas)", "tipo": "NUMERO"},
-            {"etiqueta": "Criterios de caso de sífilis congénita", "tipo": "MULTISELECT", "opciones": ["Madre con sífilis, que no recibió tratamiento o fue tratada inadecuadamente", "Títulos no treponémicos cuatro veces mayores que los de la madre", "Niño con manifestaciones clínicas sugestivas de sífilis congénita", "Demostración de Treponema pallidum en lesiones, placenta, cordón umbilical o material de autopsia", "Niño mayor de 2 años con signos de sífilis secundaria, descartado abuso o contacto sexual"]},
-            {"etiqueta": "Fecha de los test (título 4x madre)", "tipo": "FECHA"},
-            {"etiqueta": "Título de la madre", "tipo": "TEXTO"},
-            {"etiqueta": "Título del niño", "tipo": "TEXTO"},
-            {"etiqueta": "Tratamiento del niño", "tipo": "SELECT", "opciones": ["Sí, con penicilina G sódica o procaínica por ≥10 días", "Sí, con penicilina benzatínica x 1 dosis", "Sí, con otro tratamiento", "No recibió tratamiento", "Desconocido"]},
-            {"etiqueta": "Clasificación final del niño, mortinato o aborto", "tipo": "SELECT", "opciones": ["Sífilis congénita", "Niño expuesto a sífilis, no infectado"]}
+            {"etiqueta": "Fecha de parto / culminación del embarazo", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Lugar del parto", "tipo": "SELECT", "opciones": ["Establecimiento de salud", "Domicilio"], "sensible": true},
+            {"etiqueta": "Estado vital", "tipo": "SELECT", "opciones": ["Vivo", "Nació vivo, luego falleció", "Mortinato", "Aborto"], "sensible": true},
+            {"etiqueta": "Fecha de fallecimiento", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Peso al nacimiento (gramos)", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "Edad gestacional estimada (semanas)", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "Criterios de caso de sífilis congénita", "tipo": "MULTISELECT", "opciones": ["Madre con sífilis, que no recibió tratamiento o fue tratada inadecuadamente", "Títulos no treponémicos cuatro veces mayores que los de la madre", "Niño con manifestaciones clínicas sugestivas de sífilis congénita", "Demostración de Treponema pallidum en lesiones, placenta, cordón umbilical o material de autopsia", "Niño mayor de 2 años con signos de sífilis secundaria, descartado abuso o contacto sexual"], "sensible": true},
+            {"etiqueta": "Fecha de los test (título 4x madre)", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Título de la madre", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "Título del niño", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "Tratamiento del niño", "tipo": "SELECT", "opciones": ["Sí, con penicilina G sódica o procaínica por ≥10 días", "Sí, con penicilina benzatínica x 1 dosis", "Sí, con otro tratamiento", "No recibió tratamiento", "Desconocido"], "sensible": true},
+            {"etiqueta": "Clasificación final del niño, mortinato o aborto", "tipo": "SELECT", "opciones": ["Sífilis congénita", "Niño expuesto a sífilis, no infectado"], "sensible": true}
           ]
         }
       ]
@@ -1395,6 +1410,7 @@
         "caso_viaje": false,
         "caso_vacuna": true
       },
+      "_observaciones_tablas_hija": "Los datos de la vacunación (nombre/dosis/vía/sitio/adyuvante/fecha/fabricante/lote/fecha de expiración/EE.SS.) viven enteramente en caso_vacuna desde CIERRE_RECARGA_Y_FASE5.md Parte 2. La regresión de calidad de dato que eso introdujo (catálogo cerrado del PDF -> texto libre) se corrigió en PENDIENTES_POST_FASE5.md punto 2: caso_vacuna.vacuna/dosis/via/sitio/adyuvante ahora se llenan con <select> respaldados por catálogos compartidos (vacuna_minsa/dosis_vacuna/via_vacuna/sitio_vacuna/adyuvante_vacuna, sql/37_catalogos_vacuna_compartidos.sql), mismo patrón que caso_muestra -- ya no queda ningún campo de vacunación en campo_def para esta ficha.",
       "secciones": [
         {
           "nombre": "Notificación",
@@ -1414,13 +1430,6 @@
             {"etiqueta": "¿Está asegurado?", "tipo": "BOOLEANO"},
             {"etiqueta": "Tipo de seguro", "tipo": "SELECT", "opciones": ["SIS", "EsSalud", "Privado"]},
             {"etiqueta": "Ocupación", "tipo": "SELECT", "opciones": ["Sin ocupación", "Estudiante", "Comerciante", "Empleado", "Personal de salud", "Otro"]}
-          ]
-        },
-        {
-          "nombre": "Datos de la vacunación",
-          "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 2: nombre de vacuna/dosis/vía/sitio/fecha/EE.SS. que vacunó/fabricante/lote/fecha de expiración se retiran de campo_def -- ahora viven en caso_vacuna (columnas ampliadas en sql/35_fase5_ampliar_tablas_hija.sql). Solo queda 'Adyuvante', que no tiene columna equivalente en caso_vacuna. Contrapartida real: en el PDF estos eran SELECT de catálogo cerrado con códigos institucionales (ej. '06 Pentavalente'); caso_vacuna es una tabla compartida por todas las fichas y sus columnas son texto libre, así que se pierde la validación de catálogo al mover el contenido -- se acepta a propósito porque el objetivo explícito de esta fase es dejar de duplicar la vacunación en campo_def, no preservar el catálogo cerrado.",
-          "campos": [
-            {"etiqueta": "Adyuvante", "tipo": "SELECT", "opciones": ["01 Sí", "02 No"]}
           ]
         },
         {
@@ -1823,6 +1832,7 @@
         "caso_viaje": false,
         "caso_vacuna": false
       },
+      "_nota_residencia_madre": "PENDIENTES_POST_FASE5.md punto 4: 'Residencia habitual de la madre' (PDF pág. 28) ya no vive en campo_def -- se captura en caso_sujeto (rol MADRE: distrito_id + direccion, con selector de UBIGEO), fuera del manifiesto/cargador. Ver app/Views/partials/tablas-hijas/residencia-madre.php y CasosController::datosResidenciaMadre().",
       "secciones": [
         {
           "nombre": "Datos del fallecido",
@@ -1833,14 +1843,6 @@
             {"etiqueta": "Fecha de muerte", "tipo": "FECHA"},
             {"etiqueta": "Hora de muerte", "tipo": "TEXTO"},
             {"etiqueta": "Peso al nacer (gramos)", "tipo": "NUMERO"}
-          ]
-        },
-        {
-          "nombre": "Datos de la madre",
-          "rol_sujeto": "MADRE",
-          "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 2: 'RESIDENCIA HABITUAL DE LA MADRE' es una columna real de la tabla del PDF (pág. 28) que se había omitido por completo (CAMBIOS_MANIFIESTO.md la había dado por completa sin serlo). El documento de cierre sugería moverla a caso_sujeto.direccion, pero caso_sujeto hoy solo guarda un renglón de identidad para el sujeto principal (CasosController::guardarSujetos) y no tiene ningún formulario de captura por rol -- el mecanismo que sí funciona hoy para datos de un sujeto secundario es campo_def.rol_sujeto (el mismo patrón que usa Z21 para MADRE/NINO_EXPUESTO), así que se modela igual acá en vez de depender de una UI de caso_sujeto que no existe.",
-          "campos": [
-            {"etiqueta": "Residencia habitual de la madre", "tipo": "TEXTO"}
           ]
         },
         {
