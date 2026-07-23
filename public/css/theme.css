@@ -221,6 +221,11 @@
   .fields.thirds{grid-template-columns:1fr 1fr 1fr}
   .field{display:flex;flex-direction:column;gap:6px}
   .field.wide{grid-column:1/-1}
+  /* mismo motivo que .sel-list[hidden] más abajo: una regla de autor como
+     ".field{display:flex}" le gana siempre a la regla de user-agent para
+     [hidden], así que #campoGestante/#campoSemanasGestacion (ficha.js)
+     nunca se ocultaban visualmente aunque el atributo hidden sí se ponía. */
+  .field[hidden]{display:none}
   label.fl{font-size:12px;color:var(--muted);font-weight:500}
   label.fl .req{color:var(--s-confirmado)}
   .control{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;color:var(--ink);transition:border-color .15s,box-shadow .15s}

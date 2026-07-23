@@ -1,10 +1,101 @@
 # HALLAZGOS_RECARGA_FICHAS.md
 
 Registro consolidado de hallazgos por fase de `RECARGA_FICHAS.md`,
-`CIERRE_RECARGA_Y_FASE5.md` y `PENDIENTES_POST_FASE5.md`. Cada fase tiene su
-propio entregable detallado (referenciado abajo); este documento es el
-índice de "qué se encontró" para no tener que reconstruirlo leyendo cinco
-archivos distintos.
+`CIERRE_RECARGA_Y_FASE5.md`, `PENDIENTES_POST_FASE5.md` y
+`ANTES_DE_COMPARAR_FICHAS.md`. Cada fase tiene su propio entregable
+detallado (referenciado abajo); este documento es el índice de "qué se
+encontró" para no tener que reconstruirlo leyendo cinco archivos
+distintos.
+
+---
+
+## ANTES_DE_COMPARAR_FICHAS.md
+
+### Sección 1 — Secciones núcleo: nada que implementar
+
+Verificación completa en `REPORTE_NUCLEO.md`. Los 12 campos núcleo
+("Notificación", "Datos del paciente", "Investigador") ya estaban
+implementados de punta a punta desde antes de esta sesión (esquema,
+formulario de alta y edición, guardado con validación server-side, vista
+de solo lectura) — no hizo falta escribir código. Se confirmó además que
+`etnia` está correctamente excluida del listado de fichas (la consulta
+`Caso::listarPaginado()` ni siquiera la selecciona) y de cualquier export
+(no existe ninguno que la incluya).
+
+### Sección 2 — Prueba de humo real en navegador: hecha
+
+**A diferencia de las dos corridas anteriores, esta vez sí hubo
+verificación visual real.** Con autorización explícita del usuario se
+instaló Playwright + Chromium (en el scratchpad de la sesión, no en el
+repo) y se levantó el servidor con `php -S`. Para loguearse sin tocar la
+contraseña real del admin sembrado, se creó un usuario ADMIN temporal
+(`prueba-humo-temporal@test.local`) — **borrado al terminar**, junto con
+un caso de prueba (`F-00009`, creado para probar el flujo real de
+guardado) que se registró y se volvió a abrir en edición antes de
+borrarlo. La base quedó exactamente como estaba antes de empezar (1 caso
+real, 2 usuarios reales, 0 filas en `caso_vacuna`/`caso_contacto`).
+
+**Se revisaron las 6 fichas** (Sarampión, PFA, Muerte materna, ESAVI,
+Tétanos, Difteria): 24 secciones numeradas correlativamente sin repetirse
+(salvo una coincidencia de título sin relación, ver hallazgo 3 abajo), sin
+errores de consola, sin selects vacíos fuera de los esperados
+(departamento→provincia→distrito antes de elegir), sin controles
+desbordando su tarjeta. Los `MATRIZ` de PFA (fuerza muscular, tono,
+reflejos, Glasgow) y los `GRUPO_SI_NO`/"Las cuatro demoras" de Muerte
+materna se ven exactamente como matrices de opciones, no como listas
+sueltas ni con etiquetas concatenadas.
+
+**Hallazgo real, corregido: `#campoGestante`/`#campoSemanasGestacion`
+nunca se ocultaban visualmente.** El JS (`ficha.js`) sí calculaba
+correctamente que debían ocultarse cuando sexo ≠ F (`hidden="true"` se
+aplicaba al elemento), pero `public/css/theme.css` nunca traducía eso a
+`display:none` para `.field` — la regla de autor `.field{display:flex}`
+le ganaba siempre a la regla de user-agent para `[hidden]` (mismo
+fenómeno que el propio `theme.css` ya documentaba y arreglaba para
+`.sel-list`, `.cond-panel` y `.dep-wrap`, solo que no se había aplicado
+a `.field`). Se agregó `.field[hidden]{display:none}` — una línea, mismo
+patrón ya usado 3 veces en el archivo. Verificado en el navegador:
+sexo vacío → oculto; sexo=F → visible; gestante=Sí → "Semanas de
+gestación" visible; sexo=M → ambos ocultos de nuevo. Esto **no** afectaba
+a los campos condicionales de `campo_def`/`seccion_def` (usan `.dep-wrap`,
+que ya tenía la regla correcta) — era específico de los 2 campos núcleo
+de gestación.
+
+**Hallazgo real, corregido: ESAVI mostraba solo "Dosis" en antecedentes
+vacunales.** Al configurar columnas por ficha (`PENDIENTES_POST_FASE5.md`
+punto 3) se dejó `caso_vacuna` en el mínimo por defecto para todas las
+fichas, incluida ESAVI — la ficha que originalmente motivó ampliar
+`caso_vacuna` con fabricante/lote/vía/sitio/adyuvante/fecha de
+vencimiento/EE.SS. Se vio en el navegador: el widget solo mostraba
+Vacuna/Otro/Fecha/Dosis. Corregido: se agregó `columnas_tablas_hija.caso_vacuna`
+para `Y59.0` con las 8 columnas. Confirmado visualmente que ahora
+aparecen todas, con sus `<select>` poblados desde los catálogos nuevos
+(vacuna: 21 opciones, dosis: 7, vía: 5, sitio: 8, adyuvante: 3 —
+incluyendo el placeholder).
+
+**Hallazgo cosmético, no corregido:** en Sarampión (y probablemente otras
+fichas con sección propia de "Antecedentes epidemiológicos" en
+`campo_def`), el título de esa sección coincide textualmente con el
+título fijo de la tarjeta de tablas hija (`<h3>Antecedentes
+epidemiológicos</h3>`, hardcodeado en `editar.php`/`nueva/index.php`).
+No hay contenido duplicado ni numeración repetida (son las secciones 6 y
+10), solo el mismo título aparece dos veces en la misma página. No se
+tocó — es un problema de nombres, no de datos, y corregirlo requeriría
+decidir un nuevo título para uno de los dos (¿cuál? es una decisión de
+producto, no un bug).
+
+**Guardar y reabrir**: probado con una ficha real de Difteria — se
+completaron los campos mínimos obligatorios (forzando los campos de
+identidad bloqueados por RENIEC, ya que no hay conexión real a RENIEC en
+este entorno), se guardó (`F-00009` se creó de verdad en la BD), se
+reabrió en `/casos/9/editar` y los valores cargaron desde la BD sin
+error. La persona se vinculó por número de documento a un registro ya
+existente (comportamiento esperado de deduplicación por documento, no un
+defecto). Caso de prueba borrado al terminar.
+
+**Playwright queda instalado** en el scratchpad de esta sesión (no en el
+repo del proyecto) por si una sesión futura quiere repetir esta prueba
+sin reinstalar.
 
 ---
 

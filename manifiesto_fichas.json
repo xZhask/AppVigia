@@ -1411,6 +1411,10 @@
         "caso_vacuna": true
       },
       "_observaciones_tablas_hija": "Los datos de la vacunación (nombre/dosis/vía/sitio/adyuvante/fecha/fabricante/lote/fecha de expiración/EE.SS.) viven enteramente en caso_vacuna desde CIERRE_RECARGA_Y_FASE5.md Parte 2. La regresión de calidad de dato que eso introdujo (catálogo cerrado del PDF -> texto libre) se corrigió en PENDIENTES_POST_FASE5.md punto 2: caso_vacuna.vacuna/dosis/via/sitio/adyuvante ahora se llenan con <select> respaldados por catálogos compartidos (vacuna_minsa/dosis_vacuna/via_vacuna/sitio_vacuna/adyuvante_vacuna, sql/37_catalogos_vacuna_compartidos.sql), mismo patrón que caso_muestra -- ya no queda ningún campo de vacunación en campo_def para esta ficha.",
+      "columnas_tablas_hija": {
+        "caso_vacuna": ["dosis", "via", "sitio", "adyuvante", "fabricante", "lote", "fecha_vencimiento", "establecimiento"]
+      },
+      "_nota_columnas": "ANTES_DE_COMPARAR_FICHAS.md, prueba de humo: sin esto, el widget mostraba solo 'Dosis' (el mínimo por defecto) para ESAVI -- justo la ficha que motivó ampliar caso_vacuna con estas columnas. Se configuran todas: es la única ficha que las necesitaba todas.",
       "secciones": [
         {
           "nombre": "Notificación",
