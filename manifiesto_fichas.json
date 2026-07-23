@@ -1,0 +1,1864 @@
+{
+  "_version": "2.1",
+  "_fuente": ["INFORME PARA APLICATIVO DE EPIDEMIOLOGIA_removed.pdf (fichas MINSA oficiales, fuente de verdad para esta versión)", "DEFINICION_FICHAS.md", "DEFINICION_FICHAS_B_C_D.md"],
+  "_generado": "2026-07-23",
+  "_nota_v2_1": "RECARGA_FICHAS.md Fase 3: se agregó la ficha de Dengue/chikungunya/zika/arbovirosis (A97, pág. 49 del PDF), que hasta ahora no estaba en ningún manifiesto (era un stub previo a los Lotes 1-8, fuera de spec — ver memoria pendiente_auditoria_fichas). Sus 3 casos de prueba (no reales, ver sql/33_fase3_limpieza_casos_prueba_dengue.sql) se eliminaron para poder recargarla igual que las otras 23.",
+  "_nota": "v2.0 (RECARGA_FICHAS.md, Fase 1): manifiesto validado y corregido contra el PDF de fichas MINSA (no solo contra los .md, que tenían algunos errores propios de transcripción). Cambios de esquema respecto a v1.0: cada campo SELECT/MULTISELECT/GRUPO_SI_NO trae ahora su lista de 'opciones' (para SELECT/MULTISELECT son las alternativas de respuesta; para GRUPO_SI_NO son los items/preguntas que se responden Sí/No/Ignorado, patrón fijo del tipo); cada campo MATRIZ trae 'filas' y 'columnas' esperadas. Se agregó 'tablas_hijas' por ficha, marcando que tabla hija (caso_contacto/caso_muestra/caso_viaje/caso_vacuna) usa y observaciones donde el flag de la BD no calzaba con lo que el PDF realmente pide. Ver CAMBIOS_MANIFIESTO.md para el detalle de qué cambió respecto a v1.0 y contra qué página del PDF se validó cada ficha.",
+  "_tipos_validos": ["TEXTO","NUMERO","FECHA","BOOLEANO","SELECT","MULTISELECT","TEXTAREA","GRUPO_SI_NO","SI_NO_FECHA","MATRIZ","CRONOLOGIA"],
+  "fichas": {
+    "A97": {
+      "enfermedad": "Dengue, chikungunya, zika y arbovirosis",
+      "lote": "Fase 3 (agregada; no estaba en DEFINICION_FICHAS.md ni en los lotes 1-8, era stub fuera de spec — ver memoria pendiente_auditoria_fichas)",
+      "pdf_paginas": "49 (Anexo N.° 01)",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": true
+      },
+      "_observaciones_tablas_hija": "La BD tiene hoy usa_muestras=0, usa_viajes=0, usa_vacunas=0 para esta ficha (el stub previo no las usaba). El cargador debe activarlas junto con la recarga: el PDF trae examenes de laboratorio (seccion VI), un antecedente de viaje/lugar de estadia en las ultimas 2 semanas (seccion IV, repetible) y antecedente de vacuna antiamarilica (pregunta 33-34).",
+      "secciones": [
+        {
+          "nombre": "Subsistema de vigilancia",
+          "campos": [
+            {"etiqueta": "Subsistema de vigilancia", "tipo": "SELECT", "opciones": ["Definición de casos", "Vigilancia centinela", "Vigilancia de febriles"]}
+          ]
+        },
+        {
+          "nombre": "Antecedentes epidemiológicos",
+          "campos": [
+            {"etiqueta": "Caso autóctono", "tipo": "BOOLEANO"},
+            {"etiqueta": "Caso importado nacional", "tipo": "BOOLEANO"},
+            {"etiqueta": "Caso importado internacional", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Tuvo dengue anteriormente?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Año (dengue anterior)", "tipo": "NUMERO"},
+            {"etiqueta": "¿Tiene comorbilidad?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Comorbilidad (cuál)", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de síntomas", "tipo": "FECHA"},
+            {"etiqueta": "Signos y síntomas frecuentes", "tipo": "MULTISELECT", "opciones": ["Artralgias (manos)", "Artralgias (pies)", "Mialgias", "Cefalea", "Dolor ocular o retroocular", "Dolor lumbar", "Rash/exantema", "Conjuntivitis no purulenta (ojos rojos)", "Náuseas/vómitos", "Otros"]},
+            {"etiqueta": "Temperatura (°C)", "tipo": "NUMERO"},
+            {"etiqueta": "Signos de alarma", "tipo": "MULTISELECT", "opciones": ["Dolor abdominal intenso y continuo", "Dolor torácico o disnea", "Derrame seroso (ascitis o derrame pleural o pericárdico)", "Vómitos persistentes", "Disminución brusca de la temperatura o hipotermia", "Disminución de la diuresis", "Hepatomegalia", "Ictericia", "Estado mental alterado (somnolencia, inquietud, irritabilidad o convulsión)", "Incremento del hematocrito"]},
+            {"etiqueta": "Signos de gravedad", "tipo": "MULTISELECT", "opciones": ["Pulso débil e indetectable", "Extremidades frías o cianóticas", "Diferencial de Presión Arterial ≤20 mmHg", "Compromiso grave de órganos", "Sangrado grave"]},
+            {"etiqueta": "Compromiso grave de órganos (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "Sangrado grave (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "Escala de Glasgow: apertura ocular", "tipo": "NUMERO"},
+            {"etiqueta": "Escala de Glasgow: respuesta motora", "tipo": "NUMERO"},
+            {"etiqueta": "Escala de Glasgow: respuesta verbal", "tipo": "NUMERO"}
+          ]
+        },
+        {
+          "nombre": "Evolución de casos graves y egreso",
+          "_nota": "Solo para casos hospitalizados.",
+          "campos": [
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Falleció", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA"},
+            {"etiqueta": "Fue referido", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de referencia", "tipo": "FECHA"},
+            {"etiqueta": "Hospital / C.S.", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Clasificación",
+          "campos": [
+            {"etiqueta": "Clasificación", "tipo": "SELECT", "opciones": ["Dengue sin signos de alarma - Probable", "Dengue sin signos de alarma - Confirmado", "Dengue sin signos de alarma - Descartado", "Dengue con signos de alarma - Probable", "Dengue con signos de alarma - Confirmado", "Dengue con signos de alarma - Descartado", "Dengue grave - Probable", "Dengue grave - Confirmado", "Dengue grave - Descartado", "Chikungunya - Probable", "Chikungunya - Confirmado", "Chikungunya - Descartado", "Chikungunya grave - Probable", "Chikungunya grave - Confirmado", "Chikungunya grave - Descartado", "Zika - Sospechoso", "Zika - Confirmado", "Zika - Descartado", "Otras arbovirosis - Probable", "Otras arbovirosis - Confirmado", "Otras arbovirosis - Descartado", "Fiebre amarilla (síndrome febril) - Probable", "Fiebre amarilla (síndrome febril) - Confirmado", "Fiebre amarilla (síndrome febril) - Descartado"], "_nota": "El PDF modela esto como 8 clasificaciones paralelas (una por enfermedad del panel); se simplifica a una sola SELECT combinada, igual que se hizo con Chagas."},
+            {"etiqueta": "Otras arbovirosis (especificar)", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Observaciones",
+          "campos": [
+            {"etiqueta": "Observaciones", "tipo": "TEXTAREA"}
+          ]
+        }
+      ]
+    },
+    "A37.0": {
+      "enfermedad": "Tos ferina",
+      "lote": 1,
+      "pdf_paginas": "1-2",
+      "tablas_hijas": {
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": true,
+        "caso_contacto": false
+      },
+      "_observaciones_tablas_hija": "La BD tiene usa_contactos=1 para esta ficha, pero el PDF (secc. VII) solo pide conteos agregados por lugar (matriz), no un censo de contactos nombrados como en difteria. No hay campos que llenar en caso_contacto para esta ficha tal como está el PDF — revisar si usa_contactos debería ser 0, o si se está anticipando una versión futura del formato.",
+      "secciones": [
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de síntomas", "tipo": "FECHA"},
+            {"etiqueta": "Duración en días: tos paroxística", "tipo": "NUMERO"},
+            {"etiqueta": "Duración en días: tos persistente en ≥1 año", "tipo": "NUMERO"},
+            {"etiqueta": "Tos paroxística (>10 golpes de tos)", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Tos persistente (>2 semanas)", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Estridor", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Vómitos después de la tos", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Apnea", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Cianosis", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Otros síntomas", "tipo": "SI_NO_FECHA"}
+          ]
+        },
+        {
+          "nombre": "Tratamiento",
+          "campos": [
+            {"etiqueta": "¿Paciente recibió antibiótico?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Antibióticos recibidos", "tipo": "MATRIZ", "filas": ["Antibiótico 1", "Antibiótico 2", "Antibiótico 3"], "columnas": ["Dosis", "Fecha de inicio", "Vía de administración", "N.° de días"]}
+          ]
+        },
+        {
+          "nombre": "Complicaciones y hospitalización",
+          "campos": [
+            {"etiqueta": "Neumonía", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Convulsiones", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Encefalopatía", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Anorexia", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Desnutrición", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Deshidratación", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Otitis media", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Otros", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Hospitalización", "tipo": "BOOLEANO"},
+            {"etiqueta": "N.° historia clínica", "tipo": "TEXTO"},
+            {"etiqueta": "Nombre de establecimiento de salud", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "N.° de días de hospitalización", "tipo": "NUMERO"},
+            {"etiqueta": "Dx de ingreso", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de alta", "tipo": "FECHA"},
+            {"etiqueta": "Dx de egreso", "tipo": "TEXTO"},
+            {"etiqueta": "¿Presenta alguna comorbilidad?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
+            {"etiqueta": "Comorbilidad (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "¿Se diagnosticaron otras infecciones por laboratorio?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"], "_corregido": "v1.0 tenía BOOLEANO; el PDF muestra Sí(especificar)/No/Desconocido"},
+            {"etiqueta": "Otras infecciones (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de diagnóstico de otras infecciones", "tipo": "FECHA"},
+            {"etiqueta": "Defunción", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA"},
+            {"etiqueta": "Causa básica de defunción", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Antecedentes vacunales (preguntas contextuales)",
+          "_nota": "El listado de dosis recibidas (Pentavalente 1a/2a/3a, DPT refuerzos) es una lista de vacunas aplicadas: va en caso_vacuna, no aquí. Estas 5 preguntas sí son campo_def porque son condicionales de un solo valor, no una lista.",
+          "campos": [
+            {"etiqueta": "¿La madre fue vacunada con Tdap durante la gestación? (si el caso es <1 año)", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de vacunación Tdap de la madre", "tipo": "FECHA"},
+            {"etiqueta": "¿La gestante recibió Tdap? (si el caso es gestante)", "tipo": "BOOLEANO"},
+            {"etiqueta": "Semana de gestación durante la vacunación Tdap", "tipo": "NUMERO"},
+            {"etiqueta": "Fecha de vacunación Tdap (gestante)", "tipo": "FECHA"}
+          ]
+        },
+        {
+          "nombre": "Lugar probable de infección",
+          "campos": [
+            {"etiqueta": "¿Contacto con casos probables o confirmados de tos ferina?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
+            {"etiqueta": "¿Algún miembro de la familia o persona cercana ha tenido tos por más de 2 semanas?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Contactos directos domiciliarios", "tipo": "NUMERO"},
+            {"etiqueta": "Contactos directos extradomiciliarios", "tipo": "NUMERO"},
+            {"etiqueta": "Contactos por lugar", "tipo": "MATRIZ", "filas": ["Casa", "Nido/guardería", "Colegio", "Centro de trabajo", "Establecimiento de salud", "Otro"], "columnas": ["Total", "Con síntomas", "Esquema de vacunación completo", "Esquema de vacunación incompleto", "Recibieron vacunación", "Recibieron antibióticos"], "_corregido": "v1.0 no traía filas/columnas explícitas; el PDF (pág. 2, tabla VII) no incluye la fila 'Universidad/Instituto' que sí tienen Varicela y Parotiditis"}
+          ]
+        },
+        {
+          "nombre": "Clasificación final",
+          "campos": [
+            {"etiqueta": "Clasificación final", "tipo": "SELECT", "opciones": ["Probable", "Confirmado por laboratorio", "Confirmado por nexo epidemiológico", "Descartado"], "_nota": "4 valores propios que no encajan en el ENUM genérico de 4 valores de caso.clasificacion (ver memoria pendiente_auditoria_fichas)"}
+          ]
+        }
+      ]
+    },
+    "B01": {
+      "enfermedad": "Varicela con complicaciones",
+      "lote": 1,
+      "pdf_paginas": "3",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": false,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de erupción dérmica", "tipo": "FECHA"},
+            {"etiqueta": "Tipo de lesión dérmica", "tipo": "MULTISELECT", "opciones": ["Mácula", "Pápula", "Vesícula", "Costra"]},
+            {"etiqueta": "Fecha de inicio de fiebre", "tipo": "FECHA"},
+            {"etiqueta": "Temperatura (°C)", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de días de duración", "tipo": "NUMERO"}
+          ]
+        },
+        {
+          "nombre": "Complicaciones",
+          "campos": [
+            {"etiqueta": "Complicaciones", "tipo": "MULTISELECT", "opciones": ["Sobreinfección de piel y partes blandas", "Neurológicas", "Respiratorias", "Hemorrágicas", "Otras"]},
+            {"etiqueta": "Otras complicaciones (especificar)", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Factores de riesgo",
+          "campos": [
+            {"etiqueta": "Factores de riesgo", "tipo": "MULTISELECT", "opciones": ["Inmunosupresión", "Asma", "Cáncer", "Malformación congénita", "Gestante", "Enf. reumatológica", "Enf. cardíaca", "Desórdenes metabólicos", "Otras"]},
+            {"etiqueta": "Otros factores de riesgo (especificar)", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Hospitalización y egreso",
+          "campos": [
+            {"etiqueta": "Hospitalización", "tipo": "BOOLEANO"},
+            {"etiqueta": "Establecimiento", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "N.° de días", "tipo": "NUMERO"},
+            {"etiqueta": "Condición de egreso", "tipo": "SELECT", "opciones": ["Alta médica", "Alta voluntaria", "Referido", "Fallecido"]},
+            {"etiqueta": "Fecha de egreso", "tipo": "FECHA"},
+            {"etiqueta": "Referido a", "tipo": "TEXTO"},
+            {"etiqueta": "Causa de muerte", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Lugar probable de infección",
+          "campos": [
+            {"etiqueta": "¿En las últimas 2 a 3 semanas estuvo en contacto con otro caso de varicela?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "Contactos por lugar", "tipo": "MATRIZ", "filas": ["Casa", "Nido/guardería", "Colegio", "Universidad/Instituto", "Centro de trabajo", "Establecimiento de Salud", "Otros"], "columnas": ["Nombre del lugar", "Dirección", "N.° de contactos sanos", "N.° de contactos enfermos"], "_corregido": "v1.0 traía por error las columnas de Tos ferina (esquema de vacunación, antibióticos); el PDF (pág. 3) solo pide nombre/dirección/sanos/enfermos"},
+            {"etiqueta": "¿Tuvo contacto con gestante?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de contacto con gestante", "tipo": "FECHA"},
+            {"etiqueta": "Semanas de gestación (contacto)", "tipo": "NUMERO"}
+          ]
+        }
+      ]
+    },
+    "B26": {
+      "enfermedad": "Parotiditis con complicaciones",
+      "lote": 1,
+      "pdf_paginas": "4",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": true
+      },
+      "_observaciones_tablas_hija": "La BD tiene usa_muestras=1, pero el PDF de Parotiditis (pág. 4) no trae ninguna sección de laboratorio — a diferencia de Varicela, que sí la trae. Revisar si el flag es correcto.",
+      "secciones": [
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de síntomas", "tipo": "FECHA"},
+            {"etiqueta": "¿Presentó inflamación de glándulas parótidas?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de inicio de parotiditis", "tipo": "FECHA"},
+            {"etiqueta": "N.° de días de duración", "tipo": "NUMERO"},
+            {"etiqueta": "Localización", "tipo": "SELECT", "opciones": ["Unilateral", "Bilateral"]},
+            {"etiqueta": "Inflamación de glándulas submandibulares", "tipo": "BOOLEANO"},
+            {"etiqueta": "Inflamación de glándulas sublinguales", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Complicaciones",
+          "campos": [
+            {"etiqueta": "Orquitis", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Ooforitis", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Pérdida de audición", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Encefalitis", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Meningitis", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Otras", "tipo": "SI_NO_FECHA"}
+          ]
+        },
+        {
+          "nombre": "Hospitalización y egreso",
+          "campos": [
+            {"etiqueta": "Hospitalización", "tipo": "BOOLEANO"},
+            {"etiqueta": "Establecimiento", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "N.° de días", "tipo": "NUMERO"},
+            {"etiqueta": "Condición de egreso", "tipo": "SELECT", "opciones": ["Alta médica", "Alta voluntaria", "Referido", "Fallecido"]},
+            {"etiqueta": "Fecha de egreso", "tipo": "FECHA"},
+            {"etiqueta": "Referido a", "tipo": "TEXTO"},
+            {"etiqueta": "Causa de muerte", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Lugar probable de infección",
+          "campos": [
+            {"etiqueta": "¿En las últimas 2 a 4 semanas estuvo en contacto con otro caso de parotiditis?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "Contactos por lugar", "tipo": "MATRIZ", "filas": ["Nido/guardería", "Casa", "Universidad/Instituto", "Colegio", "Escuela Militar/policial", "Centro de trabajo", "Establecimiento de Salud", "Otros"], "columnas": ["Nombre del lugar", "Dirección", "N.° de contactos sanos", "N.° de contactos enfermos"], "_corregido": "igual que Varicela: columnas reales son solo nombre/dirección/sanos/enfermos, no el detalle de vacunación de Tos ferina"},
+            {"etiqueta": "¿Tuvo contacto con gestante?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Trimestre de gestación (contacto)", "tipo": "SELECT", "opciones": ["I", "II", "III"], "_corregido": "v1.0 lo tenía como NUMERO; el PDF (pág. 4) pide trimestre (I/II/III), no un número de semanas como en Varicela"}
+          ]
+        }
+      ]
+    },
+    "A36": {
+      "enfermedad": "Difteria",
+      "lote": 1,
+      "pdf_paginas": "13-14",
+      "_nota_general": "Ficha ya reconstruida y verificada en AUDITORIA_FICHA_DIFTERIA.md; validada aquí contra el PDF sin cambios estructurales, solo se agregaron las opciones de catálogo.",
+      "tablas_hijas": {
+        "caso_contacto": true,
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Signos y síntomas",
+          "campos": [
+            {"etiqueta": "Fecha de inicio", "tipo": "FECHA"},
+            {"etiqueta": "Temperatura °C", "tipo": "NUMERO"},
+            {"etiqueta": "Signos clínicos", "tipo": "GRUPO_SI_NO", "opciones": ["Fiebre o sensación de alza térmica", "Dolor de garganta o al deglutir", "Faringitis", "Laringitis", "Amigdalitis", "Aumento de volumen en cuello", "Tos", "Secreción nasal (mucosa o sanguinolenta)", "Lesión cutánea ulcerosa", "Disnea"]},
+            {"etiqueta": "Presencia de placa (seudomembrana)", "tipo": "GRUPO_SI_NO", "opciones": ["Orofaringe", "Nasal", "Traqueobronquial", "Otros"]}
+          ]
+        },
+        {
+          "nombre": "Evolución",
+          "campos": [
+            {"etiqueta": "Hospitalizado", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "¿Antibiótico antes del ingreso?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Antibiótico antes del ingreso (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "Hospital", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Tratamiento recibido", "tipo": "MULTISELECT", "opciones": ["Antibiótico", "Antitoxina"]},
+            {"etiqueta": "Tratamiento (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "Egreso del hospital", "tipo": "SELECT", "opciones": ["Recuperado", "Referido", "Falleció", "Con secuela"]},
+            {"etiqueta": "Fecha de alta", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA"},
+            {"etiqueta": "Complicaciones", "tipo": "MULTISELECT", "opciones": ["Cardíacas", "Neurológicas", "Otros"]}
+          ]
+        },
+        {
+          "nombre": "Información epidemiológica",
+          "campos": [
+            {"etiqueta": "¿Estuvo en contacto con un posible caso de difteria?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "¿Sabe si hay casos similares en la zona?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "Aislamiento domiciliario", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "Fecha de aislamiento", "tipo": "FECHA"}
+          ]
+        }
+      ]
+    },
+    "A95": {
+      "enfermedad": "Fiebre amarilla",
+      "lote": 2,
+      "pdf_paginas": "26-27",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fiebre", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Ictericia", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Pulso lento en relación a la fiebre", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Hemorragia nasal", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Melena / hematemesis", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Petequias", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Diarreas", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Hipertensión", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Oliguria", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Proteinuria", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Coluria", "tipo": "SI_NO_FECHA"},
+            {"etiqueta": "Hepatomegalia", "tipo": "SI_NO_FECHA"}
+          ]
+        },
+        {
+          "nombre": "Migración",
+          "campos": [
+            {"etiqueta": "Tiempo que reside en domicilio actual (años)", "tipo": "NUMERO"},
+            {"etiqueta": "Tiempo que reside en domicilio actual (meses)", "tipo": "NUMERO"},
+            {"etiqueta": "Si reside menos de 6 meses, ¿dónde vivía anteriormente?", "tipo": "TEXTO"},
+            {"etiqueta": "Localidades visitadas en los últimos 10 días", "tipo": "TEXTAREA"}
+          ]
+        },
+        {
+          "nombre": "Antecedentes epidemiológicos",
+          "campos": [
+            {"etiqueta": "Casos reportados en los últimos 10 días", "tipo": "GRUPO_SI_NO", "opciones": ["En los lugares visitados por el paciente", "En su comunidad", "En su casa", "Epizootias"]},
+            {"etiqueta": "Cuántas personas viven en su casa", "tipo": "NUMERO"},
+            {"etiqueta": "¿Viajó en los últimos 6 meses?", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Hospitalización",
+          "campos": [
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Hospital", "tipo": "TEXTO"},
+            {"etiqueta": "N.° H.C.", "tipo": "TEXTO"},
+            {"etiqueta": "Tiempo de enfermedad al momento de la hospitalización (días)", "tipo": "NUMERO"},
+            {"etiqueta": "Tiempo de traslado desde el domicilio (horas)", "tipo": "NUMERO"},
+            {"etiqueta": "Tiempo de traslado desde el domicilio (minutos)", "tipo": "NUMERO"},
+            {"etiqueta": "Dx de ingreso 1", "tipo": "TEXTO"},
+            {"etiqueta": "Dx de ingreso 2", "tipo": "TEXTO"},
+            {"etiqueta": "Condición de egreso", "tipo": "SELECT", "opciones": ["Alta / Recuperado", "Fallecido"]},
+            {"etiqueta": "Dx de egreso", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de egreso", "tipo": "FECHA"},
+            {"etiqueta": "Necropsia", "tipo": "BOOLEANO"},
+            {"etiqueta": "Dx macroscópico", "tipo": "TEXTO"},
+            {"etiqueta": "Dx microscópico", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Clasificación final",
+          "_corregido": "v1.0 tenía un campo 'Clasificación final' SELECT (Confirmado/Descartado) redundante: enfermedad.opciones_clasificacion ya está fijado a CONFIRMADO,DESCARTADO para esta ficha (sql/32_fix_tosferina_fiebreamarilla.sql), así que ese valor vive en caso.clasificacion (núcleo), no en campo_def — igual que en Difteria. Se retira del manifiesto; solo quedan el criterio y el Dx de descarte, que sí son propios de esta ficha.",
+          "campos": [
+            {"etiqueta": "Criterio de clasificación", "tipo": "MULTISELECT", "opciones": ["Laboratorio", "Anatomía patológica", "Clínica"]},
+            {"etiqueta": "Dx de descarte", "tipo": "TEXTO"}
+          ]
+        }
+      ]
+    },
+    "B55": {
+      "enfermedad": "Leishmaniasis",
+      "lote": 2,
+      "pdf_paginas": "45-48",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Antecedente epidemiológico",
+          "_corregido": "usa_viajes=0 para esta ficha: no hay caso_viaje habilitado, así que 'Lugar de contagio' (localidad/distrito/provincia/departamento) SÍ debe modelarse en campo_def (v1.0 lo había excluido por error, asumiendo que iba a tabla hija).",
+          "campos": [
+            {"etiqueta": "Lugar de contagio: localidad", "tipo": "TEXTO"},
+            {"etiqueta": "Lugar de contagio: distrito", "tipo": "TEXTO"},
+            {"etiqueta": "Lugar de contagio: provincia", "tipo": "TEXTO"},
+            {"etiqueta": "Lugar de contagio: departamento", "tipo": "TEXTO"},
+            {"etiqueta": "Tiempo de permanencia en el lugar de contagio", "tipo": "TEXTO"},
+            {"etiqueta": "Actividad que desarrolló durante el contagio", "tipo": "SELECT", "opciones": ["Agricultura", "Extracción de Madera", "Extracción de oro", "Estudiante", "Industria petrolera", "Comerciante", "Fuerzas Armadas", "Biólogo/Investigación", "Turismo", "Su casa", "Otros"]},
+            {"etiqueta": "¿Existen otras personas con lesiones similares en su vivienda o localidad?", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Datos clínicos",
+          "campos": [
+            {"etiqueta": "Síntomas", "tipo": "MULTISELECT", "opciones": ["Dolor en la lesión", "Fiebre", "Prurito local", "Tupidez nasal", "Disfonía leve", "Disfonía moderada", "Disfonía grave", "Dificultad respiratoria leve", "Dificultad respiratoria moderada", "Dificultad respiratoria severa", "Tos", "Pérdida de peso"]},
+            {"etiqueta": "Antecedente de otras enfermedades", "tipo": "MULTISELECT", "opciones": ["TBC", "VIH", "Enfermedad de Chagas", "Otras"]},
+            {"etiqueta": "Alergia a medicinas", "tipo": "BOOLEANO"},
+            {"etiqueta": "Alergia a medicinas (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de última regla", "tipo": "FECHA"},
+            {"etiqueta": "MAC usado", "tipo": "TEXTO"},
+            {"etiqueta": "Medicinas usadas actualmente", "tipo": "TEXTAREA"}
+          ]
+        },
+        {
+          "nombre": "Lesiones cutáneas",
+          "campos": [
+            {"etiqueta": "N.° de lesiones activas", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de cicatrices", "tipo": "NUMERO"},
+            {"etiqueta": "Lesiones", "tipo": "MATRIZ", "filas": "dinámico (una fila por lesión reportada)", "columnas": ["Fecha de inicio", "Tipo (Úlcera/Nódulo/Verrugosa/Cicatriz)", "Localización (Cabeza/Miembro superior/Miembro inferior/Torso/Pelvis)", "Ganglios (Sí/No)", "Infección (Sí/No)", "Diámetros (mm)", "Superficie (mm²)"]}
+          ]
+        },
+        {
+          "nombre": "Enfermedad mucosa",
+          "campos": [
+            {"etiqueta": "Enfermedad mucosa", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de inicio de síntomas mucosa", "tipo": "FECHA"},
+            {"etiqueta": "Tiempo (años)", "tipo": "NUMERO"},
+            {"etiqueta": "Tiempo (meses)", "tipo": "NUMERO"},
+            {"etiqueta": "Compromiso de estructuras", "tipo": "MATRIZ", "filas": ["Narinas", "1/3 anterior", "Septo nasal", "Cornetes", "Labios", "Arcada", "Paladar", "Úvula", "Faringe", "Epiglotis", "Cuerdas vocales", "Otros"], "columnas": ["Compromiso", "Eritema", "Edema", "Infiltración", "Úlcera", "N.° de lesiones y características"]}
+          ]
+        },
+        {
+          "nombre": "Signos de leishmaniasis visceral",
+          "campos": [
+            {"etiqueta": "Signos de leishmaniasis visceral", "tipo": "MULTISELECT", "opciones": ["Hepatomegalia", "Esplenomegalia", "Adenomegalia", "Anemia", "Pérdida de peso", "Anorexia", "Adenopatías", "Epistaxis", "Hemorragia gingival", "Debilidad progresiva", "Desnutrición", "Edema", "Alteraciones de la piel", "Ascitis"]}
+          ]
+        },
+        {
+          "nombre": "Diagnóstico",
+          "campos": [
+            {"etiqueta": "Forma", "tipo": "SELECT", "opciones": ["Cutánea", "Mucosa", "Visceral"]},
+            {"etiqueta": "Situación", "tipo": "SELECT", "opciones": ["Primer episodio", "Reinfección", "Recaída", "Falla al tratamiento"]},
+            {"etiqueta": "Tratamiento", "tipo": "SELECT", "opciones": ["Adecuado", "Inadecuado"]}
+          ]
+        }
+      ]
+    },
+    "B57": {
+      "enfermedad": "Enfermedad de Chagas",
+      "lote": 2,
+      "pdf_paginas": "40-41",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": false
+      },
+      "_observaciones_tablas_hija": "usa_viajes=1: la sección 'Migración' del PDF (tiempo de residencia, dónde vivía antes, localidades visitadas, viajó últimos 6 meses) va en caso_viaje, no en campo_def. La BD tiene hoy una sección 'Migración' propia en campo_def (seccion_def.id=39) que la duplica — ver INFORME_CARGADOR.md C.1.",
+      "secciones": [
+        {
+          "nombre": "Antecedentes epidemiológicos",
+          "campos": [
+            {"etiqueta": "Fecha probable de contagio", "tipo": "FECHA"},
+            {"etiqueta": "Tiempo de permanencia en el lugar probable de contagio", "tipo": "TEXTO"},
+            {"etiqueta": "¿Existe \"chirimacha\" o chinche en su casa?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "¿Ha sido picado por una \"chirimacha\" o chinche?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "Fecha de la picadura", "tipo": "FECHA"},
+            {"etiqueta": "¿Ha recibido transfusión sin control para Chagas?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "Cuántas veces (transfusión)", "tipo": "NUMERO"},
+            {"etiqueta": "Fecha de la última transfusión", "tipo": "FECHA"},
+            {"etiqueta": "¿Antecedente de madre seropositiva?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "¿Otra persona con cuadro similar en la casa o lugar de contagio?", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "Posible forma de transmisión", "tipo": "SELECT", "opciones": ["Vectorial", "Transfusional", "Vertical"]}
+          ]
+        },
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Condición", "tipo": "SELECT", "opciones": ["Sintomático", "Asintomático"]},
+            {"etiqueta": "Fecha de inicio de síntomas", "tipo": "FECHA"},
+            {"etiqueta": "Etapa aguda", "tipo": "GRUPO_SI_NO", "opciones": ["Fiebre", "Hepatomegalia", "Esplenomegalia", "Miocarditis", "Mialgias", "Meningoencefalitis", "Chagoma de inoculación", "Signo de Romaña", "Malestar general"]},
+            {"etiqueta": "Etapa crónica", "tipo": "GRUPO_SI_NO", "opciones": ["Palpitaciones", "Disfagia", "Edema", "Arritmia", "Regurgitación", "Soplo", "Dolor precordial", "Taquicardia", "Tos", "Hepatomegalia", "Disnea", "Odinofagia"]}
+          ]
+        },
+        {
+          "nombre": "Hospitalización",
+          "campos": [
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Hospital", "tipo": "TEXTO"},
+            {"etiqueta": "N.° H.C.", "tipo": "TEXTO"},
+            {"etiqueta": "Dx de ingreso 1", "tipo": "TEXTO"},
+            {"etiqueta": "Dx de ingreso 2", "tipo": "TEXTO"},
+            {"etiqueta": "Condición de egreso", "tipo": "SELECT", "opciones": ["Alta / Recuperado", "Fallecido"]},
+            {"etiqueta": "Necropsia", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Tratamiento",
+          "campos": [
+            {"etiqueta": "Recibió tratamiento", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Clasificación final",
+          "campos": [
+            {"etiqueta": "Clasificación final", "tipo": "SELECT", "opciones": ["Chagas agudo - confirmado", "Chagas crónico - confirmado", "Chagas congénito - confirmado", "Chagas agudo - descartado", "Chagas crónico - descartado", "Chagas congénito - descartado"], "_nota": "el PDF modela esto como una tabla forma x (confirmado/descartado), cada una con su propia fecha; se simplifica a una sola SELECT combinada"},
+            {"etiqueta": "Fecha de clasificación", "tipo": "FECHA"}
+          ]
+        }
+      ]
+    },
+    "A44": {
+      "enfermedad": "Enfermedad de Carrión (bartonelosis)",
+      "lote": 2,
+      "pdf_paginas": "42-44",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Antecedente epidemiológico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de enfermedad", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de ingreso al estudio o diagnóstico", "tipo": "FECHA"}
+          ]
+        },
+        {
+          "nombre": "Síntomas",
+          "campos": [
+            {"etiqueta": "Síntomas", "tipo": "MULTISELECT", "opciones": ["Fiebre", "Palidez", "Cefalea", "Malestar general", "Mialgias", "Dolor articular", "Astenia", "Prurito", "Petequias", "Equimosis", "Escalofríos", "Mareos", "Verrugas", "Lumbalgia", "Náuseas", "Vómitos", "Hiporexia", "Dolor abdominal", "Hematoquesia", "Melena", "Diarrea", "Ictericia", "Disuria", "Polaquiuria", "Coluria", "Epigastralgia", "Somnolencia", "Polipnea", "Tos", "Expectoración", "Dolor torácico", "Disnea", "Cianosis", "Convulsiones", "Inyección conjuntival", "Epistaxis", "Congestión faríngea", "Odinofagia", "Fotofobia", "Excitación psicomotriz"]}
+          ]
+        },
+        {
+          "nombre": "Funciones vitales",
+          "campos": [
+            {"etiqueta": "Temperatura (°C)", "tipo": "NUMERO"},
+            {"etiqueta": "Presión arterial", "tipo": "TEXTO"},
+            {"etiqueta": "Frecuencia respiratoria", "tipo": "NUMERO"},
+            {"etiqueta": "Pulso", "tipo": "NUMERO"},
+            {"etiqueta": "Peso (kg)", "tipo": "NUMERO"}
+          ]
+        },
+        {
+          "nombre": "Signos generales",
+          "campos": [
+            {"etiqueta": "Orientación (lúcido, tiempo, espacio, persona)", "tipo": "GRUPO_SI_NO", "opciones": ["Lúcido", "Orientado en tiempo", "Orientado en espacio", "Orientado en persona"]},
+            {"etiqueta": "Estado general", "tipo": "SELECT", "opciones": ["Bueno", "Regular", "Malo"]},
+            {"etiqueta": "Estado de nutrición", "tipo": "SELECT", "opciones": ["Bueno", "Regular", "Malo"]},
+            {"etiqueta": "Estado de hidratación", "tipo": "SELECT", "opciones": ["Bueno", "Regular", "Malo"]}
+          ]
+        },
+        {
+          "nombre": "Piel",
+          "campos": [
+            {"etiqueta": "Palidez", "tipo": "SELECT", "opciones": ["Leve", "Moderada", "Severa"]},
+            {"etiqueta": "Petequias", "tipo": "BOOLEANO"},
+            {"etiqueta": "Localización de petequias", "tipo": "TEXTO"},
+            {"etiqueta": "Equimosis", "tipo": "BOOLEANO"},
+            {"etiqueta": "Localización de equimosis", "tipo": "TEXTO"},
+            {"etiqueta": "Lesiones eruptivas", "tipo": "MATRIZ", "filas": ["Miliares", "Mulares", "Nodulares"], "columnas": ["N.°", "Cara", "Cuello", "Tronco", "Ext. superior", "Ext. inferior", "Sangrante"]}
+          ]
+        },
+        {
+          "nombre": "Tejido celular subcutáneo",
+          "campos": [
+            {"etiqueta": "Edema, localización", "tipo": "MULTISELECT", "opciones": ["Miembros inferiores", "Miembros superiores", "Palpebral", "Lumbosacro", "Otro"]}
+          ]
+        },
+        {
+          "nombre": "Ganglios linfáticos",
+          "campos": [
+            {"etiqueta": "Ganglios linfáticos", "tipo": "MATRIZ", "filas": ["Axilares", "Inguinales", "Cervicales", "Epitrocleares"], "columnas": ["N.°", "Tamaño (mm)", "Móviles", "Dolorosos"]}
+          ]
+        },
+        {
+          "nombre": "Laboratorio y evolución",
+          "campos": [
+            {"etiqueta": "Hemoglobina", "tipo": "NUMERO"},
+            {"etiqueta": "Hematocrito", "tipo": "NUMERO"},
+            {"etiqueta": "Transfusiones (U)", "tipo": "NUMERO"},
+            {"etiqueta": "Antibióticos usados", "tipo": "MULTISELECT", "opciones": ["Penicilina", "Cloranfenicol", "Rifampicina", "Ciprofloxacina", "Eritromicina", "Cotrimoxazol", "Ceftriaxona", "Otros"]}
+          ]
+        },
+        {
+          "nombre": "Hospitalización",
+          "campos": [
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Días de hospitalización", "tipo": "NUMERO"},
+            {"etiqueta": "Condición de alta", "tipo": "SELECT", "opciones": ["Curado", "Mejorado", "Transferido", "Alta voluntaria", "Fallecido"]}
+          ]
+        }
+      ]
+    },
+    "B04X": {
+      "enfermedad": "Viruela del mono (Mpox)",
+      "lote": 2,
+      "pdf_paginas": "5-6",
+      "tablas_hijas": {
+        "caso_contacto": true,
+        "caso_muestra": false,
+        "caso_viaje": true,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Datos del paciente (adicionales)",
+          "campos": [
+            {"etiqueta": "Población específica", "tipo": "MULTISELECT", "opciones": ["HSH", "Mujer transgénero", "Trabajador(a) sexual", "Privado de la libertad", "Personal de salud", "Otro"]},
+            {"etiqueta": "Orientación sexual", "tipo": "SELECT", "opciones": ["Heterosexual", "Bisexual", "Homosexual", "Otra"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Lugar probable de infección y exposición",
+          "campos": [
+            {"etiqueta": "Lugares a los que asistió", "tipo": "MULTISELECT", "opciones": ["Discoteca", "Sauna", "Bar", "Club sexual", "Evento masivo", "Fiesta", "EE.SS.", "Otro", "Ninguno"]},
+            {"etiqueta": "Exposiciones en los últimos 21 días", "tipo": "MULTISELECT", "opciones": ["Tuvo relaciones sexuales con desconocido(a) o parejas múltiples", "Tuvo relaciones sexuales con trabajador(a) sexual", "Tuvo relaciones sexuales con su pareja (con exantema o lesiones)", "Tuvo relaciones sexuales con su pareja (sin molestias clínicas)", "Tuvo contacto con personas con exantemas o lesiones en piel", "Brindó cuidados de un caso probable o confirmado de VM en domicilio", "En EE.SS. manipuló material contaminado de caso probable o confirmado VM", "Se realizó algún procedimiento médico o de laboratorio", "Se realizó un tatuaje, piercing o acupuntura", "Compartió jeringas por uso de sustancias psicoactivas endovenosas", "Otros", "Ninguno"], "sensible": true},
+            {"etiqueta": "¿Exposición con caso probable o confirmado?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
+            {"etiqueta": "¿Contacto directo y frecuente con animales?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Animales (especificar)", "tipo": "MULTISELECT", "opciones": ["Perro", "Gato", "Mono", "Aves", "Roedores", "Otros"]}
+          ]
+        },
+        {
+          "nombre": "Antecedentes",
+          "campos": [
+            {"etiqueta": "Estado inmunológico deprimido", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"], "sensible": true},
+            {"etiqueta": "Por enfermedad (especificar)", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "Por medicación (especificar)", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "Infección VIH", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"], "sensible": true},
+            {"etiqueta": "Fecha de diagnóstico VIH", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Recibe TAR", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Último recuento CD4", "tipo": "NUMERO", "sensible": true},
+            {"etiqueta": "Fecha del recuento CD4", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "ITS en los últimos 12 meses", "tipo": "MULTISELECT", "opciones": ["Chlamydia", "Gonorrea", "Herpes genital", "Sífilis", "Verrugas genitales", "Otros"], "sensible": true},
+            {"etiqueta": "Comorbilidades", "tipo": "MULTISELECT", "opciones": ["Tuberculosis", "COVID-19", "Otros"]},
+            {"etiqueta": "Cicatriz por vacuna variólica (nacidos hasta 1978)", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]}
+          ]
+        },
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de síntomas (FIS)", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de inicio del exantema agudo", "tipo": "FECHA"},
+            {"etiqueta": "Signos y síntomas", "tipo": "MULTISELECT", "opciones": ["Fiebre (>38,5°C)", "Escalofríos", "Cefalea", "Astenia", "Mialgia", "Dolor de espalda", "Dolor de garganta", "Exantema/lesión", "Linfadenopatía localizada", "Linfadenopatía generalizada", "Proctitis (dolor o sangrado anal)", "Otros"]},
+            {"etiqueta": "Distribución del sarpullido", "tipo": "SELECT", "opciones": ["Localizado", "Generalizado"]},
+            {"etiqueta": "Secuencia de aparición por zona", "tipo": "MATRIZ", "filas": ["Genital/perianal", "Oral (boca, labios)", "Cara", "Tórax, espalda", "Abdomen", "Extremidades superiores", "Extremidades inferiores", "Palma de mano"], "columnas": ["N.° de orden de aparición"]},
+            {"etiqueta": "Número de lesiones", "tipo": "SELECT", "opciones": ["1 a 10 lesiones", "11 a 25 lesiones", "26 a 99 lesiones", "100 a más"]},
+            {"etiqueta": "Estadio de los exantemas", "tipo": "MULTISELECT", "opciones": ["Mácula", "Pápula", "Vesícula", "Pústula", "Costra"]},
+            {"etiqueta": "Tipo de presentación", "tipo": "SELECT", "opciones": ["Monomórfico", "Polimórfico"]}
+          ]
+        },
+        {
+          "nombre": "Hospitalización",
+          "campos": [
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de ingreso", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de egreso", "tipo": "FECHA"},
+            {"etiqueta": "Hospital", "tipo": "TEXTO"},
+            {"etiqueta": "Motivo de ingreso", "tipo": "TEXTO"},
+            {"etiqueta": "Dx de egreso 1", "tipo": "TEXTO"},
+            {"etiqueta": "Dx de egreso 2", "tipo": "TEXTO"},
+            {"etiqueta": "UCI", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de ingreso a UCI", "tipo": "FECHA"},
+            {"etiqueta": "Defunción", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA"},
+            {"etiqueta": "Clasificación de la defunción", "tipo": "TEXTO"},
+            {"etiqueta": "Alta clínico-epidemiológica", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de alta clínico-epidemiológica", "tipo": "FECHA"}
+          ]
+        },
+        {
+          "nombre": "Clasificación",
+          "campos": [
+            {"etiqueta": "Clasificación", "tipo": "SELECT", "opciones": ["Sospechoso", "Probable", "Confirmado", "Descartado"]}
+          ]
+        }
+      ]
+    },
+    "A00": {
+      "enfermedad": "EDA grave / cólera",
+      "lote": 3,
+      "pdf_paginas": "50",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Antecedentes epidemiológicos — fuente de infección",
+          "campos": [
+            {"etiqueta": "¿De dónde obtuvo el agua en los últimos 3 días?", "tipo": "SELECT", "opciones": ["Caño dentro de su casa", "Caño público", "De un pozo", "De un río", "Puquial (manantial)", "Camión cisterna", "Fue embotellada", "Otro"]},
+            {"etiqueta": "¿Almacena agua de consumo doméstico?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿En qué tipo de recipiente?", "tipo": "SELECT", "opciones": ["Tanque elevado", "Cilindro", "Tanque bajo", "Otro"]},
+            {"etiqueta": "Nivel de cloro verificado con comparador", "tipo": "TEXTO"},
+            {"etiqueta": "¿Los recipientes tienen tapa?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Dónde consumió alimentos los últimos 3 días?", "tipo": "MULTISELECT", "opciones": ["Solo los que han sido preparados en mi casa", "En un restaurante", "En un ambulante", "En una pensión", "En un mercado", "Otro"]},
+            {"etiqueta": "Para menores de 2 años", "tipo": "MULTISELECT", "opciones": ["Ingiere leche en biberón", "Consume los mismos alimentos que los adultos en la casa", "Recibe lactancia materna"]},
+            {"etiqueta": "Eliminación de excretas", "tipo": "SELECT", "opciones": ["Red pública dentro de la vivienda", "Red pública fuera de la vivienda", "Pozo negro o ciego o silo/letrina", "Sin servicio", "Otro"]},
+            {"etiqueta": "¿Algún miembro de la familia con diarrea en los últimos 3 días?", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Síntomas", "tipo": "MULTISELECT", "opciones": ["Diarrea", "Dolor abdominal", "Náuseas", "Vómitos", "Artralgias", "Fiebre", "Cefalea", "Malestar general", "Calambres"]},
+            {"etiqueta": "Fecha de inicio de la diarrea", "tipo": "FECHA"},
+            {"etiqueta": "N.° de días de duración", "tipo": "NUMERO"},
+            {"etiqueta": "Consistencia de la deposición", "tipo": "SELECT", "opciones": ["Acuosa o líquida", "Grumosa", "Pastosa"]},
+            {"etiqueta": "Tipo de diarrea", "tipo": "SELECT", "opciones": ["EDA acuosa", "EDA disentérica", "EDA persistente"]},
+            {"etiqueta": "Presencia de", "tipo": "SELECT", "opciones": ["Moco", "Sangre", "Moco y sangre"]},
+            {"etiqueta": "N.° de deposiciones por día", "tipo": "NUMERO"},
+            {"etiqueta": "Clasificación de la diarrea", "tipo": "SELECT", "opciones": ["Sin deshidratación", "Con deshidratación leve", "Con deshidratación moderada", "Con deshidratación grave", "Shock"]}
+          ]
+        },
+        {
+          "nombre": "Tratamiento",
+          "campos": [
+            {"etiqueta": "Plan de tratamiento", "tipo": "SELECT", "opciones": ["A", "B", "C"]},
+            {"etiqueta": "Tratamiento antibiótico", "tipo": "BOOLEANO"},
+            {"etiqueta": "Antibiótico usado", "tipo": "SELECT", "opciones": ["Tetraciclina", "Cotrimoxazol", "Doxiciclina", "Ciprofloxacina", "Cloranfenicol", "Otro"]}
+          ]
+        },
+        {
+          "nombre": "Evolución",
+          "campos": [
+            {"etiqueta": "Alta", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de alta", "tipo": "FECHA"},
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Complicaciones", "tipo": "MULTISELECT", "opciones": ["Shock hipovolémico", "Acidosis", "Insuficiencia renal", "Edema agudo de pulmón"]},
+            {"etiqueta": "Fallecido", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de fallecimiento", "tipo": "FECHA"},
+            {"etiqueta": "Hora de fallecimiento", "tipo": "TEXTO"},
+            {"etiqueta": "Lugar de fallecimiento", "tipo": "SELECT", "opciones": ["En el establecimiento de salud", "En casa"]},
+            {"etiqueta": "Transferencia", "tipo": "MULTISELECT", "opciones": ["Para hospitalización", "Para diálisis"]}
+          ]
+        },
+        {
+          "nombre": "Laboratorio",
+          "campos": [
+            {"etiqueta": "Serogrupo", "tipo": "SELECT", "opciones": ["O1", "O139"]},
+            {"etiqueta": "Serotipo", "tipo": "SELECT", "opciones": ["Ogawa", "Inaba", "Hikojima"]},
+            {"etiqueta": "Otro microorganismo aislado", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Clasificación",
+          "campos": [
+            {"etiqueta": "Clasificación final", "tipo": "SELECT", "opciones": ["Sospechoso", "Probable", "Confirmado", "Compatible", "Descartado"]}
+          ]
+        }
+      ]
+    },
+    "A35": {
+      "enfermedad": "Tétanos",
+      "lote": 3,
+      "pdf_paginas": "23-24",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de lesión", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de inicio de síntomas", "tipo": "FECHA"},
+            {"etiqueta": "No recuerda día", "tipo": "BOOLEANO"},
+            {"etiqueta": "Herida", "tipo": "SELECT", "opciones": ["Única", "Múltiple"]},
+            {"etiqueta": "Tipo de herida", "tipo": "SELECT", "opciones": ["Superficial", "Profunda"]},
+            {"etiqueta": "Causa de la herida", "tipo": "TEXTO"},
+            {"etiqueta": "Lugar de la herida", "tipo": "TEXTO"},
+            {"etiqueta": "Signos y síntomas", "tipo": "GRUPO_SI_NO", "opciones": ["Fiebre", "Trismus (no succiona)", "Risa sardónica", "Convulsiones (espasmos)", "Opistótonos", "Onfalitis", "Ictericia"]},
+            {"etiqueta": "Complicaciones", "tipo": "TEXTAREA"}
+          ]
+        },
+        {
+          "nombre": "Atención",
+          "campos": [
+            {"etiqueta": "Paciente atendido por", "tipo": "SELECT", "opciones": ["Médico", "Enfermera", "Técnico sanitario", "Otro"]},
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Hospital", "tipo": "TEXTO"},
+            {"etiqueta": "N.° H.C.", "tipo": "TEXTO"},
+            {"etiqueta": "Tiempo de hospitalización (días)", "tipo": "NUMERO"},
+            {"etiqueta": "Condiciones de alta", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de alta", "tipo": "FECHA"},
+            {"etiqueta": "Fallecido", "tipo": "SELECT", "opciones": ["Sí", "No", "Ignorado"]},
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA"}
+          ]
+        },
+        {
+          "nombre": "Diagnóstico definitivo",
+          "campos": [
+            {"etiqueta": "Diagnóstico definitivo", "tipo": "SELECT", "opciones": ["Confirmado", "Descartado"]}
+          ]
+        }
+      ]
+    },
+    "A33": {
+      "enfermedad": "Tétanos neonatal",
+      "lote": 3,
+      "pdf_paginas": "21-22",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de síntomas", "tipo": "FECHA"},
+            {"etiqueta": "¿Succión normal durante los 2 primeros días de vida?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Llanto normal durante los 2 primeros días de vida?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Signos y síntomas", "tipo": "GRUPO_SI_NO", "opciones": ["Fiebre", "Trismus (no succiona)", "Risa sardónica", "Convulsiones (espasmos)", "Opistótonos", "Onfalitis", "Ictericia"]},
+            {"etiqueta": "Complicaciones", "tipo": "TEXTAREA"},
+            {"etiqueta": "Atendido por", "tipo": "SELECT", "opciones": ["Médico", "Enfermera", "Técnico sanitario", "Otro"]},
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Hospital", "tipo": "TEXTO"},
+            {"etiqueta": "N.° H.C.", "tipo": "TEXTO"},
+            {"etiqueta": "Condiciones de alta", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de alta", "tipo": "FECHA"},
+            {"etiqueta": "Fallecido", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA"}
+          ]
+        },
+        {
+          "nombre": "Datos de la madre",
+          "campos": [
+            {"etiqueta": "Nombres y apellidos de la madre", "tipo": "TEXTO"},
+            {"etiqueta": "Edad de la madre", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de embarazos", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de partos", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de hijos fallecidos antes de cumplir 28 días", "tipo": "NUMERO"},
+            {"etiqueta": "Fecha de último parto", "tipo": "FECHA"},
+            {"etiqueta": "Grado de instrucción", "tipo": "SELECT", "opciones": ["Analfabeta", "Primaria", "Secundaria", "Superior"]},
+            {"etiqueta": "N.° de consultas prenatales", "tipo": "NUMERO"}
+          ]
+        },
+        {
+          "nombre": "Atención del parto",
+          "campos": [
+            {"etiqueta": "Atendido por", "tipo": "SELECT", "opciones": ["Médico", "Obstetriz", "Enfermera", "Técnico sanitario", "Partera", "Otro"]},
+            {"etiqueta": "Instrumento utilizado para cortar el cordón umbilical", "tipo": "TEXTO"},
+            {"etiqueta": "Tratamiento aplicado al muñón umbilical en el domicilio", "tipo": "TEXTAREA"},
+            {"etiqueta": "Lugar del parto: establecimiento de salud", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Diagnóstico definitivo",
+          "campos": [
+            {"etiqueta": "Diagnóstico definitivo", "tipo": "SELECT", "opciones": ["Confirmado", "Descartado"]}
+          ]
+        }
+      ]
+    },
+    "A80": {
+      "enfermedad": "Parálisis flácida aguda (PFA)",
+      "lote": 3,
+      "pdf_paginas": "34-36",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de síntomas generales (pródromos)", "tipo": "FECHA"},
+            {"etiqueta": "Semana epidemiológica", "tipo": "NUMERO"},
+            {"etiqueta": "Fecha de la fiebre al inicio", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de la deficiencia motora", "tipo": "FECHA"},
+            {"etiqueta": "N.° de días con parálisis", "tipo": "NUMERO"},
+            {"etiqueta": "Progresión de la parálisis", "tipo": "SELECT", "opciones": ["Ascendente", "Descendente", "Mixta"]},
+            {"etiqueta": "Síntomas", "tipo": "GRUPO_SI_NO", "opciones": ["Tos", "Fiebre", "Estreñimiento", "Vómitos", "Diarrea"]},
+            {"etiqueta": "Signos", "tipo": "GRUPO_SI_NO", "opciones": ["Dolor muscular", "Cefalea", "Meníngeo"]},
+            {"etiqueta": "Características (paresia, parálisis, etc.)", "tipo": "GRUPO_SI_NO", "opciones": ["Paresia", "Parálisis", "Pares craneales", "Flacidez", "Súbita", "Asimetría", "Sensibilidad", "Parestesia", "Babinski"]},
+            {"etiqueta": "Breve descripción de sensorio, marcha y parálisis", "tipo": "TEXTAREA"}
+          ]
+        },
+        {
+          "nombre": "Examen físico",
+          "campos": [
+            {"etiqueta": "Fecha de examen físico", "tipo": "FECHA"},
+            {"etiqueta": "Realizado por", "tipo": "TEXTO"},
+            {"etiqueta": "Dx inicial 1", "tipo": "TEXTO"},
+            {"etiqueta": "Dx inicial 2", "tipo": "TEXTO"},
+            {"etiqueta": "Fuerza muscular", "tipo": "MATRIZ", "filas": ["Miembro superior izquierdo", "Miembro superior derecho", "Miembro inferior izquierdo", "Miembro inferior derecho"], "columnas": ["DIM", "AUS", "NORM", "IGN"]},
+            {"etiqueta": "Tono muscular", "tipo": "MATRIZ", "filas": ["Miembro superior izquierdo", "Miembro superior derecho", "Miembro inferior izquierdo", "Miembro inferior derecho", "Músculos cervicales"], "columnas": ["DIM", "AUS", "NORM", "IGN"]},
+            {"etiqueta": "Reflejos", "tipo": "MATRIZ", "filas": ["Miembro superior izquierdo", "Miembro superior derecho", "Miembro inferior izquierdo", "Miembro inferior derecho"], "columnas": ["DIM", "AUS", "NORM", "IGN"]},
+            {"etiqueta": "Músculos respiratorios", "tipo": "BOOLEANO"},
+            {"etiqueta": "Músculos cervicales", "tipo": "BOOLEANO"},
+            {"etiqueta": "Cara (lado afectado)", "tipo": "SELECT", "opciones": ["Derecho", "Izquierdo"]},
+            {"etiqueta": "Signos de irritación meníngea", "tipo": "MATRIZ", "filas": ["Rigidez de nuca", "Kerning", "Brudzinski", "Lasegue"], "columnas": ["AUS", "PRES", "IGN"]}
+          ]
+        },
+        {
+          "nombre": "Hospitalización y defunción",
+          "campos": [
+            {"etiqueta": "Hospitalización", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Hospital", "tipo": "TEXTO"},
+            {"etiqueta": "Servicio", "tipo": "TEXTO"},
+            {"etiqueta": "N.° H.C.", "tipo": "TEXTO"},
+            {"etiqueta": "N.° cama", "tipo": "TEXTO"},
+            {"etiqueta": "Ciudad", "tipo": "TEXTO"},
+            {"etiqueta": "Fallecido", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de fallecimiento", "tipo": "FECHA"},
+            {"etiqueta": "Causa", "tipo": "TEXTO"},
+            {"etiqueta": "Informe de necropsia", "tipo": "TEXTAREA"}
+          ]
+        },
+        {
+          "nombre": "Fuente probable de infección",
+          "campos": [
+            {"etiqueta": "Visitas recibidas en los 30 días antes", "tipo": "BOOLEANO"},
+            {"etiqueta": "De dónde (visitas)", "tipo": "TEXTO"},
+            {"etiqueta": "¿Existen otros casos semejantes en el área?", "tipo": "SELECT", "opciones": ["Sí", "No", "No sabe"]}
+          ]
+        },
+        {
+          "nombre": "Seguimiento de secuelas",
+          "campos": [
+            {"etiqueta": "Evaluación del trofismo (fuerza, tono, atrofia, sensibilidad) a 30/60/90/180 días", "tipo": "MATRIZ", "filas": ["Miembro superior derecho", "Miembro superior izquierdo", "Miembro inferior derecho", "Miembro inferior izquierdo", "Cara", "Cervicales"], "columnas": ["30 días", "60 días", "90 días", "180 días"]},
+            {"etiqueta": "Evaluación de reflejos a 30/60/90/180 días", "tipo": "MATRIZ", "filas": ["Miembro superior derecho", "Miembro superior izquierdo", "Miembro inferior derecho", "Miembro inferior izquierdo", "Babinski", "Músculos respiratorios"], "columnas": ["30 días", "60 días", "90 días", "180 días"]}
+          ]
+        },
+        {
+          "nombre": "Evaluación final de secuelas",
+          "campos": [
+            {"etiqueta": "Tipo de secuela", "tipo": "SELECT", "opciones": ["Ausente", "Mínima", "Media", "Grave"]},
+            {"etiqueta": "Localización", "tipo": "MULTISELECT", "opciones": ["MSI", "MSD", "MII", "MID", "Cara", "Músculos cervicales", "Músculos respiratorios"]},
+            {"etiqueta": "Electromiografía: realizado por", "tipo": "TEXTO"},
+            {"etiqueta": "Electromiografía: fecha", "tipo": "FECHA"},
+            {"etiqueta": "Electromiografía: conclusión", "tipo": "TEXTAREA"}
+          ]
+        },
+        {
+          "nombre": "Clasificación final",
+          "campos": [
+            {"etiqueta": "Clasificación final", "tipo": "SELECT", "opciones": ["Polio salvaje", "Polio derivado de la vacuna", "Polio asociado a la vacuna", "Polio compatible", "Descartado"], "_corregido": "el catálogo actual en BD solo tiene 3 valores (confirmado/compatible/descartado); el PDF (pág. 36) trae 5 valores distintos"},
+            {"etiqueta": "Criterio de clasificación", "tipo": "MULTISELECT", "opciones": ["Laboratorio", "Defunción", "Con parálisis residual", "Sin parálisis residual"]},
+            {"etiqueta": "Se ha descartado", "tipo": "MULTISELECT", "opciones": ["SGB", "Neuritis traumática", "Mielitis transversa", "Tumor", "Desconocido", "Otro"]}
+          ]
+        }
+      ]
+    },
+    "B05": {
+      "enfermedad": "Sarampión / rubéola / febriles eruptivas",
+      "lote": 4,
+      "pdf_paginas": "37-39",
+      "tablas_hijas": {
+        "caso_contacto": true,
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de fiebre", "tipo": "FECHA"},
+            {"etiqueta": "¿Fiebre cuantificada?", "tipo": "BOOLEANO"},
+            {"etiqueta": "N.° de días de duración de la fiebre", "tipo": "NUMERO"},
+            {"etiqueta": "Temperatura (°C)", "tipo": "NUMERO"},
+            {"etiqueta": "¿Erupción cutánea?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de inicio de erupción", "tipo": "FECHA"},
+            {"etiqueta": "N.° de días de duración de la erupción", "tipo": "NUMERO"},
+            {"etiqueta": "Estado general", "tipo": "SELECT", "opciones": ["Bueno", "Regular", "Malo"]},
+            {"etiqueta": "Signos", "tipo": "GRUPO_SI_NO", "opciones": ["Tos", "Coriza o rinorrea", "Conjuntivitis", "Manchas de Koplik", "Adenopatía cervical", "Adenopatía retroauricular", "Artralgias", "Otros"]},
+            {"etiqueta": "Descripción de la erupción cutánea", "tipo": "TEXTAREA"},
+            {"etiqueta": "Complicaciones", "tipo": "GRUPO_SI_NO", "opciones": ["Otitis media", "Convulsiones", "Neumonía", "Trombocitopenia", "Diarrea", "Encefalitis", "Otras"]},
+            {"etiqueta": "Hospitalizado", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Establecimiento de hospitalización", "tipo": "TEXTO"},
+            {"etiqueta": "N.° de historia clínica", "tipo": "TEXTO"},
+            {"etiqueta": "Fallecido", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA"},
+            {"etiqueta": "Causa básica de defunción", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Cronología de signos y síntomas",
+          "campos": [
+            {"etiqueta": "Cronología (día -10 a +10, día 0 = erupción)", "tipo": "CRONOLOGIA", "opciones": ["Erupción", "Fiebre", "Tos", "Conjuntivitis", "Coriza o rinorrea", "Manchas de Koplik", "Adenopatía retroauricular", "Adenopatía cervical", "Artralgias", "Otros"]}
+          ]
+        },
+        {
+          "nombre": "Antecedentes vacunales",
+          "campos": [
+            {"etiqueta": "Estado vacunal", "tipo": "SELECT", "opciones": ["Vacunado", "Vacunado incompleto", "No vacunado", "Ignorado", "No corresponde", "Sin evidencia"]},
+            {"etiqueta": "Tipo de vacuna", "tipo": "SELECT", "opciones": ["Antisarampionosa", "Antirrubeólica", "Doble viral (SR)", "Triple viral (SRP)"]},
+            {"etiqueta": "N.° de dosis", "tipo": "SELECT", "opciones": ["Dosis cero", "Primera dosis", "Segunda dosis", "Dosis adicional", "Desconocido"], "_corregido": "v1.0 lo tenía como NUMERO; el PDF codifica esto como opciones (0=cero,1=1a,2=2a,88=adicional,99=desconocido), no como un número libre"},
+            {"etiqueta": "Fecha de última dosis", "tipo": "FECHA"},
+            {"etiqueta": "N.° de lote", "tipo": "TEXTO"},
+            {"etiqueta": "Fuente de información", "tipo": "SELECT", "opciones": ["Carné de vacunación", "Registro en servicio de salud"]},
+            {"etiqueta": "EE.SS. donde se vacunó", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Antecedentes epidemiológicos",
+          "campos": [
+            {"etiqueta": "Captación del caso", "tipo": "SELECT", "opciones": ["Consulta", "Laboratorio", "Búsqueda activa institucional", "Búsqueda activa comunitaria", "Investigación de contactos", "Casos reportados en comunidad", "Otros"]},
+            {"etiqueta": "¿El caso es contacto de otro caso conocido?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Código del caso con el que tuvo contacto", "tipo": "TEXTO"},
+            {"etiqueta": "¿Tuvo contacto con gestante en las primeras 20 semanas?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Nombre de la gestante", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha del contacto con la gestante", "tipo": "FECHA"}
+          ]
+        },
+        {
+          "nombre": "Lugar probable de infección",
+          "campos": [
+            {"etiqueta": "Contacto con", "tipo": "MULTISELECT", "opciones": ["Contacto con extranjeros", "Visitó establecimiento de salud", "Recibió visitas en casa", "Asistió a celebraciones masivas (religiosas, festividades, sociales, etc.)", "Otros"]},
+            {"etiqueta": "Latitud y longitud del domicilio", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Cadena de transmisión",
+          "_nota": "DEFINICION_FICHAS.md linea 735-738 y PDF (pag. 39): 'Cadena de transmisión -> caso_contacto: nombre, edad, direccion, celular, fecha del contacto, lugar de contacto, fecha de inicio de erupcion, fecha de vacunacion, vacunado dentro de 72h'. No es campo_def: se verifica como tabla hija (caso_contacto), no aqui. Esta seccion falta hoy en la BD (ver REPORTE_VERIFICACION.md) y no hay evidencia de que la UI la use.",
+          "campos": []
+        },
+        {
+          "nombre": "Investigación epidemiológica",
+          "campos": [
+            {"etiqueta": "¿Búsqueda activa institucional?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Total de Dx revisados", "tipo": "NUMERO"},
+            {"etiqueta": "Casos que ya existían", "tipo": "NUMERO"},
+            {"etiqueta": "Casos nuevos ingresados", "tipo": "NUMERO"},
+            {"etiqueta": "¿Búsqueda activa comunitaria?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Casas abiertas", "tipo": "NUMERO"},
+            {"etiqueta": "Casas cerradas", "tipo": "NUMERO"},
+            {"etiqueta": "Casas abandonadas", "tipo": "NUMERO"},
+            {"etiqueta": "Total de casas", "tipo": "NUMERO"},
+            {"etiqueta": "¿Se realizó bloqueo vacunal?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de inicio del bloqueo", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de término del bloqueo", "tipo": "FECHA"},
+            {"etiqueta": "Localidades del bloqueo", "tipo": "TEXTAREA"},
+            {"etiqueta": "Número de vacunados en el bloqueo", "tipo": "NUMERO"},
+            {"etiqueta": "¿Se realizó monitoreo rápido de coberturas (MRC)?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Porcentaje de vacunados (MRC)", "tipo": "NUMERO"},
+            {"etiqueta": "¿Hubo casos reportados de sarampión en los últimos 30 días en su jurisdicción?", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Clasificación final",
+          "campos": [
+            {"etiqueta": "Clasificación", "tipo": "SELECT", "opciones": ["Sarampión", "Rubéola", "Descartado"]},
+            {"etiqueta": "Criterio de confirmación", "tipo": "SELECT", "opciones": ["IgM indirecta (+)", "Seroconversión de IgG indirecta", "PCR (+)"]},
+            {"etiqueta": "Criterio de descarte", "tipo": "SELECT", "opciones": ["Sarampión/Rubéola IgM-neg", "Reacción vacunal", "Dengue", "Parvovirus B19", "Herpes 6", "Reacción alérgica", "Zika", "Otros"]},
+            {"etiqueta": "Clasificación según fuente de infección", "tipo": "SELECT", "opciones": ["Importado", "Relacionado a importación", "Fuente desconocida", "Local o Autóctono"]},
+            {"etiqueta": "Fecha de clasificación final", "tipo": "FECHA"},
+            {"etiqueta": "Clasificado por", "tipo": "TEXTO"}
+          ]
+        }
+      ]
+    },
+    "Z21": {
+      "enfermedad": "Gestante con VIH y niño expuesto",
+      "lote": 5,
+      "pdf_paginas": "16",
+      "multi_sujeto": true,
+      "roles_sujeto": ["MADRE", "NINO_EXPUESTO"],
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Sección I — Gestante con VIH",
+          "rol_sujeto": "MADRE",
+          "campos": [
+            {"etiqueta": "Código", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de reporte de la ficha de investigación epidemiológica", "tipo": "FECHA"},
+            {"etiqueta": "Momento de diagnóstico de infección por VIH", "tipo": "SELECT", "opciones": ["Previo a la gestación actual", "Durante la actual gestación"]},
+            {"etiqueta": "Año de diagnóstico", "tipo": "NUMERO"},
+            {"etiqueta": "Momento durante la gestación", "tipo": "SELECT", "opciones": ["Atención prenatal (APN)", "Trabajo de parto", "Puerperio", "Posterior al puerperio", "Por aborto"]},
+            {"etiqueta": "Prueba de tamizaje N.° 1", "tipo": "FECHA"},
+            {"etiqueta": "Prueba de tamizaje N.° 2", "tipo": "FECHA"},
+            {"etiqueta": "Prueba confirmatoria", "tipo": "FECHA"},
+            {"etiqueta": "FUR", "tipo": "FECHA"},
+            {"etiqueta": "¿Recibió APN?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Embarazo múltiple?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Recibió ARV?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de inicio de ARV", "tipo": "FECHA"},
+            {"etiqueta": "¿Abandonó terapia ARV?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Recibe terapia triple / TARGA?", "tipo": "BOOLEANO"},
+            {"etiqueta": "N.° de nacidos vivos", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de óbitos fetales", "tipo": "NUMERO"},
+            {"etiqueta": "Aborto", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Parto por cesárea?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Institución del EE.SS. del parto", "tipo": "SELECT", "opciones": ["MINSA", "EsSalud", "FFAA/FFPP", "Privado", "Otro"], "_corregido": "faltaba en v1.0 (solo tenía el nombre del EE.SS. como texto)"},
+            {"etiqueta": "Nombre del EE.SS. del parto", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha del parto", "tipo": "FECHA"},
+            {"etiqueta": "¿Carga viral indetectable?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Abandona seguimiento?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿La gestante fallece?", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Sección II — Niño nacido expuesto al VIH",
+          "rol_sujeto": "NINO_EXPUESTO",
+          "campos": [
+            {"etiqueta": "Código del niño", "tipo": "TEXTO"},
+            {"etiqueta": "DNI del niño", "tipo": "TEXTO"},
+            {"etiqueta": "Código de la madre", "tipo": "TEXTO"},
+            {"etiqueta": "DNI de la madre", "tipo": "TEXTO"},
+            {"etiqueta": "¿Recibió ARV?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de inicio de ARV", "tipo": "FECHA"},
+            {"etiqueta": "¿Abandonó terapia ARV?", "tipo": "BOOLEANO"},
+            {"etiqueta": "ARV recibido", "tipo": "SELECT", "opciones": ["AZT", "AZT + NVP", "Otro"]},
+            {"etiqueta": "N.° de días que tomó ARV", "tipo": "NUMERO"},
+            {"etiqueta": "¿Profilaxis ARV de acuerdo a NT vigente?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Sucedáneos de leche materna?", "tipo": "BOOLEANO"},
+            {"etiqueta": "N.° de meses que recibió sucedáneos", "tipo": "NUMERO"},
+            {"etiqueta": "¿Tomó leche materna?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Estado serológico final", "tipo": "SELECT", "opciones": ["Infectado por VIH", "No infectado por VIH", "Estado indeterminado"]},
+            {"etiqueta": "Motivo de estado indeterminado", "tipo": "SELECT", "opciones": ["Continúa en seguimiento", "Fallecido antes de poder determinar su estado serológico", "Abandonó el seguimiento / seguimiento irregular", "Referido"]},
+            {"etiqueta": "Pruebas diagnósticas", "tipo": "MATRIZ", "filas": ["1.er PCR", "2.° PCR", "Prueba de ELISA", "Prueba confirmatoria"], "columnas": ["Fecha de toma de muestra", "Resultado"]},
+            {"etiqueta": "Observaciones", "tipo": "TEXTAREA"}
+          ]
+        }
+      ]
+    },
+    "B24": {
+      "enfermedad": "VIH / SIDA — notificación individual",
+      "lote": 5,
+      "pdf_paginas": "17",
+      "_nota_general": "Todos los campos deben ser sensible=1 (usa codigo de paciente, no nombre completo).",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Identificación",
+          "campos": [
+            {"etiqueta": "Código del paciente", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "DNI / CE / Pasaporte", "tipo": "TEXTO", "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Motivo de notificación",
+          "campos": [
+            {"etiqueta": "Motivo de notificación", "tipo": "SELECT", "opciones": ["Infección por VIH", "Gestante con VIH", "Niño nacido expuesto al VIH", "Niño nacido expuesto, no infectado por VIH"], "sensible": true},
+            {"etiqueta": "Subtipo (infección por VIH)", "tipo": "MULTISELECT", "opciones": ["Estadio SIDA", "Gestante con VIH", "Niño nacido expuesto, infectado por VIH", "Inicio de TARGA", "Fallecido con VIH o SIDA"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Estadio de infección VIH al momento del diagnóstico",
+          "campos": [
+            {"etiqueta": "Estadio de infección VIH al momento del diagnóstico", "tipo": "SELECT", "opciones": ["Estadio 1", "Estadio 2 (Avanzado)", "Estadio 3 (SIDA)", "Desconocido"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Datos sociodemográficos",
+          "campos": [
+            {"etiqueta": "Grado de instrucción", "tipo": "SELECT", "opciones": ["Analfabeta", "Primaria", "Secundaria", "Técnica", "Universitaria"], "sensible": true},
+            {"etiqueta": "Condición especial", "tipo": "MULTISELECT", "opciones": ["Trabajador(a) sexual", "Privado de libertad", "Usuario de drogas inyectables", "Usuario de drogas no inyectables"], "sensible": true},
+            {"etiqueta": "Sexo al nacer", "tipo": "SELECT", "opciones": ["Mujer", "Hombre"], "sensible": true},
+            {"etiqueta": "Identidad de género", "tipo": "SELECT", "opciones": ["Femenino", "Masculino", "Transgénero masculino a femenino", "Transgénero femenino a masculino", "Otro", "Desconocido"], "sensible": true},
+            {"etiqueta": "Antecedentes de RS", "tipo": "SELECT", "opciones": ["RS con hombres", "RS con mujeres", "RS con ambos sexos", "Desconocido"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Vía de transmisión",
+          "campos": [
+            {"etiqueta": "Vía de transmisión", "tipo": "SELECT", "opciones": ["Heterosexual", "Homosexual", "Bisexual", "No determinado (sexual)", "Transfusión de sangre y/o derivados", "Compartir agujas / UDI", "Accidente con material contaminado", "Trasplante de órganos o tejidos", "No determinado (parenteral)", "Madre-niño (vertical)", "Desconocida"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "TARGA y estadio SIDA",
+          "campos": [
+            {"etiqueta": "Fecha de inicio de tratamiento", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Estadio SIDA: fecha de diagnóstico", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Criterio diagnóstico de SIDA", "tipo": "SELECT", "opciones": ["CD4", "Enfermedad indicadora"], "sensible": true},
+            {"etiqueta": "Enfermedades indicadoras de SIDA", "tipo": "MATRIZ", "filas": ["Enfermedad indicadora 1", "Enfermedad indicadora 2"], "columnas": ["Descripción", "Código CIE-10"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Coinfección",
+          "campos": [
+            {"etiqueta": "Tuberculosis", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Fecha de diagnóstico de tuberculosis", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Hepatitis B", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Fecha de diagnóstico de hepatitis B", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "Hepatitis C", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Fecha de diagnóstico de hepatitis C", "tipo": "FECHA", "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Defunción",
+          "campos": [
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA", "sensible": true},
+            {"etiqueta": "¿Defunción relacionada a SIDA?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Causa de muerte", "tipo": "TEXTO", "sensible": true}
+          ]
+        }
+      ]
+    },
+    "A50": {
+      "enfermedad": "Sífilis materna y congénita",
+      "lote": 5,
+      "pdf_paginas": "18-19",
+      "multi_sujeto": true,
+      "roles_sujeto": ["MADRE", "RECIEN_NACIDO"],
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Encabezado",
+          "campos": [
+            {"etiqueta": "Investigación de", "tipo": "MULTISELECT", "opciones": ["Sífilis materna", "Sífilis congénita"]},
+            {"etiqueta": "Nivel del establecimiento", "tipo": "SELECT", "opciones": ["I-1", "I-2", "I-3", "I-4", "II-1", "II-2", "III-1"]}
+          ]
+        },
+        {
+          "nombre": "Sección II — Sífilis materna",
+          "rol_sujeto": "MADRE",
+          "campos": [
+            {"etiqueta": "FUR", "tipo": "FECHA"},
+            {"etiqueta": "¿Recibió atención prenatal?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
+            {"etiqueta": "Fecha de primer control prenatal", "tipo": "FECHA"},
+            {"etiqueta": "Edad gestacional en el primer control prenatal", "tipo": "NUMERO"},
+            {"etiqueta": "Pruebas no treponémicas (RPR, VDRL)", "tipo": "MATRIZ", "filas": ["Primera (a)", "Más reciente (b)"], "columnas": ["Fecha", "Resultado (Reactivo/No reactivo/Desconocido)", "Título", "Momento (Gestación/Parto/Puerperio)"]},
+            {"etiqueta": "Pruebas treponémicas (TPHA, TPPA, FTA Abs, ELISA, Rápida o Dual)", "tipo": "MATRIZ", "filas": ["Primera (a)", "Más reciente (b)"], "columnas": ["Fecha", "Tipo de prueba", "Resultado", "Momento"]},
+            {"etiqueta": "¿Fue la madre adecuadamente tratada durante el embarazo?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
+            {"etiqueta": "Motivo (si no fue tratada)", "tipo": "SELECT", "opciones": ["Tratamiento sin penicilina", "Tratamiento durante los 30 días previos al parto", "No inició tratamiento durante la gestación", "Tratamiento incompleto (1 ó 2 dosis)"]},
+            {"etiqueta": "Contacto(s) sexual(es) tratado(s)", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
+            {"etiqueta": "N.° de contactos sexuales tratados", "tipo": "NUMERO"},
+            {"etiqueta": "Clasificación de caso de sífilis en la gestante", "tipo": "SELECT", "opciones": ["Probable", "Confirmado", "Descartado (Falso positivo)", "Descartado (Sífilis Memoria)"]}
+          ]
+        },
+        {
+          "nombre": "Sección III — Sífilis congénita",
+          "rol_sujeto": "RECIEN_NACIDO",
+          "campos": [
+            {"etiqueta": "Fecha de parto / culminación del embarazo", "tipo": "FECHA"},
+            {"etiqueta": "Lugar del parto", "tipo": "SELECT", "opciones": ["Establecimiento de salud", "Domicilio"]},
+            {"etiqueta": "Estado vital", "tipo": "SELECT", "opciones": ["Vivo", "Nació vivo, luego falleció", "Mortinato", "Aborto"]},
+            {"etiqueta": "Fecha de fallecimiento", "tipo": "FECHA"},
+            {"etiqueta": "Peso al nacimiento (gramos)", "tipo": "NUMERO"},
+            {"etiqueta": "Edad gestacional estimada (semanas)", "tipo": "NUMERO"},
+            {"etiqueta": "Criterios de caso de sífilis congénita", "tipo": "MULTISELECT", "opciones": ["Madre con sífilis, que no recibió tratamiento o fue tratada inadecuadamente", "Títulos no treponémicos cuatro veces mayores que los de la madre", "Niño con manifestaciones clínicas sugestivas de sífilis congénita", "Demostración de Treponema pallidum en lesiones, placenta, cordón umbilical o material de autopsia", "Niño mayor de 2 años con signos de sífilis secundaria, descartado abuso o contacto sexual"]},
+            {"etiqueta": "Fecha de los test (título 4x madre)", "tipo": "FECHA"},
+            {"etiqueta": "Título de la madre", "tipo": "TEXTO"},
+            {"etiqueta": "Título del niño", "tipo": "TEXTO"},
+            {"etiqueta": "Tratamiento del niño", "tipo": "SELECT", "opciones": ["Sí, con penicilina G sódica o procaínica por ≥10 días", "Sí, con penicilina benzatínica x 1 dosis", "Sí, con otro tratamiento", "No recibió tratamiento", "Desconocido"]},
+            {"etiqueta": "Clasificación final del niño, mortinato o aborto", "tipo": "SELECT", "opciones": ["Sífilis congénita", "Niño expuesto a sífilis, no infectado"]}
+          ]
+        }
+      ]
+    },
+    "P35.0": {
+      "enfermedad": "Síndrome de rubéola congénita (SRC)",
+      "lote": 5,
+      "pdf_paginas": "20",
+      "multi_sujeto": true,
+      "roles_sujeto": ["CASO_INDICE", "MADRE"],
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": true,
+        "caso_viaje": true,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Antecedentes del paciente",
+          "campos": [
+            {"etiqueta": "¿Nació prematuro?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Edad gestacional al parto (semanas)", "tipo": "NUMERO"},
+            {"etiqueta": "Peso al nacer (gramos)", "tipo": "NUMERO"},
+            {"etiqueta": "APGAR 1'", "tipo": "NUMERO"},
+            {"etiqueta": "APGAR 5'", "tipo": "NUMERO"}
+          ]
+        },
+        {
+          "nombre": "Antecedentes de la madre",
+          "rol_sujeto": "MADRE",
+          "campos": [
+            {"etiqueta": "¿Vacunada contra la rubéola?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
+            {"etiqueta": "Fecha de vacunación contra rubéola", "tipo": "FECHA"},
+            {"etiqueta": "¿Presentó fiebre y exantema maculopapular durante el embarazo?", "tipo": "SELECT", "opciones": ["Sí", "No", "No recuerda"]},
+            {"etiqueta": "Semana de gestación (fiebre/exantema)", "tipo": "NUMERO"},
+            {"etiqueta": "¿Fue confirmada por laboratorio la rubéola de la madre?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Durante el embarazo se expuso a persona con fiebre y exantema?", "tipo": "SELECT", "opciones": ["Sí", "No", "Desconocido"]},
+            {"etiqueta": "¿Con quién? (exposición)", "tipo": "TEXTO"},
+            {"etiqueta": "Semana de gestación (exposición)", "tipo": "NUMERO"},
+            {"etiqueta": "¿Durante el embarazo viajó fuera del país?", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Cuadro clínico — manifestaciones",
+          "campos": [
+            {"etiqueta": "Manifestaciones oftálmicas", "tipo": "GRUPO_SI_NO", "opciones": ["Cataratas", "Glaucoma congénito", "Retinopatía pigmentaria", "Microftalmia"]},
+            {"etiqueta": "Manifestación auditiva", "tipo": "GRUPO_SI_NO", "opciones": ["Déficit de la audición"]},
+            {"etiqueta": "Cardiopatía congénita", "tipo": "GRUPO_SI_NO", "opciones": ["Estenosis periférica de arteria pulmonar", "Persistencia del conducto arterioso", "Comunicación interauricular"]},
+            {"etiqueta": "Otra cardiopatía congénita (especificar)", "tipo": "TEXTO"},
+            {"etiqueta": "Otras manifestaciones", "tipo": "GRUPO_SI_NO", "opciones": ["Púrpura", "Trombocitopenia", "Hepatomegalia", "Esplenomegalia", "Microcefalia", "Meningoencefalitis", "Enfermedad ósea de radiotransparencia", "Retraso en el desarrollo psicomotor", "Ictericia (dentro de las 24 h del nacimiento)"]}
+          ]
+        },
+        {
+          "nombre": "Hospitalización y defunción",
+          "campos": [
+            {"etiqueta": "Hospitalización", "tipo": "BOOLEANO"},
+            {"etiqueta": "EE.SS. de hospitalización", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de hospitalización", "tipo": "FECHA"},
+            {"etiqueta": "Dx de ingreso", "tipo": "TEXTO"},
+            {"etiqueta": "Defunción", "tipo": "BOOLEANO"},
+            {"etiqueta": "Fecha de defunción", "tipo": "FECHA"},
+            {"etiqueta": "Causa básica de defunción", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Clasificación del caso",
+          "campos": [
+            {"etiqueta": "Clasificación del caso", "tipo": "SELECT", "opciones": ["Sospechoso", "Confirmado", "Descartado", "Infección congénita por el virus de la rubéola"]}
+          ]
+        }
+      ]
+    },
+    "Y59.0": {
+      "enfermedad": "ESAVI severo",
+      "lote": 6,
+      "pdf_paginas": "9-11 (ficha principal), 12 (Anexo 1 notificación inmediata), 7-8 (Anexo 6.2, opcional)",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": true
+      },
+      "secciones": [
+        {
+          "nombre": "Notificación",
+          "campos": [
+            {"etiqueta": "Tipo", "tipo": "SELECT", "opciones": ["Severo", "Conglomerado (leve-moderado)"]},
+            {"etiqueta": "Fecha de identificación local del caso (o consulta)", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de notificación de DIRESA/GERESA/DIRIS a CDC/MINSA", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de inicio de investigación", "tipo": "FECHA"}
+          ]
+        },
+        {
+          "nombre": "Datos del paciente (adicionales)",
+          "campos": [
+            {"etiqueta": "Gestante", "tipo": "BOOLEANO"},
+            {"etiqueta": "N.° de semanas de gestación", "tipo": "NUMERO"},
+            {"etiqueta": "Tipo de localidad", "tipo": "SELECT", "opciones": ["Urbano", "Periurbano", "Rural"]},
+            {"etiqueta": "¿Está asegurado?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Tipo de seguro", "tipo": "SELECT", "opciones": ["SIS", "EsSalud", "Privado"]},
+            {"etiqueta": "Ocupación", "tipo": "SELECT", "opciones": ["Sin ocupación", "Estudiante", "Comerciante", "Empleado", "Personal de salud", "Otro"]}
+          ]
+        },
+        {
+          "nombre": "Datos de la vacunación",
+          "campos": [
+            {"etiqueta": "Nombre de vacuna", "tipo": "SELECT", "opciones": ["01 BCG", "02 DPT", "03 APO", "04 Hepatitis B", "05 Hib", "06 Pentavalente", "07 SPR", "08 Fiebre amarilla", "09 SR", "10 DT", "11 Influenza estacional", "12 Antisarampión", "13 Contra neumococo", "14 Contra rotavirus", "15 Contra VPH", "16 IPV", "17 Contra varicela", "18 dTpa", "19 Anti COVID-19", "20 Otro"]},
+            {"etiqueta": "Adyuvante", "tipo": "SELECT", "opciones": ["01 Sí", "02 No"]},
+            {"etiqueta": "Dosis", "tipo": "SELECT", "opciones": ["01 Primera", "02 Segunda", "03 Tercera", "04 Adicional", "05 Única", "06 Refuerzo"]},
+            {"etiqueta": "Vía", "tipo": "SELECT", "opciones": ["01 Oral", "02 Intradérmica", "03 Subcutánea", "04 Intramuscular"]},
+            {"etiqueta": "Sitio", "tipo": "SELECT", "opciones": ["01 Hombro derecho", "02 Hombro izquierdo", "03 Brazo derecho", "04 Brazo izquierdo", "05 Vasto externo de muslo derecho", "06 Vasto externo de muslo izquierdo", "09 Oral"]},
+            {"etiqueta": "Fecha y hora de vacunación", "tipo": "FECHA"},
+            {"etiqueta": "EE.SS. que vacunó", "tipo": "TEXTO"},
+            {"etiqueta": "Fabricante", "tipo": "TEXTO"},
+            {"etiqueta": "Lote", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de expiración", "tipo": "FECHA"}
+          ]
+        },
+        {
+          "nombre": "Antecedentes",
+          "campos": [
+            {"etiqueta": "¿ESAVI previo?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Cuál (ESAVI previo)", "tipo": "MULTISELECT", "opciones": ["Convulsión", "Rush", "Pérdida de conocimiento", "Otra"]},
+            {"etiqueta": "Condiciones de comorbilidad", "tipo": "MULTISELECT", "opciones": ["Alergia", "Convulsión", "Asma", "Diabetes", "Obesidad", "HTA", "Enf. renal", "Daño hepático", "Cáncer", "Enf. pulmonar", "Enf. reumatológica", "Enf. cardiovascular", "Enf. neurológica o neuromuscular", "Inmunodeficiencia (incluye VIH)", "Otra"]},
+            {"etiqueta": "Cuadros patológicos familiares", "tipo": "MULTISELECT", "opciones": ["Alergia", "Asma", "Urticaria", "Epilepsia", "Diabetes", "Obesidad", "Cáncer", "Convulsión febril en la infancia", "COVID-19", "TBC", "HTA", "Enf. cardiovascular", "Enf. pulmonar", "Enf. reumatológica", "Enf. renal", "Inmunodeficiencia (incluye VIH)", "Otra"]},
+            {"etiqueta": "Enfermedades prevalentes en la región", "tipo": "MULTISELECT", "opciones": ["Dengue", "Malaria", "Zika", "Leptospirosis", "Bartonelosis", "Rabia", "Otra"]}
+          ]
+        },
+        {
+          "nombre": "Signos y síntomas",
+          "campos": [
+            {"etiqueta": "Signos y síntomas (18 ítems con tiempo de inicio y término)", "tipo": "MATRIZ", "filas": ["Absceso en el sitio de inyección (estéril/bacteriano)", "Linfadenitis supurativa", "Reacción local severa", "Llanto persistente (>3 horas)", "Convulsiones", "Síndrome hipotónico-hiporreactivo", "Reacción alérgica", "Púrpura trombocitopénica", "Síncope o reacción vasovagal", "Parálisis flácida aguda", "Encefalopatías", "Encefalitis", "Meningitis", "Osteítis/osteomielitis", "Artralgia", "Sepsis", "Síndrome de shock tóxico"], "columnas": ["Tiempo (minuto/hora/día)", "Fecha de inicio", "Fecha de término"]},
+            {"etiqueta": "Otros eventos severos e inusuales (especificar)", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Descripción del cuadro clínico",
+          "campos": [
+            {"etiqueta": "Fecha de inicio", "tipo": "FECHA"},
+            {"etiqueta": "Gravedad del caso", "tipo": "TEXTO"},
+            {"etiqueta": "Secuencia cronológica de instalación de signos y síntomas", "tipo": "TEXTAREA"},
+            {"etiqueta": "Exámenes auxiliares", "tipo": "TEXTAREA"},
+            {"etiqueta": "Tratamiento recibido", "tipo": "TEXTAREA"},
+            {"etiqueta": "Evolución", "tipo": "TEXTAREA"}
+          ]
+        },
+        {
+          "nombre": "Hospitalización",
+          "campos": [
+            {"etiqueta": "N.° de historia clínica", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de ingreso", "tipo": "FECHA"},
+            {"etiqueta": "Fecha de alta", "tipo": "FECHA"},
+            {"etiqueta": "Dx de ingreso", "tipo": "TEXTO"},
+            {"etiqueta": "Dx de egreso", "tipo": "TEXTO"},
+            {"etiqueta": "Estado de alta", "tipo": "SELECT", "opciones": ["Mejorado", "Secuela", "Fallecido"]},
+            {"etiqueta": "¿Transferido?", "tipo": "BOOLEANO"},
+            {"etiqueta": "A dónde (transferencia)", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Seguimiento del paciente",
+          "campos": [
+            {"etiqueta": "Seguimiento del paciente", "tipo": "SELECT", "opciones": ["Caso no ubicable", "En rehabilitación", "Requiere solo control médico", "Requiere tratamiento quirúrgico", "Requiere control médico y tratamiento quirúrgico", "Recuperado sin secuela", "Recuperación con secuela", "Otro estudio final"]}
+          ]
+        },
+        {
+          "nombre": "Clasificación final",
+          "campos": [
+            {"etiqueta": "Clasificación final", "tipo": "SELECT", "opciones": ["Reacción relacionada a la vacuna", "Reacción relacionada con un defecto en la calidad de la vacuna", "Reacción relacionada con un error en la inmunización", "Reacción relacionada con la ansiedad por la inmunización", "Eventos coincidentes", "Evento no concluyente"]}
+          ]
+        },
+        {
+          "nombre": "Anexo 6.2 — Lista de chequeo del vacunatorio",
+          "campos": [],
+          "_nota": "El contenido real (12 secciones romanas, patron Si/No + consideracion + comentario) SI esta disponible ahora en el PDF paginas 7-8 (ver memoria pendiente_anexo_62_esavi, actualizada 2026-07-22). Se deja fuera del alcance de esta version del manifiesto porque requiere una capacidad de seccion condicional (activarse solo si clasificacion final = 2 o 3) que el motor de fichas no tiene todavia. La ficha ESAVI funciona sin el segun el propio documento de definicion."
+        }
+      ]
+    },
+    "Y07": {
+      "enfermedad": "Violencia familiar",
+      "lote": 7,
+      "pdf_paginas": "25",
+      "multi_sujeto": true,
+      "roles_sujeto": ["CASO_INDICE", "AGRESOR"],
+      "_nota_general": "Ficha de maxima confidencialidad: todos los campos deben ser sensible=1.",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Institución que registra",
+          "campos": [
+            {"etiqueta": "Institución que registra", "tipo": "SELECT", "opciones": ["MINSA", "PNP", "DEMUNAS", "CMM", "Otros"], "sensible": true},
+            {"etiqueta": "Qué otras instituciones", "tipo": "TEXTO", "sensible": true},
+            {"etiqueta": "Tipo de establecimiento", "tipo": "SELECT", "opciones": ["Hospital", "Centro de Salud"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Datos de la persona agredida",
+          "rol_sujeto": "CASO_INDICE",
+          "campos": [
+            {"etiqueta": "¿Se encuentra gestando?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Estado civil", "tipo": "SELECT", "opciones": ["Soltero(a)", "Casado(a)", "Conviviente", "Separado(a)", "Divorciado(a)", "Viudo(a)"], "sensible": true},
+            {"etiqueta": "Grado de instrucción", "tipo": "SELECT", "opciones": ["Iletrada", "Primaria", "Secundaria", "Superior"], "sensible": true},
+            {"etiqueta": "Completa / Incompleta", "tipo": "SELECT", "opciones": ["Completa", "Incompleta"], "sensible": true},
+            {"etiqueta": "¿Tiene empleo remunerado?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Ocupación", "tipo": "TEXTO", "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Datos de la persona agresora",
+          "rol_sujeto": "AGRESOR",
+          "campos": [
+            {"etiqueta": "Vínculo con la víctima", "tipo": "SELECT", "opciones": ["Esposo(a)", "Conviviente", "Hijo(a)", "Padre", "Madre", "Otro"], "sensible": true},
+            {"etiqueta": "Grado de instrucción", "tipo": "SELECT", "opciones": ["Iletrada", "Primaria", "Secundaria", "Superior"], "sensible": true},
+            {"etiqueta": "Completa / Incompleta", "tipo": "SELECT", "opciones": ["Completa", "Incompleta"], "sensible": true},
+            {"etiqueta": "¿Tiene empleo remunerado?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Ocupación", "tipo": "TEXTO", "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Datos sobre la agresión",
+          "campos": [
+            {"etiqueta": "Estado del agresor", "tipo": "SELECT", "opciones": ["Ecuánime", "Efecto de Drogas", "Efecto de Alcohol", "Ambas"], "sensible": true},
+            {"etiqueta": "Tipo de violencia", "tipo": "MULTISELECT", "opciones": ["Física", "Psicológica", "Relaciones Sexuales Forzadas", "Abandono"], "sensible": true},
+            {"etiqueta": "Medio utilizado", "tipo": "MULTISELECT", "opciones": ["Propio Cuerpo", "Arma blanca", "Arma de Fuego", "Objeto contundente"], "sensible": true},
+            {"etiqueta": "Motivo expresado", "tipo": "SELECT", "opciones": ["Familiares", "Celos", "Económicos", "Laborales", "Sin Motivo", "Otros"], "sensible": true},
+            {"etiqueta": "¿Es la primera vez que es agredido(a)?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "Durante la semana, ¿cuántas veces fue agredido(a)?", "tipo": "SELECT", "opciones": ["1", "2", "3", "4", "5", "6", "7"], "sensible": true},
+            {"etiqueta": "Durante el último mes, ¿cuántas veces?", "tipo": "SELECT", "opciones": ["1", "2 a 3", "4 a 5", "6 a 7", "7 a 8", "9", "10"], "sensible": true},
+            {"etiqueta": "Lugar de la agresión", "tipo": "SELECT", "opciones": ["Calle", "Casa", "Centro de Trabajo", "Otros"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Medidas tomadas",
+          "campos": [
+            {"etiqueta": "Medidas tomadas", "tipo": "MULTISELECT", "opciones": ["Atención Médica", "Atención Psicológica", "Denuncia Judicial", "Asistencia Social", "Denuncia Policial", "Otros"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Seguimiento",
+          "campos": [
+            {"etiqueta": "¿Fue derivado?", "tipo": "BOOLEANO", "sensible": true},
+            {"etiqueta": "¿Dónde? (derivación)", "tipo": "MULTISELECT", "opciones": ["Ministerio de Salud", "Policía", "ONG", "Ministerio Público", "Médico Legal", "DEMUNA", "Otros"], "sensible": true}
+          ]
+        }
+      ]
+    },
+    "V99": {
+      "enfermedad": "Lesiones por accidentes de tránsito",
+      "lote": 7,
+      "pdf_paginas": "29",
+      "multi_sujeto": true,
+      "roles_sujeto": ["CASO_INDICE", "CONDUCTOR"],
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Fuente de financiamiento",
+          "campos": [
+            {"etiqueta": "Fuente de financiamiento", "tipo": "SELECT", "opciones": ["SOAT", "MTC", "Particular"]}
+          ]
+        },
+        {
+          "nombre": "Datos del lesionado",
+          "campos": [
+            {"etiqueta": "N.° de HC de emergencia", "tipo": "TEXTO"},
+            {"etiqueta": "N.° de HC de hospitalización", "tipo": "TEXTO"},
+            {"etiqueta": "¿Referido de un EE.SS.?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Nombre del EE.SS. de referencia", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de ingreso al establecimiento", "tipo": "FECHA"},
+            {"etiqueta": "Diagnóstico médico Dx 1", "tipo": "TEXTO"},
+            {"etiqueta": "Diagnóstico médico Dx 2", "tipo": "TEXTO"},
+            {"etiqueta": "Diagnóstico médico Dx 3", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de egreso del establecimiento", "tipo": "FECHA"},
+            {"etiqueta": "Condición de egreso", "tipo": "SELECT", "opciones": ["Alta", "Fallecido", "Referido"]},
+            {"etiqueta": "¿Requiere rehabilitación?", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Datos del accidente",
+          "campos": [
+            {"etiqueta": "Fecha del accidente", "tipo": "FECHA"},
+            {"etiqueta": "Hora del accidente", "tipo": "TEXTO"},
+            {"etiqueta": "Vía donde ocurrió", "tipo": "SELECT", "opciones": ["Calles/Jirones", "Avenidas", "Carreteras", "Autopistas/Vía expresa", "Fluvial", "Aéreo", "Marítimo"]},
+            {"etiqueta": "Tipo de accidente", "tipo": "SELECT", "opciones": ["Atropellado", "Choque", "Volcadura", "Caída de ocupante", "Otro"]}
+          ]
+        },
+        {
+          "nombre": "Referente al lesionado",
+          "campos": [
+            {"etiqueta": "El lesionado se encontraba en", "tipo": "SELECT", "opciones": ["Motocicleta", "Motocar", "Automóvil", "Microbús", "Ómnibus", "Camión/tráiler", "Tren", "Bicicleta", "Carreta", "Avión", "Avioneta/helicóptero", "Embarcación con motor", "Embarcación sin motor"]},
+            {"etiqueta": "Ubicación del lesionado", "tipo": "SELECT", "opciones": ["Pasajero", "Conductor", "Peatón"]},
+            {"etiqueta": "Traslado del lesionado por", "tipo": "SELECT", "opciones": ["Ocasionante", "Familiar", "Propios medios", "Serenazgo", "Persona particular", "Policía", "Bombero", "Ambulancia de servicio de salud"]}
+          ]
+        },
+        {
+          "nombre": "Referente al ocasionante del accidente",
+          "campos": [
+            {"etiqueta": "Tipo de vehículo del ocasionante", "tipo": "SELECT", "opciones": ["Motocicleta", "Motocar", "Automóvil", "Microbús", "Ómnibus", "Camión/tráiler", "Tren", "Bicicleta", "Carreta", "Avión", "Avioneta/helicóptero", "Embarcación con motor", "Embarcación sin motor"]},
+            {"etiqueta": "Condición del vehículo ocasionante", "tipo": "SELECT", "opciones": ["Particular", "Público", "Estatal", "Privado"]}
+          ]
+        },
+        {
+          "nombre": "Datos del conductor",
+          "rol_sujeto": "CONDUCTOR",
+          "campos": [
+            {"etiqueta": "N.° de licencia de conducir", "tipo": "SELECT", "opciones": ["Sí", "No", "No se sabe"]},
+            {"etiqueta": "Comisaría donde se registra la denuncia policial", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Datos del vehículo",
+          "campos": [
+            {"etiqueta": "N.° de póliza SOAT", "tipo": "TEXTO"},
+            {"etiqueta": "N.° de placa del vehículo", "tipo": "TEXTO"},
+            {"etiqueta": "Nombre del dueño de la póliza SOAT", "tipo": "TEXTO"},
+            {"etiqueta": "Aseguradora", "tipo": "SELECT", "opciones": ["Rímac", "Pacífico Seguros", "La Positiva", "Generali Perú", "Mapfre Perú", "Latino Seguros", "Otro"]}
+          ]
+        }
+      ]
+    },
+    "O95": {
+      "enfermedad": "Muerte materna (Anexo 1 y 2)",
+      "lote": 8,
+      "pdf_paginas": "30-33",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Anexo 1 — Notificación inmediata",
+          "campos": [
+            {"etiqueta": "Fecha y hora de notificación", "tipo": "FECHA"},
+            {"etiqueta": "Identificado por", "tipo": "SELECT", "opciones": ["Vigilancia activa", "Vigilancia pasiva"]},
+            {"etiqueta": "Institución que notifica", "tipo": "SELECT", "opciones": ["IGSS/Gobierno Regional", "EsSalud", "Sanidad de FFAA/PNP", "Privado", "Otra"]}
+          ]
+        },
+        {
+          "nombre": "Datos del fallecimiento (Anexo 1)",
+          "campos": [
+            {"etiqueta": "Momento del fallecimiento", "tipo": "SELECT", "opciones": ["Embarazo", "Parto", "Puerperio", "Desconocido"]},
+            {"etiqueta": "Edad gestacional al momento del fallecimiento", "tipo": "NUMERO"},
+            {"etiqueta": "Fecha y hora de fallecimiento", "tipo": "FECHA"},
+            {"etiqueta": "Lugar del fallecimiento", "tipo": "SELECT", "opciones": ["EE.SS. IGSS/Gobierno Regional", "EE.SS. EsSalud", "EE.SS. Sanidad FFAA/PNP", "EE.SS. Privado", "Trayecto", "Domicilio", "Otro"]},
+            {"etiqueta": "Permanencia (estadía) en el EE.SS.", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Referencia (Anexo 1)",
+          "campos": [
+            {"etiqueta": "¿Referida?", "tipo": "BOOLEANO"},
+            {"etiqueta": "EE.SS. de origen de la referencia", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Causas de defunción (Anexo 1)",
+          "campos": [
+            {"etiqueta": "Causa final probable", "tipo": "TEXTO"},
+            {"etiqueta": "Causa intermedia probable", "tipo": "TEXTO"},
+            {"etiqueta": "Causa básica probable", "tipo": "TEXTO"},
+            {"etiqueta": "Causa genérica", "tipo": "SELECT", "opciones": ["Hemorragia", "Hipertensión gestacional", "Infección/Sepsis", "Otra causa"]},
+            {"etiqueta": "Clasificación inicial", "tipo": "SELECT", "opciones": ["Directa", "Indirecta", "Incidental", "Por determinar"]}
+          ]
+        },
+        {
+          "nombre": "Datos básicos adicionales (Anexo 2)",
+          "campos": [
+            {"etiqueta": "Idioma", "tipo": "SELECT", "opciones": ["Español", "Quechua", "Aymara", "Otra"]},
+            {"etiqueta": "Nivel educativo", "tipo": "SELECT", "opciones": ["Ninguno", "Primaria incompleta", "Primaria completa", "Secundaria incompleta", "Secundaria completa", "Superior universitaria", "Superior técnica", "Desconocido"]},
+            {"etiqueta": "Estado civil", "tipo": "SELECT", "opciones": ["Soltera", "Casada", "Conviviente", "Divorciada", "Separada", "Viuda", "Desconocido"]},
+            {"etiqueta": "Tipo de seguro", "tipo": "SELECT", "opciones": ["SIS", "EsSalud", "Privado", "Otros", "No tiene seguro"]}
+          ]
+        },
+        {
+          "nombre": "Datos del fallecimiento ampliados (Anexo 2)",
+          "campos": [
+            {"etiqueta": "Fase del puerperio en que falleció", "tipo": "SELECT", "opciones": ["Puerperio Inmediato", "Puerperio mediato", "Puerperio tardío", "No aplica", "Desconocido"]},
+            {"etiqueta": "Categoría del EE.SS.", "tipo": "SELECT", "opciones": ["I-1", "I-2", "I-3", "I-4", "II-1", "II-2", "II-E", "III-1", "III-E", "III-2", "Desconocido"]},
+            {"etiqueta": "Fecha y hora de ingreso al EE.SS.", "tipo": "FECHA"},
+            {"etiqueta": "Responsable de la atención", "tipo": "SELECT", "opciones": ["Méd. G-O", "Méd. intensivista", "Méd. residente", "Méd. general", "Obstetra", "Enfermera(o)", "Interno", "Técnico", "Partera", "Familiar", "Otro", "Desconocido"]}
+          ]
+        },
+        {
+          "nombre": "Antecedentes patológicos",
+          "campos": [
+            {"etiqueta": "Antecedentes patológicos", "tipo": "MULTISELECT", "opciones": ["Ninguno", "Hipertensión crónica", "Diabetes mellitus", "Cardiopatías", "Enfermedad renal", "Neoplasias", "Enfermedad hepática", "Tuberculosis", "ITS/VIH/SIDA", "Alcoholismo", "Drogadicción", "Violencia de género", "Tabaquismo", "Desnutrición crónica", "Otra", "Desconocido"], "sensible": true}
+          ]
+        },
+        {
+          "nombre": "Antecedentes gineco-obstétricos",
+          "campos": [
+            {"etiqueta": "N.° de gestaciones previas", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de partos", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de cesáreas", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de abortos", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de nacidos vivos", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de nacidos muertos", "tipo": "NUMERO"},
+            {"etiqueta": "N.° de hijos que viven", "tipo": "NUMERO"},
+            {"etiqueta": "Período intergenésico", "tipo": "TEXTO"},
+            {"etiqueta": "Uso de método anticonceptivo previo", "tipo": "SELECT", "opciones": ["No usó", "Hormonal", "DIU", "Barrera", "Quirúrgico", "Abstinencia periódica", "Otro", "Desconocido"]}
+          ]
+        },
+        {
+          "nombre": "Atención prenatal",
+          "campos": [
+            {"etiqueta": "¿Recibió APN?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Primera atención (trimestre)", "tipo": "SELECT", "opciones": ["I", "II", "III"]},
+            {"etiqueta": "Número de APN", "tipo": "NUMERO"},
+            {"etiqueta": "EE.SS. con mayor cantidad de atenciones", "tipo": "TEXTO"},
+            {"etiqueta": "¿Se realizaron visitas domiciliarias?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Número de visitas domiciliarias", "tipo": "NUMERO"},
+            {"etiqueta": "¿Se realizó plan de parto completo?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Responsable de la APN", "tipo": "SELECT", "opciones": ["Méd. G-O", "Méd. residente", "Méd. general", "Obstetra", "Enfermera(o)", "Interno", "Técnico", "Otro", "Desconocido"]}
+          ]
+        },
+        {
+          "nombre": "Complicaciones",
+          "campos": [
+            {"etiqueta": "Complicaciones del embarazo", "tipo": "MULTISELECT", "opciones": ["Hemorragia", "Preeclampsia/Eclampsia", "Síndrome de HELLP", "Diabetes gestacional", "Aborto", "Desnutrición", "RPM más de 12 horas", "Embarazo ectópico", "Infección tracto urinario", "Sepsis", "Óbito fetal", "Anemia", "Otro"]},
+            {"etiqueta": "Complicaciones del parto", "tipo": "MULTISELECT", "opciones": ["Hemorragia", "Preeclampsia/Eclampsia", "Síndrome de HELLP", "Trabajo de parto prolongado", "Parto obstruido", "Parto distócico", "Trabajo de parto precipitado", "Alumbramiento incompleto", "Otro"]},
+            {"etiqueta": "Complicaciones del puerperio", "tipo": "MULTISELECT", "opciones": ["Hemorragia", "Atonía uterina", "Preeclampsia/Eclampsia", "Síndrome de HELLP", "Sepsis", "Endometritis", "Retención de restos placentarios", "Depresión posparto", "Otro"]}
+          ]
+        },
+        {
+          "nombre": "Referencia y hospitalizaciones",
+          "campos": [
+            {"etiqueta": "¿Referida?", "tipo": "BOOLEANO"},
+            {"etiqueta": "N.° de referencias institucionales", "tipo": "NUMERO"},
+            {"etiqueta": "¿Hospitalizaciones en la gestación/puerperio?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Cuántas hospitalizaciones", "tipo": "NUMERO"},
+            {"etiqueta": "¿Requirió transfusión de sangre?", "tipo": "BOOLEANO"},
+            {"etiqueta": "¿Expansores plasmáticos?", "tipo": "BOOLEANO"}
+          ]
+        },
+        {
+          "nombre": "Parto o aborto",
+          "campos": [
+            {"etiqueta": "Fecha de parto o aborto", "tipo": "FECHA"},
+            {"etiqueta": "Lugar de parto o aborto", "tipo": "SELECT", "opciones": ["Domicilio", "En EE.SS.", "Otro", "No aplica"]},
+            {"etiqueta": "Tipo de parto", "tipo": "SELECT", "opciones": ["Vaginal", "Cesárea", "Instrumentado", "Desconocido", "No aplica"]},
+            {"etiqueta": "Responsable de la atención del parto o aborto", "tipo": "SELECT", "opciones": ["Méd. G-O", "Méd. intensivista", "Méd. residente", "Méd. general", "Obstetra", "Enfermera", "Interno", "Técnico", "Partera", "Familiar", "Otro", "Desconocido"]},
+            {"etiqueta": "¿Necropsia?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Diagnóstico / causa CIE-10 (necropsia)", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Entorno social y comunitario",
+          "campos": [
+            {"etiqueta": "¿Identificaron signos de peligro?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Persona que identificó signos de peligro", "tipo": "SELECT", "opciones": ["Ella misma", "Pareja", "Familiar", "Otro"]},
+            {"etiqueta": "¿Buscaron ayuda?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Quién tomó la decisión de buscar ayuda", "tipo": "SELECT", "opciones": ["Ella misma", "Pareja", "Familiar", "Otro"]},
+            {"etiqueta": "Tiempo que demoró en buscar ayuda", "tipo": "TEXTO"},
+            {"etiqueta": "¿Hubo dificultad con el acceso a servicios de salud?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Especificar dificultad de acceso", "tipo": "MULTISELECT", "opciones": ["Inaccesibilidad geográfica", "Distancia", "Transporte", "Creencias/Costumbres", "Otro"]},
+            {"etiqueta": "Tiempo desde inicio de molestias hasta llegar al EE.SS.", "tipo": "TEXTO"},
+            {"etiqueta": "¿Tuvo dificultades para ser atendida en el EE.SS.?", "tipo": "BOOLEANO"},
+            {"etiqueta": "Especificar dificultad de atención", "tipo": "MULTISELECT", "opciones": ["Económicas", "Idioma", "Administrativas/Trámites", "Demora en Atención", "Mala atención", "Otro"]},
+            {"etiqueta": "Tiempo desde que llegó al EE.SS. hasta que fue atendida", "tipo": "TEXTO"},
+            {"etiqueta": "Persona que brindó la información", "tipo": "SELECT", "opciones": ["Madre", "Padre", "Pareja", "Familiar", "Partera", "Vecino", "Otro"]}
+          ]
+        },
+        {
+          "nombre": "Datos comunitarios",
+          "campos": [
+            {"etiqueta": "Sintomatología o molestias", "tipo": "MULTISELECT", "opciones": ["Sangrado", "Pérdida de líquido", "Dolor", "Sensación de alza térmica", "Náuseas y vómitos", "Convulsiones", "Debilidad", "Ansiedad", "Pérdida/alteración del estado de conciencia", "Cefalea", "Otro"]},
+            {"etiqueta": "Maniobras usadas durante el parto", "tipo": "MULTISELECT", "opciones": ["No se usó", "Manteo", "Acomodo", "Masajes", "Otro"]},
+            {"etiqueta": "Maniobras usadas para retirar la placenta", "tipo": "MULTISELECT", "opciones": ["No se usó", "Manteo", "Acomodo", "Masajes", "Otro"]},
+            {"etiqueta": "Tiempo estimado del domicilio al EE.SS. más cercano", "tipo": "TEXTO"},
+            {"etiqueta": "Tipo de establecimiento más cercano", "tipo": "SELECT", "opciones": ["Puesto de Salud", "Centro de Salud", "Hospital"]}
+          ]
+        },
+        {
+          "nombre": "Causas de defunción (Anexo 2)",
+          "campos": [
+            {"etiqueta": "Causa final", "tipo": "TEXTO"},
+            {"etiqueta": "Causa intermedia", "tipo": "TEXTO"},
+            {"etiqueta": "Causa básica", "tipo": "TEXTO"},
+            {"etiqueta": "Causa asociada", "tipo": "TEXTO"},
+            {"etiqueta": "Causa genérica", "tipo": "SELECT", "opciones": ["Hemorragia", "Hipertensión gestacional", "Infección/Sepsis", "Otra causa"]},
+            {"etiqueta": "Clasificación final de la muerte", "tipo": "SELECT", "opciones": ["Directa", "Indirecta", "Incidental"]}
+          ]
+        },
+        {
+          "nombre": "Las cuatro demoras",
+          "campos": [
+            {"etiqueta": "1.ª demora: en la identificación del problema", "tipo": "GRUPO_SI_NO", "opciones": ["En la identificación del problema"]},
+            {"etiqueta": "2.ª demora: en la decisión de buscar ayuda", "tipo": "GRUPO_SI_NO", "opciones": ["En la decisión de buscar ayuda"]},
+            {"etiqueta": "3.ª demora: en acceder a los servicios de salud", "tipo": "GRUPO_SI_NO", "opciones": ["En acceder a los servicios de salud"]},
+            {"etiqueta": "4.ª demora: en recibir tratamiento adecuado y oportuno", "tipo": "GRUPO_SI_NO", "opciones": ["En recibir tratamiento adecuado y oportuno"]}
+          ]
+        }
+      ]
+    },
+    "P96": {
+      "enfermedad": "Muerte fetal y neonatal",
+      "lote": 8,
+      "pdf_paginas": "28",
+      "multi_sujeto": true,
+      "roles_sujeto": ["CASO_INDICE", "MADRE"],
+      "_nota_general": "Modelar un caso por fallecimiento (no una hoja con varias filas).",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_muestra": false,
+        "caso_viaje": false,
+        "caso_vacuna": false
+      },
+      "secciones": [
+        {
+          "nombre": "Datos del fallecido",
+          "campos": [
+            {"etiqueta": "Edad gestacional (semanas)", "tipo": "NUMERO"},
+            {"etiqueta": "Fecha de nacimiento", "tipo": "FECHA"},
+            {"etiqueta": "Hora de nacimiento", "tipo": "TEXTO"},
+            {"etiqueta": "Fecha de muerte", "tipo": "FECHA"},
+            {"etiqueta": "Hora de muerte", "tipo": "TEXTO"},
+            {"etiqueta": "Peso al nacer (gramos)", "tipo": "NUMERO"}
+          ]
+        },
+        {
+          "nombre": "Tipo de muerte",
+          "campos": [
+            {"etiqueta": "Tipo de muerte", "tipo": "SELECT", "opciones": ["Fetal", "Neonatal"]}
+          ]
+        },
+        {
+          "nombre": "Causa y diagnóstico",
+          "campos": [
+            {"etiqueta": "Causa básica de muerte", "tipo": "TEXTO"},
+            {"etiqueta": "Diagnóstico CIE-10", "tipo": "TEXTO"}
+          ]
+        },
+        {
+          "nombre": "Circunstancias",
+          "campos": [
+            {"etiqueta": "N.° de días de estancia hospitalaria", "tipo": "NUMERO"},
+            {"etiqueta": "Lugar del parto", "tipo": "SELECT", "opciones": ["PI Parto institucional", "PD Parto domiciliario"]},
+            {"etiqueta": "Momento de ocurrencia del fallecimiento", "tipo": "SELECT", "opciones": ["Anteparto", "Intraparto", "Post-parto"]},
+            {"etiqueta": "Lugar de la muerte", "tipo": "SELECT", "opciones": ["ES Establecimiento de salud", "CC Comunidad"]}
+          ]
+        }
+      ]
+    }
+  }
+}

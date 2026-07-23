@@ -526,20 +526,15 @@ INSERT INTO enfermedad (id, nombre, cie10, tipo_notif, grupo) VALUES
  (6,'Fiebre amarilla','A95','INMEDIATA','A'),
  (7,'ESAVI severo',NULL,'INMEDIATA','C');
 
--- --- Ejemplo de definición de ficha (motor de formularios) para Dengue ---
-INSERT INTO seccion_def (id, enfermedad_id, nombre, orden) VALUES
- (1,1,'Cuadro clínico',3),
- (2,1,'Signos de alarma',4);
-
-INSERT INTO campo_def (seccion_id, clave, etiqueta, tipo, obligatorio, catalogo_id, orden) VALUES
- (1,'fiebre','Fiebre','BOOLEANO',0,NULL,1),
- (1,'cefalea','Cefalea','BOOLEANO',0,NULL,2),
- (1,'mialgias','Mialgias','BOOLEANO',0,NULL,3),
- (1,'dolor_retroocular','Dolor retroocular','BOOLEANO',0,NULL,4),
- (1,'rash','Rash / exantema','BOOLEANO',0,NULL,5),
- (2,'dolor_abdominal','Dolor abdominal intenso','BOOLEANO',0,NULL,1),
- (2,'vomitos_persist','Vómitos persistentes','BOOLEANO',0,NULL,2),
- (2,'sangrado_mucosas','Sangrado de mucosas','BOOLEANO',0,NULL,3);
+-- Las definiciones de ficha (seccion_def / campo_def / catalogo propio de
+-- cada ficha) YA NO se siembran acá. Este esquema nace vacío de fichas;
+-- las carga `cargar_fichas.php` a partir de `manifiesto_fichas.json`
+-- (ver INFORME_CARGADOR.md y RECARGA_FICHAS.md). Antes había acá un
+-- "ejemplo de definición de ficha" para Dengue con una sección "Signos de
+-- alarma" que resultó ser contenido inventado (no viene del PDF MINSA) y
+-- que además nunca se limpiaba antes de que los lotes reales insertaran
+-- las secciones oficiales — la causa raíz documentada en
+-- INFORME_CARGADOR.md, hallazgo A.3.
 
 -- --- Redes y establecimientos (muestra) ---
 INSERT INTO red_salud (id, nombre, diresa) VALUES
