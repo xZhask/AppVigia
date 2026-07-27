@@ -1,0 +1,33 @@
+Difteria
+ - Falta campo de gestante (SI/NO) en datos del paciente, si es SI, habilita campos de semanas de gestación.
+ - doble fecha de inicio de síntomas (fecha de inicio y fecha de inicio de síntomas ), en el pdf solo hay una.
+ -En la sección de evolución, hay campos que dependen de si el paciente fue hospitalizado o no, en el pdf no hay esa condicionalidad. Los campos: Hospital, fecha de hospitalización, tratamiento recibido (Checkboxes / Opciones: Antibiótico, Antitoxina. Campo de texto: Especificar antibiótico.), Egreso del hospital, fecha de alta, fecha de defunción, complicaciones. Deeberían ser no visibles hasta que la condición del paciente sea "Hospitalizado".
+ - Estructura fuera del bloque condicional (previos a la hospitalización):
+37. Hospitalizado: Si / No / Ignorado.
+38. Antibiótico antes del ingreso: Si / No (con su respectivo campo Especificar antibiótico).
+- Los campos de especificar antibiótico, deberían habilitarse o ser visibles solo si se activa el radiobutton "Antibiótico".
+- En información epidemiológica, el campo fecha de aislamiento depende de si el check de aislamiento está marcado o no. Actualmente se puede poner una fecha de aislamiento sin necesidad de marcar el check.
+- En la sección de Información epidemiológica, hay campos que dependen si se selecciona SI en el punto 51 - Vacunación contra difteria, los campos son:
+    51. Vacunación contra difteria: [ ] Si   [ ] No
+  └── (Si es SÍ, se muestran/habilitan):
+      ├── 52. Numero de dosis: [ ] 1º   [ ] 2º   [ ] 3º
+      ├── 53. Refuerzos: [ ] 1º   [ ] 2º
+      └── 54. Fecha de ultima dosis: [ __/__/____ ]
+- Un caso similar en censo de contactos domiciliarios, la fecha de vacunación se debería activar solo si se selecciona SI en las opciones de *vacunado*
+- En el formuario de difteria aparece el campo viajes, pero en el pdf este no aparece, En su lugar creo que se toma el lugar de probable infección (10 días previos..) (punto 46 del pdf). Este último si aparece en el formulario web pero para seleccionar departamento/provincia/distrito debería ser dinámico, proveniente de la base de datos, como en la sección de datos del paciente. 
+- En el formulario web también aparecen antecedentes vacunales en donde se puede seleccionar distintos tipos de vacuna, pero el pdf no requiere eso, en su lugar pide:
+    51. Vacunación contra difteria: [ ] Si   [ ] No
+- En la sección LABORATORIO, en el punto 57- tipo de muestra, solamente aparece para seleccionar entre 2 tipos.
+VI. LABORATORIO
+ ├── 57. Tipo de muestra: [ ] Hisopado   [ ] Membrana
+ │     └── (Si se selecciona una muestra):
+ │           └── 56. Fecha de toma de muestra [ __/__/____ ]
+ │
+ ├── Pruebas realizadas:
+ │     ├── 58. Cultivo: [ ] Si   [ ] No
+ │     └── 59. PCR:     [ ] Si   [ ] No
+ │           └── (Si Cultivo == SÍ ó PCR == SÍ):
+ │                 └── 60. Fecha resultado [ __/__/____ ]
+ │
+ ├── 61. Recibió Antibiótico: [ ] Si   [ ] No
+ └── 62. Clasificación final: [ ] Confirmado   [ ] Descartado

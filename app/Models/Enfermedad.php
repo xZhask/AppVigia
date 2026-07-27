@@ -35,4 +35,14 @@ class Enfermedad extends Model
                     e.nombre_corto"
         )->fetchAll();
     }
+
+    public static function buscarPorCie10(string $cie10): ?array
+    {
+        $consulta = Database::conexion()->prepare(
+            'SELECT * FROM enfermedad WHERE cie10 = :cie10 LIMIT 1'
+        );
+        $consulta->execute(['cie10' => $cie10]);
+        $r = $consulta->fetch();
+        return $r ?: null;
+    }
 }

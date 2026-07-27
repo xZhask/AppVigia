@@ -20,22 +20,37 @@ use App\Models\CatalogoItem;
 use App\Models\SeccionDef;
 
 $secciones = SeccionDef::porEnfermedad((int) $enfermedad['id']);
+if (($enfermedad['cie10'] ?? '') === 'B05') {
+    $secciones = array_values(array_filter($secciones, fn($s) => !in_array(trim($s['nombre']), [
+        'Datos de notificación e identificación del caso',
+        'Datos de filiación y tutor'
+    ], true)));
+}
+if (($enfermedad['cie10'] ?? '') === 'O95') {
+    $secciones = array_values(array_filter($secciones, fn($s) => !in_array(trim($s['nombre']), [
+        'Datos de notificación'
+    ], true)));
+}
 $opcionesPorCatalogo = [];
 $numeroSeccion = $numeroSeccionInicial;
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos): void {
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad): void {
     $campos = CampoDef::porSeccion($seccionId);
     $puedeVerSensibles = \App\Core\Auth::tieneRol('ADMIN');
     $campos = array_filter($campos, fn($c) => empty($c['sensible']) || $puedeVerSensibles);
     
-    $camposBooleanos = array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO');
-    $camposOtros = array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO');
+    $idsPadre = array_filter(array_column($campos, 'depende_de'));
+    $camposBooleanos = array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !in_array($c['id'], $idsPadre));
+    $camposOtros = array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || in_array($c['id'], $idsPadre));
 
     if (!empty($camposOtros)): ?>
         <div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
           <?php
           $tipoAnterior = null;
           foreach ($camposOtros as $campo):
+            if (($campo['clave'] ?? '') === 'b05_fecha_ultimo_dia_seguimiento_contactos' || (int)($campo['id'] ?? 0) === 16108) {
+                continue;
+            }
             $campo['obligatorio'] = (int) $campo['obligatorio'];
             $valor = $valoresCampos[$campo['id']] ?? ($campo['tipo'] === 'MULTISELECT' ? [] : '');
             $error = $erroresCampos[$campo['id']] ?? null;
@@ -50,9 +65,80 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);
                 ?><div class="dep-wrap" data-depende-de="campo_<?= (int) $campo['depende_de'] ?>" data-valor-activador="<?= e($campo['valor_activador']) ?>" <?= $oculto ? 'hidden' : '' ?>><?php
             endif;
-            require __DIR__ . '/campo-dinamico.php';
+            if ($campo['tipo'] === 'BOOLEANO'): ?>
+              <div class="field">
+                <label class="fl"><?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?></label>
+                <div class="control">
+                  <select name="campo_<?= (int) $campo['id'] ?>" data-nosearch="true">
+                    <option value="">Seleccionar…</option>
+                    <option value="1" <?= seleccionado($valor, '1') ?>>Sí</option>
+                    <option value="0" <?= seleccionado($valor, '0') ?>>No</option>
+                  </select>
+                </div>
+              </div>
+            <?php else:
+                require __DIR__ . '/campo-dinamico.php';
+                if ($campo['etiqueta'] === 'Descripción de la erupción cutánea' || stripos($campo['etiqueta'], 'descripción de la erupción') !== false) {
+                    require __DIR__ . '/campos/exantema-evolucion-body-map.php';
+                }
+            endif;
             if ($tieneDependencia): ?></div><?php endif;
             $tipoAnterior = $campo['tipo'];
+
+            if (($campo['clave'] ?? '') === 'paciente_viajo_7_30_dias' || (int)($campo['id'] ?? 0) === 16095) {
+                $valPacienteViajo = $valoresCampos[16095] ?? '';
+                $esViajoInicial = ($valPacienteViajo === 'SI') || !empty($filasViajes ?? []);
+                ?>
+                </div>
+                <div id="b05-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_16095" data-valor-activador="SI" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esViajoInicial ? 'display: none;' : '' ?>" <?= !$esViajoInicial ? 'hidden' : '' ?>>
+                  <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
+                  <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                </div>
+                <div class="fields" style="width: 100%; margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
+                <?php
+            }
+
+            if (($campo['clave'] ?? '') === 'b05_total_de_casas' || (int)($campo['id'] ?? 0) === 16075) {
+                ?>
+                </div>
+                <div id="b05-wrapper-cadena-transmision" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 20px; margin-bottom: 24px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 18px 0;">
+                  <div class="eyebrow" style="margin-bottom:14px; font-size:0.95rem; font-weight:700; color:var(--accent-deep); width:100%; display:block;">1. CADENA DE TRANSMISIÓN</div>
+                  <div class="info-callout" style="background:var(--accent-soft); border:1px solid var(--accent); border-radius:var(--radius-sm, 8px); padding:14px 18px; margin-bottom:20px; color:var(--ink); font-size:0.875rem; line-height:1.6; width:100%;">
+                    <div style="margin-bottom:10px;">
+                      <span style="display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--accent); color:var(--accent-deep); font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; box-shadow:var(--shadow-soft);">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="16" x2="12"></line>
+                          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        Instrucciones / Objetivo: Identificar casos secundarios
+                      </span>
+                    </div>
+                    <div style="width:100%;">
+                      <div style="color:var(--ink-2); display:flex; flex-direction:column; gap:4px; width:100%;">
+                        <div><strong style="color:var(--accent-deep);">a)</strong> Tomar como referencia la fecha de inicio de erupción del caso en investigación.</div>
+                        <div><strong style="color:var(--accent-deep);">b)</strong> Identificar los contactos individuales o de grupo que tuvo el caso 4 días antes y 4 días después del inicio de la erupción.</div>
+                        <div><strong style="color:var(--accent-deep);">c)</strong> Registrar en orden cronológico en la siguiente tabla.</div>
+                        <div><strong style="color:var(--accent-deep);">d)</strong> Programar el seguimiento de los contactos asintomáticos hasta por 30 días a partir del primer contacto con el caso. Para los que inicien erupción se apertura nueva ficha.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <?php
+                  $filasContactos = $filasContactos ?? [];
+                  $columnasContacto = ['fecha_contacto', 'lugar_contacto', 'edad', 'direccion', 'celular', 'vacunado_72h', 'fecha_vacunacion', 'fecha_inicio_erupcion'];
+                  require __DIR__ . '/tablas-hijas/contactos.php';
+                  ?>
+                  <div class="field" style="margin-top:16px; width:100%; max-width:320px;">
+                    <label class="fl">Fecha de último día de seguimiento de contactos</label>
+                    <div class="control mono">
+                      <input type="date" name="campo_16108" value="<?= e($valoresCampos[16108] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
+                    </div>
+                  </div>
+                </div>
+                <div class="eyebrow" style="margin-top:20px; margin-bottom:14px; font-size:0.95rem; font-weight:700; color:var(--accent-deep); width:100%; flex-basis:100%; clear:both; display:block;">2. ACCIONES DE CONTROL</div>
+                <div class="fields" style="width:100%; margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
+                <?php
+            }
           endforeach; ?>
         </div>
     <?php endif;
@@ -132,6 +218,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     </span>
   </div>
   <div class="section-body">
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
@@ -141,6 +228,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
         <?php if ($errorFechaInicioSintomas): ?><span class="hint err"><?= e($errorFechaInicioSintomas) ?></span><?php endif; ?>
       </div>
     </div>
+    <?php endif; ?>
     <?php if (!empty($secciones)): ?>
       <?php $renderizarCampos((int) $secciones[0]['id']); ?>
     <?php else: ?>
@@ -161,7 +249,57 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
       <h3><?= e($seccion['nombre']) ?></h3>
     </div>
     <div class="section-body">
-      <?php $renderizarCampos((int) $seccion['id']); ?>
+      <?php if (trim($seccion['nombre']) === 'Cadena de transmisión'): ?>
+        <?php if (($enfermedad['cie10'] ?? '') !== 'B05'): ?>
+          <div class="info-callout" style="background:var(--accent-soft); border:1px solid var(--accent); border-radius:var(--radius-sm, 8px); padding:14px 18px; margin-bottom:20px; color:var(--ink); font-size:0.875rem; line-height:1.6;">
+            <div style="margin-bottom:10px;">
+              <span style="display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--accent); color:var(--accent-deep); font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; box-shadow:var(--shadow-soft);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                Instrucciones / Objetivo
+              </span>
+            </div>
+            <div style="width:100%;">
+              <div style="font-weight:600; color:var(--accent-deep); margin-bottom:6px; font-size:0.9rem;">
+                Identificar el caso primario, luego:
+              </div>
+              <div style="color:var(--ink-2); display:flex; flex-direction:column; gap:4px; width:100%;">
+                <div><strong style="color:var(--accent-deep);">a)</strong> Tomar como referencia la fecha de inicio de parálisis del caso.</div>
+                <div><strong style="color:var(--accent-deep);">b)</strong> Identificar los contactos individuales o de grupo que tuvo el caso 45 días antes y 45 días después del inicio de la parálisis.</div>
+                <div><strong style="color:var(--accent-deep);">c)</strong> Enumerar en orden cronológico en la siguiente tabla.</div>
+                <div><strong style="color:var(--accent-deep);">d)</strong> Programar el seguimiento de los contactos asintomáticos hasta por 60 días a partir de su captación (para los que inician parálisis se apertura nueva ficha).</div>
+              </div>
+            </div>
+          </div>
+          <?php
+          $filasContactos = $filasContactos ?? [];
+          $columnasContacto = ['edad', 'dosis', 'fecha_ultima_dosis', 'fecha_colecta_heces', 'fecha_envio', 'fecha_resultado', 'resultado_aislamiento'];
+          require __DIR__ . '/tablas-hijas/contactos.php';
+          ?>
+        <?php endif; ?>
+      <?php else: ?>
+        <?php if (trim($seccion['nombre']) === 'Lugar probable de infección' && ($enfermedad['cie10'] ?? '') === 'B05'): ?>
+          <div style="margin-bottom: 20px;">
+            <div class="eyebrow" style="margin-bottom:10px">Lugar y/o institución probable de infección (considerar entre 7 a 30 días antes del inicio de erupción cutánea)</div>
+            <?php require __DIR__ . '/tablas-hijas/lugar-infeccion.php'; ?>
+          </div>
+        <?php endif; ?>
+
+        <?php $renderizarCampos((int) $seccion['id']); ?>
+
+        <?php if (trim($seccion['nombre']) === 'Antecedentes vacunales' && ($enfermedad['cie10'] ?? '') === 'B05'): 
+          $valEstadoVacunal = $valoresCampos[16052] ?? '';
+          $esVacunadoInicial = in_array($valEstadoVacunal, ['VACUNADO', 'VACUNADO_INCOMPLETO'], true) || !empty($filasVacunas ?? []);
+        ?>
+          <div id="b05-wrapper-vacunas-registradas" style="margin-top: 18px; border-top: 1px solid var(--line-2); padding-top: 14px; <?= !$esVacunadoInicial ? 'display: none;' : '' ?>" <?= !$esVacunadoInicial ? 'hidden' : '' ?>>
+            <div class="eyebrow" style="margin-bottom:10px">Vacunas registradas</div>
+            <?php require __DIR__ . '/tablas-hijas/vacunas.php'; ?>
+          </div>
+        <?php endif; ?>
+      <?php endif; ?>
     </div>
   </div>
   <?php $numeroSeccion++; ?>

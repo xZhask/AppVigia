@@ -108,7 +108,7 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
     'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h'],
     'caso_vacuna'   => ['dosis', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
     'caso_viaje'    => ['pais', 'fecha_salida', 'fecha_retorno'],
-    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result'],
+    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones'],
 ];
 
 // Listas de opciones tan genéricas que se comparten entre fichas en vez de
@@ -376,11 +376,16 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // (el widget cae al mínimo por defecto), no se conserva lo que hubiera
     // quedado de una corrida anterior.
     $columnasDeclaradas = $fichaManifiesto['columnas_tablas_hija'] ?? [];
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ? WHERE id = ?')->execute([
+    $tablasHijas = $fichaManifiesto['tablas_hijas'] ?? [];
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_vacuna']) ? json_encode($columnasDeclaradas['caso_vacuna'], JSON_UNESCAPED_UNICODE) : null,
+        !empty($tablasHijas['caso_contacto']) ? 1 : 0,
+        !empty($tablasHijas['caso_muestra']) ? 1 : 0,
+        !empty($tablasHijas['caso_viaje']) ? 1 : 0,
+        !empty($tablasHijas['caso_vacuna']) ? 1 : 0,
         $enfermedadId,
     ]);
 

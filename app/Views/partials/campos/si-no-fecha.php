@@ -8,33 +8,45 @@ $respondido = $isSi || $isNo || $isIgn;
 $idMatriz = 'si_no_fecha_' . $campo['id'];
 ?>
 <div class="field wide grupo-si-no-field si-no-fecha-field" id="<?= $idMatriz ?>" data-campo-id="<?= $campo['id'] ?>">
-  <div class="grupo-si-no-row <?= $isSi ? 'is-si' : '' ?> <?= $respondido ? 'respondido' : 'pendiente' ?>" tabindex="-1" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line-2); min-height:40px; padding-left:0; transition: border-left 0.15s; border-left: <?= $isSi ? '3px solid var(--accent)' : '3px solid transparent' ?>;">
+  <div class="grupo-si-no-row <?= $isSi ? 'is-si' : '' ?> <?= $respondido ? 'respondido' : 'pendiente' ?>" tabindex="-1" style="display:flex; flex-direction:column; justify-content:center; border-bottom:1px solid var(--line-2); min-height:40px; padding:6px 0; transition: border-left 0.15s; border-left: <?= $isSi ? '3px solid var(--accent)' : '3px solid transparent' ?>;">
     
-    <!-- Etiqueta a la izquierda -->
-    <span class="row-label" style="font-size: 13.5px; color: <?= $isSi ? 'var(--ink)' : ($respondido ? 'var(--ink-2)' : 'var(--ink)') ?>; font-weight: <?= $isSi ? '500' : 'normal' ?>; flex:1; padding-left:6px;">
-      <?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?>
-    </span>
-    
-    <div style="display:flex; align-items:center; gap:16px;">
-      <!-- Control segmentado al centro -->
-      <div class="seg" style="width: 190px; flex-shrink:0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+      <!-- Etiqueta a la izquierda -->
+      <span class="row-label" style="font-size: 13.5px; color: <?= $isSi ? 'var(--ink)' : ($respondido ? 'var(--ink-2)' : 'var(--ink)') ?>; font-weight: <?= $isSi ? '500' : 'normal' ?>; flex:1; padding-left:6px;">
+        <?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?>
+      </span>
+      
+      <?php
+      $cie10Actual = $enfermedad['cie10'] ?? ($GLOBALS['enfermedad']['cie10'] ?? '');
+      $permitirIgnorado = ($cie10Actual !== 'B05');
+      $anchoSeg = $permitirIgnorado ? '190px' : '130px';
+      ?>
+      <!-- Control segmentado a la derecha -->
+      <div class="seg" style="width: <?= $anchoSeg ?>; flex-shrink:0;">
         <label class="seg-label <?= $isSi ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="Sí">
-          <input type="radio" name="<?= e($nombreCampo) ?>[marcado]" value="SI" class="sr-only" <?= $isSi ? 'checked' : '' ?> onchange="this.closest('.grupo-si-no-row').querySelector('.fecha-dep').style.display = this.checked ? 'block' : 'none'">
+          <input type="radio" name="<?= e($nombreCampo) ?>[marcado]" value="SI" class="sr-only" <?= $isSi ? 'checked' : '' ?> onchange="var d=this.closest('.grupo-si-no-row').querySelector('.fecha-dep'); if(d) d.style.display = this.checked ? 'block' : 'none';">
           Sí
         </label>
         <label class="seg-label <?= $isNo ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="No">
-          <input type="radio" name="<?= e($nombreCampo) ?>[marcado]" value="NO" class="sr-only" <?= $isNo ? 'checked' : '' ?> onchange="this.closest('.grupo-si-no-row').querySelector('.fecha-dep').style.display = 'none'">
+          <input type="radio" name="<?= e($nombreCampo) ?>[marcado]" value="NO" class="sr-only" <?= $isNo ? 'checked' : '' ?> onchange="var d=this.closest('.grupo-si-no-row').querySelector('.fecha-dep'); if(d) d.style.display = 'none';">
           No
         </label>
+        <?php if ($permitirIgnorado): ?>
         <label class="seg-label <?= $isIgn ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="Ignorado">
-          <input type="radio" name="<?= e($nombreCampo) ?>[marcado]" value="IGNORADO" class="sr-only" <?= $isIgn ? 'checked' : '' ?> onchange="this.closest('.grupo-si-no-row').querySelector('.fecha-dep').style.display = 'none'">
+          <input type="radio" name="<?= e($nombreCampo) ?>[marcado]" value="IGNORADO" class="sr-only" <?= $isIgn ? 'checked' : '' ?> onchange="var d=this.closest('.grupo-si-no-row').querySelector('.fecha-dep'); if(d) d.style.display = 'none';">
           Ign.
         </label>
+        <?php endif; ?>
       </div>
+    </div>
 
-      <!-- Campo de fecha a la derecha -->
-      <div class="control mono fecha-dep <?= $error ? 'err' : '' ?>" style="width: 140px; display: <?= $isSi ? 'block' : 'none' ?>;">
-        <input type="date" name="<?= e($nombreCampo) ?>[fecha]" value="<?= e($valores['fecha'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
+    <!-- Campo de fecha abajo -->
+    <div class="fecha-dep" style="display: <?= $isSi ? 'block' : 'none' ?>; margin-top:10px; padding-left:6px; padding-right:6px; width:100%;">
+      <div class="field" style="margin-bottom:0; max-width:240px;">
+        <label class="fl" style="font-size:12px; margin-bottom:4px; color:var(--muted)">Fecha día 0 (inicio):</label>
+        <div class="control mono <?= $error ? 'err' : '' ?>">
+          <input type="date" name="<?= e($nombreCampo) ?>[fecha]" value="<?= e($valores['fecha'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
+        </div>
       </div>
     </div>
   </div>

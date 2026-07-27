@@ -21,6 +21,8 @@ use App\Core\Session;
 
 $config = require __DIR__ . '/../config/config.php';
 
+date_default_timezone_set($config['app']['timezone'] ?? 'America/Lima');
+
 error_reporting(E_ALL);
 ini_set('display_errors', $config['app']['debug'] ? '1' : '0');
 

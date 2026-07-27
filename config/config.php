@@ -16,6 +16,8 @@ return [
         // En producción debe quedar en false: los errores se registran en el
         // log de PHP, nunca se muestran en pantalla (detalle técnico ≠ usuario).
         'debug' => false,
+        // Zona horaria por defecto para Perú.
+        'timezone' => 'America/Lima',
     ],
     'reportes' => [
         // Años previos con datos necesarios para usar el canal histórico

@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('America/Lima');
+
 spl_autoload_register(function (string $clase): void {
     $prefijo = 'App\\';
     if (!str_starts_with($clase, $prefijo)) {

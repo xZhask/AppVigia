@@ -9,6 +9,11 @@ $respondidas = 0;
 foreach ($opciones as $op) {
     if (!empty($valores[$op['valor']])) $respondidas++;
 }
+$cie10Actual = $enfermedad['cie10'] ?? ($GLOBALS['enfermedad']['cie10'] ?? '');
+$esComplicacionesB05 = ($cie10Actual === 'B05' && trim($campo['etiqueta']) === 'Complicaciones');
+$permitirIgnorado = ($cie10Actual !== 'B05' || $esComplicacionesB05);
+$etiquetaIgnorado = ($cie10Actual === 'B05') ? 'Desc.' : 'Ign.';
+$anchoSeg = $permitirIgnorado ? '190px' : '130px';
 ?>
 <div class="field wide grupo-si-no-field" id="<?= $idMatriz ?>" data-campo-id="<?= $campo['id'] ?>">
   <?php if (!$esSubgrupo): ?>
@@ -31,10 +36,10 @@ foreach ($opciones as $op) {
     
     <?php if ($hayOpciones): ?>
       <div style="display:flex; justify-content:flex-end; padding-right: 2px; margin-bottom:4px; font-size:12px; font-weight:500; color:var(--muted);">
-        <div style="width: 190px; display:flex; text-align:center;">
+        <div style="width: <?= $anchoSeg ?>; display:flex; text-align:center;">
            <span style="flex:1">Sí</span>
            <span style="flex:1">No</span>
-           <span style="flex:1">Ign.</span>
+           <?php if ($permitirIgnorado): ?><span style="flex:1"><?= e($etiquetaIgnorado) ?></span><?php endif; ?>
         </div>
       </div>
     <?php endif; ?>
@@ -53,24 +58,38 @@ foreach ($opciones as $op) {
       $isNo = $val === 'NO';
       $isIgn = $val === 'IGNORADO';
       $rowId = 'row_' . $campo['id'] . '_' . $op['valor'];
+      $esOtros = (in_array(strtoupper($op['valor']), ['OTROS', 'OTRAS'], true) || stripos($op['etiqueta'], 'otro') !== false);
+      $placeholderOtros = (stripos($campo['etiqueta'], 'complicac') !== false) ? 'Especifique otras complicaciones…' : 'Especifique otros signos…';
     ?>
-      <div class="grupo-si-no-row <?= $isSi ? 'is-si' : '' ?> <?= $val ? 'respondido' : 'pendiente' ?>" id="<?= $rowId ?>" tabindex="-1" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line-2); min-height:40px; padding-left:<?= $esSubgrupo ? '16px' : '0' ?>; transition: border-left 0.15s; border-left: <?= $isSi ? '3px solid var(--accent)' : '3px solid transparent' ?>;">
-        <span class="row-label" style="font-size: 13.5px; color: <?= $isSi ? 'var(--ink)' : ($val ? 'var(--ink-2)' : 'var(--ink)') ?>; font-weight: <?= $isSi ? '500' : 'normal' ?>; flex:1; padding-left:6px;"><?= e($op['etiqueta']) ?></span>
-        
-        <div class="seg" style="width: 190px; flex-shrink:0;">
-          <label class="seg-label <?= $isSi ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="Sí">
-            <input type="radio" name="<?= e($nombreCampo) ?>[<?= e($op['valor']) ?>]" value="SI" class="sr-only" <?= $isSi ? 'checked' : '' ?>>
-            Sí
-          </label>
-          <label class="seg-label <?= $isNo ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="No">
-            <input type="radio" name="<?= e($nombreCampo) ?>[<?= e($op['valor']) ?>]" value="NO" class="sr-only" <?= $isNo ? 'checked' : '' ?>>
-            No
-          </label>
-          <label class="seg-label <?= $isIgn ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="Ignorado">
-            <input type="radio" name="<?= e($nombreCampo) ?>[<?= e($op['valor']) ?>]" value="IGNORADO" class="sr-only" <?= $isIgn ? 'checked' : '' ?>>
-            Ign.
-          </label>
+      <div class="grupo-si-no-row <?= $isSi ? 'is-si' : '' ?> <?= $val ? 'respondido' : 'pendiente' ?>" id="<?= $rowId ?>" tabindex="-1" style="display:flex; flex-direction:column; justify-content:center; border-bottom:1px solid var(--line-2); min-height:40px; padding:6px 0; padding-left:<?= $esSubgrupo ? '16px' : '0' ?>; transition: border-left 0.15s; border-left: <?= $isSi ? '3px solid var(--accent)' : '3px solid transparent' ?>;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <span class="row-label" style="font-size: 13.5px; color: <?= $isSi ? 'var(--ink)' : ($val ? 'var(--ink-2)' : 'var(--ink)') ?>; font-weight: <?= $isSi ? '500' : 'normal' ?>; flex:1; padding-left:6px;"><?= e($op['etiqueta']) ?></span>
+          
+          <div class="seg" style="width: <?= $anchoSeg ?>; flex-shrink:0;">
+            <label class="seg-label <?= $isSi ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="Sí">
+              <input type="radio" name="<?= e($nombreCampo) ?>[<?= e($op['valor']) ?>]" value="SI" class="sr-only" <?= $isSi ? 'checked' : '' ?>>
+              Sí
+            </label>
+            <label class="seg-label <?= $isNo ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="No">
+              <input type="radio" name="<?= e($nombreCampo) ?>[<?= e($op['valor']) ?>]" value="NO" class="sr-only" <?= $isNo ? 'checked' : '' ?>>
+              No
+            </label>
+            <?php if ($permitirIgnorado): ?>
+            <label class="seg-label <?= $isIgn ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="<?= e($etiquetaIgnorado) ?>">
+              <input type="radio" name="<?= e($nombreCampo) ?>[<?= e($op['valor']) ?>]" value="IGNORADO" class="sr-only" <?= $isIgn ? 'checked' : '' ?>>
+              <?= e($etiquetaIgnorado) ?>
+            </label>
+            <?php endif; ?>
+          </div>
         </div>
+
+        <?php if ($esOtros): ?>
+          <div class="otros-especificar-dep" style="display: <?= $isSi ? 'block' : 'none' ?>; margin-top:8px; padding-left:6px; padding-right:6px; width:100%;">
+            <div class="control">
+              <input type="text" name="<?= e($nombreCampo) ?>[OTROS_ESPECIFICAR]" value="<?= e($valores['OTROS_ESPECIFICAR'] ?? '') ?>" placeholder="<?= e($placeholderOtros) ?>" style="width:100%;">
+            </div>
+          </div>
+        <?php endif; ?>
       </div>
     <?php endforeach; ?>
   </div>

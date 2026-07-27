@@ -97,7 +97,8 @@ function campoVisiblePorDependencia(array $campo, array $valoresCampos): bool
         return is_array($valorPadre) && in_array($campo['valor_activador'], $valorPadre, true);
     }
 
-    return (string) $valorPadre === (string) $campo['valor_activador'];
+    $activadores = array_map('trim', explode(',', (string) $campo['valor_activador']));
+    return in_array((string) $valorPadre, $activadores, true);
 }
 
 /**

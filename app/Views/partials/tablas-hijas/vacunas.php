@@ -4,17 +4,7 @@
  * esperadas: $filasVacunas (array de ['vacuna','dosis','fecha','fabricante',
  * 'lote','via','sitio','fecha_vencimiento','establecimiento','adyuvante']),
  * $opcionesVacuna/$opcionesDosis/$opcionesViaVacuna/$opcionesSitio/
- * $opcionesAdyuvante (catalogo_item, PENDIENTES_POST_FASE5.md punto 2).
- *
- * "Vacuna"/"Dosis"/"Vía"/"Sitio"/"Adyuvante" son <select> respaldados por
- * catálogo (mismo patrón que muestras.php: se guarda el `valor` del
- * catalogo_item, no texto libre, para que "Pentavalente"/"pentavalente"/
- * "Penta" no dejen de agruparse en reportes). Solo "Vacuna" tiene además un
- * campo de texto para "20 Otro (especificar)", porque es la única opción
- * del PDF que lo pide -- si se completa, reemplaza al código elegido.
- *
- * $columnasVacuna (punto 3): columnas que esta ficha debe mostrar, además
- * de "Vacuna"/"Otro (especificar)"/"Fecha de aplicación", que son fijas.
+ * $opcionesAdyuvante (catalogo_item).
  */
 $erroresVacunas = $erroresVacunas ?? [];
 $opcionesVacuna = $opcionesVacuna ?? [];
@@ -25,109 +15,177 @@ $opcionesAdyuvante = $opcionesAdyuvante ?? [];
 $columnasVacuna = $columnasVacuna ?? ['dosis'];
 $muestra = fn(string $col) => in_array($col, $columnasVacuna, true);
 
+$cie10Actual = $enfermedad['cie10'] ?? '';
+$esB05 = ($cie10Actual === 'B05');
+
 $filaVacuna = function (array $fila = [
     'vacuna' => '', 'vacuna_otro' => '', 'dosis' => '', 'fecha' => '', 'fabricante' => '', 'lote' => '',
-    'via' => '', 'sitio' => '', 'adyuvante' => '', 'fecha_vencimiento' => '', 'establecimiento' => '',
-], ?array $error = null) use ($opcionesVacuna, $opcionesDosis, $opcionesViaVacuna, $opcionesSitio, $opcionesAdyuvante, $muestra): void {
+    'via' => '', 'sitio' => '', 'adyuvante' => '', 'fecha_vencimiento' => '', 'establecimiento' => '', 'fuente_informacion' => '',
+], ?array $error = null) use ($opcionesVacuna, $opcionesDosis, $opcionesViaVacuna, $opcionesSitio, $opcionesAdyuvante, $muestra, $esB05): void {
     $errorFecha = $error['fecha'] ?? null;
     ?>
-  <div class="subrow">
+  <div class="subrow" style="<?= $esB05 ? 'border-left: 3px solid var(--accent); padding-left: 12px; margin-bottom: 16px;' : '' ?>">
     <div class="fields thirds" style="flex:1">
-      <div class="field">
-        <label class="fl">Vacuna</label>
-        <div class="control">
-          <select name="vacuna_nombre[]">
-            <option value="">Seleccionar…</option>
-            <?php foreach ($opcionesVacuna as $op): ?>
-              <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['vacuna'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
-            <?php endforeach; ?>
-          </select>
+      <?php if ($esB05): ?>
+        <!-- ================= VACUNAS ESPECÍFICAS PARA B05 ================= -->
+        <!-- 1. Tipo de vacuna -->
+        <div class="field">
+          <label class="fl">Tipo de vacuna</label>
+          <div class="control">
+            <select name="vacuna_nombre[]">
+              <option value="">Seleccionar…</option>
+              <option value="ANTISARAMPIONOSA" <?= seleccionado($fila['vacuna'] ?? '', 'ANTISARAMPIONOSA') ?>>Antisarampionosa</option>
+              <option value="ANTIRRUBEOLICA" <?= seleccionado($fila['vacuna'] ?? '', 'ANTIRRUBEOLICA') ?>>Antirrubeólica</option>
+              <option value="DOBLE_VIRAL_SR" <?= seleccionado($fila['vacuna'] ?? '', 'DOBLE_VIRAL_SR') ?>>Doble viral (SR)</option>
+              <option value="TRIPLE_VIRAL_SRP" <?= seleccionado($fila['vacuna'] ?? '', 'TRIPLE_VIRAL_SRP') ?>>Triple viral (SRP)</option>
+            </select>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label class="fl">Si es "Otro", especificar</label>
-        <div class="control"><input type="text" name="vacuna_otro[]" value="<?= e($fila['vacuna_otro'] ?? '') ?>"></div>
-      </div>
-      <div class="field">
-        <label class="fl">Fecha de aplicación</label>
-        <div class="control mono <?= $errorFecha ? 'err' : '' ?>"><input type="date" name="vacuna_fecha[]" value="<?= e($fila['fecha'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
-        <?php if ($errorFecha): ?><span class="hint err"><?= e($errorFecha) ?></span><?php endif; ?>
-      </div>
-      <?php if ($muestra('dosis')): ?>
-      <div class="field">
-        <label class="fl">Dosis</label>
-        <div class="control">
-          <select name="vacuna_dosis[]">
-            <option value="">Seleccionar…</option>
-            <?php foreach ($opcionesDosis as $op): ?>
-              <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['dosis'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
-            <?php endforeach; ?>
-          </select>
+
+        <!-- 2. N.º de dosis -->
+        <div class="field">
+          <label class="fl">N.° de dosis</label>
+          <div class="control">
+            <select name="vacuna_dosis[]">
+              <option value="">Seleccionar…</option>
+              <option value="DOSIS_CERO" <?= seleccionado($fila['dosis'] ?? '', 'DOSIS_CERO') ?>>Dosis cero</option>
+              <option value="PRIMERA_DOSIS" <?= seleccionado($fila['dosis'] ?? '', 'PRIMERA_DOSIS') ?>>Primera dosis</option>
+              <option value="SEGUNDA_DOSIS" <?= seleccionado($fila['dosis'] ?? '', 'SEGUNDA_DOSIS') ?>>Segunda dosis</option>
+              <option value="DOSIS_ADICIONAL" <?= seleccionado($fila['dosis'] ?? '', 'DOSIS_ADICIONAL') ?>>Dosis adicional</option>
+              <option value="DESCONOCIDO" <?= seleccionado($fila['dosis'] ?? '', 'DESCONOCIDO') ?>>Desconocido</option>
+            </select>
+          </div>
         </div>
-      </div>
-      <?php endif; ?>
-      <?php if ($muestra('via')): ?>
-      <div class="field">
-        <label class="fl">Vía</label>
-        <div class="control">
-          <select name="vacuna_via[]">
-            <option value="">Seleccionar…</option>
-            <?php foreach ($opcionesViaVacuna as $op): ?>
-              <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['via'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
-            <?php endforeach; ?>
-          </select>
+
+        <!-- 3. Fecha de última dosis -->
+        <div class="field">
+          <label class="fl">Fecha de última dosis</label>
+          <div class="control mono <?= $errorFecha ? 'err' : '' ?>"><input type="date" name="vacuna_fecha[]" value="<?= e($fila['fecha'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+          <?php if ($errorFecha): ?><span class="hint err"><?= e($errorFecha) ?></span><?php endif; ?>
         </div>
-      </div>
-      <?php endif; ?>
-      <?php if ($muestra('sitio')): ?>
-      <div class="field">
-        <label class="fl">Sitio</label>
-        <div class="control">
-          <select name="vacuna_sitio[]">
-            <option value="">Seleccionar…</option>
-            <?php foreach ($opcionesSitio as $op): ?>
-              <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['sitio'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
-            <?php endforeach; ?>
-          </select>
+
+        <!-- 4. N.º de lote -->
+        <div class="field">
+          <label class="fl">N.° de lote</label>
+          <div class="control mono"><input type="text" name="vacuna_lote[]" value="<?= e($fila['lote'] ?? '') ?>" placeholder="N.° de lote…"></div>
         </div>
-      </div>
-      <?php endif; ?>
-      <?php if ($muestra('adyuvante')): ?>
-      <div class="field">
-        <label class="fl">Adyuvante</label>
-        <div class="control">
-          <select name="vacuna_adyuvante[]" data-nosearch="true">
-            <option value="">Seleccionar…</option>
-            <?php foreach ($opcionesAdyuvante as $op): ?>
-              <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['adyuvante'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
-            <?php endforeach; ?>
-          </select>
+
+        <!-- 5. Fuente de información -->
+        <div class="field">
+          <label class="fl">Fuente de información</label>
+          <div class="control">
+            <select name="vacuna_fuente_informacion[]">
+              <option value="">Seleccionar…</option>
+              <option value="CARNE_VACUNACION" <?= seleccionado($fila['fuente_informacion'] ?? '', 'CARNE_VACUNACION') ?>>Carné de vacunación</option>
+              <option value="REGISTRO_SALUD" <?= seleccionado($fila['fuente_informacion'] ?? '', 'REGISTRO_SALUD') ?>>Registro en servicio de salud</option>
+            </select>
+          </div>
         </div>
-      </div>
-      <?php endif; ?>
-      <?php if ($muestra('fabricante')): ?>
-      <div class="field">
-        <label class="fl">Fabricante</label>
-        <div class="control"><input type="text" name="vacuna_fabricante[]" value="<?= e($fila['fabricante'] ?? '') ?>"></div>
-      </div>
-      <?php endif; ?>
-      <?php if ($muestra('lote')): ?>
-      <div class="field">
-        <label class="fl">Lote</label>
-        <div class="control mono"><input type="text" name="vacuna_lote[]" value="<?= e($fila['lote'] ?? '') ?>"></div>
-      </div>
-      <?php endif; ?>
-      <?php if ($muestra('fecha_vencimiento')): ?>
-      <div class="field">
-        <label class="fl">Fecha de vencimiento</label>
-        <div class="control mono"><input type="date" name="vacuna_fecha_vencimiento[]" value="<?= e($fila['fecha_vencimiento'] ?? '') ?>"></div>
-      </div>
-      <?php endif; ?>
-      <?php if ($muestra('establecimiento')): ?>
-      <div class="field">
-        <label class="fl">EE.SS. que vacunó</label>
-        <div class="control"><input type="text" name="vacuna_establecimiento[]" value="<?= e($fila['establecimiento'] ?? '') ?>"></div>
-      </div>
+
+        <!-- 6. EE.SS. donde se vacunó -->
+        <div class="field">
+          <label class="fl">EE.SS. donde se vacunó</label>
+          <div class="control"><input type="text" name="vacuna_establecimiento[]" value="<?= e($fila['establecimiento'] ?? '') ?>" placeholder="Establecimiento…"></div>
+        </div>
+
+      <?php else: ?>
+        <!-- Formulario estándar para otras enfermedades -->
+        <div class="field">
+          <label class="fl">Vacuna</label>
+          <div class="control">
+            <select name="vacuna_nombre[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesVacuna as $op): ?>
+                <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['vacuna'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="fl">Si es "Otro", especificar</label>
+          <div class="control"><input type="text" name="vacuna_otro[]" value="<?= e($fila['vacuna_otro'] ?? '') ?>"></div>
+        </div>
+        <div class="field">
+          <label class="fl">Fecha de aplicación</label>
+          <div class="control mono <?= $errorFecha ? 'err' : '' ?>"><input type="date" name="vacuna_fecha[]" value="<?= e($fila['fecha'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+          <?php if ($errorFecha): ?><span class="hint err"><?= e($errorFecha) ?></span><?php endif; ?>
+        </div>
+        <?php if ($muestra('dosis')): ?>
+        <div class="field">
+          <label class="fl">Dosis</label>
+          <div class="control">
+            <select name="vacuna_dosis[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesDosis as $op): ?>
+                <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['dosis'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('via')): ?>
+        <div class="field">
+          <label class="fl">Vía</label>
+          <div class="control">
+            <select name="vacuna_via[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesViaVacuna as $op): ?>
+                <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['via'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('sitio')): ?>
+        <div class="field">
+          <label class="fl">Sitio</label>
+          <div class="control">
+            <select name="vacuna_sitio[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesSitio as $op): ?>
+                <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['sitio'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('adyuvante')): ?>
+        <div class="field">
+          <label class="fl">Adyuvante</label>
+          <div class="control">
+            <select name="vacuna_adyuvante[]" data-nosearch="true">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesAdyuvante as $op): ?>
+                <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['adyuvante'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('fabricante')): ?>
+        <div class="field">
+          <label class="fl">Fabricante</label>
+          <div class="control"><input type="text" name="vacuna_fabricante[]" value="<?= e($fila['fabricante'] ?? '') ?>"></div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('lote')): ?>
+        <div class="field">
+          <label class="fl">Lote</label>
+          <div class="control mono"><input type="text" name="vacuna_lote[]" value="<?= e($fila['lote'] ?? '') ?>"></div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('fecha_vencimiento')): ?>
+        <div class="field">
+          <label class="fl">Fecha de vencimiento</label>
+          <div class="control mono"><input type="date" name="vacuna_fecha_vencimiento[]" value="<?= e($fila['fecha_vencimiento'] ?? '') ?>"></div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('establecimiento')): ?>
+        <div class="field">
+          <label class="fl">EE.SS. que vacunó</label>
+          <div class="control"><input type="text" name="vacuna_establecimiento[]" value="<?= e($fila['establecimiento'] ?? '') ?>"></div>
+        </div>
+        <?php endif; ?>
       <?php endif; ?>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar vacuna" style="margin-top:22px">

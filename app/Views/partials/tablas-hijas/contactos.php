@@ -69,10 +69,40 @@ $filaContacto = function (array $fila = [
         </div>
       </div>
       <?php endif; ?>
-      <?php if ($muestra('fecha_vacunacion')): ?>
+      <?php if ($muestra('dosis') || $muestra('dosis_recibidas')): ?>
       <div class="field">
-        <label class="fl">Fecha de vacunación</label>
+        <label class="fl">N.° dosis recibidas</label>
+        <div class="control mono"><input type="number" min="0" max="20" name="contacto_dosis_recibidas[]" value="<?= e($fila['dosis_recibidas'] ?? '') ?>"></div>
+      </div>
+      <?php endif; ?>
+      <?php if ($muestra('fecha_ultima_dosis') || $muestra('fecha_vacunacion')): ?>
+      <div class="field">
+        <label class="fl">Fecha última dosis</label>
         <div class="control mono"><input type="date" name="contacto_fecha_vacunacion[]" value="<?= e($fila['fecha_vacunacion'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+      </div>
+      <?php endif; ?>
+      <?php if ($muestra('fecha_colecta_heces')): ?>
+      <div class="field">
+        <label class="fl">Fecha colecta heces</label>
+        <div class="control mono"><input type="date" name="contacto_fecha_colecta_heces[]" value="<?= e($fila['fecha_colecta_heces'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+      </div>
+      <?php endif; ?>
+      <?php if ($muestra('fecha_envio')): ?>
+      <div class="field">
+        <label class="fl">Fecha envío</label>
+        <div class="control mono"><input type="date" name="contacto_fecha_envio[]" value="<?= e($fila['fecha_envio'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+      </div>
+      <?php endif; ?>
+      <?php if ($muestra('fecha_resultado')): ?>
+      <div class="field">
+        <label class="fl">Fecha resultado</label>
+        <div class="control mono"><input type="date" name="contacto_fecha_resultado[]" value="<?= e($fila['fecha_resultado'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+      </div>
+      <?php endif; ?>
+      <?php if ($muestra('resultado_aislamiento')): ?>
+      <div class="field">
+        <label class="fl">Resultado aislamiento</label>
+        <div class="control"><input type="text" name="contacto_resultado_aislamiento[]" value="<?= e($fila['resultado_aislamiento'] ?? '') ?>"></div>
       </div>
       <?php endif; ?>
       <?php if ($muestra('profilaxis')): ?>
@@ -90,13 +120,19 @@ $filaContacto = function (array $fila = [
       <?php if ($muestra('doc')): ?>
       <div class="field">
         <label class="fl">Documento</label>
-        <div class="control mono"><input type="text" name="contacto_doc[]" value="<?= e($fila['doc']) ?>"></div>
+        <div class="control mono"><input type="text" name="contacto_doc[]" value="<?= e($fila['doc'] ?? '') ?>"></div>
       </div>
       <?php endif; ?>
       <?php if ($muestra('celular')): ?>
       <div class="field">
         <label class="fl">Celular</label>
-        <div class="control mono"><input type="text" name="contacto_celular[]" value="<?= e($fila['celular']) ?>"></div>
+        <div class="control mono"><input type="text" name="contacto_celular[]" value="<?= e($fila['celular'] ?? '') ?>"></div>
+      </div>
+      <?php endif; ?>
+      <?php if ($muestra('direccion')): ?>
+      <div class="field">
+        <label class="fl">Dirección</label>
+        <div class="control"><input type="text" name="contacto_direccion[]" value="<?= e($fila['direccion'] ?? '') ?>"></div>
       </div>
       <?php endif; ?>
       <?php if ($muestra('fecha_contacto')): ?>

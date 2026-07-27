@@ -111,7 +111,7 @@ class CasosController extends Controller
             'erroresMuestras' => [],
             'erroresLugarInfeccion' => [],
             'sujetoMadre' => [],
-        ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo(), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
+        ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
     }
 
     public function crear(): void
@@ -170,6 +170,9 @@ class CasosController extends Controller
                 : 'Tu cuenta no tiene un establecimiento asignado; pide a un administrador que lo configure.';
         }
 
+        if ($valoresFijos['fecha_notif'] === '') {
+            $valoresFijos['fecha_notif'] = $this->extraerFechaNotificacion((int) $enfermedad['id']);
+        }
         $fechaNotifIso = fechaIsoValida($valoresFijos['fecha_notif']);
         if (!$fechaNotifIso) {
             $erroresFijos['fecha_notif'] = 'Ingresa una fecha de notificación válida.';
@@ -201,6 +204,9 @@ class CasosController extends Controller
         }
 
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
+        if ($fechaInicioSintomas === '') {
+            $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
+        }
         $fechaInicioSintomasIso = null;
         $errorFechaInicioSintomas = null;
         if ($fechaInicioSintomas === '') {
@@ -229,7 +235,7 @@ class CasosController extends Controller
         $filasContactos = $this->filasContactos();
         [$filasViajes, $erroresViajes] = $this->filasViajes();
         [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
-        [$filasMuestras, $erroresMuestras] = $this->filasMuestras();
+        [$filasMuestras, $erroresMuestras] = $this->filasMuestras($enfermedad);
         [$filasLugarInfeccion, $erroresLugarInfeccion] = $this->filasLugarInfeccion();
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
@@ -262,7 +268,7 @@ class CasosController extends Controller
                 'erroresMuestras' => $erroresMuestras,
                 'erroresLugarInfeccion' => $erroresLugarInfeccion,
                 'sujetoMadre' => ($enfermedad['cie10'] ?? null) === 'P96' ? $this->datosResidenciaMadre() : [],
-            ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo(), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
+            ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
         }
 
@@ -377,10 +383,31 @@ class CasosController extends Controller
         require __DIR__ . '/../Views/partials/secciones-clinicas.php';
         $html = ob_get_clean();
 
+        $datosMuestras = $this->datosMuestrasCatalogo($enfermedad);
+        $opcionesTipoMuestra = $datosMuestras['opcionesTipoMuestra'];
+        $opcionesTipoPrueba  = $datosMuestras['opcionesTipoPrueba'];
+        $opcionesResultado   = $datosMuestras['opcionesResultado'];
+        $filasMuestras       = [];
+        $erroresMuestras     = [];
+        $columnasMuestra     = $this->datosColumnasTablaHija($enfermedad)['columnasMuestra'] ?? [];
+
+        ob_start();
+        require __DIR__ . '/../Views/partials/tablas-hijas/muestras.php';
+        $htmlMuestras = ob_get_clean();
+
+        $isPfa = ($enfermedad['cie10'] ?? '') === 'A80';
+        $isB05 = ($enfermedad['cie10'] ?? '') === 'B05';
+        $sinCaptacion = in_array($enfermedad['cie10'] ?? '', ['A80', 'B05', 'O95'], true);
+        $tieneAntecedentesEpi = !$isPfa && !$isB05 && ((int) ($enfermedad['usa_contactos'] ?? 0) === 1 || (int) ($enfermedad['usa_viajes'] ?? 0) === 1 || (int) ($enfermedad['usa_vacunas'] ?? 0) === 1 || (int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1 || ($enfermedad['cie10'] ?? null) === 'P96');
+
         echo json_encode([
-            'html'        => $html,
-            'cie10'       => $enfermedad['cie10'] ?: '—',
-            'nombreCorto' => mb_strtolower(explode(' /', $enfermedad['nombre'])[0]),
+            'html'                 => $html,
+            'htmlMuestras'         => $htmlMuestras,
+            'cie10'                => $enfermedad['cie10'] ?: '—',
+            'usaCaptacion'         => !$sinCaptacion,
+            'usaMuestras'          => (int) ($enfermedad['usa_muestras'] ?? 0) === 1,
+            'tieneAntecedentesEpi' => $tieneAntecedentesEpi,
+            'nombreCorto'          => mb_strtolower(explode(' /', $enfermedad['nombre'])[0]),
         ]);
     }
 
@@ -571,7 +598,7 @@ class CasosController extends Controller
             'erroresLugarInfeccion' => [],
             'erroresMuestras' => [],
             'sujetoMadre' => CasoSujeto::porCaso((int) $caso['id'])['MADRE'] ?? [],
-        ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo(), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($caso['distrito_id'])));
+        ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($caso['distrito_id'])));
     }
 
     public function actualizar(string $id): void
@@ -648,6 +675,9 @@ class CasosController extends Controller
         }
 
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
+        if ($fechaInicioSintomas === '') {
+            $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
+        }
         $fechaInicioSintomasIso = null;
         $errorFechaInicioSintomas = null;
         if ($fechaInicioSintomas === '') {
@@ -674,7 +704,7 @@ class CasosController extends Controller
         $filasContactos = $this->filasContactos();
         [$filasViajes, $erroresViajes] = $this->filasViajes();
         [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
-        [$filasMuestras, $erroresMuestras] = $this->filasMuestras();
+        [$filasMuestras, $erroresMuestras] = $this->filasMuestras($enfermedad);
         [$filasLugarInfeccion, $erroresLugarInfeccion] = $this->filasLugarInfeccion();
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
@@ -706,7 +736,7 @@ class CasosController extends Controller
                 'erroresMuestras' => $erroresMuestras,
                 'erroresLugarInfeccion' => $erroresLugarInfeccion,
                 'sujetoMadre' => ($enfermedad['cie10'] ?? null) === 'P96' ? $this->datosResidenciaMadre() : [],
-            ], $datosPnp['vista'], $this->datosMuestrasCatalogo(), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
+            ], $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
         }
 
@@ -877,6 +907,18 @@ class CasosController extends Controller
         $puedeVerSensibles = Auth::tieneRol('ADMIN');
 
         foreach ($campos as $campoId => $campo) {
+            if ($campoId === 14301 && !empty($_POST['hora_notificacion'])) {
+                $valFechaHora = trim($_POST['fecha_notif'] ?? '') . ' ' . trim($_POST['hora_notificacion']);
+                $valoresCampos[$campoId] = $valFechaHora;
+                $paraGuardar[$campoId] = $valFechaHora;
+                continue;
+            }
+            if ($campoId === 14302 && !empty($_POST['identificado_por'])) {
+                $valIdentificado = trim($_POST['identificado_por']);
+                $valoresCampos[$campoId] = $valIdentificado;
+                $paraGuardar[$campoId] = $valIdentificado;
+                continue;
+            }
             $tipo = $campo['tipo'];
             $obligatorio = (int) $campo['obligatorio'] === 1;
             $sensible = !empty($campo['sensible']);
@@ -924,7 +966,7 @@ class CasosController extends Controller
                 continue;
             }
 
-            if (in_array($tipo, ['GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true)) {
+            if (in_array($tipo, ['GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true) || is_array($_POST[$nombreCampo] ?? null)) {
                 $valorCrudo = $_POST[$nombreCampo] ?? [];
                 if (!is_array($valorCrudo)) {
                     $valorCrudo = [];
@@ -1004,7 +1046,8 @@ class CasosController extends Controller
             } elseif (in_array($campo['tipo'], ['GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true)) {
                 $valores[$campoId] = $crudo ? json_decode($crudo, true) ?? [] : [];
             } else {
-                $valores[$campoId] = $crudo ?? '';
+                $decoded = ($crudo && (str_starts_with($crudo, '{') || str_starts_with($crudo, '['))) ? json_decode($crudo, true) : null;
+                $valores[$campoId] = is_array($decoded) ? $decoded : ($crudo ?? '');
             }
         }
 
@@ -1283,12 +1326,85 @@ class CasosController extends Controller
         ], JSON_UNESCAPED_UNICODE);
     }
 
-    private function datosMuestrasCatalogo(): array
+    private const OPCIONES_MUESTRA_POR_ENFERMEDAD = [
+        'A36' => [ // Difteria
+            'tipo_muestra' => ['HISOPADO', 'MEMBRANA'],
+            'tipo_prueba'  => ['CULT', 'PCR'],
+        ],
+        'A37.0' => [ // Tos ferina
+            'tipo_muestra' => ['HNF', 'ASP_NF'],
+            'tipo_prueba'  => ['CULT', 'PCR'],
+        ],
+        'B05' => [ // Sarampión / rubéola / febriles eruptivas
+            'tipo_muestra' => ['SUERO', 'HNF_FAR', 'ORINA'],
+            'tipo_prueba'  => ['PCR', 'ELISA'],
+        ],
+        'P35.0' => [ // Síndrome de rubéola congénita (SRC)
+            'tipo_muestra' => ['HNF_FAR', 'SEROLOGIA', 'SUERO', 'ORINA'],
+            'tipo_prueba'  => ['PCR', 'ELISA'],
+        ],
+        'B04X' => [ // Viruela del mono (Mpox)
+            'tipo_muestra' => ['HNF_ORF', 'LESION', 'COSTRA'],
+            'tipo_prueba'  => ['PCR'],
+        ],
+        'B01' => [ // Varicela con complicaciones
+            'tipo_muestra' => ['VESICULA', 'SUERO'],
+            'tipo_prueba'  => ['PCR', 'ELISA'],
+        ],
+        'A97' => [ // Dengue, chikungunya, zika y arbovirosis
+            'tipo_muestra' => ['SUERO', 'ORINA', 'TEJIDO'],
+            'tipo_prueba'  => ['PCR', 'ELISA', 'AG'],
+        ],
+        'A95' => [ // Fiebre amarilla
+            'tipo_muestra' => ['SUERO', 'BIOPSIA', 'SEROLOGIA', 'HIGADO', 'CULTIVO_MUESTRA'],
+            'tipo_prueba'  => ['PCR', 'ELISA'],
+        ],
+        'B57' => [ // Enfermedad de Chagas
+            'tipo_muestra' => ['SUERO', 'SANGRE'],
+            'tipo_prueba'  => ['MICROSCOPIA', 'PCR', 'ELISA'],
+        ],
+        'A00' => [ // EDA grave / Cólera
+            'tipo_muestra' => ['HECES', 'VOMITO', 'SUERO'],
+            'tipo_prueba'  => ['CULT', 'RAPIDA'],
+        ],
+        'A80' => [ // Parálisis flácida aguda (PFA)
+            'tipo_muestra' => ['HECES'],
+            'tipo_prueba'  => ['AISL_VIRAL', 'PCR', 'CULT'],
+        ],
+        'B55' => [ // Leishmaniasis
+            'tipo_muestra' => ['LESION', 'BIOPSIA'],
+            'tipo_prueba'  => ['MICROSCOPIA', 'CULT', 'PCR'],
+        ],
+        'A44' => [ // Carrión
+            'tipo_muestra' => ['SANGRE', 'SUERO'],
+            'tipo_prueba'  => ['FROTIS_SANGUINEO', 'CULT', 'PCR'],
+        ],
+    ];
+
+    private function datosMuestrasCatalogo(?array $enfermedad = null): array
     {
+        $todosMuestras  = CatalogoItem::porCatalogo(4);
+        $todosPruebas   = CatalogoItem::porCatalogo(5);
+        $todosResultado = CatalogoItem::porCatalogo(3);
+
+        $cie10 = $enfermedad['cie10'] ?? '';
+        $configFicha = self::OPCIONES_MUESTRA_POR_ENFERMEDAD[$cie10] ?? null;
+
+        if ($configFicha) {
+            if (!empty($configFicha['tipo_muestra'])) {
+                $permitidos = $configFicha['tipo_muestra'];
+                $todosMuestras = array_values(array_filter($todosMuestras, fn($it) => in_array($it['valor'], $permitidos, true)));
+            }
+            if (!empty($configFicha['tipo_prueba'])) {
+                $permitidos = $configFicha['tipo_prueba'];
+                $todosPruebas = array_values(array_filter($todosPruebas, fn($it) => in_array($it['valor'], $permitidos, true)));
+            }
+        }
+
         return [
-            'opcionesTipoMuestra' => CatalogoItem::porCatalogo(4),
-            'opcionesTipoPrueba'  => CatalogoItem::porCatalogo(5),
-            'opcionesResultado'   => CatalogoItem::porCatalogo(3),
+            'opcionesTipoMuestra' => $todosMuestras,
+            'opcionesTipoPrueba'  => $todosPruebas,
+            'opcionesResultado'   => $todosResultado,
         ];
     }
 
@@ -1324,7 +1440,7 @@ class CasosController extends Controller
         'contacto' => ['parentesco', 'doc', 'celular'],
         'vacuna'   => ['dosis'],
         'viaje'    => ['pais', 'fecha_salida', 'fecha_retorno'],
-        'muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result'],
+        'muestra'  => ['tipo_muestra', 'tipo_prueba', 'resultado', 'fecha_toma', 'fecha_result'],
     ];
 
     /**
@@ -1386,14 +1502,20 @@ class CasosController extends Controller
         $edades = $_POST['contacto_edad'] ?? [];
         $sexos = $_POST['contacto_sexo'] ?? [];
         $vacunados = $_POST['contacto_vacunado'] ?? [];
+        $dosisRecibidasArr = $_POST['contacto_dosis_recibidas'] ?? [];
         $fechasVacunacion = $_POST['contacto_fecha_vacunacion'] ?? [];
         $profilaxis = $_POST['contacto_profilaxis'] ?? [];
         $docs = $_POST['contacto_doc'] ?? [];
         $celulares = $_POST['contacto_celular'] ?? [];
         $fechasContacto = $_POST['contacto_fecha_contacto'] ?? [];
+        $fechasColectaHecesArr = $_POST['contacto_fecha_colecta_heces'] ?? [];
+        $fechasEnvioArr = $_POST['contacto_fecha_envio'] ?? [];
+        $fechasResultadoArr = $_POST['contacto_fecha_resultado'] ?? [];
+        $resultadosAislamientoArr = $_POST['contacto_resultado_aislamiento'] ?? [];
         $lugaresContacto = $_POST['contacto_lugar_contacto'] ?? [];
         $fechasInicioErupcion = $_POST['contacto_fecha_inicio_erupcion'] ?? [];
         $vacunados72h = $_POST['contacto_vacunado_72h'] ?? [];
+        $direcciones = $_POST['contacto_direccion'] ?? [];
 
         $filas = [];
         foreach ($nombres as $i => $nombre) {
@@ -1407,8 +1529,12 @@ class CasosController extends Controller
             $fechaVacunacion = trim((string) ($fechasVacunacion[$i] ?? ''));
             $profilaxisFila = $profilaxis[$i] ?? '';
             $fechaContacto = trim((string) ($fechasContacto[$i] ?? ''));
+            $fechaColectaHeces = trim((string) ($fechasColectaHecesArr[$i] ?? ''));
+            $fechaEnvio = trim((string) ($fechasEnvioArr[$i] ?? ''));
+            $fechaResultado = trim((string) ($fechasResultadoArr[$i] ?? ''));
             $fechaInicioErupcion = trim((string) ($fechasInicioErupcion[$i] ?? ''));
             $vacunado72h = $vacunados72h[$i] ?? '';
+            $direccion = trim((string) ($direcciones[$i] ?? ''));
 
             $filas[] = [
                 'nombres'               => $nombre,
@@ -1416,14 +1542,20 @@ class CasosController extends Controller
                 'edad'                  => $edad !== '' && is_numeric($edad) ? (int) $edad : null,
                 'sexo'                  => in_array($sexo, ['M', 'F'], true) ? $sexo : null,
                 'vacunado'              => in_array($vacunado, ['SI', 'NO', 'IGNORADO'], true) ? $vacunado : null,
+                'dosis_recibidas'       => trim((string) ($dosisRecibidasArr[$i] ?? '')) ?: null,
                 'fecha_vacunacion'      => $fechaVacunacion !== '' ? fechaIsoValida($fechaVacunacion) : null,
                 'profilaxis'            => in_array($profilaxisFila, ['SI', 'NO'], true) ? $profilaxisFila : null,
                 'doc'                   => trim((string) ($docs[$i] ?? '')) ?: null,
                 'celular'               => trim((string) ($celulares[$i] ?? '')) ?: null,
                 'fecha_contacto'        => $fechaContacto !== '' ? fechaIsoValida($fechaContacto) : null,
+                'fecha_colecta_heces'  => $fechaColectaHeces !== '' ? fechaIsoValida($fechaColectaHeces) : null,
+                'fecha_envio'          => $fechaEnvio !== '' ? fechaIsoValida($fechaEnvio) : null,
+                'fecha_resultado'      => $fechaResultado !== '' ? fechaIsoValida($fechaResultado) : null,
+                'resultado_aislamiento' => trim((string) ($resultadosAislamientoArr[$i] ?? '')) ?: null,
                 'lugar_contacto'        => trim((string) ($lugaresContacto[$i] ?? '')) ?: null,
                 'fecha_inicio_erupcion' => $fechaInicioErupcion !== '' ? fechaIsoValida($fechaInicioErupcion) : null,
                 'vacunado_72h'          => in_array($vacunado72h, ['SI', 'NO', 'DESCONOCIDO'], true) ? $vacunado72h : null,
+                'direccion'             => $direccion !== '' ? $direccion : null,
             ];
         }
 
@@ -1442,6 +1574,8 @@ class CasosController extends Controller
         $lugares = $_POST['viaje_pais'] ?? [];
         $salidas = $_POST['viaje_fecha_salida'] ?? [];
         $retornos = $_POST['viaje_fecha_retorno'] ?? [];
+        $transportesIda = $_POST['viaje_transporte_ida'] ?? [];
+        $transportesRetorno = $_POST['viaje_transporte_retorno'] ?? [];
 
         $filas = [];
         $errores = [];
@@ -1449,7 +1583,10 @@ class CasosController extends Controller
             $lugar = trim((string) $lugar);
             $salidaTxt = trim((string) ($salidas[$i] ?? ''));
             $retornoTxt = trim((string) ($retornos[$i] ?? ''));
-            if ($lugar === '' && $salidaTxt === '' && $retornoTxt === '') {
+            $transIda = trim((string) ($transportesIda[$i] ?? ''));
+            $transRetorno = trim((string) ($transportesRetorno[$i] ?? ''));
+
+            if ($lugar === '' && $salidaTxt === '' && $retornoTxt === '' && $transIda === '' && $transRetorno === '') {
                 continue;
             }
 
@@ -1474,9 +1611,11 @@ class CasosController extends Controller
             }
 
             $filas[] = [
-                'pais'          => $lugar !== '' ? $lugar : null,
-                'fecha_salida'  => $salidaIso,
-                'fecha_retorno' => $retornoIso,
+                'pais'               => $lugar !== '' ? $lugar : null,
+                'fecha_salida'       => $salidaIso,
+                'fecha_retorno'      => $retornoIso,
+                'transporte_ida'     => $transIda !== '' ? $transIda : null,
+                'transporte_retorno' => $transRetorno !== '' ? $transRetorno : null,
             ];
         }
 
@@ -1511,6 +1650,7 @@ class CasosController extends Controller
         $adyuvantes = $_POST['vacuna_adyuvante'] ?? [];
         $fechasVencimiento = $_POST['vacuna_fecha_vencimiento'] ?? [];
         $establecimientos = $_POST['vacuna_establecimiento'] ?? [];
+        $fuentesInformacion = $_POST['vacuna_fuente_informacion'] ?? [];
 
         $filas = [];
         $errores = [];
@@ -1532,10 +1672,10 @@ class CasosController extends Controller
             }
             $fechaVencimientoTxt = trim((string) ($fechasVencimiento[$i] ?? ''));
             // "Otro (especificar)" reemplaza al código elegido si se completó.
-            $vacuna = $otro !== '' ? $otro : $this->codigoValidoDeCatalogo($codigo, 'vacuna_minsa');
+            $vacuna = $otro !== '' ? $otro : ($this->codigoValidoDeCatalogo($codigo, 'vacuna_minsa') ?: $codigo);
             $filas[] = [
                 'vacuna'            => $vacuna,
-                'dosis'             => $this->codigoValidoDeCatalogo(trim((string) ($dosis[$i] ?? '')), 'dosis_vacuna'),
+                'dosis'             => $this->codigoValidoDeCatalogo(trim((string) ($dosis[$i] ?? '')), 'dosis_vacuna') ?: (trim((string) ($dosis[$i] ?? '')) ?: null),
                 'fecha'             => $fechaIso,
                 'fabricante'        => trim((string) ($fabricantes[$i] ?? '')) ?: null,
                 'lote'              => trim((string) ($lotes[$i] ?? '')) ?: null,
@@ -1544,24 +1684,38 @@ class CasosController extends Controller
                 'adyuvante'         => $this->codigoValidoDeCatalogo(trim((string) ($adyuvantes[$i] ?? '')), 'adyuvante_vacuna'),
                 'fecha_vencimiento' => $fechaVencimientoTxt !== '' ? fechaIsoValida($fechaVencimientoTxt) : null,
                 'establecimiento'   => trim((string) ($establecimientos[$i] ?? '')) ?: null,
+                'fuente_informacion'=> trim((string) ($fuentesInformacion[$i] ?? '')) ?: null,
             ];
         }
 
         return [$filas, $errores];
     }
 
-    private function filasMuestras(): array
+    private function filasMuestras(?array $enfermedad = null): array
     {
         $tiposMuestra = $_POST['muestra_tipo_muestra'] ?? [];
         $tiposPrueba = $_POST['muestra_tipo_prueba'] ?? [];
         $recibioAntibiotico = $_POST['muestra_recibio_antibiotico'] ?? [];
         $resultados = $_POST['muestra_resultado'] ?? [];
         $fechasToma = $_POST['muestra_fecha_toma'] ?? [];
+        $fechasEnvioIns = $_POST['muestra_fecha_envio_ins'] ?? [];
         $fechasResultado = $_POST['muestra_fecha_result'] ?? [];
+        $agentesAislados = $_POST['muestra_agente_aislado'] ?? [];
+        $observacionesArr = $_POST['muestra_observaciones'] ?? [];
 
-        $validosTipoMuestra = array_column(CatalogoItem::porCatalogo(4), 'valor');
-        $validosTipoPrueba = array_column(CatalogoItem::porCatalogo(5), 'valor');
-        $validosResultado = array_column(CatalogoItem::porCatalogo(3), 'valor');
+        $fechasRecepcionIns = $_POST['muestra_fecha_recepcion_ins'] ?? [];
+        $resultadosPcr = $_POST['muestra_resultado_pcr'] ?? [];
+        $fechasResultPcr = $_POST['muestra_fecha_result_pcr'] ?? [];
+        $genotipos = $_POST['muestra_genotipo'] ?? [];
+        $resultadosIgm = $_POST['muestra_resultado_igm'] ?? [];
+        $fechasResultIgm = $_POST['muestra_fecha_result_igm'] ?? [];
+        $resultadosIgg = $_POST['muestra_resultado_igg'] ?? [];
+        $fechasResultIgg = $_POST['muestra_fecha_result_igg'] ?? [];
+
+        $datosMuestras = $this->datosMuestrasCatalogo($enfermedad);
+        $validosTipoMuestra = array_column($datosMuestras['opcionesTipoMuestra'], 'valor');
+        $validosTipoPrueba  = array_column($datosMuestras['opcionesTipoPrueba'], 'valor');
+        $validosResultado   = array_column($datosMuestras['opcionesResultado'], 'valor');
 
         $filas = [];
         $errores = [];
@@ -1570,9 +1724,21 @@ class CasosController extends Controller
             $tipoPrueba = trim((string) ($tiposPrueba[$i] ?? ''));
             $resultado = trim((string) ($resultados[$i] ?? ''));
             $tomaTxt = trim((string) ($fechasToma[$i] ?? ''));
+            $envioInsTxt = trim((string) ($fechasEnvioIns[$i] ?? ''));
+            $recepInsTxt = trim((string) ($fechasRecepcionIns[$i] ?? ''));
             $resultTxt = trim((string) ($fechasResultado[$i] ?? ''));
+            $agenteTxt = trim((string) ($agentesAislados[$i] ?? ''));
+            $obsTxt = trim((string) ($observacionesArr[$i] ?? ''));
 
-            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $resultTxt === '') {
+            $resPcr = trim((string) ($resultadosPcr[$i] ?? ''));
+            $resPcrTxt = trim((string) ($fechasResultPcr[$i] ?? ''));
+            $genotipoTxt = trim((string) ($genotipos[$i] ?? ''));
+            $resIgm = trim((string) ($resultadosIgm[$i] ?? ''));
+            $resIgmTxt = trim((string) ($fechasResultIgm[$i] ?? ''));
+            $resIgg = trim((string) ($resultadosIgg[$i] ?? ''));
+            $resIggTxt = trim((string) ($fechasResultIgg[$i] ?? ''));
+
+            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '') {
                 continue;
             }
 
@@ -1582,6 +1748,14 @@ class CasosController extends Controller
                 if (!$tomaIso) {
                     $errores[$i]['fecha_toma'] = self::ERROR_FECHA_INVALIDA;
                     $tomaIso = $tomaTxt;
+                }
+            }
+            $envioInsIso = null;
+            if ($envioInsTxt !== '') {
+                $envioInsIso = fechaIsoValida($envioInsTxt);
+                if (!$envioInsIso) {
+                    $errores[$i]['fecha_envio_ins'] = self::ERROR_FECHA_INVALIDA;
+                    $envioInsIso = $envioInsTxt;
                 }
             }
             $resultIso = null;
@@ -1596,12 +1770,23 @@ class CasosController extends Controller
             $antibiotico = $recibioAntibiotico[$i] ?? '';
 
             $filas[] = [
-                'tipo_muestra'        => in_array($tipoMuestra, $validosTipoMuestra, true) ? $tipoMuestra : null,
+                'tipo_muestra'        => in_array($tipoMuestra, $validosTipoMuestra, true) ? $tipoMuestra : (in_array($tipoMuestra, ['SUERO', 'HNF_FAR', 'ORINA'], true) ? $tipoMuestra : null),
                 'tipo_prueba'         => in_array($tipoPrueba, $validosTipoPrueba, true) ? $tipoPrueba : null,
                 'recibio_antibiotico' => in_array($antibiotico, ['0', '1'], true) ? (int) $antibiotico : null,
-                'resultado'           => in_array($resultado, $validosResultado, true) ? $resultado : null,
+                'resultado'           => in_array($resultado, $validosResultado, true) ? $resultado : ($resIgm ?: ($resPcr ?: ($resIgg ?: null))),
                 'fecha_toma'          => $tomaIso,
-                'fecha_result'        => $resultIso,
+                'fecha_envio_ins'     => $envioInsIso,
+                'fecha_result'        => $resultIso ?: ($resIgmTxt ? fechaIsoValida($resIgmTxt) : ($resPcrTxt ? fechaIsoValida($resPcrTxt) : ($resIggTxt ? fechaIsoValida($resIggTxt) : null))),
+                'agente_aislado'      => $agenteTxt !== '' ? $agenteTxt : null,
+                'observaciones'       => $obsTxt !== '' ? $obsTxt : null,
+                'fecha_recepcion_ins' => $recepInsTxt !== '' ? fechaIsoValida($recepInsTxt) : null,
+                'resultado_pcr'       => $resPcr !== '' ? $resPcr : null,
+                'fecha_result_pcr'    => $resPcrTxt !== '' ? fechaIsoValida($resPcrTxt) : null,
+                'genotipo'            => $genotipoTxt !== '' ? $genotipoTxt : null,
+                'resultado_igm'       => $resIgm !== '' ? $resIgm : null,
+                'fecha_result_igm'    => $resIgmTxt !== '' ? fechaIsoValida($resIgmTxt) : null,
+                'resultado_igg'       => $resIgg !== '' ? $resIgg : null,
+                'fecha_result_igg'    => $resIggTxt !== '' ? fechaIsoValida($resIggTxt) : null,
             ];
         }
 
@@ -1616,6 +1801,8 @@ class CasosController extends Controller
         $lugares = $_POST['lugarinf_institucion'] ?? [];
         $localidades = $_POST['lugarinf_localidad'] ?? [];
         $permanencias = $_POST['lugarinf_permanencia'] ?? [];
+        $distritos = $_POST['lugarinf_distrito_id'] ?? [];
+        $direcciones = $_POST['lugarinf_direccion'] ?? [];
 
         $filas = [];
         $errores = [];
@@ -1623,8 +1810,10 @@ class CasosController extends Controller
             $lugar = trim((string) $lugar);
             $localidad = trim((string) ($localidades[$i] ?? ''));
             $permanenciaTxt = trim((string) ($permanencias[$i] ?? ''));
+            $distritoId = trim((string) ($distritos[$i] ?? ''));
+            $direccion = trim((string) ($direcciones[$i] ?? ''));
 
-            if ($lugar === '' && $localidad === '' && $permanenciaTxt === '') {
+            if ($lugar === '' && $localidad === '' && $permanenciaTxt === '' && $distritoId === '' && $direccion === '') {
                 continue;
             }
 
@@ -1641,6 +1830,8 @@ class CasosController extends Controller
                 'lugar_institucion' => $lugar ?: null,
                 'localidad_texto'   => $localidad ?: null,
                 'permanencia_dias'  => $permanencia,
+                'distrito_id'       => $distritoId ?: null,
+                'direccion'         => $direccion ?: null,
             ];
         }
 
@@ -1690,5 +1881,39 @@ class CasosController extends Controller
             header('Location: /casos/nuevo');
             exit;
         }
+    }
+
+    private function extraerFechaNotificacion(int $enfermedadId): string
+    {
+        $secciones = \App\Models\SeccionDef::porEnfermedad($enfermedadId);
+        foreach ($secciones as $seccion) {
+            $campos = \App\Models\CampoDef::porSeccion((int) $seccion['id']);
+            foreach ($campos as $c) {
+                if ($c['tipo'] === 'FECHA' && (stripos($c['etiqueta'], 'notificación') !== false || stripos($c['etiqueta'], 'notificacion') !== false)) {
+                    $val = trim($_POST['campo_' . $c['id']] ?? '');
+                    if ($val !== '') {
+                        return $val;
+                    }
+                }
+            }
+        }
+        return '';
+    }
+
+    private function extraerFechaInicioSintomas(int $enfermedadId): string
+    {
+        $secciones = \App\Models\SeccionDef::porEnfermedad($enfermedadId);
+        foreach ($secciones as $seccion) {
+            $campos = \App\Models\CampoDef::porSeccion((int) $seccion['id']);
+            foreach ($campos as $c) {
+                if ($c['tipo'] === 'FECHA') {
+                    $val = trim($_POST['campo_' . $c['id']] ?? '');
+                    if ($val !== '') {
+                        return $val;
+                    }
+                }
+            }
+        }
+        return '';
     }
 }

@@ -28,10 +28,9 @@ class Database
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES   => false,
                 ]);
-                // El charset del DSN ya fija la codificación de la conexión,
-                // pero se deja explícito (con la collation del esquema) para
-                // que quede a prueba de clientes/drivers que lo ignoren.
+                // Fija la codificación y la zona horaria oficial de Perú (America/Lima = UTC-5).
                 self::$conexion->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+                self::$conexion->exec("SET time_zone = '-05:00'");
             } catch (PDOException $e) {
                 error_log('Error de conexión a BD: ' . $e->getMessage());
                 throw new PDOException('No se pudo conectar a la base de datos.');

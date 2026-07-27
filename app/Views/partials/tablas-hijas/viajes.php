@@ -11,20 +11,49 @@ $filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha
     $errorRetorno = $error['fecha_retorno'] ?? null;
     ?>
   <div class="subrow">
-    <div class="fields thirds" style="flex:1">
-      <div class="field">
+    <div class="fields" style="flex:1; display:flex; flex-wrap:wrap; gap:12px">
+      <!-- 1. Lugar visitado -->
+      <div class="field" style="flex:2; min-width:200px">
         <label class="fl">Lugar visitado (país o ciudad)</label>
-        <div class="control"><input type="text" name="viaje_pais[]" value="<?= e($fila['pais']) ?>"></div>
+        <div class="control"><input type="text" name="viaje_pais[]" value="<?= e($fila['pais'] ?? '') ?>" placeholder="País o ciudad…"></div>
       </div>
-      <div class="field">
-        <label class="fl">Fecha de salida</label>
+      <!-- 2. Fecha de ingreso -->
+      <div class="field" style="flex:1; min-width:130px">
+        <label class="fl">Fecha de ingreso</label>
         <div class="control mono <?= $errorSalida ? 'err' : '' ?>"><input type="date" name="viaje_fecha_salida[]" value="<?= e($fila['fecha_salida'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         <?php if ($errorSalida): ?><span class="hint err"><?= e($errorSalida) ?></span><?php endif; ?>
       </div>
-      <div class="field">
-        <label class="fl">Fecha de retorno</label>
+      <!-- 3. Transporte ida -->
+      <div class="field" style="flex:1; min-width:130px">
+        <label class="fl">Transporte ida</label>
+        <div class="control">
+          <select name="viaje_transporte_ida[]">
+            <option value="">Seleccionar…</option>
+            <option value="AEREO" <?= seleccionado($fila['transporte_ida'] ?? '', 'AEREO') ?>>Aéreo</option>
+            <option value="TERRESTRE" <?= seleccionado($fila['transporte_ida'] ?? '', 'TERRESTRE') ?>>Terrestre</option>
+            <option value="MARITIMO" <?= seleccionado($fila['transporte_ida'] ?? '', 'MARITIMO') ?>>Marítimo</option>
+            <option value="OTRO" <?= seleccionado($fila['transporte_ida'] ?? '', 'OTRO') ?>>Otro</option>
+          </select>
+        </div>
+      </div>
+      <!-- 4. Fecha de salida -->
+      <div class="field" style="flex:1; min-width:130px">
+        <label class="fl">Fecha de salida</label>
         <div class="control mono <?= $errorRetorno ? 'err' : '' ?>"><input type="date" name="viaje_fecha_retorno[]" value="<?= e($fila['fecha_retorno'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         <?php if ($errorRetorno): ?><span class="hint err"><?= e($errorRetorno) ?></span><?php endif; ?>
+      </div>
+      <!-- 5. Transporte retorno -->
+      <div class="field" style="flex:1; min-width:130px">
+        <label class="fl">Transporte retorno</label>
+        <div class="control">
+          <select name="viaje_transporte_retorno[]">
+            <option value="">Seleccionar…</option>
+            <option value="AEREO" <?= seleccionado($fila['transporte_retorno'] ?? '', 'AEREO') ?>>Aéreo</option>
+            <option value="TERRESTRE" <?= seleccionado($fila['transporte_retorno'] ?? '', 'TERRESTRE') ?>>Terrestre</option>
+            <option value="MARITIMO" <?= seleccionado($fila['transporte_retorno'] ?? '', 'MARITIMO') ?>>Marítimo</option>
+            <option value="OTRO" <?= seleccionado($fila['transporte_retorno'] ?? '', 'OTRO') ?>>Otro</option>
+          </select>
+        </div>
       </div>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar viaje" style="margin-top:22px">

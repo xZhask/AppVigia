@@ -1,0 +1,184 @@
+FICHA CLINICA EPIDEMIOLOGICA VIGILANCIA DE PARALISIS FLACIDA AGUDA (P.F.A.)
+- En el formulario web, actualmente solo hay fecha de notificación, pero en pdf aparecen 5 fechas.  fecha de conocimiento, de investigación, de notificación EE.SS.a Red/Microred, de noficación Red/Microred a DISA, de noficicación de DISA a DGE. Aparte de un número de ficha.
+
+- en la sección 1 de Registro parece N° de orden nacional, campo que no aparece en el formulario. Además del departamento, provincia, distrito y localidad del caso epidemiológico (Aunque esto puede ser cubierto internamente por la dirección de la IPRESS).
+-En la sección 2, DATOS PERSONALES, aparecen unos posibles tutores, Padre y Madre, además de 2 tipos de residencia, residencia permanente y residencia provisional. En el formulario solo aparece una dirección actual.
+- También aparece una sección 3, CONOCIMIENTO DEL CASO, con dos opciones (Notificación / Búsqueda activa).
+- Existe una subsección dentro de la sección 3 (PRIMER NOTIFICANTE), la cual tiene datos como: Nombre, IPRESS, Ubigeo, TELÉFONO, etc. Pero el formulario no muestra campos para esto.
+- En la sección 4 (CUADRO CLÍNICO) del PDF, solo aparece fecha inicio síntomas generales (pródromos), si bien esta también aparece en el formulario, en el formulario también aparece fecha de inicio de síntomas. Solo debería aparecer una.
+- En la sección 4, debajo de Características (paresia, parálisis, etc.) del formulario faltan la subsección de Localización parálisis con las columnas (SI / NO / IGN/ Prox. / Dist.) y dentro de esta subsección aparecen opciones para marcar:
+    + Miembro superior izquierdo (MSI)
+    + Miembro superior derecho (MSD)
+    + Miembro inferior izquierdo (MII)
+    + Miembro inferior derecho (MID)
+    y las subsecciones Signos y síntomas y otros Cara (lado afectado) los cuales aparecen más abajo.
+- La semana epidemiológica es captada por el sistema, no es necesario ingresarla en un input.
+- En la sección 4 también aparecen los campos:
+    - Fuerza Muscular (Opciones: Disminuida (DIM), Ausente (AUS), Normal (NORM), Ignorado (IGN)):
+        + Miembro superior izquierdo (MSI)
+        + Miembro superior derecho (MSD)
+        + Miembro inferior izquierdo (MII)
+        + Miembro inferior derecho (MID)
+    - Tono Muscular (Opciones: DIM / AUS / NORM / IGN):
+        + MSI, MSD, MII, MID.
+        + Músculos cervicales.
+    - Reflejos (Opciones: DIM / AUS / NORM / IGN):
+        + MSI, MSD, MII, MID.
+    - Signos de Irritación Meníngea (Pág. 35) (Opciones: Ausente (AUS), Presente (PRES), Ignorado (IGN)):
+        + Rigidez de nuca
+        + Kernig
+        + Brudzinski
+        + Lasegue
+    Si bien son matrices de evaluación física, todos son campos para marcar entre las opciones que presenta cada uno, y la matriz en la web aparece como si fuesen inputs de texto.
+- En la sección 5 y 6 (HOSPITALIZACIÓN Y FALLECIDO) hay campos que dependen de la opción seleccionada. 
+    5. Hospitalizado: [ ] Sí   [ ] No
+    └── (Si es SÍ):
+        ├── Fecha de internamiento [ __/__/____ ]
+        ├── Hospital
+        ├── Servicio
+        ├── Nº Historia clínica
+        ├── Nº Cama
+        └── Ciudad
+    6. Fallecido: [ ] Sí   [ ] No
+    └── (Si es SÍ):
+        ├── Fecha de fallecimiento [ __/__/____ ]
+        ├── Causa de fallecimiento
+        └── Informe de necropsia
+    Si bien estos checks (hospitalización y fallecido) están presentes en el formulario, los campos que dependen de estos, son visibles y editables desde que carga el formulario. también, estos se encuentran al final de la sección bajo la subsección signos y síntomas, pero esta no es la subsección del documento original (pág 35).
+
+- En la sección 7 del pdf (ANTECEDENTES DE VACUNA ANTIPOLIO) que no contempla actualmente el formulario:
+    7. Vacunado: [ ] SÍ   [ ] NO   [ ] IGN
+    └── (Si es SÍ):
+        ├── Nº de dosis recibidas
+        ├── Verificada con carné: [ ] SÍ   [ ] NO
+        ├── Fecha de última dosis recibida [ __/__/____ ]
+        ├── Establecimiento donde fue vacunado
+        ├── Dirección
+        └── Ciudad
+- En la sección 8, DATOS DE LABORATORIO, aparece solo un tipo de muestra Heces. en el pdf aparece Heces 1 y Heces 2, con sus respectivos campos.
+Muestras de heces del caso (Heces 1 y Heces 2):
+Fecha de envío a INS, Fecha de resultado y Agente aislado dependen de haber registrado la Fecha de obtención de la muestra.
+En la versión actual del formulario en este aparecen otros tipos de muestra, parece que quedaron pegados los de difteria y no se actualiza al cambiar de enfermedad.
+- La sección 9(FUENTE PROBABLE DE INFECCIÓN) tiene 3 preguntas condicionales.
+    9. FUENTE PROBABLE DE INFECCIÓN
+
+    ├── (a) ¿Viajes realizados en los 30 días antes del inicio de la deficiencia motora? [ ] Si   [ ] No
+    │     └── (Campo oculto/deshabilitado por defecto)
+    │           └── Si se marca [SÍ] ➔ Se muestra/habilita: "A donde" (Lugar / Destino del viaje)
+    │
+    ├── (b) ¿Visitas recibidas en los 30 días antes del inicio de la deficiencia motora? [ ] Si   [ ] No
+    │     └── (Campo oculto/deshabilitado por defecto)
+    │           └── Si se marca [SÍ] ➔ Se muestra/habilita: "De donde" (Lugar / Origen de las visitas)
+    │
+    └── (c) ¿Existen otros casos semejantes en el área? [ ] Si   [ ] No   [ ] No sabe
+Este último si existe en el formulario web. Los otros dos no cumplen esa funcionalidad.
+- Existe en el pdf una sección 10 CADENA DE TRANSMISIÓN, que no está presente en el formulario, no corresponde al paciente directamente, sino a la investigación epidemiológica de sus contactos. Su objetivo es determinar si existe transmisión del poliovirus y realizar el seguimiento de las personas expuestas.
+    La propia ficha indica el objetivo e instrucciones:
+    Objetivo: Identificar el caso primario.
+    Luego:
+        (SECCIÓN INFORMATIVA que debería aparecer en el formulario)
+        a) Tomar como referencia la fecha de inicio de la parálisis del caso.
+        b) Identificar los contactos individuales o de grupo que tuvo el caso 45 días antes y 45 días después del inicio de la parálisis.
+        c) Enumerarlos en orden cronológico.
+        d) Dar seguimiento a los contactos asintomáticos hasta por 60 días; si alguno desarrolla parálisis, se abre una nueva ficha.
+    ¿Qué información registra?
+    La tabla almacena información de cada contacto del caso índice:
+        Nombre
+        Edad
+        Número de dosis recibidas de vacuna antipolio
+        Fecha de la última dosis
+        Fecha de colecta de heces
+        Fecha de envío
+        Fecha de resultado
+        Resultado del aislamiento viral
+
+    Es decir, cada fila representa una persona diferente, no datos adicionales del paciente.
+- La Sección 11 (ACCIONES DE CONTROL) es un módulo operativo de respuesta rápida (iniciado ante un caso probable) que actualmente no está contemplado adecuadamente en el formulario web:
+    11. ACCIONES DE CONTROL
+    ├── Bloqueo:
+    │     ├── Localidad(es) (Texto)
+    │     └── Fecha inicio [ __/__/____ ]
+    │
+    ├── Búsqueda activa:
+    │     ├── Nº casos hallados
+    │     ├── Ingresan al sistema
+    │     └── Se descartan (no cumplen criterio)
+    │
+    └── Tabla de Cobertura de Vacunación y Censo de Casas:
+          ├── Vacunados por edad: (1 año, 1-4 años, 5-14 años, >15 años) ➔ TOTAL VAC (Calculado)
+          └── Censo de casas: (Casas abiertas, Casas cerradas, Casas abandonadas) ➔ TOTAL CASAS (Calculado)
+- La Sección 12 (SEGUIMIENTO DE SECUELAS) es un seguimiento longitudinal neurológico no contemplado en el formulario web actual:
+    12. SEGUIMIENTO DE SECUELAS
+    ├── Hitos temporales de control: (30 días, 60 días, 90 días, 180 días)
+    │     ├── Fecha programada [ __/__/____ ]
+    │     └── Fecha en que se realizó [ __/__/____ ]
+    │
+    ├── Evaluación del Trofismo (Matriz 30 / 60 / 90 / 180 días):
+    │     ├── Fuerza muscular (MSD, MSI, MID, MII, Cara)
+    │     ├── Tono muscular (MSD, MSI, MID, MII, Cara)
+    │     ├── Atrofia (MSD, MSI, MID, MII, Cervicales)
+    │     └── Sensibilidad
+    │
+    └── Evaluación de Reflejos (Matriz 30 / 60 / 90 / 180 días):
+          ├── Reflejos en extremidades (MSD, MSI, MID, MII)
+          ├── Reflejo de Babinski
+          ├── Músculos respiratorios
+          └── Comentarios evolutivos (textarea)
+- Las Secciones 15, 16 y 17 definen la resolución final y diagnóstico diferencial del caso:
+Secciones 15, 16 y 17: CLASIFICACIÓN FINAL, CRITERIOS Y DESCARTE de la ficha de Parálisis Flácida Aguda (P.F.A.) (Página 36 del PDF):
+
+Análisis de las Secciones 15, 16 y 17 (PDF pág. 36)
+1. Sección 15: CLASIFICACIÓN FINAL
+Importancia Epidemiológica: Es la resolución oficial emitida por el Comité de Expertos / MINSA para la vigilancia de Polio.
+Opciones excluyentes del MINSA (5 opciones obligatorias):
+Polio salvaje (Aislamiento de Poliovirus salvaje).
+Polio derivado de la vacuna (Aislamiento de VDPV / variante de la vacuna).
+Polio asociado a la vacuna (Parálisis en receptor o contacto de vacuna Sabin).
+Polio compatible (Parálisis residual/fallecido/perdido de vista sin muestras de heces adecuadas).
+Descartado (Caso descartado para poliomielitis).
+Campos complementarios:
+Especificar: Campo de texto libre para detallar la resolución o fundamentación.
+Fecha de clasificación [ __/__/____ ]: Fecha de dictamen final del Comité.
+2. Sección 16: CRITERIOS PARA CLASIFICACIÓN
+Fundamento del dictamen final:
+Laboratorio (Aislamiento virológico positivo).
+Defunción (Caso fallecido durante el seguimiento).
+Con parálisis residual (Evidencia deSecuela a los 60 días).
+Sin parálisis residual (Recuperación funcional a los 60 días).
+Descartado.
+3. Sección 17: SE HA DESCARTADO (Diagnóstico Diferencial Final)
+Regla de Visibilidad/Condicionalidad:
+Oculto/Deshabilitado por defecto.
+Se habilita/muestra ÚNICAMENTE cuando en la Sección 15 se selecciona Descartado.
+Diagnósticos Diferenciales Alternativos:
+SGB (Síndrome de Guillain-Barré) (Causa principal de PFA no polio).
+Neuritis traumática.
+Mielitis transversa.
+Tumor.
+Desconocido.
+OTRO: Especificar (Campo de texto para otros diagnósticos como neuropatías, miopatías, etc.).
+  15. CLASIFICACIÓN FINAL (Reemplaza la clasificación genérica por los 5 tipos oficiales del MINSA):
+      ├── [ ] Polio salvaje
+      ├── [ ] Polio derivado de la vacuna
+      ├── [ ] Polio asociado a la vacuna
+      ├── [ ] Polio compatible
+      └── [ ] Descartado
+            ├── Especificar (Texto)
+            └── Fecha de clasificación [ __/__/____ ]
+
+  16. CRITERIOS PARA CLASIFICACIÓN (Checkboxes de evidencia):
+      ├── [ ] Laboratorio
+      ├── [ ] Defunción
+      ├── [ ] Con parálisis residual
+      ├── [ ] Sin parálisis residual
+      └── [ ] Descartado
+
+  17. SE HA DESCARTADO (Diagnóstico Diferencial - Condicional a "Descartado"):
+      └── (Si Clasificación Final == Descartado ➔ Muestra/Habilita):
+            ├── [ ] SGB (Síndrome de Guillain-Barré)
+            ├── [ ] Neuritis traumática
+            ├── [ ] Mielitis transversa
+            ├── [ ] Tumor
+            ├── [ ] Desconocido
+            └── [ ] OTRO: Especificar (Texto)
+- y al final, antes de datos del investigador, un apartado para observaciones generales(sección 19 del pdf).

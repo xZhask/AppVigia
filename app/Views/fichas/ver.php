@@ -66,7 +66,7 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Registrado por</label><div class="control" style="background:var(--paper)"><?= e($caso['usuario_nombre']) ?></div></div>
           <div class="field"><label class="fl">Fecha de registro</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['creado_en'])) ?></div></div>
         </div>
-        <?php if ($caso['tipo_captacion'] || $caso['lugar_captacion'] || $caso['clasificacion_captacion']): ?>
+        <?php if (!in_array($enfermedad['cie10'] ?? null, ['A80', 'B05'], true) && ($caso['tipo_captacion'] || $caso['lugar_captacion'] || $caso['clasificacion_captacion'])): ?>
           <div class="eyebrow" style="margin:18px 0 10px">Captación</div>
           <div class="fields thirds">
             <div class="field"><label class="fl">Tipo de captación</label><div class="control" style="background:var(--paper)"><?= $caso['tipo_captacion'] === 'ACTIVA' ? 'Activa' : ($caso['tipo_captacion'] === 'PASIVA' ? 'Pasiva' : '—') ?></div></div>

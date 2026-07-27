@@ -21,16 +21,18 @@ class CasoViaje extends Model
         $pdo->prepare('DELETE FROM caso_viaje WHERE caso_id = :caso')->execute(['caso' => $casoId]);
 
         $consulta = $pdo->prepare(
-            'INSERT INTO caso_viaje (caso_id, pais, fecha_salida, fecha_retorno)
-             VALUES (:caso, :pais, :fecha_salida, :fecha_retorno)'
+            'INSERT INTO caso_viaje (caso_id, pais, fecha_salida, fecha_retorno, transporte_ida, transporte_retorno)
+             VALUES (:caso, :pais, :fecha_salida, :fecha_retorno, :transporte_ida, :transporte_retorno)'
         );
 
         foreach ($filas as $fila) {
             $consulta->execute([
-                'caso'          => $casoId,
-                'pais'          => $fila['pais'],
-                'fecha_salida'  => $fila['fecha_salida'],
-                'fecha_retorno' => $fila['fecha_retorno'],
+                'caso'               => $casoId,
+                'pais'               => $fila['pais'],
+                'fecha_salida'       => $fila['fecha_salida'],
+                'fecha_retorno'      => $fila['fecha_retorno'],
+                'transporte_ida'     => $fila['transporte_ida'] ?? null,
+                'transporte_retorno' => $fila['transporte_retorno'] ?? null,
             ]);
         }
     }

@@ -23,8 +23,8 @@ class CasoVacuna extends Model
         $pdo->prepare('DELETE FROM caso_vacuna WHERE caso_id = :caso')->execute(['caso' => $casoId]);
 
         $consulta = $pdo->prepare(
-            'INSERT INTO caso_vacuna (caso_id, vacuna, dosis, fecha, fabricante, lote, via, sitio, fecha_vencimiento, establecimiento, adyuvante)
-             VALUES (:caso, :vacuna, :dosis, :fecha, :fabricante, :lote, :via, :sitio, :fecha_vencimiento, :establecimiento, :adyuvante)'
+            'INSERT INTO caso_vacuna (caso_id, vacuna, dosis, fecha, fabricante, lote, via, sitio, fecha_vencimiento, establecimiento, adyuvante, fuente_informacion)
+             VALUES (:caso, :vacuna, :dosis, :fecha, :fabricante, :lote, :via, :sitio, :fecha_vencimiento, :establecimiento, :adyuvante, :fuente_informacion)'
         );
 
         foreach ($filas as $fila) {
@@ -40,6 +40,7 @@ class CasoVacuna extends Model
                 'fecha_vencimiento' => $fila['fecha_vencimiento'] ?? null,
                 'establecimiento'   => $fila['establecimiento'] ?? null,
                 'adyuvante'         => $fila['adyuvante'] ?? null,
+                'fuente_informacion'=> $fila['fuente_informacion'] ?? null,
             ]);
         }
     }

@@ -325,3 +325,49 @@
     .card{box-shadow:none;border:1px solid #D6DEE3}
     .report-out{grid-template-columns:1fr 260px}
   }
+
+/* ============================================================
+   ESTILOS GLOBALES DE SCROLLBAR (LIGHT & DARK MODE)
+   ============================================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--faint) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--faint);
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html[data-theme="dark"] * {
+  scrollbar-color: var(--sidebar-line) transparent;
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background-color: var(--sidebar-line);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent);
+}

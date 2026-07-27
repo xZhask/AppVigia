@@ -89,7 +89,12 @@ if ($puedeElegirEstablecimiento) {
               <?php endif; ?>
             </div>
           </div>
-          <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
+          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95'], true) ? 'hidden' : '' ?>>
+            <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
+          </div>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-b05.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-o95.php'; ?>
         </div>
       </div>
 
@@ -183,47 +188,56 @@ if ($puedeElegirEstablecimiento) {
         ?>
       </div>
 
+      <?php
+      $isPfa = ($enfermedad['cie10'] ?? '') === 'A80';
+      $isB05 = ($enfermedad['cie10'] ?? '') === 'B05';
+      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05;
+      $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05;
+      $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05;
+      $mostrarResidenciaMadre = (($enfermedad['cie10'] ?? null) === 'P96');
+      $tieneAntecedentesEpidemiologicos = $mostrarContactos || $mostrarViajes || $mostrarVacunas || $mostrarLugarInf || $mostrarResidenciaMadre;
+      ?>
+
       <!-- 4. Antecedentes epidemiológicos -->
-      <div class="card section">
+      <div class="card section" id="cardAntecedentesEpidemiologicos" <?= $tieneAntecedentesEpidemiologicos ? '' : 'hidden' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Antecedentes epidemiológicos</h3></div>
         <div class="section-body">
-          <?php if ((int)($enfermedad['usa_contactos'] ?? 0) === 1): ?>
+          <?php if ($mostrarContactos && ($enfermedad['cie10'] ?? '') !== 'B05'): ?>
             <div class="eyebrow" style="margin-bottom:10px">Contactos</div>
             <?php require __DIR__ . '/../partials/tablas-hijas/contactos.php'; ?>
           <?php endif; ?>
 
-          <?php if ((int)($enfermedad['usa_viajes'] ?? 0) === 1): ?>
+          <?php if ($mostrarViajes && ($enfermedad['cie10'] ?? '') !== 'B05'): ?>
             <div class="eyebrow" style="margin:22px 0 10px">Viajes</div>
             <?php require __DIR__ . '/../partials/tablas-hijas/viajes.php'; ?>
           <?php endif; ?>
 
-          <?php if ((int)($enfermedad['usa_vacunas'] ?? 0) === 1): ?>
+          <?php if ($mostrarVacunas && ($enfermedad['cie10'] ?? '') !== 'B05'): ?>
             <div class="eyebrow" style="margin:22px 0 10px">Antecedentes vacunales</div>
             <?php require __DIR__ . '/../partials/tablas-hijas/vacunas.php'; ?>
           <?php endif; ?>
 
-          <?php if ((int)($enfermedad['usa_lugar_infeccion'] ?? 0) === 1): ?>
+          <?php if ($mostrarLugarInf && ($enfermedad['cie10'] ?? '') !== 'B05'): ?>
             <div class="eyebrow" style="margin:22px 0 10px">Lugar probable de infección</div>
             <?php require __DIR__ . '/../partials/tablas-hijas/lugar-infeccion.php'; ?>
           <?php endif; ?>
 
-          <?php if (($enfermedad['cie10'] ?? null) === 'P96'): ?>
+          <?php if ($mostrarResidenciaMadre): ?>
             <?php require __DIR__ . '/../partials/tablas-hijas/residencia-madre.php'; ?>
           <?php endif; ?>
         </div>
       </div>
-      <?php $numeroSeccion++; ?>
+      <?php if ($tieneAntecedentesEpidemiologicos) $numeroSeccion++; ?>
 
       <!-- 5. Laboratorio -->
-      <?php if ((int)($enfermedad['usa_muestras'] ?? 0) === 1): ?>
-        <div class="card section">
-          <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>
-          <div class="section-body">
-            <?php require __DIR__ . '/../partials/tablas-hijas/muestras.php'; ?>
-          </div>
+      <div class="card section" id="seccionLaboratorioCard" <?= (int)($enfermedad['usa_muestras'] ?? 0) === 1 ? '' : 'hidden' ?>>
+        <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>
+        <div class="section-body" id="seccionLaboratorioBody">
+          <?php require __DIR__ . '/../partials/tablas-hijas/muestras.php'; ?>
         </div>
-        <?php $numeroSeccion++; ?>
-      <?php endif; ?>
+      </div>
+      <?php if ((int)($enfermedad['usa_muestras'] ?? 0) === 1) $numeroSeccion++; ?>
 
       <!-- Investigador -->
       <div class="card section">
