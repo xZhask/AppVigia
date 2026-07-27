@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var tagCie = document.getElementById('cieTag');
     var textoCie = tagCie ? (tagCie.textContent || '') : '';
     
-    if (textoEnfermedad.indexOf('A80') !== -1 || textoCie.indexOf('A80') !== -1) {
+    if (textoEnfermedad.indexOf('A80') !== -1 || textoCie.indexOf('A80') !== -1 || textoEnfermedad.indexOf('O95') !== -1 || textoCie.indexOf('O95') !== -1) {
       campoGestante.hidden = true;
       campoSemanas.hidden = true;
       if (gestanteSel) gestanteSel.value = '';
@@ -287,7 +287,12 @@ document.addEventListener('DOMContentLoaded', function () {
           document.querySelectorAll('.o95-elem').forEach(function(el) {
             el.hidden = !esO95;
           });
+          document.querySelectorAll('.o95-hide').forEach(function(el) {
+            el.hidden = esO95;
+            el.style.display = esO95 ? 'none' : '';
+          });
           actualizarTutorB05();
+          actualizarEtapaFichaO95();
 
           var antecedentesCard = document.getElementById('cardAntecedentesEpidemiologicos');
           if (antecedentesCard) {
@@ -1292,6 +1297,179 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   actualizarBloqueViajesB05();
+
+  function obtenerCie10Actual() {
+    var enfermedadSel = document.getElementById('diseaseSel');
+    if (enfermedadSel && enfermedadSel.selectedOptions[0]) {
+      var opt = enfermedadSel.selectedOptions[0];
+      var cie = opt.getAttribute('data-cie10');
+      if (cie) return cie.trim().toUpperCase();
+      var txt = opt.text || '';
+      var m = txt.match(/\(([A-Z0-9\.]+)\)/);
+      if (m && m[1]) return m[1].trim().toUpperCase();
+    }
+    var tagCie = document.getElementById('cieTag');
+    if (tagCie) {
+      var text = tagCie.textContent || '';
+      var m = text.match(/CIE-10\s*·\s*([A-Z0-9\.]+)/i);
+      if (m && m[1]) return m[1].trim().toUpperCase();
+    }
+    return '';
+  }
+
+  // O95 Conmutación de etapas: Anexo 1 (Notificación inmediata) vs Anexo 2 (Investigación epidemiológica)
+  function actualizarEtapaFichaO95() {
+    var cie10 = obtenerCie10Actual();
+    var esO95 = (cie10 === 'O95');
+
+    var o95FechasWrap = document.getElementById('notificacionFechasO95Wrap');
+    if (o95FechasWrap) {
+      o95FechasWrap.hidden = !esO95;
+      o95FechasWrap.style.display = esO95 ? '' : 'none';
+    }
+
+    // Ocultar Sexo, Celular, Nacionalidad, Localidad cuando es O95
+    document.querySelectorAll('.o95-hide').forEach(function(el) {
+      el.hidden = esO95;
+      el.style.display = esO95 ? 'none' : '';
+    });
+
+    // Mostrar elementos exclusivos de O95 (como N.° de historia clínica) solo cuando es O95
+    document.querySelectorAll('.o95-elem').forEach(function(el) {
+      if (el.id !== 'notificacionFechasO95Wrap') {
+        el.hidden = !esO95;
+        el.style.display = esO95 ? '' : 'none';
+      }
+    });
+
+    // Ocultar Gestante cuando es O95
+    var campoGestante = document.getElementById('campoGestante');
+    var campoSemanas = document.getElementById('campoSemanasGestacion');
+    if (esO95) {
+      if (campoGestante) { campoGestante.hidden = true; campoGestante.style.display = 'none'; }
+      if (campoSemanas) { campoSemanas.hidden = true; campoSemanas.style.display = 'none'; }
+    }
+
+    if (!esO95) {
+      // Para enfermedades generales: mostrar etnia general, ocultar grupo/pueblo O95
+      document.querySelectorAll('.o95-anexo-2-section, .o95-anexo-2-elem').forEach(function(sec) {
+        sec.hidden = true;
+        sec.style.display = 'none';
+      });
+      return;
+    }
+
+    // Para O95:
+    var radioAnexo2 = document.querySelector('input[name="o95_tipo_ficha"][value="ANEXO_2"]');
+    var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
+
+    document.querySelectorAll('.o95-anexo-2-section, .o95-anexo-2-elem').forEach(function(sec) {
+      sec.hidden = !esAnexo2;
+      sec.style.display = esAnexo2 ? '' : 'none';
+    });
+
+    actualizarPuebloEtnicoO95();
+
+    if (typeof renumerarSeccionesSiguientes === 'function') {
+      renumerarSeccionesSiguientes();
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.name === 'o95_tipo_ficha') {
+      actualizarEtapaFichaO95();
+    }
+  });
+
+  actualizarEtapaFichaO95();
+
+  // Dependencia de Grupo étnico -> Etnia / Pueblo étnico en O95
+  var O95_MAPA_ETNIAS = {
+    'ANDINO': ['Quechua', 'Aymara', 'Jaqaru', 'Uro', 'Otro'],
+    'INDIGENA_AMAZONICO': ['Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Otro'],
+    'INDÍGENA AMAZÓNICO': ['Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Otro'],
+    'AFROPERUANO': ['Afroperuano'],
+    'AFRODESCENDIENTE': ['Afroperuano'],
+    'MESTIZO': ['No aplica'],
+    'ASIATICO_DESCENDIENTE': ['Chino-peruano', 'Japonés-peruano', 'Otro'],
+    'ASIÁTICO DESCENDIENTE': ['Chino-peruano', 'Japonés-peruano', 'Otro'],
+    'OTRO': ['Otro']
+  };
+
+  function normalizarClaveGrupo(val) {
+    if (!val) return '';
+    return val.toString().trim().toUpperCase()
+      .replace(/Á/g, 'A').replace(/É/g, 'E').replace(/Í/g, 'I').replace(/Ó/g, 'O').replace(/Ú/g, 'U')
+      .replace(/\s+/g, '_');
+  }
+
+  function actualizarPuebloEtnicoO95() {
+    var grupoSel = document.getElementById('o95GrupoEtnicoSel');
+    var puebloSel = document.getElementById('o95PuebloEtnicoSel');
+    if (!grupoSel || !puebloSel) return;
+
+    var grupoRaw = grupoSel.value || '';
+    var grupoNorm = normalizarClaveGrupo(grupoRaw);
+    var valorPrevio = puebloSel.getAttribute('data-valor-actual') || puebloSel.value || '';
+
+    puebloSel.innerHTML = '<option value="">Seleccionar…</option>';
+
+    var opciones = O95_MAPA_ETNIAS[grupoRaw] || O95_MAPA_ETNIAS[grupoNorm] || null;
+
+    if (opciones && opciones.length > 0) {
+      opciones.forEach(function(opt) {
+        var el = document.createElement('option');
+        el.value = opt;
+        el.textContent = opt;
+        if (opt === valorPrevio) {
+          el.selected = true;
+        }
+        puebloSel.appendChild(el);
+      });
+      if (opciones.length === 1 && !valorPrevio) {
+        puebloSel.value = opciones[0];
+      }
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && (e.target.id === 'o95GrupoEtnicoSel' || e.target.name === 'campo_16110')) {
+      puebloSelAttrReset();
+      actualizarPuebloEtnicoO95();
+    }
+  });
+
+  function puebloSelAttrReset() {
+    var puebloSel = document.getElementById('o95PuebloEtnicoSel');
+    if (puebloSel) puebloSel.removeAttribute('data-valor-actual');
+  }
+
+  function actualizarOtrosCamposO95() {
+    var selIdioma = document.getElementById('o95IdiomaSel');
+    var wrapIdiomaOtra = document.getElementById('campoIdiomaOtraO95');
+    if (selIdioma && wrapIdiomaOtra) {
+      var esOtra = (selIdioma.value === 'OTRA');
+      wrapIdiomaOtra.hidden = !esOtra;
+      wrapIdiomaOtra.style.display = esOtra ? '' : 'none';
+    }
+
+    var selSeguro = document.getElementById('o95TipoSeguroSel');
+    var wrapSeguroOtro = document.getElementById('campoSeguroOtroO95');
+    if (selSeguro && wrapSeguroOtro) {
+      var esOtroS = (selSeguro.value === 'OTROS');
+      wrapSeguroOtro.hidden = !esOtroS;
+      wrapSeguroOtro.style.display = esOtroS ? '' : 'none';
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && (e.target.id === 'o95IdiomaSel' || e.target.id === 'o95TipoSeguroSel')) {
+      actualizarOtrosCamposO95();
+    }
+  });
+
+  actualizarPuebloEtnicoO95();
+  actualizarOtrosCamposO95();
 
   // B05 Clasificación final -> Sincronizar clasificación del caso al final del formulario
   function actualizarClasificacionCasoB05() {

@@ -119,16 +119,26 @@ if ($puedeElegirEstablecimiento) {
               </div>
               <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span><?php endif; ?>
             </div>
-            <div class="field">
+            <?php $esO95Index = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
+            <div class="field o95-elem" <?= $esO95Index ? '' : 'hidden style="display:none;"' ?>>
+              <label class="fl">N.° de historia clínica</label>
+              <div class="control mono">
+                <input type="text" name="campo_16109" value="<?= e($valoresCampos[16109] ?? '') ?>" placeholder="N.° H.C.…">
+              </div>
+            </div>
+            <div class="field o95-hide" <?= $esO95Index ? 'hidden style="display:none;"' : '' ?>>
               <label class="fl">Sexo</label>
               <div class="control">
                 <select id="sexo" name="sexo" data-nosearch="true">
                   <option value="">Seleccionar…</option>
-                  <option value="F" <?= seleccionado($valoresFijos['sexo'], 'F') ?>>Femenino</option>
-                  <option value="M" <?= seleccionado($valoresFijos['sexo'], 'M') ?>>Masculino</option>
+                  <option value="F" <?= seleccionado($valoresFijos['sexo'] ?? '', 'F') ?>>Femenino</option>
+                  <option value="M" <?= seleccionado($valoresFijos['sexo'] ?? '', 'M') ?>>Masculino</option>
                 </select>
               </div>
             </div>
+            <?php if ($esO95Index): ?>
+              <input type="hidden" name="sexo" value="F">
+            <?php endif; ?>
             <div class="field">
               <label class="fl">Fecha de nacimiento</label>
               <div style="display:flex;gap:8px;align-items:center">

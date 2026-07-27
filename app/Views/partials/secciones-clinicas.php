@@ -241,9 +241,15 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
 </div>
 <?php $numeroSeccion++; ?>
 
-<?php foreach (array_slice($secciones, 1) as $seccion): ?>
-  <?php $mostrarSeparadorSujeto((int) $seccion['id']); ?>
-  <div class="card section<?= $atributosDependenciaSeccion($seccion) ?>">
+<?php
+$valTipoFichaO95 = $valoresFijos['o95_tipo_ficha'] ?? $valoresCampos[14300] ?? $_POST['o95_tipo_ficha'] ?? 'ANEXO_1';
+foreach (array_slice($secciones, 1) as $seccion):
+  $mostrarSeparadorSujeto((int) $seccion['id']);
+  $esAnexo2O95 = (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) >= 5);
+  $claseAnexo2O95 = $esAnexo2O95 ? ' o95-anexo-2-section' : '';
+  $ocultoAnexo2O95 = ($esAnexo2O95 && $valTipoFichaO95 !== 'ANEXO_2') ? ' hidden style="display:none;"' : '';
+?>
+  <div class="card section<?= $claseAnexo2O95 ?><?= $atributosDependenciaSeccion($seccion) ?>" <?= $ocultoAnexo2O95 ?>>
     <div class="section-head">
       <span class="section-num"><?= $numeroSeccion ?></span>
       <h3><?= e($seccion['nombre']) ?></h3>
