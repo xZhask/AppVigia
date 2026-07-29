@@ -94,10 +94,13 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Localidad</label><div class="control" style="background:var(--paper)"><?= e($caso['localidad'] ?: '—') ?></div></div>
           <div class="field wide"><label class="fl">Domicilio actual</label><div class="control" style="background:var(--paper)"><?= e($caso['direccion'] ?: '—') ?></div></div>
           <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
-            <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') ?></div></div>
+            <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e(($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') . (($caso['etnia'] ?? '') === 'OTRO' && !empty($caso['etnia_otra']) ? ' (' . $caso['etnia_otra'] . ')' : '')) ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['nombre_tutor']) || !empty($caso['celular_tutor'])): ?>
+            <div class="field wide"><label class="fl">Madre / Tutor / Responsable</label><div class="control" style="background:var(--paper)"><?= e($caso['nombre_tutor'] ?: '—') ?><?= !empty($caso['celular_tutor']) ? ' · N.° Celular: ' . e($caso['celular_tutor']) : '' ?></div></div>
           <?php endif; ?>
           <?php if ($caso['gestante']): ?>
-            <div class="field"><label class="fl">Gestante</label><div class="control" style="background:var(--paper)">Sí<?= $caso['semanas_gestacion'] ? ' · ' . (int) $caso['semanas_gestacion'] . ' semanas' : '' ?></div></div>
+            <div class="field"><label class="fl">Gestante</label><div class="control" style="background:var(--paper)">Sí<?= !empty($caso['trimestre_gestacion']) ? ' · Trimestre ' . e($caso['trimestre_gestacion']) : ($caso['semanas_gestacion'] ? ' · ' . (int) $caso['semanas_gestacion'] . ' semanas' : '') ?></div></div>
           <?php endif; ?>
         </div>
         <?php if (($caso['condicion'] ?? 'PARTICULAR') !== 'PARTICULAR'): ?>
@@ -229,13 +232,14 @@ $accionEtiquetas = [
     <?php endif; ?>
 
     <!-- Investigador -->
-    <?php if ($caso['investigador_nombre'] || $caso['investigador_cargo'] || $caso['fecha_investigacion']): ?>
+    <?php if ($caso['investigador_nombre'] || $caso['investigador_cargo'] || ($caso['investigador_profesion'] ?? '') || $caso['fecha_investigacion']): ?>
     <div class="card section">
       <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Investigador</h3></div>
       <div class="section-body">
-        <div class="fields thirds">
+        <div class="fields quarters">
           <div class="field"><label class="fl">Investigador / responsable</label><div class="control" style="background:var(--paper)"><?= e($caso['investigador_nombre'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Cargo</label><div class="control" style="background:var(--paper)"><?= e($caso['investigador_cargo'] ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Profesión</label><div class="control" style="background:var(--paper)"><?= e(($caso['investigador_profesion'] ?? '') ?: '—') ?></div></div>
           <div class="field"><label class="fl">Fecha de investigación</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_investigacion']) ?: '—') ?></div></div>
         </div>
       </div>

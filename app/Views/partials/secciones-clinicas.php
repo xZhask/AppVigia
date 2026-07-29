@@ -31,6 +31,15 @@ if (($enfermedad['cie10'] ?? '') === 'O95') {
         'Datos de notificación'
     ], true)));
 }
+if (($enfermedad['cie10'] ?? '') === 'B26') {
+    $secciones = array_values(array_filter($secciones, fn($s) => !in_array(trim($s['nombre']), [
+        'Datos de notificación e investigación del caso',
+        'Lugar probable de infección',
+        'Cuadro clínico',
+        'Complicaciones',
+        'Hospitalización y egreso'
+    ], true)));
+}
 $opcionesPorCatalogo = [];
 $numeroSeccion = $numeroSeccionInicial;
 
@@ -208,6 +217,11 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
   <?php $mostrarSeparadorSujeto((int) $secciones[0]['id']); ?>
 <?php endif; ?>
 
+<?php if (empty($secciones) && ($enfermedad['cie10'] ?? '') === 'B26'): ?>
+  <input type="hidden" id="numeroSiguienteSeccion" value="<?= $numeroSeccion ?>">
+  <?php return; ?>
+<?php endif; ?>
+
 <div class="card section<?= $atributosDependenciaSeccion($secciones[0] ?? []) ?>">
   <div class="section-head">
     <span class="section-num"><?= $numeroSeccion ?></span>
@@ -218,7 +232,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     </span>
   </div>
   <div class="section-body">
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05'], true)): ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
@@ -230,7 +244,11 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     </div>
     <?php endif; ?>
     <?php if (!empty($secciones)): ?>
-      <?php $renderizarCampos((int) $secciones[0]['id']); ?>
+      <?php if (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($secciones[0]['orden'] ?? 0) === 1): ?>
+        <?php require __DIR__ . '/datos-fallecimiento-o95.php'; ?>
+      <?php else: ?>
+        <?php $renderizarCampos((int) $secciones[0]['id']); ?>
+      <?php endif; ?>
     <?php else: ?>
       <p style="color:var(--muted);font-size:13px;margin:0">
         Todavía no hay campos clínicos definidos para <?= e(mb_strtolower($enfermedad['nombre'])) ?>.
@@ -245,7 +263,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
 $valTipoFichaO95 = $valoresFijos['o95_tipo_ficha'] ?? $valoresCampos[14300] ?? $_POST['o95_tipo_ficha'] ?? 'ANEXO_1';
 foreach (array_slice($secciones, 1) as $seccion):
   $mostrarSeparadorSujeto((int) $seccion['id']);
-  $esAnexo2O95 = (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) >= 5);
+  $esAnexo2O95 = (($enfermedad['cie10'] ?? '') === 'O95' && ((int) ($seccion['orden'] ?? 0) === 2 || (int) ($seccion['orden'] ?? 0) === 4 || (int) ($seccion['orden'] ?? 0) === 5 || (int) ($seccion['orden'] ?? 0) >= 7));
   $claseAnexo2O95 = $esAnexo2O95 ? ' o95-anexo-2-section' : '';
   $ocultoAnexo2O95 = ($esAnexo2O95 && $valTipoFichaO95 !== 'ANEXO_2') ? ' hidden style="display:none;"' : '';
 ?>
@@ -255,7 +273,27 @@ foreach (array_slice($secciones, 1) as $seccion):
       <h3><?= e($seccion['nombre']) ?></h3>
     </div>
     <div class="section-body">
-      <?php if (trim($seccion['nombre']) === 'Cadena de transmisión'): ?>
+      <?php if (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 2): ?>
+        <?php require __DIR__ . '/antecedentes-patologicos-obstetricos-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 3): ?>
+        <?php require __DIR__ . '/causas-defuncion-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 4): ?>
+        <?php require __DIR__ . '/atencion-prenatal-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 5): ?>
+        <?php require __DIR__ . '/complicaciones-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 6): ?>
+        <?php require __DIR__ . '/referencia-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 7): ?>
+        <?php require __DIR__ . '/hospitalizaciones-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 8): ?>
+        <?php require __DIR__ . '/parto-aborto-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 9): ?>
+        <?php require __DIR__ . '/entorno-social-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 10): ?>
+        <?php require __DIR__ . '/datos-comunitarios-o95.php'; ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 11): ?>
+        <?php require __DIR__ . '/demoras-o95.php'; ?>
+      <?php elseif (trim($seccion['nombre']) === 'Cadena de transmisión'): ?>
         <?php if (($enfermedad['cie10'] ?? '') !== 'B05'): ?>
           <div class="info-callout" style="background:var(--accent-soft); border:1px solid var(--accent); border-radius:var(--radius-sm, 8px); padding:14px 18px; margin-bottom:20px; color:var(--ink); font-size:0.875rem; line-height:1.6;">
             <div style="margin-bottom:10px;">

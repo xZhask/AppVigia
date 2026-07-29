@@ -3,6 +3,8 @@ function inicializarUbigeo(prefijo) {
   var selProv = document.getElementById(prefijo + '-provincia');
   var selDist = document.getElementById(prefijo + '-distrito');
   if (!selDep || !selProv || !selDist) return;
+  if (selDep._ubigeoInit) return;
+  selDep._ubigeoInit = true;
 
   function llenarOpciones(select, items, placeholder) {
     select.innerHTML = '';
@@ -73,4 +75,18 @@ function establecerUbigeo(prefijo, departamentoId, provinciaId, distritoId) {
         });
     })
     .catch(function () { /* sin provincia/distrito previo: se deja el departamento nada más */ });
+}
+
+function autoInicializarUbigeos() {
+  if (window._ubigeoQueuedPrefixes && Array.isArray(window._ubigeoQueuedPrefixes)) {
+    window._ubigeoQueuedPrefixes.forEach(function(prefijo) {
+      inicializarUbigeo(prefijo);
+    });
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', autoInicializarUbigeos);
+} else {
+  autoInicializarUbigeos();
 }

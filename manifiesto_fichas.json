@@ -727,6 +727,39 @@
             "_observaciones_tablas_hija": "La BD tiene usa_muestras=1, pero el PDF de Parotiditis (pág. 4) no trae ninguna sección de laboratorio — a diferencia de Varicela, que sí la trae. Revisar si el flag es correcto.",
             "secciones": [
                 {
+                    "nombre": "Datos de notificación e investigación del caso",
+                    "campos": [
+                        {
+                            "etiqueta": "Código de registro N.°",
+                            "tipo": "TEXTO"
+                        },
+                        {
+                            "etiqueta": "Fecha de consulta",
+                            "tipo": "FECHA"
+                        },
+                        {
+                            "etiqueta": "Fecha de conocimiento local del caso",
+                            "tipo": "FECHA"
+                        },
+                        {
+                            "etiqueta": "Fecha de investigación (visita domiciliaria)",
+                            "tipo": "FECHA"
+                        },
+                        {
+                            "etiqueta": "Fecha de notificación EE.SS. a Red\/Microred",
+                            "tipo": "FECHA"
+                        },
+                        {
+                            "etiqueta": "Fecha de notificación Red\/Microred a Dirección de Salud",
+                            "tipo": "FECHA"
+                        },
+                        {
+                            "etiqueta": "Fecha de notificación Dirección de Salud a CDC",
+                            "tipo": "FECHA"
+                        }
+                    ]
+                },
+                {
                     "nombre": "Cuadro clínico",
                     "campos": [
                         {
@@ -5427,7 +5460,8 @@
                             "etiqueta": "APGAR 5'",
                             "tipo": "NUMERO"
                         }
-                    ]
+                    ],
+                    "orden": 1
                 },
                 {
                     "nombre": "Antecedentes de la madre",
@@ -5484,7 +5518,8 @@
                             "etiqueta": "¿Durante el embarazo viajó fuera del país?",
                             "tipo": "BOOLEANO"
                         }
-                    ]
+                    ],
+                    "orden": 2
                 },
                 {
                     "nombre": "Cuadro clínico — manifestaciones",
@@ -5534,7 +5569,8 @@
                                 "Ictericia (dentro de las 24 h del nacimiento)"
                             ]
                         }
-                    ]
+                    ],
+                    "orden": 3
                 },
                 {
                     "nombre": "Hospitalización y defunción",
@@ -5567,7 +5603,8 @@
                             "etiqueta": "Causa básica de defunción",
                             "tipo": "TEXTO"
                         }
-                    ]
+                    ],
+                    "orden": 4
                 },
                 {
                     "nombre": "Clasificación del caso",
@@ -5582,7 +5619,8 @@
                                 "Infección congénita por el virus de la rubéola"
                             ]
                         }
-                    ]
+                    ],
+                    "orden": 5
                 }
             ]
         },
@@ -6465,45 +6503,15 @@
             },
             "secciones": [
                 {
-                    "nombre": "Anexo 1 — Notificación inmediata",
-                    "campos": [
-                        {
-                            "etiqueta": "Fecha y hora de notificación",
-                            "tipo": "FECHA"
-                        },
-                        {
-                            "etiqueta": "Identificado por",
-                            "tipo": "SELECT",
-                            "opciones": [
-                                "Vigilancia activa",
-                                "Vigilancia pasiva"
-                            ]
-                        },
-                        {
-                            "etiqueta": "Institución que notifica",
-                            "tipo": "SELECT",
-                            "opciones": [
-                                "IGSS\/Gobierno Regional",
-                                "EsSalud",
-                                "Sanidad de FFAA\/PNP",
-                                "Privado",
-                                "Otra"
-                            ]
-                        },
-                        {
-                            "clave": "o95_n_de_historia_clinica",
-                            "etiqueta": "N.° de historia clínica",
-                            "tipo": "TEXTO",
-                            "obligatorio": 0
-                        }
-                    ]
-                },
-                {
                     "nombre": "Datos del fallecimiento (Anexo 1)",
+                    "orden": 1,
                     "campos": [
                         {
+                            "clave": "o95_momento_del_fallecimiento",
                             "etiqueta": "Momento del fallecimiento",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Embarazo",
                                 "Parto",
@@ -6512,90 +6520,106 @@
                             ]
                         },
                         {
-                            "etiqueta": "Edad gestacional al momento del fallecimiento",
-                            "tipo": "NUMERO"
+                            "clave": "o95_edad_gestacional_al_momento_del_fallecimiento",
+                            "etiqueta": "Edad gestacional (Semanas)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
-                            "etiqueta": "Fecha y hora de fallecimiento",
-                            "tipo": "FECHA"
-                        },
-                        {
-                            "etiqueta": "Lugar del fallecimiento",
+                            "clave": "o95_lugar_del_fallecimiento",
+                            "etiqueta": "¿Dónde ocurrió el fallecimiento?",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
-                                "EE.SS. IGSS\/Gobierno Regional",
-                                "EE.SS. EsSalud",
-                                "EE.SS. Sanidad FFAA\/PNP",
-                                "EE.SS. Privado",
-                                "Trayecto",
+                                "Establecimiento de salud",
                                 "Domicilio",
+                                "Trayecto",
                                 "Otro"
                             ]
                         },
                         {
-                            "etiqueta": "Permanencia (estadía) en el EE.SS.",
-                            "tipo": "TEXTO"
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Referencia (Anexo 1)",
-                    "campos": [
-                        {
-                            "etiqueta": "¿Referida?",
-                            "tipo": "BOOLEANO"
-                        },
-                        {
-                            "etiqueta": "EE.SS. de origen de la referencia",
-                            "tipo": "TEXTO"
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Causas de defunción (Anexo 1)",
-                    "campos": [
-                        {
-                            "etiqueta": "Causa final probable",
-                            "tipo": "TEXTO"
-                        },
-                        {
-                            "etiqueta": "Causa intermedia probable",
-                            "tipo": "TEXTO"
-                        },
-                        {
-                            "etiqueta": "Causa básica probable",
-                            "tipo": "TEXTO"
-                        },
-                        {
-                            "etiqueta": "Causa genérica",
+                            "clave": "o95_idioma",
+                            "etiqueta": "Idioma",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
-                                "Hemorragia",
-                                "Hipertensión gestacional",
-                                "Infección\/Sepsis",
-                                "Otra causa"
+                                "Español",
+                                "Quechua",
+                                "Aymara",
+                                "Otra"
                             ]
                         },
                         {
-                            "etiqueta": "Clasificación inicial",
+                            "clave": "o95_nivel_educativo",
+                            "etiqueta": "Nivel educativo",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
-                                "Directa",
-                                "Indirecta",
-                                "Incidental",
-                                "Por determinar"
+                                "Ninguno",
+                                "Primaria incompleta",
+                                "Primaria completa",
+                                "Secundaria incompleta",
+                                "Secundaria completa",
+                                "Superior universitaria",
+                                "Superior técnica",
+                                "Desconocido"
                             ]
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Datos básicos adicionales (Anexo 2)",
-                    "campos": [
+                        },
+                        {
+                            "clave": "o95_estado_civil",
+                            "etiqueta": "Estado civil",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "Soltera",
+                                "Casada",
+                                "Conviviente",
+                                "Divorciada",
+                                "Separada",
+                                "Viuda",
+                                "Desconocido"
+                            ]
+                        },
+                        {
+                            "clave": "o95_tipo_de_seguro",
+                            "etiqueta": "Tipo de seguro",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "SIS",
+                                "EsSalud",
+                                "Privado",
+                                "Otros",
+                                "No tiene seguro"
+                            ]
+                        },
+                        {
+                            "clave": "o95_fase_del_puerperio_en_que_fallecio",
+                            "etiqueta": "Fase del puerperio",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "Inmediato",
+                                "Mediato",
+                                "Tardío",
+                                "Desconocido"
+                            ],
+                            "depende_de": "Momento del fallecimiento",
+                            "valor_activador": "Puerperio"
+                        },
                         {
                             "clave": "o95_grupo_etnico",
                             "etiqueta": "Grupo étnico",
                             "tipo": "SELECT",
-                            "obligatorio": 0,
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Mestizo",
                                 "Andino",
@@ -6609,7 +6633,8 @@
                             "clave": "o95_etnia_pueblo_etnico",
                             "etiqueta": "Etnia \/ Pueblo étnico",
                             "tipo": "SELECT",
-                            "obligatorio": 0,
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Quechua",
                                 "Aymara",
@@ -6633,102 +6658,133 @@
                             ]
                         },
                         {
-                            "clave": "o95_idioma",
-                            "etiqueta": "Idioma",
-                            "tipo": "SELECT",
-                            "obligatorio": 0,
-                            "opciones": [
-                                "Español",
-                                "Quechua",
-                                "Aymara",
-                                "Otra"
-                            ]
+                            "clave": "o95_ocupacion",
+                            "etiqueta": "Ocupación",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
                             "clave": "o95_idioma_otra",
                             "etiqueta": "Especificar otro idioma",
                             "tipo": "TEXTO",
-                            "obligatorio": 0,
+                            "requerido": false,
+                            "sensible": false,
                             "depende_de": "Idioma",
                             "valor_activador": "OTRA"
-                        },
-                        {
-                            "clave": "o95_nivel_educativo",
-                            "etiqueta": "Nivel educativo",
-                            "tipo": "SELECT",
-                            "obligatorio": 0,
-                            "opciones": [
-                                "Ninguno",
-                                "Primaria incompleta",
-                                "Primaria completa",
-                                "Secundaria incompleta",
-                                "Secundaria completa",
-                                "Superior universitaria",
-                                "Superior técnica",
-                                "Desconocido"
-                            ]
-                        },
-                        {
-                            "clave": "o95_estado_civil",
-                            "etiqueta": "Estado civil",
-                            "tipo": "SELECT",
-                            "obligatorio": 0,
-                            "opciones": [
-                                "Soltera",
-                                "Casada",
-                                "Conviviente",
-                                "Divorciada",
-                                "Separada",
-                                "Viuda",
-                                "Desconocido"
-                            ]
-                        },
-                        {
-                            "clave": "o95_ocupacion",
-                            "etiqueta": "Ocupación",
-                            "tipo": "TEXTO",
-                            "obligatorio": 0
-                        },
-                        {
-                            "clave": "o95_tipo_de_seguro",
-                            "etiqueta": "Tipo de seguro",
-                            "tipo": "SELECT",
-                            "obligatorio": 0,
-                            "opciones": [
-                                "SIS",
-                                "EsSalud",
-                                "Privado",
-                                "Otros",
-                                "No tiene seguro"
-                            ]
                         },
                         {
                             "clave": "o95_tipo_de_seguro_otro",
                             "etiqueta": "Especificar otro tipo de seguro",
                             "tipo": "TEXTO",
-                            "obligatorio": 0,
+                            "requerido": false,
+                            "sensible": false,
                             "depende_de": "Tipo de seguro",
                             "valor_activador": "OTROS"
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Datos del fallecimiento ampliados (Anexo 2)",
-                    "campos": [
+                        },
                         {
-                            "etiqueta": "Fase del puerperio en que falleció",
+                            "clave": "o95_edad_gestacional_desconocida",
+                            "etiqueta": "Edad gestacional desconocida",
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_fecha_de_fallecimiento",
+                            "etiqueta": "Fecha de fallecimiento",
+                            "tipo": "FECHA",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_hora_de_fallecimiento",
+                            "etiqueta": "Hora de fallecimiento",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_tipo_eess_fallecimiento",
+                            "etiqueta": "Tipo de establecimiento de salud",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
-                                "Puerperio Inmediato",
-                                "Puerperio mediato",
-                                "Puerperio tardío",
-                                "No aplica",
-                                "Desconocido"
+                                "EESS Sanidad FFAA\/PNP",
+                                "EESS MINSA \/ IGSS",
+                                "EESS EsSalud",
+                                "EESS Privado"
                             ]
                         },
                         {
+                            "clave": "o95_eess_fallecimiento_id",
+                            "etiqueta": "Establecimiento Sanidad PNP",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_nombre_eess_fallecimiento",
+                            "etiqueta": "Nombre del establecimiento",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_fallecimiento_dep_id",
+                            "etiqueta": "Departamento (Fallecimiento)",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_fallecimiento_prov_id",
+                            "etiqueta": "Provincia (Fallecimiento)",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_fallecimiento_dist_id",
+                            "etiqueta": "Distrito (Fallecimiento)",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_permanencia_dias",
+                            "etiqueta": "Permanencia (Días)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_permanencia_horas",
+                            "etiqueta": "Permanencia (Horas)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_permanencia_minutos",
+                            "etiqueta": "Permanencia (Minutos)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_lugar_fallecimiento_otro_especificar",
+                            "etiqueta": "Especificar lugar u observaciones",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_categoria_del_ee_ss",
                             "etiqueta": "Categoría del EE.SS.",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "I-1",
                                 "I-2",
@@ -6744,17 +6800,23 @@
                             ]
                         },
                         {
+                            "clave": "o95_fecha_y_hora_de_ingreso_al_ee_ss",
                             "etiqueta": "Fecha y hora de ingreso al EE.SS.",
-                            "tipo": "FECHA"
+                            "tipo": "FECHA",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_responsable_de_la_atencion",
                             "etiqueta": "Responsable de la atención",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
-                                "Méd. G-O",
-                                "Méd. intensivista",
-                                "Méd. residente",
-                                "Méd. general",
+                                "Médico G-O",
+                                "Médico intensivista",
+                                "Médico residente",
+                                "Médico general",
                                 "Obstetra",
                                 "Enfermera(o)",
                                 "Interno",
@@ -6768,11 +6830,15 @@
                     ]
                 },
                 {
-                    "nombre": "Antecedentes patológicos",
+                    "nombre": "Antecedentes patológicos y obstétricos",
+                    "orden": 2,
                     "campos": [
                         {
+                            "clave": "o95_antecedentes_patologicos",
                             "etiqueta": "Antecedentes patológicos",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Ninguno",
                                 "Hipertensión crónica",
@@ -6790,49 +6856,70 @@
                                 "Desnutrición crónica",
                                 "Otra",
                                 "Desconocido"
-                            ],
-                            "sensible": true
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Antecedentes gineco-obstétricos",
-                    "campos": [
+                            ]
+                        },
                         {
+                            "clave": "o95_n_de_gestaciones_previas",
                             "etiqueta": "N.° de gestaciones previas",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_n_de_partos",
                             "etiqueta": "N.° de partos",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_n_de_cesareas",
                             "etiqueta": "N.° de cesáreas",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_n_de_abortos",
                             "etiqueta": "N.° de abortos",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_n_de_nacidos_vivos",
                             "etiqueta": "N.° de nacidos vivos",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_n_de_nacidos_muertos",
                             "etiqueta": "N.° de nacidos muertos",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_n_de_hijos_que_viven",
                             "etiqueta": "N.° de hijos que viven",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_periodo_intergenesico",
                             "etiqueta": "Período intergenésico",
-                            "tipo": "TEXTO"
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_uso_de_metodo_anticonceptivo_previo",
                             "etiqueta": "Uso de método anticonceptivo previo",
-                            "tipo": "SELECT",
+                            "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "No usó",
                                 "Hormonal",
@@ -6843,19 +6930,161 @@
                                 "Otro",
                                 "Desconocido"
                             ]
+                        },
+                        {
+                            "clave": "o95_antecedentes_patologicos_otra",
+                            "etiqueta": "Especificar otro antecedente patológico",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_periodo_intergenesico_anios",
+                            "etiqueta": "Período intergenésico (Años)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_periodo_intergenesico_meses",
+                            "etiqueta": "Período intergenésico (Meses)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_metodo_anticonceptivo_otro",
+                            "etiqueta": "Especificar otro método anticonceptivo",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Causas de defunción (Anexo 1)",
+                    "orden": 3,
+                    "campos": [
+                        {
+                            "clave": "o95_causa_final_probable",
+                            "etiqueta": "Causa final probable",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_causa_intermedia_probable",
+                            "etiqueta": "Causa intermedia probable",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_causa_basica_probable",
+                            "etiqueta": "Causa básica probable",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_causa_generica",
+                            "etiqueta": "Causa genérica",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "Hemorragia",
+                                "Hipertensión gestacional",
+                                "Infección\/Sepsis",
+                                "Otra causa"
+                            ]
+                        },
+                        {
+                            "clave": "o95_clasificacion_inicial",
+                            "etiqueta": "Clasificación inicial",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "Directa",
+                                "Indirecta",
+                                "Incidental",
+                                "Por determinar"
+                            ]
+                        },
+                        {
+                            "clave": "o95_causa_asociada",
+                            "etiqueta": "Causa asociada",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_clasificacion_final_de_la_muerte",
+                            "etiqueta": "Clasificación final de la muerte",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "Directa",
+                                "Indirecta",
+                                "Incidental"
+                            ]
+                        },
+                        {
+                            "clave": "o95_causa_final_cie10",
+                            "etiqueta": "CIE-10 Causa final",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_causa_intermedia_cie10",
+                            "etiqueta": "CIE-10 Causa intermedia",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_causa_basica_cie10",
+                            "etiqueta": "CIE-10 Causa básica",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_causa_generica_otra",
+                            "etiqueta": "Especificar otra causa genérica",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_causa_asociada_cie10",
+                            "etiqueta": "CIE-10 Causa asociada",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         }
                     ]
                 },
                 {
                     "nombre": "Atención prenatal",
+                    "orden": 4,
                     "campos": [
                         {
+                            "clave": "o95_recibio_apn",
                             "etiqueta": "¿Recibió APN?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_primera_atencion_trimestre",
                             "etiqueta": "Primera atención (trimestre)",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "I",
                                 "II",
@@ -6863,32 +7092,50 @@
                             ]
                         },
                         {
+                            "clave": "o95_numero_de_apn",
                             "etiqueta": "Número de APN",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_ee_ss_con_mayor_cantidad_de_atenciones",
                             "etiqueta": "EE.SS. con mayor cantidad de atenciones",
-                            "tipo": "TEXTO"
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_se_realizaron_visitas_domiciliarias",
                             "etiqueta": "¿Se realizaron visitas domiciliarias?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_numero_de_visitas_domiciliarias",
                             "etiqueta": "Número de visitas domiciliarias",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_se_realizo_plan_de_parto_completo",
                             "etiqueta": "¿Se realizó plan de parto completo?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_responsable_de_la_apn",
                             "etiqueta": "Responsable de la APN",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
-                                "Méd. G-O",
-                                "Méd. residente",
-                                "Méd. general",
+                                "Médico G-O",
+                                "Médico residente",
+                                "Médico general",
                                 "Obstetra",
                                 "Enfermera(o)",
                                 "Interno",
@@ -6896,16 +7143,50 @@
                                 "Otro",
                                 "Desconocido"
                             ]
+                        },
+                        {
+                            "clave": "o95_categoria_eess_apn",
+                            "etiqueta": "Categoría del EE.SS.",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "I-1",
+                                "I-2",
+                                "I-3",
+                                "I-4",
+                                "II-1",
+                                "II-2",
+                                "II-E",
+                                "III-1",
+                                "III-2",
+                                "III-E",
+                                "Desconocido"
+                            ]
+                        },
+                        {
+                            "clave": "o95_responsable_apn_otro",
+                            "etiqueta": "Especificar otro responsable de APN",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Responsable de la APN",
+                            "valor_activador": "Otro"
                         }
                     ]
                 },
                 {
                     "nombre": "Complicaciones",
+                    "orden": 5,
                     "campos": [
                         {
+                            "clave": "o95_complicaciones_del_embarazo",
                             "etiqueta": "Complicaciones del embarazo",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
+                                "Ninguna complicación",
                                 "Hemorragia",
                                 "Preeclampsia\/Eclampsia",
                                 "Síndrome de HELLP",
@@ -6922,9 +7203,13 @@
                             ]
                         },
                         {
+                            "clave": "o95_complicaciones_del_parto",
                             "etiqueta": "Complicaciones del parto",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
+                                "Ninguna complicación",
                                 "Hemorragia",
                                 "Preeclampsia\/Eclampsia",
                                 "Síndrome de HELLP",
@@ -6937,9 +7222,13 @@
                             ]
                         },
                         {
+                            "clave": "o95_complicaciones_del_puerperio",
                             "etiqueta": "Complicaciones del puerperio",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
+                                "Ninguna complicación",
                                 "Hemorragia",
                                 "Atonía uterina",
                                 "Preeclampsia\/Eclampsia",
@@ -6950,48 +7239,256 @@
                                 "Depresión posparto",
                                 "Otro"
                             ]
+                        },
+                        {
+                            "clave": "o95_complicaciones_embarazo_otro",
+                            "etiqueta": "Especificar otra complicación del embarazo",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Complicaciones del embarazo",
+                            "valor_activador": "Otro"
+                        },
+                        {
+                            "clave": "o95_complicaciones_parto_otro",
+                            "etiqueta": "Especificar otra complicación del parto",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Complicaciones del parto",
+                            "valor_activador": "Otro"
+                        },
+                        {
+                            "clave": "o95_complicaciones_puerperio_otro",
+                            "etiqueta": "Especificar otra complicación del puerperio",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Complicaciones del puerperio",
+                            "valor_activador": "Otro"
+                        },
+                        {
+                            "clave": "o95_tuvo_complicaciones",
+                            "etiqueta": "¿Tuvo complicaciones?",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Desconocido"
+                            ]
                         }
                     ]
                 },
                 {
-                    "nombre": "Referencia y hospitalizaciones",
+                    "nombre": "Referencia (Anexo 1)",
+                    "orden": 6,
                     "campos": [
                         {
+                            "clave": "o95_referida",
                             "etiqueta": "¿Referida?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "No sabe"
+                            ]
                         },
                         {
+                            "clave": "o95_ee_ss_de_origen_de_la_referencia",
+                            "etiqueta": "EE.SS. de origen de la referencia",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_n_de_referencias_institucionales",
                             "etiqueta": "N.° de referencias institucionales",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_referencia_dep_id",
+                            "etiqueta": "Departamento (Origen de la referencia)",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_referencia_prov_id",
+                            "etiqueta": "Provincia (Origen de la referencia)",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_referencia_dist_id",
+                            "etiqueta": "Distrito (Origen de la referencia)",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_fecha_ingreso_eess_origen",
+                            "etiqueta": "Fecha de ingreso al EE.SS. origen de la referencia",
+                            "tipo": "FECHA",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_hora_ingreso_eess_origen",
+                            "etiqueta": "Hora de ingreso al EE.SS. origen de la referencia",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_fecha_egreso_eess_origen",
+                            "etiqueta": "Fecha de egreso del EE.SS. origen de la referencia",
+                            "tipo": "FECHA",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_hora_egreso_eess_origen",
+                            "etiqueta": "Hora de egreso del EE.SS. origen de la referencia",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_demora_referencia_dias",
+                            "etiqueta": "Tiempo de demora (días)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_demora_referencia_horas",
+                            "etiqueta": "Tiempo de demora (horas)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_responsable_atencion_eess_origen",
+                            "etiqueta": "Responsable de la atención en EE.SS. origen",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "Médico G-O",
+                                "Médico intensivista",
+                                "Médico residente",
+                                "Médico general",
+                                "Obstetra",
+                                "Enfermera(o)",
+                                "Interno",
+                                "Técnico",
+                                "Otro",
+                                "Desconocido"
+                            ]
+                        },
+                        {
+                            "clave": "o95_responsable_eess_origen_otro",
+                            "etiqueta": "Especificar otro responsable en EE.SS. origen",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Responsable de la atención en EE.SS. origen",
+                            "valor_activador": "Otro"
+                        },
+                        {
+                            "clave": "o95_institucion_destino_referencia",
+                            "etiqueta": "Institución destino de la referencia",
+                            "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
+                            "opciones": [
+                                "EESS IGSS \/ Gobierno Regional",
+                                "EESS EsSalud",
+                                "EESS SSFFAA \/ PNP",
+                                "EESS Privado"
+                            ]
+                        },
+                        {
+                            "clave": "o95_eess_destino_referencia",
+                            "etiqueta": "EE.SS. destino de la referencia",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_fecha_ingreso_eess_destino",
+                            "etiqueta": "Fecha de ingreso al EE.SS. destino de la referencia",
+                            "tipo": "FECHA",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_hora_ingreso_eess_destino",
+                            "etiqueta": "Hora de ingreso al EE.SS. destino de la referencia",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Hospitalizaciones",
+                    "orden": 7,
+                    "campos": [
+                        {
+                            "clave": "o95_hospitalizaciones_en_la_gestacion_puerperio",
                             "etiqueta": "¿Hospitalizaciones en la gestación\/puerperio?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_cuantas_hospitalizaciones",
                             "etiqueta": "Cuántas hospitalizaciones",
-                            "tipo": "NUMERO"
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_requirio_transfusion_de_sangre",
                             "etiqueta": "¿Requirió transfusión de sangre?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_expansores_plasmaticos",
                             "etiqueta": "¿Expansores plasmáticos?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         }
                     ]
                 },
                 {
                     "nombre": "Parto o aborto",
+                    "orden": 8,
                     "campos": [
                         {
+                            "clave": "o95_fecha_de_parto_o_aborto",
                             "etiqueta": "Fecha de parto o aborto",
-                            "tipo": "FECHA"
+                            "tipo": "FECHA",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_lugar_de_parto_o_aborto",
                             "etiqueta": "Lugar de parto o aborto",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Domicilio",
                                 "En EE.SS.",
@@ -7000,8 +7497,11 @@
                             ]
                         },
                         {
+                            "clave": "o95_tipo_de_parto",
                             "etiqueta": "Tipo de parto",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Vaginal",
                                 "Cesárea",
@@ -7011,8 +7511,11 @@
                             ]
                         },
                         {
+                            "clave": "o95_responsable_de_la_atencion_del_parto_o_aborto",
                             "etiqueta": "Responsable de la atención del parto o aborto",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Méd. G-O",
                                 "Méd. intensivista",
@@ -7029,25 +7532,83 @@
                             ]
                         },
                         {
+                            "clave": "o95_necropsia",
                             "etiqueta": "¿Necropsia?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_diagnostico_causa_cie_10_necropsia",
                             "etiqueta": "Diagnóstico \/ causa CIE-10 (necropsia)",
-                            "tipo": "TEXTO"
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
+                        },
+                        {
+                            "clave": "o95_fecha_parto_desconocida",
+                            "etiqueta": "Fecha de parto o aborto desconocida",
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Fecha de parto o aborto",
+                            "valor_activador": "DESCONOCIDA"
+                        },
+                        {
+                            "clave": "o95_fecha_parto_no_aplica",
+                            "etiqueta": "Fecha de parto o aborto no aplica",
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Fecha de parto o aborto",
+                            "valor_activador": "NO_APLICA"
+                        },
+                        {
+                            "clave": "o95_lugar_parto_eess_nombre",
+                            "etiqueta": "Nombre del EE.SS. del parto o aborto",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Lugar de parto o aborto",
+                            "valor_activador": "EESS"
+                        },
+                        {
+                            "clave": "o95_lugar_parto_otro",
+                            "etiqueta": "Especificar otro lugar de parto o aborto",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Lugar de parto o aborto",
+                            "valor_activador": "OTRO"
+                        },
+                        {
+                            "clave": "o95_responsable_parto_otro",
+                            "etiqueta": "Especificar otro responsable del parto o aborto",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Responsable de la atención del parto o aborto",
+                            "valor_activador": "OTRO"
                         }
                     ]
                 },
                 {
                     "nombre": "Entorno social y comunitario",
+                    "orden": 9,
                     "campos": [
                         {
+                            "clave": "o95_identificaron_signos_de_peligro",
                             "etiqueta": "¿Identificaron signos de peligro?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_persona_que_identifico_signos_de_peligro",
                             "etiqueta": "Persona que identificó signos de peligro",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Ella misma",
                                 "Pareja",
@@ -7056,12 +7617,18 @@
                             ]
                         },
                         {
+                            "clave": "o95_buscaron_ayuda",
                             "etiqueta": "¿Buscaron ayuda?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_quien_tomo_la_decision_de_buscar_ayuda",
                             "etiqueta": "Quién tomó la decisión de buscar ayuda",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Ella misma",
                                 "Pareja",
@@ -7070,16 +7637,25 @@
                             ]
                         },
                         {
+                            "clave": "o95_tiempo_que_demoro_en_buscar_ayuda",
                             "etiqueta": "Tiempo que demoró en buscar ayuda",
-                            "tipo": "TEXTO"
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_hubo_dificultad_con_el_acceso_a_servicios_de_salud",
                             "etiqueta": "¿Hubo dificultad con el acceso a servicios de salud?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_especificar_dificultad_de_acceso",
                             "etiqueta": "Especificar dificultad de acceso",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Inaccesibilidad geográfica",
                                 "Distancia",
@@ -7089,16 +7665,25 @@
                             ]
                         },
                         {
+                            "clave": "o95_tiempo_desde_inicio_de_molestias_hasta_llegar_al_ee",
                             "etiqueta": "Tiempo desde inicio de molestias hasta llegar al EE.SS.",
-                            "tipo": "TEXTO"
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_tuvo_dificultades_para_ser_atendida_en_el_ee_ss",
                             "etiqueta": "¿Tuvo dificultades para ser atendida en el EE.SS.?",
-                            "tipo": "BOOLEANO"
+                            "tipo": "BOOLEANO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_especificar_dificultad_de_atencion",
                             "etiqueta": "Especificar dificultad de atención",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Económicas",
                                 "Idioma",
@@ -7109,12 +7694,18 @@
                             ]
                         },
                         {
+                            "clave": "o95_tiempo_desde_que_llego_al_ee_ss_hasta_que_fue_atend",
                             "etiqueta": "Tiempo desde que llegó al EE.SS. hasta que fue atendida",
-                            "tipo": "TEXTO"
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_persona_que_brindo_la_informacion",
                             "etiqueta": "Persona que brindó la información",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Madre",
                                 "Padre",
@@ -7124,15 +7715,118 @@
                                 "Vecino",
                                 "Otro"
                             ]
+                        },
+                        {
+                            "clave": "o95_persona_identifico_otro",
+                            "etiqueta": "Especificar otra persona que identificó signos",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Persona que identificó signos de peligro",
+                            "valor_activador": "OTRO"
+                        },
+                        {
+                            "clave": "o95_decision_buscar_ayuda_otro",
+                            "etiqueta": "Especificar otra persona que tomó la decisión de buscar ayuda",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Quién tomó la decisión de buscar ayuda",
+                            "valor_activador": "OTRO"
+                        },
+                        {
+                            "clave": "o95_tiempo_buscar_ayuda_horas",
+                            "etiqueta": "Tiempo en buscar ayuda (horas)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "¿Buscaron ayuda?",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "o95_tiempo_buscar_ayuda_minutos",
+                            "etiqueta": "Tiempo en buscar ayuda (minutos)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "¿Buscaron ayuda?",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "o95_dificultad_acceso_otro",
+                            "etiqueta": "Especificar otra dificultad de acceso",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Especificar dificultad de acceso",
+                            "valor_activador": "OTRO"
+                        },
+                        {
+                            "clave": "o95_tiempo_llegar_eess_horas",
+                            "etiqueta": "Tiempo hasta llegar al EE.SS. (horas)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "¿Hubo dificultad con el acceso a servicios de salud?",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "o95_tiempo_llegar_eess_minutos",
+                            "etiqueta": "Tiempo hasta llegar al EE.SS. (minutos)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "¿Hubo dificultad con el acceso a servicios de salud?",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "o95_dificultad_atencion_otro",
+                            "etiqueta": "Especificar otra dificultad de atención",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Especificar dificultad de atención",
+                            "valor_activador": "OTRO"
+                        },
+                        {
+                            "clave": "o95_tiempo_hasta_atendida_horas",
+                            "etiqueta": "Tiempo hasta ser atendida (horas)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "¿Tuvo dificultades para ser atendida en el EE.SS.?",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "o95_tiempo_hasta_atendida_minutos",
+                            "etiqueta": "Tiempo hasta ser atendida (minutos)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "¿Tuvo dificultades para ser atendida en el EE.SS.?",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "o95_persona_brindo_info_otro",
+                            "etiqueta": "Especificar otra persona que brindó información",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Persona que brindó la información",
+                            "valor_activador": "OTRO"
                         }
                     ]
                 },
                 {
                     "nombre": "Datos comunitarios",
+                    "orden": 10,
                     "campos": [
                         {
+                            "clave": "o95_sintomatologia_o_molestias",
                             "etiqueta": "Sintomatología o molestias",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Sangrado",
                                 "Pérdida de líquido",
@@ -7148,8 +7842,11 @@
                             ]
                         },
                         {
+                            "clave": "o95_maniobras_usadas_durante_el_parto",
                             "etiqueta": "Maniobras usadas durante el parto",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "No se usó",
                                 "Manteo",
@@ -7159,8 +7856,11 @@
                             ]
                         },
                         {
+                            "clave": "o95_maniobras_usadas_para_retirar_la_placenta",
                             "etiqueta": "Maniobras usadas para retirar la placenta",
                             "tipo": "MULTISELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "No se usó",
                                 "Manteo",
@@ -7170,90 +7870,117 @@
                             ]
                         },
                         {
+                            "clave": "o95_tiempo_estimado_del_domicilio_al_ee_ss_mas_cercano",
                             "etiqueta": "Tiempo estimado del domicilio al EE.SS. más cercano",
-                            "tipo": "TEXTO"
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
+                            "clave": "o95_tipo_de_establecimiento_mas_cercano",
                             "etiqueta": "Tipo de establecimiento más cercano",
                             "tipo": "SELECT",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "Puesto de Salud",
                                 "Centro de Salud",
                                 "Hospital"
                             ]
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Causas de defunción (Anexo 2)",
-                    "campos": [
-                        {
-                            "etiqueta": "Causa final",
-                            "tipo": "TEXTO"
                         },
                         {
-                            "etiqueta": "Causa intermedia",
-                            "tipo": "TEXTO"
+                            "clave": "o95_sintomatologia_otro",
+                            "etiqueta": "Especificar otra sintomatología o molestia",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Sintomatología o molestias",
+                            "valor_activador": "OTRO"
                         },
                         {
-                            "etiqueta": "Causa básica",
-                            "tipo": "TEXTO"
+                            "clave": "o95_maniobras_parto_otro",
+                            "etiqueta": "Especificar otra maniobra durante el parto",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Maniobras usadas durante el parto",
+                            "valor_activador": "OTRO"
                         },
                         {
-                            "etiqueta": "Causa asociada",
-                            "tipo": "TEXTO"
+                            "clave": "o95_maniobras_placenta_otro",
+                            "etiqueta": "Especificar otra maniobra para retirar placenta",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false,
+                            "depende_de": "Maniobras usadas para retirar la placenta",
+                            "valor_activador": "OTRO"
                         },
                         {
-                            "etiqueta": "Causa genérica",
-                            "tipo": "SELECT",
-                            "opciones": [
-                                "Hemorragia",
-                                "Hipertensión gestacional",
-                                "Infección\/Sepsis",
-                                "Otra causa"
-                            ]
+                            "clave": "o95_tiempo_domicilio_eess_horas",
+                            "etiqueta": "Tiempo del domicilio al EE.SS. (horas)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         },
                         {
-                            "etiqueta": "Clasificación final de la muerte",
-                            "tipo": "SELECT",
-                            "opciones": [
-                                "Directa",
-                                "Indirecta",
-                                "Incidental"
-                            ]
+                            "clave": "o95_tiempo_domicilio_eess_minutos",
+                            "etiqueta": "Tiempo del domicilio al EE.SS. (minutos)",
+                            "tipo": "NUMERO",
+                            "requerido": false,
+                            "sensible": false
                         }
                     ]
                 },
                 {
                     "nombre": "Las cuatro demoras",
+                    "orden": 11,
                     "campos": [
                         {
+                            "clave": "o95_1_demora_en_la_identificacion_del_problema",
                             "etiqueta": "1.ª demora: en la identificación del problema",
                             "tipo": "GRUPO_SI_NO",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "En la identificación del problema"
                             ]
                         },
                         {
+                            "clave": "o95_2_demora_en_la_decision_de_buscar_ayuda",
                             "etiqueta": "2.ª demora: en la decisión de buscar ayuda",
                             "tipo": "GRUPO_SI_NO",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "En la decisión de buscar ayuda"
                             ]
                         },
                         {
+                            "clave": "o95_3_demora_en_acceder_a_los_servicios_de_salud",
                             "etiqueta": "3.ª demora: en acceder a los servicios de salud",
                             "tipo": "GRUPO_SI_NO",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "En acceder a los servicios de salud"
                             ]
                         },
                         {
+                            "clave": "o95_4_demora_en_recibir_tratamiento_adecuado_y_oportuno",
                             "etiqueta": "4.ª demora: en recibir tratamiento adecuado y oportuno",
                             "tipo": "GRUPO_SI_NO",
+                            "requerido": false,
+                            "sensible": false,
                             "opciones": [
                                 "En recibir tratamiento adecuado y oportuno"
                             ]
+                        },
+                        {
+                            "clave": "o95_observaciones_demoras",
+                            "etiqueta": "Observaciones: Anote información adicional relevante",
+                            "tipo": "TEXTO",
+                            "requerido": false,
+                            "sensible": false
                         }
                     ]
                 }

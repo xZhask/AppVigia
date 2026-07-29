@@ -36,7 +36,7 @@ $valTipoFicha = $valoresFijos['o95_tipo_ficha'] ?? $valoresCampos[14300] ?? $_PO
 
   <div class="field" style="width:100%; border-top:1px solid var(--line-2); padding-top:14px;">
     <label class="fl" style="font-weight:700; color:var(--accent-deep); margin-bottom:8px;">Etapa de la ficha (Muerte Materna) <span class="req">*</span></label>
-    <div class="control-radio-group" style="display:flex; gap:16px; align-items:center; background:var(--surface-2, #18222d); padding:12px 16px; border-radius:var(--radius-sm, 8px); border:1px solid var(--line-2);">
+    <div class="control-radio-group">
       <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; font-weight:600;">
         <input type="radio" name="o95_tipo_ficha" value="ANEXO_1" <?= $valTipoFicha !== 'ANEXO_2' ? 'checked' : '' ?> style="accent-color:var(--accent); width:16px; height:16px;">
         <span>Anexo 1: Notificación inmediata</span>

@@ -92,6 +92,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ---------- PFA: Clasificación final -> Criterios y Clasificación del caso inferior ----------
   function sincronizarDescartadoPfa() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('A80') === -1 && !document.querySelector('[name="campo_15672"]')) return;
+
     var selectClasificacion = null;
     document.querySelectorAll('.field').forEach(function (f) {
       var fl = f.querySelector('.fl');
@@ -160,35 +164,82 @@ document.addEventListener('DOMContentLoaded', function () {
   var sexoSel = document.querySelector('[name="sexo"]');
   var gestanteSel = document.getElementById('gestanteSel');
   var campoGestante = document.getElementById('campoGestante');
-  var campoSemanas = document.getElementById('campoSemanasGestacion');
+
+  function actualizarEtniaOtra(focusInp) {
+    var sel = document.querySelector('[name="etnia"], #etniaSel');
+    var wrap = document.getElementById('campoEtniaOtraWrap');
+    var inp = document.getElementById('etniaOtraInput');
+    if (!sel || !wrap) return;
+    var esOtro = (sel.value === 'OTRO');
+    wrap.hidden = !esOtro;
+    wrap.style.display = esOtro ? '' : 'none';
+    if (inp) {
+      inp.disabled = !esOtro;
+      if (!esOtro) {
+        inp.value = '';
+      } else if (focusInp === true) {
+        inp.focus();
+      }
+    }
+  }
+  actualizarEtniaOtra(false);
 
   function actualizarGestante() {
-    if (!campoGestante || !campoSemanas) return;
+    var campoGestante = document.getElementById('campoGestante');
+    if (!campoGestante) return;
+
+    var sexoSel = document.querySelector('[name="sexo"], #sexo');
+    var gestanteSel = document.getElementById('gestanteSel');
+
     var enfermedadSel = document.getElementById('diseaseSel');
     var opcionEnfermedad = enfermedadSel && enfermedadSel.selectedOptions[0];
     var textoEnfermedad = opcionEnfermedad ? (opcionEnfermedad.text || '') : '';
     var tagCie = document.getElementById('cieTag');
     var textoCie = tagCie ? (tagCie.textContent || '') : '';
     
+    var campoSemanas = document.getElementById('campoSemanasGestacion');
+    var campoTrimestre = document.getElementById('campoTrimestreGestacion');
+
     if (textoEnfermedad.indexOf('A80') !== -1 || textoCie.indexOf('A80') !== -1 || textoEnfermedad.indexOf('O95') !== -1 || textoCie.indexOf('O95') !== -1) {
       campoGestante.hidden = true;
-      campoSemanas.hidden = true;
+      campoGestante.style.display = 'none';
+      if (campoSemanas) { campoSemanas.hidden = true; campoSemanas.style.display = 'none'; }
+      if (campoTrimestre) { campoTrimestre.hidden = true; campoTrimestre.style.display = 'none'; }
       if (gestanteSel) gestanteSel.value = '';
       return;
     }
 
-    var esFemenino = sexoSel && sexoSel.value === 'F';
+    var valSexo = sexoSel ? (sexoSel.value || '') : '';
+    var esFemenino = (valSexo === 'F' || valSexo === 'FEMENINO');
+
     campoGestante.hidden = !esFemenino;
+    campoGestante.style.display = esFemenino ? '' : 'none';
+
     if (!esFemenino && gestanteSel) gestanteSel.value = '';
 
     var esGestante = esFemenino && gestanteSel && gestanteSel.value === '1';
-    campoSemanas.hidden = !esGestante;
+    var esB26 = (textoEnfermedad.indexOf('B26') !== -1 || textoCie.indexOf('B26') !== -1);
+
+    if (campoSemanas) {
+      campoSemanas.hidden = !esGestante || esB26;
+      campoSemanas.style.display = (!esGestante || esB26) ? 'none' : '';
+    }
+    if (campoTrimestre) {
+      campoTrimestre.hidden = !esGestante || !esB26;
+      campoTrimestre.style.display = (!esGestante || !esB26) ? 'none' : '';
+    }
+
     var wrapPartoB05 = document.getElementById('wrapLugarPartoB05');
-    if (wrapPartoB05) wrapPartoB05.hidden = !esGestante;
+    if (wrapPartoB05) {
+      wrapPartoB05.hidden = !esGestante;
+      wrapPartoB05.style.display = esGestante ? '' : 'none';
+    }
 
     if (!esGestante) {
       var semanas = document.getElementById('semanasGestacion');
       if (semanas) semanas.value = '';
+      var trimestreSel = document.getElementById('trimestreGestacionSel');
+      if (trimestreSel) trimestreSel.value = '';
     }
   }
   if (sexoSel) sexoSel.addEventListener('change', actualizarGestante);
@@ -208,6 +259,201 @@ document.addEventListener('DOMContentLoaded', function () {
   if (chkEsMenorB05) {
     chkEsMenorB05.addEventListener('change', actualizarTutorB05);
   }
+
+  function actualizarLugarInfeccionB26(forcedCie10) {
+    var card = document.getElementById('cardLugarProbableInfeccionB26');
+    if (!card) return;
+
+    var esB26 = false;
+    if (typeof forcedCie10 === 'string' && forcedCie10 !== '') {
+      esB26 = (forcedCie10 === 'B26' || forcedCie10.indexOf('B26') !== -1);
+    } else {
+      var enfermedadSel = document.getElementById('diseaseSel');
+      var opcionEnfermedad = enfermedadSel && enfermedadSel.selectedOptions && enfermedadSel.selectedOptions[0];
+      var valEnf = enfermedadSel ? (enfermedadSel.value || '') : '';
+      var cieOpt = opcionEnfermedad ? (opcionEnfermedad.dataset.cie10 || '') : '';
+      var textoEnfermedad = opcionEnfermedad ? (opcionEnfermedad.text || '') : '';
+      var tagCie = document.getElementById('cieTag');
+      var textoCie = tagCie ? (tagCie.textContent || '') : '';
+
+      esB26 = (cieOpt === 'B26' || textoEnfermedad.indexOf('B26') !== -1 || textoCie.indexOf('B26') !== -1 || valEnf === '9');
+    }
+
+    card.hidden = !esB26;
+    card.style.display = esB26 ? '' : 'none';
+
+    if (!esB26) return;
+
+    var radContacto = document.querySelector('input[name="campo_13728"]:checked');
+    var valContacto = radContacto ? radContacto.value : '';
+    var wrapDetalle = document.getElementById('wrapDetalleContactosB26');
+    var esSiContacto = (valContacto === 'SI');
+
+    if (wrapDetalle) {
+      wrapDetalle.hidden = !esSiContacto;
+      wrapDetalle.style.display = esSiContacto ? '' : 'none';
+    }
+
+    var radGestante = document.querySelector('input[name="campo_13730"]:checked');
+    var valGestante = radGestante ? radGestante.value : '';
+    var wrapGestanteDetalle = document.getElementById('wrapGestanteDetalleB26');
+    var esSiGestante = esSiContacto && (valGestante === 'SI');
+
+    if (wrapGestanteDetalle) {
+      wrapGestanteDetalle.hidden = !esSiGestante;
+      wrapGestanteDetalle.style.display = esSiGestante ? '' : 'none';
+    }
+  }
+  actualizarLugarInfeccionB26();
+
+  function actualizarCuadroClinicoB26(forcedCie10) {
+    var card = document.getElementById('cardCuadroClinicoB26');
+    if (!card) return;
+
+    var esB26 = false;
+    if (typeof forcedCie10 === 'string' && forcedCie10 !== '') {
+      esB26 = (forcedCie10 === 'B26' || forcedCie10.indexOf('B26') !== -1);
+    } else {
+      var enfermedadSel = document.getElementById('diseaseSel');
+      var opcionEnfermedad = enfermedadSel && enfermedadSel.selectedOptions && enfermedadSel.selectedOptions[0];
+      var valEnf = enfermedadSel ? (enfermedadSel.value || '') : '';
+      var cieOpt = opcionEnfermedad ? (opcionEnfermedad.dataset.cie10 || '') : '';
+      var textoEnfermedad = opcionEnfermedad ? (opcionEnfermedad.text || '') : '';
+      var tagCie = document.getElementById('cieTag');
+      var textoCie = tagCie ? (tagCie.textContent || '') : '';
+
+      esB26 = (cieOpt === 'B26' || textoEnfermedad.indexOf('B26') !== -1 || textoCie.indexOf('B26') !== -1 || valEnf === '9');
+    }
+
+    card.hidden = !esB26;
+    card.style.display = esB26 ? '' : 'none';
+
+    if (!esB26) return;
+
+    // 1. Inflamación de glándulas parótidas
+    var radParotidas = document.querySelector('input[name="campo_13708"]:checked');
+    var valParotidas = radParotidas ? radParotidas.value : '';
+    var wrapParotidasDetalle = document.getElementById('wrapParotidasDetalleB26');
+    var esSiParotidas = (valParotidas === 'SI');
+
+    if (wrapParotidasDetalle) {
+      wrapParotidasDetalle.hidden = !esSiParotidas;
+      wrapParotidasDetalle.style.display = esSiParotidas ? '' : 'none';
+    }
+
+    // 2. Complicaciones
+    document.querySelectorAll('.box-complicacion-b26').forEach(function(box) {
+      var chk = box.querySelector('.chk-complicacion-b26');
+      var wrap = box.querySelector('.wrap-fecha-complicacion');
+      var inps = box.querySelectorAll('.inp-fecha-complicacion-b26');
+      var activo = !!(chk && chk.checked);
+      if (wrap) wrap.style.display = activo ? '' : 'none';
+      inps.forEach(function(inp) {
+        inp.disabled = !activo;
+      });
+    });
+
+    // 3. Hospitalización
+    var radHosp = document.querySelector('input[name="campo_13720"]:checked');
+    var valHosp = radHosp ? radHosp.value : '';
+    var wrapHospDetalle = document.getElementById('wrapHospitalizacionDetalleB26');
+    var esSiHosp = (valHosp === 'SI');
+
+    if (wrapHospDetalle) {
+      wrapHospDetalle.hidden = !esSiHosp;
+      wrapHospDetalle.style.display = esSiHosp ? '' : 'none';
+    }
+
+    // 4. Condición de egreso
+    var radEgreso = document.querySelector('input[name="campo_13724"]:checked');
+    var valEgreso = radEgreso ? radEgreso.value : '';
+    var wrapEgresoRef = document.getElementById('wrapEgresoReferidoB26');
+    var wrapEgresoFall = document.getElementById('wrapEgresoFallecidoB26');
+
+    if (wrapEgresoRef) {
+      var esRef = (valEgreso === 'REFERIDO');
+      wrapEgresoRef.hidden = !esRef;
+      wrapEgresoRef.style.display = esRef ? '' : 'none';
+    }
+
+    if (wrapEgresoFall) {
+      var esFall = (valEgreso === 'FALLECIDO');
+      wrapEgresoFall.hidden = !esFall;
+      wrapEgresoFall.style.display = esFall ? '' : 'none';
+    }
+
+    // 5. Sincronizar restricciones min de fechas
+    var inpInicioSintomas = document.getElementById('fechaInicioSintomasB26');
+    var fSintomasVal = inpInicioSintomas ? inpInicioSintomas.value : '';
+
+    if (fSintomasVal) {
+      var fParotiditis = document.getElementById('fechaInicioParotiditisB26');
+      if (fParotiditis) fParotiditis.min = fSintomasVal;
+
+      document.querySelectorAll('.box-complicacion-b26 input[type="date"]').forEach(function(inpDate) {
+        inpDate.min = fSintomasVal;
+      });
+
+      var fHosp = document.getElementById('fechaHospitalizacionB26');
+      if (fHosp) fHosp.min = fSintomasVal;
+    }
+
+    var fHospVal = document.getElementById('fechaHospitalizacionB26') ? document.getElementById('fechaHospitalizacionB26').value : '';
+    var fEgreso = document.getElementById('fechaEgresoB26');
+    if (fEgreso) {
+      if (fHospVal) fEgreso.min = fHospVal;
+      else if (fSintomasVal) fEgreso.min = fSintomasVal;
+    }
+  }
+  actualizarCuadroClinicoB26();
+
+  function actualizarVacunacionB26(forcedCie10) {
+    var card = document.getElementById('cardVacunacionB26');
+    if (!card) return;
+
+    var esB26 = false;
+    if (typeof forcedCie10 === 'string' && forcedCie10 !== '') {
+      esB26 = (forcedCie10 === 'B26' || forcedCie10.indexOf('B26') !== -1);
+    } else {
+      var enfermedadSel = document.getElementById('diseaseSel');
+      var opcionEnfermedad = enfermedadSel && enfermedadSel.selectedOptions && enfermedadSel.selectedOptions[0];
+      var valEnf = enfermedadSel ? (enfermedadSel.value || '') : '';
+      var cieOpt = opcionEnfermedad ? (opcionEnfermedad.dataset.cie10 || '') : '';
+      var textoEnfermedad = opcionEnfermedad ? (opcionEnfermedad.text || '') : '';
+      var tagCie = document.getElementById('cieTag');
+      var textoCie = tagCie ? (tagCie.textContent || '') : '';
+
+      esB26 = (cieOpt === 'B26' || textoEnfermedad.indexOf('B26') !== -1 || textoCie.indexOf('B26') !== -1 || valEnf === '9');
+    }
+
+    card.hidden = !esB26;
+    card.style.display = esB26 ? '' : 'none';
+
+    var antecedentesCard = document.getElementById('cardAntecedentesEpidemiologicos');
+    if (antecedentesCard && esB26) {
+      antecedentesCard.hidden = true;
+      antecedentesCard.style.display = 'none';
+    }
+
+    var clasifCard = document.getElementById('cardClasificacionCaso');
+    if (clasifCard && esB26) {
+      clasifCard.hidden = true;
+      clasifCard.style.display = 'none';
+    }
+
+    if (!esB26) return;
+
+    var radVac = document.querySelector('input[name="b26_vacunacion_spr"]:checked');
+    var valVac = radVac ? radVac.value : '';
+    var wrapDetalle = document.getElementById('wrapVacunaSprDetalleB26');
+    var esSiVac = (valVac === 'SI');
+
+    if (wrapDetalle) {
+      wrapDetalle.hidden = !esSiVac;
+      wrapDetalle.style.display = esSiVac ? '' : 'none';
+    }
+  }
+  actualizarVacunacionB26();
   actualizarTutorB05();
 
   // ---------- Censo de contactos: fecha de vacunación solo si vacunado = Sí ----------
@@ -259,6 +505,16 @@ document.addEventListener('DOMContentLoaded', function () {
           contenedorClinico.innerHTML = datos.html;
           contenedorClinico.style.opacity = '1';
 
+          if (datos.htmlClasificacionChips) {
+            var chipSelect = document.querySelector('.chip-select');
+            if (chipSelect) {
+              var fieldParent = chipSelect.closest('.field');
+              if (fieldParent) {
+                fieldParent.outerHTML = datos.htmlClasificacionChips;
+              }
+            }
+          }
+
           var captacionWrap = document.getElementById('notificacionCaptacionWrap');
           if (captacionWrap) {
             captacionWrap.hidden = !datos.usaCaptacion;
@@ -281,6 +537,12 @@ document.addEventListener('DOMContentLoaded', function () {
             o95FechasWrap.hidden = !esO95;
           }
 
+          var esB26 = (datos.cie10 === 'B26');
+          var b26FechasWrap = document.getElementById('notificacionFechasB26Wrap');
+          if (b26FechasWrap) {
+            b26FechasWrap.hidden = !esB26;
+          }
+
           document.querySelectorAll('.b05-field-wrap, .b05-elem').forEach(function(el) {
             el.hidden = !esB05;
           });
@@ -291,8 +553,38 @@ document.addEventListener('DOMContentLoaded', function () {
             el.hidden = esO95;
             el.style.display = esO95 ? 'none' : '';
           });
+          document.querySelectorAll('.b26-hide').forEach(function(el) {
+            el.hidden = esB26;
+            el.style.display = esB26 ? 'none' : '';
+          });
+          var captGrid = document.querySelector('.b26-capt-grid');
+          if (captGrid) {
+            if (esB26) {
+              captGrid.classList.remove('thirds');
+              captGrid.classList.add('halves');
+            } else {
+              captGrid.classList.remove('halves');
+              captGrid.classList.add('thirds');
+            }
+          }
+          if (!esB05) {
+            var chkMenor = document.getElementById('chkEsMenorEdadB05');
+            if (chkMenor) chkMenor.checked = false;
+          }
+          if (!esO95) {
+            var chkCom = document.getElementById('o95HabilitarDatosComunitariosChk');
+            if (chkCom) {
+              chkCom.checked = false;
+              delete chkCom.dataset.userToggled;
+            }
+          }
           actualizarTutorB05();
           actualizarEtapaFichaO95();
+          actualizarEtniaOtra(false);
+          actualizarGestante();
+          actualizarLugarInfeccionB26(datos.cie10);
+          actualizarCuadroClinicoB26(datos.cie10);
+          actualizarVacunacionB26(datos.cie10);
 
           var antecedentesCard = document.getElementById('cardAntecedentesEpidemiologicos');
           if (antecedentesCard) {
@@ -315,6 +607,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
           if (typeof inicializarGruposSiNo === 'function') inicializarGruposSiNo();
           evaluarDependencias();
+          if (esO95) sincronizarClasificacionO95();
 
           var tagCie = document.getElementById('cieTag');
           if (tagCie) tagCie.textContent = 'CIE-10 · ' + datos.cie10;
@@ -1333,6 +1626,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.hidden = esO95;
       el.style.display = esO95 ? 'none' : '';
     });
+    actualizarEtniaOtra(false);
 
     // Mostrar elementos exclusivos de O95 (como N.° de historia clínica) solo cuando es O95
     document.querySelectorAll('.o95-elem').forEach(function(el) {
@@ -1364,11 +1658,23 @@ document.addEventListener('DOMContentLoaded', function () {
     var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
 
     document.querySelectorAll('.o95-anexo-2-section, .o95-anexo-2-elem').forEach(function(sec) {
-      sec.hidden = !esAnexo2;
-      sec.style.display = esAnexo2 ? '' : 'none';
+      if (sec.id !== 'campoIdiomaOtraO95' && sec.id !== 'campoSeguroOtroO95' && sec.id !== 'campoCategoriaEessO95' && sec.id !== 'campoFechaHoraIngresoO95') {
+        sec.hidden = !esAnexo2;
+        sec.style.display = esAnexo2 ? '' : 'none';
+      }
     });
 
     actualizarPuebloEtnicoO95();
+    actualizarOtrosCamposO95();
+    actualizarDatosFallecimientoO95();
+    actualizarReferenciaO95();
+    actualizarAntecedentesPatologicosObstetricosO95();
+    actualizarAtencionPrenatalO95();
+    actualizarComplicacionesO95();
+    actualizarHospitalizacionesO95();
+    actualizarPartoAbortoO95();
+    actualizarEntornoSocialO95();
+    actualizarDatosComunitariosO95();
 
     if (typeof renumerarSeccionesSiguientes === 'function') {
       renumerarSeccionesSiguientes();
@@ -1430,6 +1736,10 @@ document.addEventListener('DOMContentLoaded', function () {
         puebloSel.value = opciones[0];
       }
     }
+
+    if (window.SelectorBusqueda) {
+      window.SelectorBusqueda.actualizar(puebloSel);
+    }
   }
 
   document.addEventListener('change', function(e) {
@@ -1445,31 +1755,1146 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function actualizarOtrosCamposO95() {
+    var radioAnexo2 = document.querySelector('input[name="o95_tipo_ficha"][value="ANEXO_2"]');
+    var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
+
     var selIdioma = document.getElementById('o95IdiomaSel');
     var wrapIdiomaOtra = document.getElementById('campoIdiomaOtraO95');
-    if (selIdioma && wrapIdiomaOtra) {
-      var esOtra = (selIdioma.value === 'OTRA');
+    if (wrapIdiomaOtra) {
+      var valInd = selIdioma ? selIdioma.value : '';
+      var esOtra = esAnexo2 && (valInd === 'OTRA' || valInd === 'Otra');
       wrapIdiomaOtra.hidden = !esOtra;
       wrapIdiomaOtra.style.display = esOtra ? '' : 'none';
     }
 
     var selSeguro = document.getElementById('o95TipoSeguroSel');
     var wrapSeguroOtro = document.getElementById('campoSeguroOtroO95');
-    if (selSeguro && wrapSeguroOtro) {
-      var esOtroS = (selSeguro.value === 'OTROS');
+    if (wrapSeguroOtro) {
+      var valSeg = selSeguro ? selSeguro.value : '';
+      var esOtroS = esAnexo2 && (valSeg === 'OTROS' || valSeg === 'Otros');
       wrapSeguroOtro.hidden = !esOtroS;
       wrapSeguroOtro.style.display = esOtroS ? '' : 'none';
     }
   }
 
+  function calcularFechaHoraIngresoO95() {
+    var fechaFall = document.querySelector('input[name="campo_14306"]');
+    var horaFall = document.querySelector('input[name="campo_16116"]');
+    var diasInput = document.querySelector('input[name="campo_16123"]');
+    var horasInput = document.querySelector('input[name="campo_16124"]');
+    var minsInput = document.querySelector('input[name="campo_16125"]');
+    var inputIngreso = document.getElementById('o95FechaHoraIngresoInput');
+
+    if (!fechaFall || !fechaFall.value || !inputIngreso) return;
+
+    var strFecha = fechaFall.value;
+    var strHora = (horaFall && horaFall.value) ? horaFall.value : '00:00';
+
+    var dtFall = new Date(strFecha + 'T' + strHora + ':00');
+    if (isNaN(dtFall.getTime())) return;
+
+    var dias = parseInt(diasInput ? diasInput.value : '0', 10) || 0;
+    var horas = parseInt(horasInput ? horasInput.value : '0', 10) || 0;
+    var mins = parseInt(minsInput ? minsInput.value : '0', 10) || 0;
+
+    var totalMins = (dias * 24 * 60) + (horas * 60) + mins;
+    if (totalMins <= 0) return;
+
+    var dtIngreso = new Date(dtFall.getTime() - (totalMins * 60 * 1000));
+
+    var yyyy = dtIngreso.getFullYear();
+    var mm = String(dtIngreso.getMonth() + 1).padStart(2, '0');
+    var dd = String(dtIngreso.getDate()).padStart(2, '0');
+    var hh = String(dtIngreso.getHours()).padStart(2, '0');
+    var mi = String(dtIngreso.getMinutes()).padStart(2, '0');
+
+    inputIngreso.value = yyyy + '-' + mm + '-' + dd + 'T' + hh + ':' + mi;
+  }
+
+  function actualizarDatosFallecimientoO95() {
+    var radioAnexo2 = document.querySelector('input[name="o95_tipo_ficha"][value="ANEXO_2"]');
+    var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
+
+    var selMomento = document.getElementById('o95MomentoFallecimientoSel');
+    var wrapPuerperio = document.getElementById('campoFasePuerperioO95');
+    if (selMomento && wrapPuerperio) {
+      var esPuerperio = (selMomento.value === 'Puerperio' || selMomento.value === 'PUERPERIO');
+      wrapPuerperio.hidden = !esPuerperio;
+      wrapPuerperio.style.display = esPuerperio ? '' : 'none';
+    }
+
+    var chkEG = document.getElementById('o95EdadGestacionalDesconocidaChk');
+    var inputEG = document.getElementById('o95EdadGestacionalInput');
+    if (chkEG && inputEG) {
+      inputEG.disabled = chkEG.checked;
+      if (chkEG.checked) inputEG.value = '';
+    }
+
+    var radioLugar = document.querySelector('input[name="campo_14307"]:checked');
+    var valLugar = radioLugar ? radioLugar.value : 'Establecimiento de salud';
+
+    var wrapEess = document.getElementById('bloqueEessFallecimientoO95');
+    var wrapOtro = document.getElementById('bloqueEspecificarOtroLugar');
+    var wrapTrayecto = document.getElementById('bloqueTrayectoFallecimiento');
+    var wrapUbigeoFall = document.getElementById('bloqueUbigeoFallecimientoO95');
+
+    if (wrapEess) {
+      var esEess = (valLugar === 'Establecimiento de salud');
+      wrapEess.hidden = !esEess;
+      wrapEess.style.display = esEess ? '' : 'none';
+    }
+    if (wrapOtro) {
+      var esOtro = (valLugar === 'Otro');
+      wrapOtro.hidden = !esOtro;
+      wrapOtro.style.display = esOtro ? '' : 'none';
+    }
+    if (wrapTrayecto) {
+      var esTrayecto = (valLugar === 'Trayecto');
+      wrapTrayecto.hidden = !esTrayecto;
+      wrapTrayecto.style.display = esTrayecto ? '' : 'none';
+    }
+
+    var selTipoEess = document.getElementById('o95TipoEessSel');
+    var valTipoEess = selTipoEess ? selTipoEess.value : 'EESS Sanidad FFAA/PNP';
+
+    var subSanidad = document.getElementById('subBloqueSanidadPnp');
+    var subOtroEess = document.getElementById('subBloqueOtroEess');
+    if (selTipoEess) {
+      var esSanidad = (valTipoEess === 'EESS Sanidad FFAA/PNP' || valTipoEess === 'SANIDAD_PNP');
+      if (subSanidad) {
+        subSanidad.hidden = !esSanidad;
+        subSanidad.style.display = esSanidad ? '' : 'none';
+      }
+      if (subOtroEess) {
+        subOtroEess.hidden = esSanidad;
+        subOtroEess.style.display = !esSanidad ? '' : 'none';
+      }
+    }
+
+    // Ubigeo del fallecimiento sólo aparecerá cuando se seleccione MINSA, EsSalud, Privado u Otro.
+    if (wrapUbigeoFall) {
+      var mostrarUbigeo = (valLugar === 'Otro') || (valLugar === 'Establecimiento de salud' && (valTipoEess !== 'EESS Sanidad FFAA/PNP' && valTipoEess !== 'SANIDAD_PNP'));
+      wrapUbigeoFall.hidden = !mostrarUbigeo;
+      wrapUbigeoFall.style.display = mostrarUbigeo ? '' : 'none';
+      if (mostrarUbigeo) {
+        if (typeof inicializarUbigeo === 'function') {
+          inicializarUbigeo('o95-fallecimiento-ubigeo');
+        }
+        if (window.SelectorBusqueda) {
+          var sDep = document.getElementById('o95-fallecimiento-ubigeo-departamento');
+          var sProv = document.getElementById('o95-fallecimiento-ubigeo-provincia');
+          var sDist = document.getElementById('o95-fallecimiento-ubigeo-distrito');
+          if (sDep) window.SelectorBusqueda.actualizar(sDep);
+          if (sProv) window.SelectorBusqueda.actualizar(sProv);
+          if (sDist) window.SelectorBusqueda.actualizar(sDist);
+        }
+      }
+    }
+
+    // Anexo 2 especificos de Fallecimiento
+    var wrapCategoria = document.getElementById('campoCategoriaEessO95');
+    var wrapIngreso = document.getElementById('campoFechaHoraIngresoO95');
+    var wrapResponsable = document.getElementById('campoResponsableAtencionO95');
+
+    if (wrapCategoria) {
+      var esCat = esAnexo2 && (valLugar === 'Establecimiento de salud') && (valTipoEess !== 'EESS Sanidad FFAA/PNP' && valTipoEess !== 'SANIDAD_PNP');
+      wrapCategoria.hidden = !esCat;
+      wrapCategoria.style.display = esCat ? '' : 'none';
+    }
+
+    if (wrapIngreso) {
+      var esIng = esAnexo2 && (valLugar === 'Establecimiento de salud');
+      wrapIngreso.hidden = !esIng;
+      wrapIngreso.style.display = esIng ? '' : 'none';
+    }
+
+    if (wrapResponsable) {
+      wrapResponsable.hidden = !esAnexo2;
+      wrapResponsable.style.display = esAnexo2 ? '' : 'none';
+    }
+
+    sincronizarIpessPnpUbigeoO95();
+    calcularFechaHoraIngresoO95();
+  }
+
+  function sincronizarIpessPnpUbigeoO95() {
+    var selIpress = document.getElementById('o95IpressPnpSel');
+    var inputHiddenDep = document.getElementById('o95-fallecimiento-ubigeo-dep-hidden');
+    var inputHiddenProv = document.getElementById('o95-fallecimiento-ubigeo-prov-hidden');
+    var selDist = document.getElementById('o95-fallecimiento-ubigeo-distrito');
+
+    if (!selIpress) return;
+
+    var opt = selIpress.options[selIpress.selectedIndex];
+    var depId = opt ? opt.getAttribute('data-dep-id') : '';
+    var provId = opt ? opt.getAttribute('data-prov-id') : '';
+    var distId = opt ? opt.getAttribute('data-dist-id') : '';
+
+    var selTipoEess = document.getElementById('o95TipoEessSel');
+    var radioLugar = document.querySelector('input[name="campo_14307"]:checked');
+    var valLugar = radioLugar ? radioLugar.value : '';
+    var esSanidadPnp = (valLugar === 'Establecimiento de salud' && selTipoEess && (selTipoEess.value === 'EESS Sanidad FFAA/PNP' || selTipoEess.value === 'SANIDAD_PNP') && selIpress.value !== '');
+
+    if (esSanidadPnp && depId) {
+      if (inputHiddenDep) inputHiddenDep.value = depId;
+      if (inputHiddenProv) inputHiddenProv.value = provId;
+      if (selDist && distId) {
+        if (!Array.from(selDist.options).some(function(o) { return o.value == distId; })) {
+          var el = document.createElement('option');
+          el.value = distId;
+          el.textContent = distId;
+          selDist.appendChild(el);
+        }
+        selDist.value = distId;
+      }
+    }
+  }
+
   document.addEventListener('change', function(e) {
-    if (e.target && (e.target.id === 'o95IdiomaSel' || e.target.id === 'o95TipoSeguroSel')) {
+    if (!e.target) return;
+    if (e.target.id === 'o95IdiomaSel' || e.target.name === 'campo_14316' || e.target.id === 'o95TipoSeguroSel' || e.target.name === 'campo_14319') {
       actualizarOtrosCamposO95();
+    }
+    if (e.target.id === 'o95MomentoFallecimientoSel' ||
+        e.target.id === 'o95EdadGestacionalDesconocidaChk' ||
+        e.target.name === 'campo_14307' ||
+        e.target.id === 'o95TipoEessSel' ||
+        e.target.id === 'o95IpressPnpSel' ||
+        e.target.name === 'campo_14306' ||
+        e.target.name === 'campo_16116') {
+      actualizarDatosFallecimientoO95();
+    }
+    if (e.target.id === 'o95ReferidaSel' || e.target.name === 'campo_14309') {
+      actualizarReferenciaO95();
+    }
+    if (e.target.id === 'o95-fallecimiento-ubigeo-departamento') {
+      var hiddenDep = document.getElementById('o95-fallecimiento-ubigeo-dep-hidden');
+      if (hiddenDep) hiddenDep.value = e.target.value;
+    }
+    if (e.target.id === 'o95-fallecimiento-ubigeo-provincia') {
+      var hiddenProv = document.getElementById('o95-fallecimiento-ubigeo-prov-hidden');
+      if (hiddenProv) hiddenProv.value = e.target.value;
+    }
+    if (e.target.id === 'o95-referencia-ubigeo-departamento') {
+      var hiddenDepR = document.getElementById('o95-referencia-ubigeo-dep-hidden');
+      if (hiddenDepR) hiddenDepR.value = e.target.value;
+    }
+    if (e.target.id === 'o95-referencia-ubigeo-provincia') {
+      var hiddenProvR = document.getElementById('o95-referencia-ubigeo-prov-hidden');
+      if (hiddenProvR) hiddenProvR.value = e.target.value;
+    }
+  });
+
+  document.addEventListener('input', function(e) {
+    if (!e.target) return;
+    if (e.target.name === 'campo_16123' || e.target.name === 'campo_16124' || e.target.name === 'campo_16125') {
+      calcularFechaHoraIngresoO95();
+    }
+  });
+
+  function actualizarReferenciaO95() {
+    var selReferida = document.getElementById('o95ReferidaSel');
+    var wrapAnexo1 = document.getElementById('bloqueReferenciaAnexo1O95');
+    var wrapAnexo2 = document.getElementById('bloqueReferenciaAnexo2O95');
+
+    if (!selReferida) return;
+
+    var valRef = (selReferida.value || '').toUpperCase().trim();
+    var esSi = (valRef === 'SI' || valRef === '1');
+
+    var radioAnexo2 = document.querySelector('input[name="o95_tipo_ficha"][value="ANEXO_2"]');
+    var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
+
+    if (wrapAnexo1) {
+      wrapAnexo1.hidden = !esSi;
+      wrapAnexo1.style.display = esSi ? '' : 'none';
+      if (esSi) {
+        if (typeof inicializarUbigeo === 'function') {
+          inicializarUbigeo('o95-referencia-ubigeo');
+        }
+        if (window.SelectorBusqueda) {
+          var sDep = document.getElementById('o95-referencia-ubigeo-departamento');
+          var sProv = document.getElementById('o95-referencia-ubigeo-provincia');
+          var sDist = document.getElementById('o95-referencia-ubigeo-distrito');
+          if (sDep) window.SelectorBusqueda.actualizar(sDep);
+          if (sProv) window.SelectorBusqueda.actualizar(sProv);
+          if (sDist) window.SelectorBusqueda.actualizar(sDist);
+        }
+      }
+    }
+
+    if (wrapAnexo2) {
+      var mostrarAnexo2Ref = (esSi && esAnexo2);
+      wrapAnexo2.hidden = !mostrarAnexo2Ref;
+      wrapAnexo2.style.display = mostrarAnexo2Ref ? '' : 'none';
+    }
+
+    var selRespOrig = document.getElementById('o95RespOrigenSel');
+    var wrapRespOrigOtro = document.getElementById('bloqueRespOrigenOtroO95');
+    if (wrapRespOrigOtro && selRespOrig) {
+      var valRO = (selRespOrig.value || '').toUpperCase().trim();
+      var esRespOtro = (valRO === 'OTRO');
+      wrapRespOrigOtro.hidden = !esRespOtro;
+      wrapRespOrigOtro.style.display = esRespOtro ? '' : 'none';
+    }
+
+    calcularTiempoDemoraO95();
+  }
+
+  function calcularTiempoDemoraO95() {
+    var inFechaIng = document.getElementById('o95FechaIngOrigenInput');
+    var inHoraIng  = document.getElementById('o95HoraIngOrigenInput');
+    var inFechaEgr = document.getElementById('o95FechaEgrOrigenInput');
+    var inHoraEgr  = document.getElementById('o95HoraEgrOrigenInput');
+
+    var inDemoraDias  = document.getElementById('o95DemoraDiasInput');
+    var inDemoraHoras = document.getElementById('o95DemoraHorasInput');
+
+    if (!inFechaIng || !inFechaEgr) return;
+
+    var vIng = inFechaIng.value;
+    var vEgr = inFechaEgr.value;
+
+    // 1. Establecer límites min/max recíprocos entre fecha de ingreso y egreso
+    if (vIng) {
+      inFechaEgr.min = vIng;
+    } else {
+      inFechaEgr.removeAttribute('min');
+    }
+
+    if (vEgr) {
+      inFechaIng.max = vEgr;
+    }
+
+    // 2. Validar inconsistencia donde egreso < ingreso
+    if (vIng && vEgr) {
+      var hIng = (inHoraIng && inHoraIng.value) ? inHoraIng.value : '00:00';
+      var hEgr = (inHoraEgr && inHoraEgr.value) ? inHoraEgr.value : '00:00';
+
+      var dtIng = new Date(vIng + 'T' + hIng);
+      var dtEgr = new Date(vEgr + 'T' + hEgr);
+
+      if (dtEgr < dtIng) {
+        // Si el egreso es menor que el ingreso, se resetea la fecha de egreso para mantener consistencia
+        inFechaEgr.value = '';
+        if (inDemoraDias) inDemoraDias.value = 0;
+        if (inDemoraHoras) inDemoraHoras.value = 0;
+        return;
+      }
+
+      // 3. Calcular diferencia en milisegundos y desglosar días y horas transcurridas
+      var diffMs = dtEgr.getTime() - dtIng.getTime();
+      if (!isNaN(diffMs) && diffMs >= 0) {
+        var totalMinutos = Math.floor(diffMs / (1000 * 60));
+        var totalHoras   = Math.floor(totalMinutos / 60);
+        var dias  = Math.floor(totalHoras / 24);
+        var horas = totalHoras % 24;
+
+        if (inDemoraDias) inDemoraDias.value = dias;
+        if (inDemoraHoras) inDemoraHoras.value = horas;
+      }
+    }
+  }
+
+  function sincronizarClasificacionO95(origenElemento) {
+    var selClasifFinal   = document.querySelector('[name="campo_14379"]');
+    var selClasifInicial = document.querySelector('[name="campo_14315"]');
+    var radiosClasif     = Array.from(document.querySelectorAll('input[name="clasificacion"]'));
+    if (!radiosClasif.length) return;
+
+    if (origenElemento && origenElemento.name === 'clasificacion') {
+      var valRadio = origenElemento.value;
+      if (selClasifFinal) selClasifFinal.value = valRadio;
+      if (selClasifInicial && !selClasifInicial.value) selClasifInicial.value = valRadio;
+    } else {
+      var valSelect = (selClasifFinal && selClasifFinal.value) ? selClasifFinal.value : (selClasifInicial ? selClasifInicial.value : '');
+      if (valSelect) {
+        radiosClasif.forEach(function(r) {
+          r.checked = (r.value === valSelect);
+        });
+      }
+    }
+  }
+
+  function actualizarCausasDefuncionO95() {
+    var selGen = document.getElementById('o95CausaGenericaSel');
+    var wrapOtra = document.getElementById('bloqueCausaGenericaOtraO95');
+    if (selGen && wrapOtra) {
+      var valGen = (selGen.value || '').toUpperCase().trim();
+      var esOtra = (valGen === 'OTRA' || valGen === 'OTRA CAUSA');
+
+      wrapOtra.hidden = !esOtra;
+      wrapOtra.style.display = esOtra ? '' : 'none';
+    }
+    sincronizarClasificacionO95();
+  }
+
+  function actualizarAntecedentesPatologicosObstetricosO95() {
+    var container = document.getElementById('bloqueAntecedentesPatologicosObstetricosO95');
+    if (!container) return;
+
+    // --- A. ANTECEDENTES PATOLÓGICOS (Reglas 1, 2, 3) ---
+    var patChks = Array.from(container.querySelectorAll('.o95PatologiaChk'));
+    var chkNinguno = patChks.find(function(c) { return c.value === 'NINGUNO' || c.getAttribute('data-codigo') === 'NINGUNO'; });
+    var chkDesconocido = patChks.find(function(c) { return c.value === 'DESCONOCIDO' || c.getAttribute('data-codigo') === 'DESCONOCIDO'; });
+    var chkPatOtra = patChks.find(function(c) { return c.value === 'OTRA' || c.getAttribute('data-codigo') === 'OTRA'; });
+    var wrapPatOtra = document.getElementById('bloquePatologiaOtraO95');
+
+    if (chkNinguno && chkNinguno.checked) {
+      patChks.forEach(function(c) {
+        if (c !== chkNinguno) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+    } else if (chkDesconocido && chkDesconocido.checked) {
+      patChks.forEach(function(c) {
+        if (c !== chkDesconocido) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+    } else {
+      patChks.forEach(function(c) {
+        c.disabled = false;
+      });
+    }
+
+    if (wrapPatOtra && chkPatOtra) {
+      wrapPatOtra.hidden = !chkPatOtra.checked;
+      wrapPatOtra.style.display = chkPatOtra.checked ? '' : 'none';
+    }
+
+    // --- B & C. ANTECEDENTES GINECO OBSTÉTRICOS (Reglas 4, 5, 6, 7, 8) ---
+    var inpGest = document.getElementById('o95GestacionesInput');
+    var inpPartos = document.getElementById('o95PartosInput');
+    var inpCesareas = document.getElementById('o95CesareasInput');
+    var inpAbortos = document.getElementById('o95AbortosInput');
+    var inpNacVivos = document.getElementById('o95NacVivosInput');
+    var inpNacMuertos = document.getElementById('o95NacMuertosInput');
+    var inpHijosViven = document.getElementById('o95HijosVivenInput');
+    var inpInterAnios = document.getElementById('o95IntergenesicoAniosInput');
+    var inpInterMeses = document.getElementById('o95IntergenesicoMesesInput');
+    var blockIntergenesico = document.getElementById('o95IntergenesicoBlock');
+    var alertGineco = document.getElementById('o95GinecoValidacionAlerta');
+
+    if (inpGest) {
+      var nGest = parseInt(inpGest.value, 10);
+      if (isNaN(nGest) || nGest < 0) nGest = 0;
+
+      if (nGest === 0) {
+        // Regla 4: Gestaciones = 0 -> todos 0 y bloqueados
+        [inpPartos, inpCesareas, inpAbortos, inpNacVivos, inpNacMuertos, inpHijosViven].forEach(function(inp) {
+          if (inp) {
+            inp.value = 0;
+            inp.disabled = true;
+          }
+        });
+        if (inpInterAnios) inpInterAnios.value = 0;
+        if (inpInterMeses) inpInterMeses.value = 0;
+        if (blockIntergenesico) {
+          blockIntergenesico.hidden = true;
+          blockIntergenesico.style.display = 'none';
+        }
+      } else if (nGest === 1) {
+        // Regla 5: Gestaciones = 1 -> Habilitar partos, cesareas, etc., Periodo intergenesico oculto
+        [inpPartos, inpCesareas, inpAbortos, inpNacVivos, inpNacMuertos, inpHijosViven].forEach(function(inp) {
+          if (inp) inp.disabled = false;
+        });
+        if (inpInterAnios) inpInterAnios.value = 0;
+        if (inpInterMeses) inpInterMeses.value = 0;
+        if (blockIntergenesico) {
+          blockIntergenesico.hidden = true;
+          blockIntergenesico.style.display = 'none';
+        }
+      } else {
+        // Regla 6: Gestaciones >= 2 -> Habilitar todos y mostrar Periodo intergenesico
+        [inpPartos, inpCesareas, inpAbortos, inpNacVivos, inpNacMuertos, inpHijosViven].forEach(function(inp) {
+          if (inp) inp.disabled = false;
+        });
+        if (blockIntergenesico) {
+          blockIntergenesico.hidden = false;
+          blockIntergenesico.style.display = 'flex';
+        }
+      }
+
+      // Validaciones C: 4 Condiciones Duras
+      var nPartos = parseInt(inpPartos ? inpPartos.value : 0, 10) || 0;
+      var nCesareas = parseInt(inpCesareas ? inpCesareas.value : 0, 10) || 0;
+      var nAbortos = parseInt(inpAbortos ? inpAbortos.value : 0, 10) || 0;
+      var nNacVivos = parseInt(inpNacVivos ? inpNacVivos.value : 0, 10) || 0;
+      var nNacMuertos = parseInt(inpNacMuertos ? inpNacMuertos.value : 0, 10) || 0;
+      var nHijosViven = parseInt(inpHijosViven ? inpHijosViven.value : 0, 10) || 0;
+
+      var msgs = [];
+      if (nPartos > nGest) {
+        msgs.push('⚠ El N.° de partos (' + nPartos + ') no puede superar el N.° de gestaciones previas (' + nGest + ').');
+      }
+      if (nAbortos > nGest) {
+        msgs.push('⚠ El N.° de abortos (' + nAbortos + ') no puede superar el N.° de gestaciones previas (' + nGest + ').');
+      }
+      if (nCesareas > nPartos) {
+        msgs.push('⚠ El N.° de cesáreas (' + nCesareas + ') no puede ser mayor que el N.° de partos (' + nPartos + ').');
+      }
+      if (nHijosViven > nNacVivos) {
+        msgs.push('⚠ El N.° de hijos que viven (' + nHijosViven + ') no puede superar el N.° de nacidos vivos (' + nNacVivos + ').');
+      }
+
+      if (alertGineco) {
+        if (msgs.length > 0) {
+          alertGineco.innerHTML = msgs.join('<br>');
+          alertGineco.style.display = 'block';
+        } else {
+          alertGineco.style.display = 'none';
+          alertGineco.innerHTML = '';
+        }
+      }
+    }
+
+    // --- D. USO DE MÉTODO ANTICONCEPTIVO (Reglas 10, 11, 12) ---
+    var metChks = Array.from(container.querySelectorAll('.o95MetodoChk'));
+    var chkNoUso = metChks.find(function(c) { return c.value === 'NO_USO' || c.getAttribute('data-codigo') === 'NO_USO'; });
+    var chkMetDesconocido = metChks.find(function(c) { return c.value === 'DESCONOCIDO' || c.getAttribute('data-codigo') === 'DESCONOCIDO'; });
+    var chkMetOtro = metChks.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+    var wrapMetOtro = document.getElementById('bloqueMetodoAnticonceptivoOtroO95');
+
+    if (chkNoUso && chkNoUso.checked) {
+      metChks.forEach(function(c) {
+        if (c !== chkNoUso) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+    } else if (chkMetDesconocido && chkMetDesconocido.checked) {
+      metChks.forEach(function(c) {
+        if (c !== chkMetDesconocido) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+    } else {
+      metChks.forEach(function(c) {
+        c.disabled = false;
+      });
+    }
+
+    if (wrapMetOtro && chkMetOtro) {
+      wrapMetOtro.hidden = !chkMetOtro.checked;
+      wrapMetOtro.style.display = chkMetOtro.checked ? '' : 'none';
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    if (!e.target) return;
+    if (e.target.id === 'o95CausaGenericaSel' || e.target.name === 'campo_14314') {
+      actualizarCausasDefuncionO95();
+    }
+    if (e.target.classList.contains('o95PatologiaChk') ||
+        e.target.classList.contains('o95MetodoChk') ||
+        e.target.id === 'o95GestacionesInput' ||
+        e.target.id === 'o95PartosInput' ||
+        e.target.id === 'o95CesareasInput' ||
+        e.target.id === 'o95AbortosInput' ||
+        e.target.id === 'o95NacVivosInput' ||
+        e.target.id === 'o95NacMuertosInput' ||
+        e.target.id === 'o95HijosVivenInput') {
+      actualizarAntecedentesPatologicosObstetricosO95();
+    }
+  });
+
+  document.addEventListener('input', function(e) {
+    if (!e.target) return;
+    if (e.target.id === 'o95GestacionesInput' ||
+        e.target.id === 'o95PartosInput' ||
+        e.target.id === 'o95CesareasInput' ||
+        e.target.id === 'o95AbortosInput' ||
+        e.target.id === 'o95NacVivosInput' ||
+        e.target.id === 'o95NacMuertosInput' ||
+        e.target.id === 'o95HijosVivenInput') {
+      actualizarAntecedentesPatologicosObstetricosO95();
+    }
+  });
+
+  // Sanitización de entradas numéricas enteras: Bloqueo de 'e', 'E', '.', ',', '+', '-'
+  document.addEventListener('keydown', function(e) {
+    if (!e.target) return;
+    var isNumInput = (e.target.type === 'number' || e.target.getAttribute('inputmode') === 'numeric' || e.target.classList.contains('solo-enteros'));
+    var isDecimalAllowed = e.target.classList.contains('permite-decimales');
+
+    if (isNumInput && !isDecimalAllowed) {
+      if (['e', 'E', '.', ',', '+', '-'].includes(e.key)) {
+        e.preventDefault();
+      }
+    }
+  });
+
+  document.addEventListener('input', function(e) {
+    if (!e.target) return;
+    var isNumInput = (e.target.type === 'number' || e.target.getAttribute('inputmode') === 'numeric' || e.target.classList.contains('solo-enteros'));
+    var isDecimalAllowed = e.target.classList.contains('permite-decimales');
+
+    if (isNumInput && !isDecimalAllowed) {
+      if (/[eE\.\,\+\-]/.test(e.target.value)) {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+      }
+    }
+  });
+
+  function actualizarAtencionPrenatalO95() {
+    var container = document.getElementById('bloqueAtencionPrenatalO95');
+    if (!container) return;
+
+    // 1. ¿Recibió APN?
+    var rApnSi = document.getElementById('o95RecibioApnSi');
+    var wrapApnDetalles = document.getElementById('bloqueApnDetallesO95');
+    if (wrapApnDetalles) {
+      var esApnSi = (rApnSi && rApnSi.checked);
+      wrapApnDetalles.hidden = !esApnSi;
+      wrapApnDetalles.style.display = esApnSi ? '' : 'none';
+    }
+
+    // Responsable = Otro
+    var selResp = document.getElementById('o95ResponsableApnSel');
+    var wrapRespOtro = document.getElementById('bloqueResponsableApnOtroO95');
+    if (wrapRespOtro && selResp) {
+      var valR = (selResp.value || '').toUpperCase().trim();
+      var esRespOtro = (valR === 'OTRO');
+      wrapRespOtro.hidden = !esRespOtro;
+      wrapRespOtro.style.display = esRespOtro ? '' : 'none';
+    }
+
+    // 2. ¿Visitas domiciliarias?
+    var rVisitasSi = document.getElementById('o95VisitasDomSi');
+    var wrapVisitasDetalles = document.getElementById('bloqueVisitasDomDetallesO95');
+    if (wrapVisitasDetalles) {
+      var esVisitasSi = (rVisitasSi && rVisitasSi.checked);
+      wrapVisitasDetalles.hidden = !esVisitasSi;
+      wrapVisitasDetalles.style.display = esVisitasSi ? '' : 'none';
+    }
+  }
+
+  function actualizarComplicacionesO95() {
+    var container = document.getElementById('bloqueComplicacionesO95');
+    if (!container) return;
+
+    // 1. ¿Tuvo complicaciones? (Reglas 1, 2, 3)
+    var rTuvoSi = document.getElementById('o95TuvoCompSi');
+    var wrapGrupos = document.getElementById('bloqueGruposComplicacionesO95');
+    if (wrapGrupos) {
+      var esTuvoSi = (rTuvoSi && rTuvoSi.checked);
+      wrapGrupos.hidden = !esTuvoSi;
+      wrapGrupos.style.display = esTuvoSi ? '' : 'none';
+    }
+
+    // 2. Grupo 1: Complicaciones del embarazo
+    var chksEmb = Array.from(container.querySelectorAll('.o95CompEmbChk'));
+    var chkNingunaEmb = chksEmb.find(function(c) { return c.value === 'NINGUNA' || c.getAttribute('data-codigo') === 'NINGUNA'; });
+    var chkOtroEmb = chksEmb.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+    var wrapOtroEmb = document.getElementById('bloqueCompEmbOtroO95');
+
+    if (chkNingunaEmb && chkNingunaEmb.checked) {
+      chksEmb.forEach(function(c) {
+        if (c !== chkNingunaEmb) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+    } else {
+      chksEmb.forEach(function(c) { c.disabled = false; });
+    }
+    if (wrapOtroEmb && chkOtroEmb) {
+      wrapOtroEmb.hidden = !chkOtroEmb.checked;
+      wrapOtroEmb.style.display = chkOtroEmb.checked ? '' : 'none';
+    }
+
+    // 3. Grupo 2: Complicaciones del parto
+    var chksPart = Array.from(container.querySelectorAll('.o95CompPartChk'));
+    var chkNingunaPart = chksPart.find(function(c) { return c.value === 'NINGUNA' || c.getAttribute('data-codigo') === 'NINGUNA'; });
+    var chkOtroPart = chksPart.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+    var wrapOtroPart = document.getElementById('bloqueCompPartOtroO95');
+
+    if (chkNingunaPart && chkNingunaPart.checked) {
+      chksPart.forEach(function(c) {
+        if (c !== chkNingunaPart) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+    } else {
+      chksPart.forEach(function(c) { c.disabled = false; });
+    }
+    if (wrapOtroPart && chkOtroPart) {
+      wrapOtroPart.hidden = !chkOtroPart.checked;
+      wrapOtroPart.style.display = chkOtroPart.checked ? '' : 'none';
+    }
+
+    // 4. Grupo 3: Complicaciones del puerperio
+    var chksPuer = Array.from(container.querySelectorAll('.o95CompPuerChk'));
+    var chkNingunaPuer = chksPuer.find(function(c) { return c.value === 'NINGUNA' || c.getAttribute('data-codigo') === 'NINGUNA'; });
+    var chkOtroPuer = chksPuer.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+    var wrapOtroPuer = document.getElementById('bloqueCompPuerOtroO95');
+
+    if (chkNingunaPuer && chkNingunaPuer.checked) {
+      chksPuer.forEach(function(c) {
+        if (c !== chkNingunaPuer) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+    } else {
+      chksPuer.forEach(function(c) { c.disabled = false; });
+    }
+    if (wrapOtroPuer && chkOtroPuer) {
+      wrapOtroPuer.hidden = !chkOtroPuer.checked;
+      wrapOtroPuer.style.display = chkOtroPuer.checked ? '' : 'none';
+    }
+  }
+
+  function actualizarHospitalizacionesO95() {
+    var container = document.getElementById('bloqueHospitalizacionesO95');
+    if (!container) return;
+
+    var rHospSi = document.getElementById('o95HospGestSi');
+    var wrapCuantasHosp = document.getElementById('bloqueCuantasHospO95');
+    if (wrapCuantasHosp) {
+      var esHospSi = (rHospSi && rHospSi.checked);
+      wrapCuantasHosp.hidden = !esHospSi;
+      wrapCuantasHosp.style.display = esHospSi ? '' : 'none';
+    }
+  }
+
+  function actualizarPartoAbortoO95() {
+    var container = document.getElementById('bloquePartoAbortoO95');
+    if (!container) return;
+
+    // 6. Mejora del sistema: Si Momento del fallecimiento = EMBARAZO -> Establecer Tipo de parto = NO_APLICA, Fecha = No aplica
+    var selMomento = document.getElementById('o95MomentoFallecimientoSel') || document.querySelector('[name="campo_14304"]');
+    var valMomento = selMomento ? (selMomento.value || '').toUpperCase().trim() : '';
+
+    var chkDescon = document.getElementById('o95FechaPartoDesconChk');
+    var chkNA = document.getElementById('o95FechaPartoNoAplicaChk');
+    var inFecha = document.getElementById('o95FechaPartoInput');
+
+    var selLugar = document.getElementById('o95LugarPartoSel');
+    var wrapEess = document.getElementById('bloqueLugarPartoEessO95');
+    var wrapLugarOtro = document.getElementById('bloqueLugarPartoOtroO95');
+
+    var selTipo = document.getElementById('o95TipoPartoSel');
+    var selResp = document.getElementById('o95RespPartoSel');
+    var wrapRespOtro = document.getElementById('bloqueRespPartoOtroO95');
+
+    var rNecroSi = document.getElementById('o95NecropsiaSi');
+    var wrapCausaNecro = document.getElementById('bloqueNecropsiaCausaO95');
+
+    if (valMomento === 'EMBARAZO' || valMomento === 'DURANTE EL EMBARAZO') {
+      if (chkNA && !chkNA.disabled && !chkNA.checked && (!inFecha || !inFecha.value)) {
+        chkNA.checked = true;
+        if (chkDescon) chkDescon.checked = false;
+      }
+      if (selTipo && (!selTipo.value || selTipo.value === 'VAGINAL' || selTipo.value === 'CESAREA')) {
+        selTipo.value = 'NO_APLICA';
+      }
+      if (selLugar && (!selLugar.value || selLugar.value === 'DOMICILIO' || selLugar.value === 'EESS')) {
+        selLugar.value = 'NO_APLICA';
+      }
+    }
+
+    // 1. Fecha de parto o aborto (Desconocida / No aplica)
+    if (inFecha) {
+      var deshabilitarFecha = (chkDescon && chkDescon.checked) || (chkNA && chkNA.checked);
+      inFecha.disabled = deshabilitarFecha;
+      if (deshabilitarFecha) {
+        inFecha.value = '';
+      }
+    }
+
+    // 2. Lugar del parto o aborto
+    if (selLugar) {
+      var vLugar = (selLugar.value || '').toUpperCase().trim();
+      var esEess = (vLugar === 'EESS' || vLugar === 'EN EESS');
+      var esLugarOtro = (vLugar === 'OTRO');
+
+      if (wrapEess) {
+        wrapEess.hidden = !esEess;
+        wrapEess.style.display = esEess ? '' : 'none';
+      }
+      if (wrapLugarOtro) {
+        wrapLugarOtro.hidden = !esLugarOtro;
+        wrapLugarOtro.style.display = esLugarOtro ? '' : 'none';
+      }
+    }
+
+    // 4. Responsable de la atención
+    if (selResp) {
+      var vResp = (selResp.value || '').toUpperCase().trim();
+      var esRespOtro = (vResp === 'OTRO');
+      if (wrapRespOtro) {
+        wrapRespOtro.hidden = !esRespOtro;
+        wrapRespOtro.style.display = esRespOtro ? '' : 'none';
+      }
+    }
+
+    // 5. Necropsia
+    if (wrapCausaNecro) {
+      var esNecroSi = (rNecroSi && rNecroSi.checked);
+      wrapCausaNecro.hidden = !esNecroSi;
+      wrapCausaNecro.style.display = esNecroSi ? '' : 'none';
+    }
+  }
+
+  function actualizarEntornoSocialO95() {
+    var container = document.getElementById('bloqueEntornoSocialO95');
+    if (!container) return;
+
+    // 1. Identificaron signos de peligro
+    var rIdentSi = document.getElementById('o95IdentSignosSi');
+    var wrapIdent = document.getElementById('bloqueIdentificaronSignosO95');
+    var selPersIdent = document.getElementById('o95PersonaIdentificoSel');
+    var wrapPersIdentOtro = document.getElementById('bloquePersonaIdentificoOtroO95');
+
+    var esIdentSi = (rIdentSi && rIdentSi.checked);
+    if (wrapIdent) {
+      wrapIdent.hidden = !esIdentSi;
+      wrapIdent.style.display = esIdentSi ? '' : 'none';
+    }
+    if (wrapPersIdentOtro && selPersIdent) {
+      var vPI = (selPersIdent.value || '').toUpperCase().trim();
+      var esPIOtro = (vPI === 'OTRO');
+      wrapPersIdentOtro.hidden = !esPIOtro;
+      wrapPersIdentOtro.style.display = esPIOtro ? '' : 'none';
+    }
+
+    // 2. Buscaron ayuda
+    var rAyudaSi = document.getElementById('o95BuscaronAyudaSi');
+    var wrapAyuda = document.getElementById('bloqueBuscaronAyudaO95');
+    var selDecis = document.getElementById('o95DecisionBuscarAyudaSel');
+    var wrapDecisOtro = document.getElementById('bloqueDecisionBuscarAyudaOtroO95');
+
+    var esAyudaSi = (rAyudaSi && rAyudaSi.checked);
+    if (wrapAyuda) {
+      wrapAyuda.hidden = !esAyudaSi;
+      wrapAyuda.style.display = esAyudaSi ? '' : 'none';
+    }
+    if (wrapDecisOtro && selDecis) {
+      var vDec = (selDecis.value || '').toUpperCase().trim();
+      var esDecOtro = (vDec === 'OTRO');
+      wrapDecisOtro.hidden = !esDecOtro;
+      wrapDecisOtro.style.display = esDecOtro ? '' : 'none';
+    }
+
+    // 3. Dificultad con acceso
+    var rAccesoSi = document.getElementById('o95DificultadAccesoSi');
+    var wrapAcceso = document.getElementById('bloqueDificultadAccesoO95');
+    var wrapAccesoOtro = document.getElementById('bloqueDificultadAccesoOtroO95');
+    var chksAcceso = Array.from(container.querySelectorAll('.o95DifAccesoChk'));
+    var chkAccesoOtro = chksAcceso.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+
+    var esAccesoSi = (rAccesoSi && rAccesoSi.checked);
+    if (wrapAcceso) {
+      wrapAcceso.hidden = !esAccesoSi;
+      wrapAcceso.style.display = esAccesoSi ? '' : 'none';
+    }
+    if (wrapAccesoOtro && chkAccesoOtro) {
+      var esAccOtro = chkAccesoOtro.checked;
+      wrapAccesoOtro.hidden = !esAccOtro;
+      wrapAccesoOtro.style.display = esAccOtro ? '' : 'none';
+    }
+
+    // 4. Dificultad con atencion
+    var rAtencSi = document.getElementById('o95DificultadAtencionSi');
+    var wrapAtenc = document.getElementById('bloqueDificultadAtencionO95');
+    var wrapAtencOtro = document.getElementById('bloqueDificultadAtencionOtroO95');
+    var chksAtenc = Array.from(container.querySelectorAll('.o95DifAtencChk'));
+    var chkAtencOtro = chksAtenc.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+
+    var esAtencSi = (rAtencSi && rAtencSi.checked);
+    if (wrapAtenc) {
+      wrapAtenc.hidden = !esAtencSi;
+      wrapAtenc.style.display = esAtencSi ? '' : 'none';
+    }
+    if (wrapAtencOtro && chkAtencOtro) {
+      var esAtOtro = chkAtencOtro.checked;
+      wrapAtencOtro.hidden = !esAtOtro;
+      wrapAtencOtro.style.display = esAtOtro ? '' : 'none';
+    }
+
+    // 5. Persona que brindo informacion
+    var selPersInfo = document.getElementById('o95PersonaBrindoInfoSel');
+    var wrapPersInfoOtro = document.getElementById('bloquePersonaBrindoInfoOtroO95');
+    if (wrapPersInfoOtro && selPersInfo) {
+      var vInfo = (selPersInfo.value || '').toUpperCase().trim();
+      var esInfoOtro = (vInfo === 'OTRO');
+      wrapPersInfoOtro.hidden = !esInfoOtro;
+      wrapPersInfoOtro.style.display = esInfoOtro ? '' : 'none';
+    }
+
+    // Validar limites de minutos (0-59)
+    ['o95TiempoBuscarAyudaMinutosInput', 'o95TiempoLlegarEessMinutosInput', 'o95TiempoHastaAtendidaMinutosInput'].forEach(function(id) {
+      var elem = document.getElementById(id);
+      if (elem && elem.value !== '') {
+        var v = parseInt(elem.value, 10);
+        if (isNaN(v) || v < 0) elem.value = 0;
+        else if (v > 59) elem.value = 59;
+      }
+    });
+  }
+
+  function actualizarDatosComunitariosO95() {
+    var container = document.getElementById('bloqueDatosComunitariosO95');
+    if (!container) return;
+
+    var chkEnable = document.getElementById('o95HabilitarDatosComunitariosChk');
+    var wrapContenido = document.getElementById('bloqueContenidoComunitarioO95');
+
+    // 0. Autodetectar si Lugar de fallecimiento es extrainstitucional
+    var selLugarDef = document.getElementById('o95LugarFallecimientoSel') || document.querySelector('[name="campo_14300"]');
+    if (selLugarDef) {
+      var vLugarDef = (selLugarDef.value || '').toUpperCase().trim();
+      if (vLugarDef === 'DOMICILIO' || vLugarDef === 'TRAYECTO' || vLugarDef === 'OTRO') {
+        if (chkEnable && !chkEnable.checked && !chkEnable.dataset.userToggled) {
+          chkEnable.checked = true;
+        }
+      }
+    }
+
+    var esHabilitado = (chkEnable && chkEnable.checked);
+    if (wrapContenido) {
+      wrapContenido.hidden = !esHabilitado;
+      wrapContenido.style.display = esHabilitado ? '' : 'none';
+    }
+
+    // 1. Sintomatologia
+    var chksSintom = Array.from(container.querySelectorAll('.o95SintomChk'));
+    var chkSintomOtro = chksSintom.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+    var wrapSintomOtro = document.getElementById('bloqueSintomatologiaOtroO95');
+    if (wrapSintomOtro && chkSintomOtro) {
+      var esSOtro = chkSintomOtro.checked;
+      wrapSintomOtro.hidden = !esSOtro;
+      wrapSintomOtro.style.display = esSOtro ? '' : 'none';
+    }
+
+    // 2. Maniobras durante el parto
+    var chksManPart = Array.from(container.querySelectorAll('.o95ManPartChk'));
+    var chkManPartNoUso = chksManPart.find(function(c) { return c.value === 'NO_SE_USO' || c.getAttribute('data-codigo') === 'NO_SE_USO'; });
+    var chkManPartOtro  = chksManPart.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+    var wrapManPartOtro = document.getElementById('bloqueManiobrasPartoOtroO95');
+
+    if (chkManPartNoUso && chkManPartNoUso.checked) {
+      chksManPart.forEach(function(c) {
+        if (c !== chkManPartNoUso) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+      if (wrapManPartOtro) {
+        wrapManPartOtro.hidden = true;
+        wrapManPartOtro.style.display = 'none';
+      }
+    } else {
+      chksManPart.forEach(function(c) { c.disabled = false; });
+      if (wrapManPartOtro && chkManPartOtro) {
+        var esMPOtro = chkManPartOtro.checked;
+        wrapManPartOtro.hidden = !esMPOtro;
+        wrapManPartOtro.style.display = esMPOtro ? '' : 'none';
+      }
+    }
+
+    // 3. Maniobras para retirar placenta
+    var chksManPlac = Array.from(container.querySelectorAll('.o95ManPlacChk'));
+    var chkManPlacNoUso = chksManPlac.find(function(c) { return c.value === 'NO_SE_USO' || c.getAttribute('data-codigo') === 'NO_SE_USO'; });
+    var chkManPlacOtro  = chksManPlac.find(function(c) { return c.value === 'OTRO' || c.getAttribute('data-codigo') === 'OTRO'; });
+    var wrapManPlacOtro = document.getElementById('bloqueManiobrasPlacentaOtroO95');
+
+    if (chkManPlacNoUso && chkManPlacNoUso.checked) {
+      chksManPlac.forEach(function(c) {
+        if (c !== chkManPlacNoUso) {
+          c.checked = false;
+          c.disabled = true;
+        }
+      });
+      if (wrapManPlacOtro) {
+        wrapManPlacOtro.hidden = true;
+        wrapManPlacOtro.style.display = 'none';
+      }
+    } else {
+      chksManPlac.forEach(function(c) { c.disabled = false; });
+      if (wrapManPlacOtro && chkManPlacOtro) {
+        var esMPlOtro = chkManPlacOtro.checked;
+        wrapManPlacOtro.hidden = !esMPlOtro;
+        wrapManPlacOtro.style.display = esMPlOtro ? '' : 'none';
+      }
+    }
+
+    // Validar limites de minutos (0-59)
+    var inMinDom = document.getElementById('o95TiempoDomicilioEessMinutosInput');
+    if (inMinDom && inMinDom.value !== '') {
+      var vM = parseInt(inMinDom.value, 10);
+      if (isNaN(vM) || vM < 0) inMinDom.value = 0;
+      else if (vM > 59) inMinDom.value = 59;
+    }
+  }
+
+  function actualizarInvestigadorProfesion() {
+    var selProf = document.getElementById('investigadorProfesionSel');
+    var wrapOtra = document.getElementById('bloqueInvestigadorProfesionOtra');
+    if (!selProf || !wrapOtra) return;
+
+    var valP = (selProf.value || '').trim();
+    var esOtro = (valP === 'Otro');
+
+    wrapOtra.hidden = !esOtro;
+    wrapOtra.style.display = esOtro ? '' : 'none';
+  }
+
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.demora-help-btn');
+    document.querySelectorAll('.demora-row').forEach(function(r) { r.classList.remove('has-active-tooltip'); });
+    if (btn) {
+      var wasActive = btn.classList.contains('active');
+      document.querySelectorAll('.demora-help-btn.active').forEach(function(b) { b.classList.remove('active'); });
+      if (!wasActive) {
+        btn.classList.add('active');
+        var row = btn.closest('.demora-row');
+        if (row) row.classList.add('has-active-tooltip');
+      }
+    } else {
+      document.querySelectorAll('.demora-help-btn.active').forEach(function(b) { b.classList.remove('active'); });
+    }
+  });
+
+  document.addEventListener('change', function(e) {
+    if (!e.target) return;
+    if (e.target.name === 'campo_13728' || e.target.name === 'campo_13730' || e.target.classList.contains('radio-contacto-caso-b26') || e.target.classList.contains('radio-contacto-gestante-b26')) {
+      actualizarLugarInfeccionB26();
+    }
+    if (e.target.name === 'campo_13708' || e.target.name === 'campo_13720' || e.target.name === 'campo_13724' ||
+        e.target.classList.contains('chk-complicacion-b26') || e.target.classList.contains('radio-parotidas-b26') ||
+        e.target.classList.contains('radio-hospitalizacion-b26') || e.target.classList.contains('radio-egreso-b26')) {
+      actualizarCuadroClinicoB26();
+    }
+    if (e.target.name === 'b26_vacunacion_spr' || e.target.classList.contains('radio-vacuna-spr-b26')) {
+      actualizarVacunacionB26();
+    }
+    if (e.target.classList.contains('sel-lugar-tipo-b26')) {
+      var row = e.target.closest('.row-lugar-b26');
+      if (row) {
+        var inpNombre = row.querySelector('.inp-lugar-nombre-b26');
+        if (inpNombre) {
+          var esCasa = (e.target.value === 'CASA');
+          inpNombre.disabled = esCasa;
+          inpNombre.placeholder = esCasa ? '— No aplica —' : 'Nombre del lugar…';
+          if (esCasa) inpNombre.value = '';
+        }
+      }
+    }
+    if (e.target.name === 'sexo' || e.target.id === 'sexo' || e.target.name === 'gestante' || e.target.id === 'gestanteSel') {
+      actualizarGestante();
+    }
+    if (e.target.name === 'etnia' || e.target.id === 'etniaSel') {
+      actualizarEtniaOtra(true);
+    }
+    if (e.target.name === 'clasificacion' || e.target.name === 'campo_14379' || e.target.name === 'campo_14315') {
+      sincronizarClasificacionO95(e.target);
+    }
+    if (e.target.id === 'investigadorProfesionSel') {
+      actualizarInvestigadorProfesion();
+    }
+    if (e.target.id === 'o95HabilitarDatosComunitariosChk') {
+      e.target.dataset.userToggled = 'true';
+      actualizarDatosComunitariosO95();
+    }
+    if (e.target.classList.contains('o95SintomChk') ||
+        e.target.classList.contains('o95ManPartChk') ||
+        e.target.classList.contains('o95ManPlacChk') ||
+        e.target.name === 'campo_14300') {
+      actualizarDatosComunitariosO95();
+    }
+    if (e.target.name === 'campo_14357' ||
+        e.target.id === 'o95PersonaIdentificoSel' ||
+        e.target.name === 'campo_14359' ||
+        e.target.id === 'o95DecisionBuscarAyudaSel' ||
+        e.target.name === 'campo_14362' ||
+        e.target.classList.contains('o95DifAccesoChk') ||
+        e.target.name === 'campo_14365' ||
+        e.target.classList.contains('o95DifAtencChk') ||
+        e.target.id === 'o95PersonaBrindoInfoSel') {
+      actualizarEntornoSocialO95();
+    }
+    if (e.target.id === 'o95FechaPartoDesconChk') {
+      var cNA = document.getElementById('o95FechaPartoNoAplicaChk');
+      if (e.target.checked && cNA) cNA.checked = false;
+      actualizarPartoAbortoO95();
+    }
+    if (e.target.id === 'o95FechaPartoNoAplicaChk') {
+      var cD = document.getElementById('o95FechaPartoDesconChk');
+      if (e.target.checked && cD) cD.checked = false;
+      actualizarPartoAbortoO95();
+    }
+    if (e.target.id === 'o95LugarPartoSel' ||
+        e.target.id === 'o95TipoPartoSel' ||
+        e.target.id === 'o95RespPartoSel' ||
+        e.target.name === 'campo_14355' ||
+        e.target.name === 'campo_14304') {
+      actualizarPartoAbortoO95();
+    }
+    if (e.target.id === 'o95ReferidaSel' ||
+        e.target.name === 'campo_14309' ||
+        e.target.id === 'o95RespOrigenSel' ||
+        e.target.name === 'campo_16154' ||
+        e.target.id === 'o95FechaIngOrigenInput' ||
+        e.target.id === 'o95HoraIngOrigenInput' ||
+        e.target.id === 'o95FechaEgrOrigenInput' ||
+        e.target.id === 'o95HoraEgrOrigenInput') {
+      actualizarReferenciaO95();
+    }
+    if (e.target.name === 'campo_14347') {
+      actualizarHospitalizacionesO95();
+    }
+    if (e.target.name === 'campo_14334' ||
+        e.target.name === 'campo_14338' ||
+        e.target.id === 'o95ResponsableApnSel' ||
+        e.target.name === 'campo_14341') {
+      actualizarAtencionPrenatalO95();
+    }
+    if (e.target.name === 'campo_16147' ||
+        e.target.classList.contains('o95CompEmbChk') ||
+        e.target.classList.contains('o95CompPartChk') ||
+        e.target.classList.contains('o95CompPuerChk')) {
+      actualizarComplicacionesO95();
+    }
+  });
+
+  document.addEventListener('input', function(e) {
+    if (!e.target) return;
+    if (e.target.id === 'o95TiempoDomicilioEessMinutosInput') {
+      actualizarDatosComunitariosO95();
+    }
+    if (e.target.id === 'o95TiempoBuscarAyudaMinutosInput' ||
+        e.target.id === 'o95TiempoLlegarEessMinutosInput' ||
+        e.target.id === 'o95TiempoHastaAtendidaMinutosInput') {
+      actualizarEntornoSocialO95();
+    }
+    if (e.target.id === 'o95FechaIngOrigenInput' ||
+        e.target.id === 'o95HoraIngOrigenInput' ||
+        e.target.id === 'o95FechaEgrOrigenInput' ||
+        e.target.id === 'o95HoraEgrOrigenInput') {
+      actualizarReferenciaO95();
     }
   });
 
   actualizarPuebloEtnicoO95();
   actualizarOtrosCamposO95();
+  actualizarDatosFallecimientoO95();
+  actualizarReferenciaO95();
+  actualizarCausasDefuncionO95();
+  actualizarAntecedentesPatologicosObstetricosO95();
+  actualizarAtencionPrenatalO95();
+  actualizarComplicacionesO95();
+  actualizarHospitalizacionesO95();
+  actualizarPartoAbortoO95();
+  actualizarEntornoSocialO95();
+  actualizarDatosComunitariosO95();
+  actualizarInvestigadorProfesion();
 
   // B05 Clasificación final -> Sincronizar clasificación del caso al final del formulario
   function actualizarClasificacionCasoB05() {
@@ -1546,6 +2971,21 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.addEventListener('input', function(e) {
+    if (e.target && (e.target.id === 'fechaInicioSintomasB26' || e.target.id === 'fechaHospitalizacionB26')) {
+      actualizarCuadroClinicoB26();
+    }
+    if (e.target && e.target.type === 'number' && e.target.classList.contains('inp-dias-pos-b26')) {
+      var valPos = parseInt(e.target.value, 10);
+      if (isNaN(valPos) || valPos < 1) {
+        e.target.value = (e.target.value === '' ? '' : '1');
+      }
+    }
+    if (e.target && e.target.type === 'number' && (e.target.classList.contains('inp-lugar-sanos-b26') || e.target.classList.contains('inp-lugar-enfermos-b26'))) {
+      var val = parseInt(e.target.value, 10);
+      if (isNaN(val) || val < 0) {
+        e.target.value = (e.target.value === '' ? '' : '0');
+      }
+    }
     if (e.target && e.target.name && (
       e.target.name === 'campo_16072' || e.target.name === 'campo_16073' || e.target.name === 'campo_16074' ||
       e.target.name === 'campo_16104' || e.target.name === 'campo_16105' || e.target.name === 'campo_16106' || e.target.name === 'campo_16107'

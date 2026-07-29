@@ -64,6 +64,9 @@ function marcado(mixed $valor): string
  */
 function opcionesClasificacionPara(array $enfermedad): array
 {
+    if (($enfermedad['cie10'] ?? '') === 'O95') {
+        return ['DIRECTA', 'INDIRECTA', 'INCIDENTAL', 'POR_DETERMINAR'];
+    }
     $genericas = ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'];
     $restriccion = trim($enfermedad['opciones_clasificacion'] ?? '');
     if ($restriccion === '') {

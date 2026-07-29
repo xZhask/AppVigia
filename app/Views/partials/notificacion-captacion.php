@@ -7,8 +7,9 @@
  * Variable esperada: $valoresFijos con tipo_captacion, lugar_captacion,
  * clasificacion_captacion.
  */
+$esB26Capt = (($enfermedad['cie10'] ?? null) === 'B26');
 ?>
-<div class="fields thirds" style="margin-top:14px">
+<div class="b26-capt-grid <?= $esB26Capt ? 'fields halves' : 'fields thirds' ?>" style="margin-top:14px">
   <div class="field">
     <label class="fl">Tipo de captación</label>
     <div class="control">
@@ -29,7 +30,7 @@
       </select>
     </div>
   </div>
-  <div class="field">
+  <div class="field b26-hide" <?= $esB26Capt ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Clasificación en la captación</label>
     <div class="control">
       <select name="clasificacion_captacion" data-nosearch="true">

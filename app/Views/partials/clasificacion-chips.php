@@ -8,13 +8,31 @@
  * propio (enfermedad.opciones_clasificacion, CSV; NULL = las 4 genéricas) —
  * ej. difteria solo admite Confirmado/Descartado (AUDITORIA_FICHA_DIFTERIA.md).
  */
-$opcionesClasificacion = [
-    'SOSPECHOSO' => ['dot' => 'dot-sos', 'etiqueta' => 'Sospechoso'],
-    'PROBABLE'   => ['dot' => 'dot-pro', 'etiqueta' => 'Probable'],
-    'CONFIRMADO' => ['dot' => 'dot-con', 'etiqueta' => 'Confirmado'],
-    'DESCARTADO' => ['dot' => 'dot-des', 'etiqueta' => 'Descartado'],
-];
-$opcionesClasificacion = array_intersect_key($opcionesClasificacion, array_flip(opcionesClasificacionPara($enfermedad)));
+$esO95Chips = (($enfermedad['cie10'] ?? '') === 'O95');
+
+if ($esO95Chips) {
+    $opcionesClasificacion = [
+        'DIRECTA'        => ['dot' => 'dot-con', 'etiqueta' => 'Directa'],
+        'INDIRECTA'      => ['dot' => 'dot-pro', 'etiqueta' => 'Indirecta'],
+        'INCIDENTAL'     => ['dot' => 'dot-sos', 'etiqueta' => 'Incidental'],
+        'POR_DETERMINAR' => ['dot' => 'dot-des', 'etiqueta' => 'Por determinar'],
+    ];
+
+    $valCausaClasif = $valoresCampos[14379] ?? ($valoresCampos[14315] ?? '');
+    if ($valCausaClasif && in_array($valCausaClasif, array_keys($opcionesClasificacion), true)) {
+        $clasificacionActual = $valCausaClasif;
+    } elseif (!in_array($clasificacionActual, array_keys($opcionesClasificacion), true)) {
+        $clasificacionActual = 'POR_DETERMINAR';
+    }
+} else {
+    $opcionesClasificacion = [
+        'SOSPECHOSO' => ['dot' => 'dot-sos', 'etiqueta' => 'Sospechoso'],
+        'PROBABLE'   => ['dot' => 'dot-pro', 'etiqueta' => 'Probable'],
+        'CONFIRMADO' => ['dot' => 'dot-con', 'etiqueta' => 'Confirmado'],
+        'DESCARTADO' => ['dot' => 'dot-des', 'etiqueta' => 'Descartado'],
+    ];
+    $opcionesClasificacion = array_intersect_key($opcionesClasificacion, array_flip(opcionesClasificacionPara($enfermedad)));
+}
 ?>
 <div class="field">
   <label class="fl">Clasificación del caso</label>

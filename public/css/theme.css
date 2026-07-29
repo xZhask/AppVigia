@@ -11,6 +11,7 @@
 :root{
     --paper:#F4F6F8;
     --surface:#FFFFFF;
+    --surface-2:#F1F5F9;
     --ink:#14202B;
     --ink-2:#243441;
     --muted:#5F6E7A;
@@ -683,3 +684,48 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb {
 html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
   background-color: var(--accent);
 }
+
+/* Radio & Checkbox Containers - Light & Dark Theme */
+.control-radio-group,
+.radio-group-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    align-items: center;
+    background: var(--surface-2, var(--paper));
+    padding: 12px 16px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.control-radio-group label,
+.radio-group-container label,
+.checkbox-grid label.choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink);
+    user-select: none;
+    transition: color 0.15s;
+}
+
+.control-radio-group label:hover,
+.radio-group-container label:hover,
+.checkbox-grid label.choice:hover {
+    color: var(--accent-deep);
+}
+
+.control-radio-group input[type="radio"],
+.radio-group-container input[type="radio"],
+.checkbox-grid input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+

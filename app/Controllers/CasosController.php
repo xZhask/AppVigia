@@ -151,13 +151,19 @@ class CasosController extends Controller
             'direccion'          => trim($_POST['direccion'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
+            'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
+            'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
+            'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
             'semanas_gestacion'  => trim($_POST['semanas_gestacion'] ?? ''),
+            'trimestre_gestacion'=> $_POST['trimestre_gestacion'] ?? '',
             'tipo_captacion'         => $_POST['tipo_captacion'] ?? '',
             'lugar_captacion'        => $_POST['lugar_captacion'] ?? '',
             'clasificacion_captacion' => $_POST['clasificacion_captacion'] ?? '',
             'investigador_nombre'    => trim($_POST['investigador_nombre'] ?? ''),
             'investigador_cargo'     => trim($_POST['investigador_cargo'] ?? ''),
+            'investigador_profesion' => trim($_POST['investigador_profesion_sel'] ?? '') === 'Otro' ? trim($_POST['investigador_profesion_otra'] ?? '') : trim($_POST['investigador_profesion_sel'] ?? ''),
+            'investigador_profesion_otra' => trim($_POST['investigador_profesion_otra'] ?? ''),
             'fecha_investigacion'    => trim($_POST['fecha_investigacion'] ?? ''),
         ];
 
@@ -395,6 +401,12 @@ class CasosController extends Controller
         require __DIR__ . '/../Views/partials/tablas-hijas/muestras.php';
         $htmlMuestras = ob_get_clean();
 
+        $clasificacionActual = opcionesClasificacionPara($enfermedad)[0];
+        $valoresCampos = [];
+        ob_start();
+        require __DIR__ . '/../Views/partials/clasificacion-chips.php';
+        $htmlClasificacionChips = ob_get_clean();
+
         $isPfa = ($enfermedad['cie10'] ?? '') === 'A80';
         $isB05 = ($enfermedad['cie10'] ?? '') === 'B05';
         $sinCaptacion = in_array($enfermedad['cie10'] ?? '', ['A80', 'B05', 'O95'], true);
@@ -403,6 +415,7 @@ class CasosController extends Controller
         echo json_encode([
             'html'                 => $html,
             'htmlMuestras'         => $htmlMuestras,
+            'htmlClasificacionChips' => $htmlClasificacionChips,
             'cie10'                => $enfermedad['cie10'] ?: '—',
             'usaCaptacion'         => !$sinCaptacion,
             'usaMuestras'          => (int) ($enfermedad['usa_muestras'] ?? 0) === 1,
@@ -567,13 +580,18 @@ class CasosController extends Controller
             'direccion'          => (string) ($caso['direccion'] ?? ''),
             'localidad'          => (string) ($caso['localidad'] ?? ''),
             'etnia'              => (string) ($caso['etnia'] ?? ''),
+            'etnia_otra'         => (string) ($caso['etnia_otra'] ?? ''),
+            'nombre_tutor'       => (string) ($caso['nombre_tutor'] ?? ''),
+            'celular_tutor'      => (string) ($caso['celular_tutor'] ?? ''),
             'gestante'           => $caso['gestante'] !== null ? (string) $caso['gestante'] : '',
             'semanas_gestacion'  => (string) ($caso['semanas_gestacion'] ?? ''),
+            'trimestre_gestacion'=> (string) ($caso['trimestre_gestacion'] ?? ''),
             'tipo_captacion'         => (string) ($caso['tipo_captacion'] ?? ''),
             'lugar_captacion'        => (string) ($caso['lugar_captacion'] ?? ''),
             'clasificacion_captacion' => (string) ($caso['clasificacion_captacion'] ?? ''),
             'investigador_nombre'    => (string) ($caso['investigador_nombre'] ?? ''),
             'investigador_cargo'     => (string) ($caso['investigador_cargo'] ?? ''),
+            'investigador_profesion' => (string) ($caso['investigador_profesion'] ?? ''),
             'fecha_investigacion'    => (string) ($caso['fecha_investigacion'] ?? ''),
         ];
 
@@ -637,8 +655,12 @@ class CasosController extends Controller
             'direccion'          => trim($_POST['direccion'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
+            'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
+            'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
+            'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
             'semanas_gestacion'  => trim($_POST['semanas_gestacion'] ?? ''),
+            'trimestre_gestacion'=> $_POST['trimestre_gestacion'] ?? '',
             'tipo_captacion'         => $_POST['tipo_captacion'] ?? '',
             'lugar_captacion'        => $_POST['lugar_captacion'] ?? '',
             'clasificacion_captacion' => $_POST['clasificacion_captacion'] ?? '',
@@ -907,6 +929,21 @@ class CasosController extends Controller
         $puedeVerSensibles = Auth::tieneRol('ADMIN');
 
         foreach ($campos as $campoId => $campo) {
+            if ($campoId === 13729 && isset($_POST['b26_lugar_tipo']) && is_array($_POST['b26_lugar_tipo'])) {
+                $matriz13729 = [];
+                foreach ($_POST['b26_lugar_tipo'] as $idx => $tipo) {
+                    $matriz13729[] = [
+                        'tipo'      => trim((string) $tipo),
+                        'nombre'    => trim((string) ($_POST['b26_lugar_nombre'][$idx] ?? '')),
+                        'direccion' => trim((string) ($_POST['b26_lugar_direccion'][$idx] ?? '')),
+                        'sanos'     => trim((string) ($_POST['b26_lugar_sanos'][$idx] ?? '')),
+                        'enfermos'  => trim((string) ($_POST['b26_lugar_enfermos'][$idx] ?? '')),
+                    ];
+                }
+                $paraGuardar[13729] = json_encode($matriz13729, JSON_UNESCAPED_UNICODE);
+                $valoresCampos[13729] = $matriz13729;
+                continue;
+            }
             if ($campoId === 14301 && !empty($_POST['hora_notificacion'])) {
                 $valFechaHora = trim($_POST['fecha_notif'] ?? '') . ' ' . trim($_POST['hora_notificacion']);
                 $valoresCampos[$campoId] = $valFechaHora;
@@ -1026,6 +1063,13 @@ class CasosController extends Controller
             }
         }
 
+        foreach (['b26_inf_direccion', 'b26_inf_departamento_id', 'b26_inf_provincia_id', 'b26_inf_distrito_id', 'b26_inf_localidad', 'b26_fecha_contacto_gestante', 'b26_vacunacion_spr', 'b26_dosis_spr', 'b26_fecha_ultima_dosis_spr', 'b26_eess_vacunacion_spr', 'b26_observaciones'] as $cCustom) {
+            if (isset($_POST[$cCustom])) {
+                $paraGuardar[$cCustom] = trim((string) $_POST[$cCustom]);
+                $valoresCampos[$cCustom] = trim((string) $_POST[$cCustom]);
+            }
+        }
+
         return [$valoresCampos, $erroresCampos, $paraGuardar];
     }
 
@@ -1071,13 +1115,19 @@ class CasosController extends Controller
             'direccion'          => '',
             'localidad'          => '',
             'etnia'              => '',
+            'etnia_otra'         => '',
+            'nombre_tutor'       => '',
+            'celular_tutor'      => '',
             'gestante'           => '',
             'semanas_gestacion'  => '',
+            'trimestre_gestacion'=> '',
             'tipo_captacion'         => '',
             'lugar_captacion'        => '',
             'clasificacion_captacion' => '',
             'investigador_nombre'    => Auth::usuario()['nombre'] ?? '',
             'investigador_cargo'     => '',
+            'investigador_profesion' => '',
+            'investigador_profesion_otra' => '',
             'fecha_investigacion'    => $hoyIso,
         ];
     }
@@ -1113,13 +1163,20 @@ class CasosController extends Controller
     {
         $etnias = ['MESTIZO', 'ANDINO', 'ASIATICO_DESCENDIENTE', 'AFRODESCENDIENTE', 'INDIGENA_AMAZONICO', 'OTRO'];
         $etnia = in_array($valoresFijos['etnia'], $etnias, true) ? $valoresFijos['etnia'] : null;
+        $etniaOtra = ($etnia === 'OTRO' && $valoresFijos['etnia_otra'] !== '') ? $valoresFijos['etnia_otra'] : null;
 
         $gestante = null;
         $semanasGestacion = null;
+        $trimestreGestacion = null;
         if ($valoresFijos['sexo'] === 'F' && in_array($valoresFijos['gestante'], ['0', '1'], true)) {
             $gestante = (int) $valoresFijos['gestante'];
-            if ($gestante === 1 && is_numeric($valoresFijos['semanas_gestacion'])) {
-                $semanasGestacion = (int) $valoresFijos['semanas_gestacion'];
+            if ($gestante === 1) {
+                if (is_numeric($valoresFijos['semanas_gestacion'])) {
+                    $semanasGestacion = (int) $valoresFijos['semanas_gestacion'];
+                }
+                if (in_array($valoresFijos['trimestre_gestacion'], ['I', 'II', 'III'], true)) {
+                    $trimestreGestacion = $valoresFijos['trimestre_gestacion'];
+                }
             }
         }
 
@@ -1129,13 +1186,17 @@ class CasosController extends Controller
 
         return [
             'persona' => [
-                'celular'           => $valoresFijos['celular'] !== '' ? $valoresFijos['celular'] : null,
-                'nacionalidad'      => $valoresFijos['nacionalidad'] !== '' ? $valoresFijos['nacionalidad'] : null,
-                'direccion'         => $valoresFijos['direccion'] !== '' ? $valoresFijos['direccion'] : null,
-                'localidad'         => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
-                'etnia'             => $etnia,
-                'gestante'          => $gestante,
-                'semanas_gestacion' => $semanasGestacion,
+                'celular'            => $valoresFijos['celular'] !== '' ? $valoresFijos['celular'] : null,
+                'nacionalidad'       => $valoresFijos['nacionalidad'] !== '' ? $valoresFijos['nacionalidad'] : null,
+                'direccion'          => $valoresFijos['direccion'] !== '' ? $valoresFijos['direccion'] : null,
+                'localidad'          => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
+                'etnia'              => $etnia,
+                'etnia_otra'         => $etniaOtra,
+                'nombre_tutor'       => $valoresFijos['nombre_tutor'] !== '' ? $valoresFijos['nombre_tutor'] : null,
+                'celular_tutor'      => $valoresFijos['celular_tutor'] !== '' ? $valoresFijos['celular_tutor'] : null,
+                'gestante'           => $gestante,
+                'semanas_gestacion'  => $semanasGestacion,
+                'trimestre_gestacion'=> $trimestreGestacion,
             ],
             'caso' => [
                 'tipo_captacion'          => $tipoCaptacion,
@@ -1143,6 +1204,7 @@ class CasosController extends Controller
                 'clasificacion_captacion' => $clasificacionCaptacion,
                 'investigador_nombre'     => $valoresFijos['investigador_nombre'] !== '' ? $valoresFijos['investigador_nombre'] : null,
                 'investigador_cargo'      => $valoresFijos['investigador_cargo'] !== '' ? $valoresFijos['investigador_cargo'] : null,
+                'investigador_profesion'  => $valoresFijos['investigador_profesion'] !== '' ? $valoresFijos['investigador_profesion'] : null,
                 'fecha_investigacion'     => $valoresFijos['fecha_investigacion'] !== '' ? fechaIsoValida($valoresFijos['fecha_investigacion']) : null,
             ],
         ];

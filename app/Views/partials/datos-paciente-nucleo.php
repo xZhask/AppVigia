@@ -173,7 +173,7 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <div class="field o95-hide" id="campoEtniaRazaGral" <?= $esO95 ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Etnia / raza</label>
     <div class="control">
-      <select name="etnia" data-nosearch="true">
+      <select id="etniaSel" name="etnia" data-nosearch="true">
         <option value="">Seleccionar…</option>
         <option value="MESTIZO" <?= seleccionado($valoresFijos['etnia'] ?? '', 'MESTIZO') ?>>Mestizo</option>
         <option value="ANDINO" <?= seleccionado($valoresFijos['etnia'] ?? '', 'ANDINO') ?>>Andino</option>
@@ -184,6 +184,13 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
       </select>
     </div>
     <span class="hint">Dato sensible: no aparece en exportaciones</span>
+  </div>
+
+  <div class="field" id="campoEtniaOtraWrap" hidden style="display:none;">
+    <label class="fl">Especificar otra etnia</label>
+    <div class="control">
+      <input type="text" id="etniaOtraInput" name="etnia_otra" value="<?= e($valoresFijos['etnia_otra'] ?? '') ?>" placeholder="Especificar etnia / raza…" <?= (($valoresFijos['etnia'] ?? '') === 'OTRO') ? '' : 'disabled' ?>>
+    </div>
   </div>
   <?php endif; ?>
 
@@ -206,8 +213,25 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <?php endif; ?>
 </div>
 
-<!-- 4. ¿Gestante? + Semanas de gestación -->
+<!-- 3b. Nombre de Madre/Responsable/Tutor y Celular del tutor (En la siguiente fila después de Etnia) -->
+<div class="fields halves o95-hide" style="margin-top:14px" <?= $esO95 ? 'hidden style="display:none;"' : '' ?>>
+  <div class="field">
+    <label class="fl">Nombre de la madre / tutor / responsable</label>
+    <div class="control">
+      <input type="text" name="nombre_tutor" value="<?= e($valoresFijos['nombre_tutor'] ?? '') ?>" placeholder="Nombre completo de la madre, tutor o responsable…">
+    </div>
+  </div>
+  <div class="field">
+    <label class="fl">N.° Celular del tutor / responsable</label>
+    <div class="control mono">
+      <input type="text" name="celular_tutor" value="<?= e($valoresFijos['celular_tutor'] ?? '') ?>" placeholder="N.° celular del tutor o contacto…" maxlength="20">
+    </div>
+  </div>
+</div>
+
+<!-- 4. ¿Gestante? + Semanas de gestación (General) / Trimestre de gestación (Solo B26) -->
 <?php if (!in_array(strtoupper(trim($enfermedad['cie10'] ?? '')), ['A80', 'O95'], true)): ?>
+<?php $esB26Gest = (($enfermedad['cie10'] ?? '') === 'B26'); ?>
 <div class="fields thirds" style="margin-top:14px">
   <div class="field" id="campoGestante" hidden>
     <label class="fl">¿Gestante?</label>
@@ -219,9 +243,20 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
       </select>
     </div>
   </div>
-  <div class="field" id="campoSemanasGestacion" hidden>
+  <div class="field" id="campoSemanasGestacion" <?= $esB26Gest ? 'hidden style="display:none;"' : 'hidden' ?>>
     <label class="fl">Semanas de gestación</label>
     <div class="control mono"><input type="number" min="0" max="45" id="semanasGestacion" name="semanas_gestacion" value="<?= e($valoresFijos['semanas_gestacion'] ?? '') ?>"></div>
+  </div>
+  <div class="field" id="campoTrimestreGestacion" <?= (!$esB26Gest) ? 'hidden style="display:none;"' : 'hidden' ?>>
+    <label class="fl">Trimestre de gestación</label>
+    <div class="control">
+      <select id="trimestreGestacionSel" name="trimestre_gestacion" data-nosearch="true">
+        <option value="">Seleccionar…</option>
+        <option value="I" <?= seleccionado($valoresFijos['trimestre_gestacion'] ?? '', 'I') ?>>I Trimestre</option>
+        <option value="II" <?= seleccionado($valoresFijos['trimestre_gestacion'] ?? '', 'II') ?>>II Trimestre</option>
+        <option value="III" <?= seleccionado($valoresFijos['trimestre_gestacion'] ?? '', 'III') ?>>III Trimestre</option>
+      </select>
+    </div>
   </div>
 </div>
 <?php endif; ?>

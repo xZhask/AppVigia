@@ -95,6 +95,7 @@ if ($puedeElegirEstablecimiento) {
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b05.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-o95.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-b26.php'; ?>
         </div>
       </div>
 
@@ -191,6 +192,15 @@ if ($puedeElegirEstablecimiento) {
         </div>
       </div>
 
+      <!-- 3. III. Lugar probable de infección (B26 Parotiditis) -->
+      <?php require __DIR__ . '/../partials/lugar-probable-infeccion-b26.php'; ?>
+
+      <!-- 4. IV. Cuadro clínico (B26 Parotiditis) -->
+      <?php require __DIR__ . '/../partials/cuadro-clinico-b26.php'; ?>
+
+      <!-- 5. V. Antecedentes de vacunación y VII. Observaciones (B26 Parotiditis) -->
+      <?php require __DIR__ . '/../partials/antecedentes-vacunacion-b26.php'; ?>
+
       <div id="secciones-clinicas">
         <?php
         $numeroSeccionInicial = 3;
@@ -201,12 +211,13 @@ if ($puedeElegirEstablecimiento) {
       <?php
       $isPfa = ($enfermedad['cie10'] ?? '') === 'A80';
       $isB05 = ($enfermedad['cie10'] ?? '') === 'B05';
-      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05;
-      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05;
-      $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05;
-      $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05;
+      $isB26 = ($enfermedad['cie10'] ?? '') === 'B26';
+      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
+      $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
+      $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
       $mostrarResidenciaMadre = (($enfermedad['cie10'] ?? null) === 'P96');
-      $tieneAntecedentesEpidemiologicos = $mostrarContactos || $mostrarViajes || $mostrarVacunas || $mostrarLugarInf || $mostrarResidenciaMadre;
+      $tieneAntecedentesEpidemiologicos = ($mostrarContactos || $mostrarViajes || $mostrarVacunas || $mostrarLugarInf || $mostrarResidenciaMadre) && !$isB26;
       ?>
 
       <!-- 4. Antecedentes epidemiológicos -->
@@ -259,7 +270,8 @@ if ($puedeElegirEstablecimiento) {
       <?php $numeroSeccion++; ?>
 
       <!-- Clasificación del caso -->
-      <div class="card section">
+      <?php $esB26Clasif = (($enfermedad['cie10'] ?? '') === 'B26'); ?>
+      <div class="card section" id="cardClasificacionCaso" <?= $esB26Clasif ? 'hidden style="display:none;"' : '' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Clasificación del caso</h3></div>
         <div class="section-body">
           <?php require __DIR__ . '/../partials/clasificacion-chips.php'; ?>

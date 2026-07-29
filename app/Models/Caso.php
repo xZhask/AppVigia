@@ -139,7 +139,7 @@ class Caso extends Model
         $sql = 'SELECT c.*, p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                        p.distrito_id, p.condicion, p.cip, p.situacion_pnp, p.grado_id, p.categoria_pnp, p.unidad_id,
                        p.titular_id, p.vinculo_titular,
-                       p.celular, p.nacionalidad, p.direccion, p.localidad, p.etnia, p.gestante, p.semanas_gestacion,
+                       p.celular, p.nacionalidad, p.direccion, p.localidad, p.etnia, p.etnia_otra, p.nombre_tutor, p.celular_tutor, p.gestante, p.semanas_gestacion, p.trimestre_gestacion,
                        e.nombre AS enfermedad_nombre, e.cie10, e.tipo_notif,
                        e.multi_sujeto AS enfermedad_multi_sujeto, e.roles_sujeto AS enfermedad_roles_sujeto,
                        est.nombre AS establecimiento_nombre, est.id AS establecimiento_id,

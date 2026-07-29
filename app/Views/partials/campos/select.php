@@ -1,6 +1,9 @@
 <?php
 /** Variables: $campo, $valor (string), $error (?string), $opciones (array de catalogo_item) */
 $nombreCampo = 'campo_' . $campo['id'];
+if (($campo['clave'] ?? '') === 'o95_lugar_del_fallecimiento' && ($valor === '' || $valor === null)) {
+    $valor = 'EE_SS_SANIDAD_FFAA_PNP';
+}
 $es3OpcionesSiNoDesc = (count($opciones) === 3 && isset($opciones[0]['valor'], $opciones[1]['valor'], $opciones[2]['valor']) && $opciones[0]['valor'] === 'SI' && $opciones[1]['valor'] === 'NO');
 ?>
 <?php if ($es3OpcionesSiNoDesc): ?>

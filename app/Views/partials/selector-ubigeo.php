@@ -15,6 +15,8 @@
  *   $distritoRequerido (bool, opcional, default true)
  */
 $errorDistrito ??= null;
+$nombreCampoDepartamento ??= 'departamento_id';
+$nombreCampoProvincia ??= 'provincia_id';
 $nombreCampoDistrito ??= 'distrito_id';
 $distritoRequerido ??= true;
 ?>
@@ -22,7 +24,7 @@ $distritoRequerido ??= true;
   <div class="field">
     <label class="fl">Departamento</label>
     <div class="control">
-      <select id="<?= e($prefijo) ?>-departamento">
+      <select name="<?= e($nombreCampoDepartamento) ?>" id="<?= e($prefijo) ?>-departamento">
         <option value="">Seleccionar…</option>
         <?php foreach ($departamentos as $dep): ?>
           <option value="<?= e($dep['id']) ?>" <?= seleccionado($departamentoSeleccionado, $dep['id']) ?>><?= e($dep['nombre']) ?></option>
@@ -33,7 +35,7 @@ $distritoRequerido ??= true;
   <div class="field">
     <label class="fl">Provincia</label>
     <div class="control">
-      <select id="<?= e($prefijo) ?>-provincia">
+      <select name="<?= e($nombreCampoProvincia) ?>" id="<?= e($prefijo) ?>-provincia">
         <option value="">Seleccionar…</option>
         <?php foreach ($provinciasIniciales as $prov): ?>
           <option value="<?= e($prov['id']) ?>" <?= seleccionado($provinciaSeleccionada, $prov['id']) ?>><?= e($prov['nombre']) ?></option>
@@ -54,4 +56,12 @@ $distritoRequerido ??= true;
     <?php if ($errorDistrito): ?><span class="hint err"><?= e($errorDistrito) ?></span><?php endif; ?>
   </div>
 </div>
-<script>document.addEventListener('DOMContentLoaded', function () { inicializarUbigeo('<?= e($prefijo) ?>'); });</script>
+<script>
+window._ubigeoQueuedPrefixes = window._ubigeoQueuedPrefixes || [];
+if (window._ubigeoQueuedPrefixes.indexOf('<?= e($prefijo) ?>') === -1) {
+  window._ubigeoQueuedPrefixes.push('<?= e($prefijo) ?>');
+}
+if (typeof inicializarUbigeo === 'function') {
+  inicializarUbigeo('<?= e($prefijo) ?>');
+}
+</script>
