@@ -20,13 +20,20 @@ $fecha = Get-Date -Format "yyyyMMdd_HHmmss"
 $rutaSql = Join-Path $CarpetaDestino "vigia_$fecha.sql"
 $rutaZip = Join-Path $CarpetaDestino "vigia_$fecha.zip"
 
-$argumentos = @("--user=$Usuario", "--single-transaction", "--routines", "--triggers", $BaseDatos)
+$argumentos = @(
+    "--user=$Usuario", "--single-transaction", "--routines", "--triggers",
+    "--skip-column-statistics", "--default-character-set=utf8mb4",
+    "--result-file=$rutaSql", $BaseDatos
+)
 if ($Clave -ne "") {
     $argumentos = @("--password=$Clave") + $argumentos
 }
 
 try {
-    & $MysqlDumpExe @argumentos | Out-File -FilePath $rutaSql -Encoding utf8
+    & $MysqlDumpExe @argumentos
+    if ($LASTEXITCODE -ne 0) {
+        throw "mysqldump devolvio codigo $LASTEXITCODE"
+    }
 
     Compress-Archive -Path $rutaSql -DestinationPath $rutaZip -Force
     Remove-Item $rutaSql
