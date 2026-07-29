@@ -216,6 +216,44 @@ function validarManifiesto(array $manifiesto): void
             }
         }
 
+        // Orden explícito (Petición 2, Fase 6): todo o nada por ficha para
+        // las secciones, y todo o nada por sección para sus campos. Mezclar
+        // orden explícito e implícito produce colisiones y huecos
+        // silenciosos -- mejor abortar acá que dejarlo pasar en silencio,
+        // igual que ya se hace con los tipos desconocidos.
+        $seccionesConOrden = 0;
+        $ordenesSeccion = [];
+        foreach ($ficha['secciones'] as $seccion) {
+            if (array_key_exists('orden', $seccion)) {
+                $seccionesConOrden++;
+                $ordenesSeccion[] = $seccion['orden'];
+            }
+        }
+        if ($seccionesConOrden > 0 && $seccionesConOrden < count($ficha['secciones'])) {
+            throw new RuntimeException("Manifiesto inválido: {$cie10} mezcla secciones con \"orden\" explícito y secciones sin él. Todo o nada por ficha.");
+        }
+        if ($seccionesConOrden > 0 && count($ordenesSeccion) !== count(array_unique($ordenesSeccion, SORT_REGULAR))) {
+            throw new RuntimeException("Manifiesto inválido: {$cie10} tiene dos o más secciones con el mismo \"orden\".");
+        }
+
+        foreach ($ficha['secciones'] as $seccion) {
+            $nombreSeccion = $seccion['nombre'] ?? '(sin nombre)';
+            $camposConOrden = 0;
+            $ordenesCampo = [];
+            foreach ($seccion['campos'] as $campo) {
+                if (array_key_exists('orden', $campo)) {
+                    $camposConOrden++;
+                    $ordenesCampo[] = $campo['orden'];
+                }
+            }
+            if ($camposConOrden > 0 && $camposConOrden < count($seccion['campos'])) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / sección \"{$nombreSeccion}\" mezcla campos con \"orden\" explícito y campos sin él. Todo o nada por sección.");
+            }
+            if ($camposConOrden > 0 && count($ordenesCampo) !== count(array_unique($ordenesCampo, SORT_REGULAR))) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / sección \"{$nombreSeccion}\" tiene dos o más campos con el mismo \"orden\".");
+            }
+        }
+
         if (!empty($ficha['columnas_tablas_hija'])) {
             foreach ($ficha['columnas_tablas_hija'] as $tabla => $columnas) {
                 if (!isset(COLUMNAS_TABLA_HIJA_VALIDAS[$tabla])) {
@@ -438,8 +476,13 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         if (empty($seccion['campos'])) {
             continue; // seccion informativa (contenido vive en tabla hija o queda pendiente): no genera seccion_def
         }
+        // Orden explícito (Fase 6): si la sección lo trae, se usa tal cual
+        // -- validarManifiesto() ya garantizó que es todo o nada por ficha,
+        // así que este fallback a la posición del array solo se activa
+        // cuando NINGUNA sección de esta ficha trae "orden".
+        $ordenSeccionReal = $seccion['orden'] ?? $ordenSeccion;
         $stmt = $pdo->prepare('INSERT INTO seccion_def (enfermedad_id, nombre, orden) VALUES (?,?,?)');
-        $stmt->execute([$enfermedadId, $seccion['nombre'], $ordenSeccion]);
+        $stmt->execute([$enfermedadId, $seccion['nombre'], $ordenSeccionReal]);
         $seccionId = (int) $pdo->lastInsertId();
         $reporte['secciones_creadas'][] = $seccion['nombre'];
         if (!empty($seccion['depende_de'])) {
@@ -453,7 +496,8 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         $clavesUsadas = [];
         $ordenCampo = 1;
         foreach ($seccion['campos'] as $campo) {
-            $campoId = insertarCampo($pdo, $seccionId, $cie10, $campo, $ordenCampo, $rolSujeto, $clavesUsadas, $catalogCache, $nombresCatalogo, $reporte);
+            $ordenCampoReal = $campo['orden'] ?? $ordenCampo;
+            $campoId = insertarCampo($pdo, $seccionId, $cie10, $campo, $ordenCampoReal, $rolSujeto, $clavesUsadas, $catalogCache, $nombresCatalogo, $reporte);
             $idPorEtiqueta[$campo['etiqueta']] = $campoId;
             if (!empty($campo['depende_de'])) {
                 $pendientesDependencia[$campoId] = [

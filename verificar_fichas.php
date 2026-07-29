@@ -179,6 +179,7 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
         'campos_encontrados' => 0,
         'secciones_faltantes' => [],
         'secciones_sobrantes' => [],
+        'secciones_orden_incorrecto' => [],
         'diferencias_por_seccion' => [],
         'estado' => 'OK',
     ];
@@ -243,6 +244,21 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
         $seccionBd = $seccionesBd[$idxEncontrado];
         $camposBd = $camposPorSeccion[$seccionBd['id']] ?? [];
 
+        // Orden explícito (Petición 2, Fase 6, punto 4): verificar_fichas.php
+        // ya leía seccion_def.orden (ORDER BY ... orden ...) pero nunca lo
+        // contrastaba contra el manifiesto. Sin esto, una deriva de orden
+        // seguía siendo invisible aunque cargar_fichas.php ya la respetara.
+        $ordenSeccionEsperado = $seccionManifiesto['orden'] ?? null;
+        $ordenSeccionEncontrado = (int) $seccionBd['orden'];
+        if ($ordenSeccionEsperado !== null && $ordenSeccionEsperado !== $ordenSeccionEncontrado) {
+            $item['secciones_orden_incorrecto'][] = [
+                'nombre' => $seccionManifiesto['nombre'],
+                'seccion_id' => (int) $seccionBd['id'],
+                'orden_esperado' => $ordenSeccionEsperado,
+                'orden_encontrado' => $ordenSeccionEncontrado,
+            ];
+        }
+
         $etiquetasEsperadas = [];
         foreach ($seccionManifiesto['campos'] as $ic => $c) {
             $etiquetasEsperadas[$ic] = normalizar($c['etiqueta']);
@@ -263,6 +279,7 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
             'catalogos_incorrectos' => [],
             'sensible_incorrecto' => [],
             'dependencia_incorrecta' => [],
+            'campos_orden_incorrecto' => [],
         ];
 
         foreach ($matchCampos['faltantes'] as $ic) {
@@ -328,6 +345,18 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
                 ];
             }
 
+            $ordenCampoEsperado = $campoManifiesto['orden'] ?? null;
+            $ordenCampoEncontrado = (int) $campoBd['orden'];
+            if ($ordenCampoEsperado !== null && $ordenCampoEsperado !== $ordenCampoEncontrado) {
+                $diffSeccion['campos_orden_incorrecto'][] = [
+                    'etiqueta' => $campoManifiesto['etiqueta'],
+                    'clave_bd' => $campoBd['clave'],
+                    'campo_id' => (int) $campoBd['id'],
+                    'orden_esperado' => $ordenCampoEsperado,
+                    'orden_encontrado' => $ordenCampoEncontrado,
+                ];
+            }
+
             if (!$tipoOk) {
                 continue; // tipo ya está mal: no tiene sentido auditar su catálogo
             }
@@ -387,12 +416,12 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
             }
         }
 
-        if ($diffSeccion['campos_faltantes'] || $diffSeccion['campos_sobrantes'] || $diffSeccion['tipos_incorrectos'] || $diffSeccion['catalogos_incorrectos'] || $diffSeccion['sensible_incorrecto'] || $diffSeccion['dependencia_incorrecta']) {
+        if ($diffSeccion['campos_faltantes'] || $diffSeccion['campos_sobrantes'] || $diffSeccion['tipos_incorrectos'] || $diffSeccion['catalogos_incorrectos'] || $diffSeccion['sensible_incorrecto'] || $diffSeccion['dependencia_incorrecta'] || $diffSeccion['campos_orden_incorrecto']) {
             $item['diferencias_por_seccion'][] = $diffSeccion;
         }
     }
 
-    $tieneDiferencias = $item['secciones_faltantes'] || $item['secciones_sobrantes'] || $item['diferencias_por_seccion'];
+    $tieneDiferencias = $item['secciones_faltantes'] || $item['secciones_sobrantes'] || $item['secciones_orden_incorrecto'] || $item['diferencias_por_seccion'];
     $item['estado'] = $tieneDiferencias ? 'CON_DIFERENCIAS' : 'OK';
 
     $resultado[] = $item;
@@ -423,7 +452,7 @@ $fechaHoy = date('Y-m-d');
 echo "# REPORTE_VERIFICACION.md\n\n";
 echo "Generado por `verificar_fichas.php` el {$fechaHoy} comparando la base de datos contra `manifiesto_fichas.json`.\n\n";
 echo "No se modificó ninguna definición de ficha ni la base de datos: esta es una corrida de solo lectura.\n\n";
-echo "**Metodología.** Las secciones y campos se emparejan por nombre/etiqueta normalizada (sin tildes, mayúsculas ni signos de puntuación), primero por coincidencia exacta y luego por similitud aproximada (contención o distancia de Levenshtein relativa ≤ 0.30). Para los campos SELECT/MULTISELECT/GRUPO_SI_NO/CRONOLOGIA (los mismos tipos que `cargar_fichas.php` exige con catálogo), además se verifica: que `catalogo_id` no sea NULL, que ese catálogo tenga al menos un `catalogo_item`, y que sus opciones (emparejadas con la misma normalización) coincidan con las del manifiesto — desde RECARGA_FICHAS.md Fase 4 (antes era una limitación conocida, ver INFORME_CARGADOR.md hallazgo A.2b). Desde CIERRE_RECARGA_Y_FASE5.md Parte 0, también se verifica que `campo_def.sensible` y la dependencia condicional (`depende_de`/`valor_activador`) coincidan con el manifiesto — la recarga de la Fase 3 los perdía en silencio porque no formaban parte del esquema del manifiesto todavía. Limitación que sigue vigente: si una ficha consolida en la BD varias secciones del manifiesto en una sola (o al revés), puede reportarse una 'sección faltante' que en realidad solo cambió de nombre/agrupación — revisar el detalle antes de asumir contenido perdido.\n\n";
+echo "**Metodología.** Las secciones y campos se emparejan por nombre/etiqueta normalizada (sin tildes, mayúsculas ni signos de puntuación), primero por coincidencia exacta y luego por similitud aproximada (contención o distancia de Levenshtein relativa ≤ 0.30). Para los campos SELECT/MULTISELECT/GRUPO_SI_NO/CRONOLOGIA (los mismos tipos que `cargar_fichas.php` exige con catálogo), además se verifica: que `catalogo_id` no sea NULL, que ese catálogo tenga al menos un `catalogo_item`, y que sus opciones (emparejadas con la misma normalización) coincidan con las del manifiesto — desde RECARGA_FICHAS.md Fase 4 (antes era una limitación conocida, ver INFORME_CARGADOR.md hallazgo A.2b). Desde CIERRE_RECARGA_Y_FASE5.md Parte 0, también se verifica que `campo_def.sensible` y la dependencia condicional (`depende_de`/`valor_activador`) coincidan con el manifiesto — la recarga de la Fase 3 los perdía en silencio porque no formaban parte del esquema del manifiesto todavía. Desde la Petición 2 (Fase 6), también se compara `seccion_def.orden` y `campo_def.orden` contra el `\"orden\"` explícito del manifiesto (si el manifiesto no lo trae para una ficha, no se compara — cargar_fichas.php sigue asignándolo por posición del array para esa ficha). Limitación que sigue vigente: si una ficha consolida en la BD varias secciones del manifiesto en una sola (o al revés), puede reportarse una 'sección faltante' que en realidad solo cambió de nombre/agrupación — revisar el detalle antes de asumir contenido perdido.\n\n";
 echo "---\n\n";
 
 echo "## Resumen\n\n";
@@ -489,6 +518,14 @@ foreach ($resultado as $item) {
         echo "\n";
     }
 
+    if ($item['secciones_orden_incorrecto']) {
+        echo "**Orden de sección incorrecto:**\n\n";
+        foreach ($item['secciones_orden_incorrecto'] as $s) {
+            echo "- «{$s['nombre']}» (seccion_def.id={$s['seccion_id']}) — se esperaba orden {$s['orden_esperado']}, se encontró {$s['orden_encontrado']}\n";
+        }
+        echo "\n";
+    }
+
     foreach ($item['diferencias_por_seccion'] as $diff) {
         echo "**Sección: {$diff['seccion']}**";
         if (normalizar($diff['seccion']) !== normalizar($diff['seccion_bd'])) {
@@ -546,6 +583,12 @@ foreach ($resultado as $item) {
                 $esp = $c['depende_de_esperado'] !== null ? "depende de «{$c['depende_de_esperado']}» = {$c['valor_activador_esperado']}" : 'sin dependencia';
                 $enc = $c['depende_de_encontrado'] !== null ? "depende de «{$c['depende_de_encontrado']}» = {$c['valor_activador_encontrado']}" : 'sin dependencia';
                 echo "  - «{$c['etiqueta']}» (campo_def.id={$c['campo_id']}, clave `{$c['clave_bd']}`) — se esperaba {$esp}, se encontró {$enc}\n";
+            }
+        }
+        if ($diff['campos_orden_incorrecto']) {
+            echo "- Orden de campo incorrecto:\n";
+            foreach ($diff['campos_orden_incorrecto'] as $c) {
+                echo "  - «{$c['etiqueta']}» (campo_def.id={$c['campo_id']}, clave `{$c['clave_bd']}`) — se esperaba orden {$c['orden_esperado']}, se encontró {$c['orden_encontrado']}\n";
             }
         }
         echo "\n";
