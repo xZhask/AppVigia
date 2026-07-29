@@ -20,11 +20,15 @@ foreach ($seccionesP35 as $s) {
 $camposNotifP35 = $secNotifP35 ? CampoDef::porSeccion((int) $secNotifP35['id']) : [];
 $campoMapP35 = [];
 foreach ($camposNotifP35 as $c) {
-    $campoMapP35[trim($c['etiqueta'])] = $c;
+    $campoMapP35[$c['clave']] = $c;
 }
 
-$getCampoInputP35 = function(string $etiqueta) use ($campoMapP35, $valoresCampos, $erroresCampos) {
-    $c = $campoMapP35[$etiqueta] ?? null;
+// No usa $campo() de campos-por-clave.php: mismo motivo que
+// notificacion-fechas-b26.php (ver ese archivo) -- este partial se incluye
+// sin condicion aunque P35.0 no sea la ficha activa, así que resuelve
+// siempre contra la P35.0 real, no contra $enfermedad.
+$getCampoInputP35 = function(string $clave) use ($campoMapP35, $valoresCampos, $erroresCampos) {
+    $c = $campoMapP35[$clave] ?? null;
     if (!$c) return ['id' => null, 'name' => '', 'val' => '', 'err' => null];
     $val = $valoresCampos[$c['id']] ?? '';
     $err = $erroresCampos[$c['id']] ?? null;
@@ -36,13 +40,13 @@ $getCampoInputP35 = function(string $etiqueta) use ($campoMapP35, $valoresCampos
     ];
 };
 
-$codigoReg       = $getCampoInputP35('Código de registro N.°');
-$fechaConoc      = $getCampoInputP35('Fecha de conocimiento local del caso');
-$fechaNotifEess  = $getCampoInputP35('Fecha de notificación EE.SS. a Red/Microred');
-$fechaNotifRed   = $getCampoInputP35('Fecha de notificación Red/Microred a Dirección de Salud');
-$fechaNotifCdc   = $getCampoInputP35('Fecha de notificación Dirección de Salud a CDC');
-$fechaInvest     = $getCampoInputP35('Fecha de investigación (visita domiciliaria)');
-$casoCaptadoEn   = $getCampoInputP35('Caso captado en');
+$codigoReg       = $getCampoInputP35('p35_0_codigo_de_registro_n');
+$fechaConoc      = $getCampoInputP35('p35_0_fecha_de_conocimiento_local_del_caso');
+$fechaNotifEess  = $getCampoInputP35('p35_0_fecha_de_notificacion_eess_a_red_microred');
+$fechaNotifRed   = $getCampoInputP35('p35_0_fecha_notif_red_microred_a_direccion_salud');
+$fechaNotifCdc   = $getCampoInputP35('p35_0_fecha_notif_direccion_salud_a_cdc');
+$fechaInvest     = $getCampoInputP35('p35_0_fecha_de_investigacion_visita_domiciliaria');
+$casoCaptadoEn   = $getCampoInputP35('p35_0_caso_captado_en');
 ?>
 
 <div id="notificacionFechasP35Wrap" <?= ($enfermedad['cie10'] ?? null) === 'P35.0' ? '' : 'hidden style="display:none;"' ?>>

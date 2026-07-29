@@ -20,11 +20,18 @@ foreach ($seccionesB26 as $s) {
 $camposNotifB26 = $secNotifB26 ? CampoDef::porSeccion((int) $secNotifB26['id']) : [];
 $campoMapB26 = [];
 foreach ($camposNotifB26 as $c) {
-    $campoMapB26[trim($c['etiqueta'])] = $c;
+    $campoMapB26[$c['clave']] = $c;
 }
 
-$getCampoInputB26 = function(string $etiqueta) use ($campoMapB26, $valoresCampos, $erroresCampos) {
-    $c = $campoMapB26[$etiqueta] ?? null;
+// No usa $campo() de campos-por-clave.php: ese resolvedor busca dentro de
+// $enfermedad (la ficha activa en esta carga de pagina), pero este partial
+// se incluye sin condicion junto a sus hermanos de pfa/b05/o95/p350 -- sus
+// campos tienen que estar en el DOM (ocultos) incluso cuando B26 no es la
+// ficha activa, para que el cambio de enfermedad en el formulario (que solo
+// reemplaza la seccion clinica via AJAX, no esta tarjeta) los pueda mostrar
+// sin recargar la pagina. Por eso resuelve siempre contra la B26 real.
+$getCampoInputB26 = function(string $clave) use ($campoMapB26, $valoresCampos, $erroresCampos) {
+    $c = $campoMapB26[$clave] ?? null;
     if (!$c) return ['id' => null, 'name' => '', 'val' => '', 'err' => null];
     $val = $valoresCampos[$c['id']] ?? '';
     $err = $erroresCampos[$c['id']] ?? null;
@@ -36,16 +43,16 @@ $getCampoInputB26 = function(string $etiqueta) use ($campoMapB26, $valoresCampos
     ];
 };
 
-$codigoReg       = $getCampoInputB26('Código de registro N.°');
-$fechaConsulta   = $getCampoInputB26('Fecha de consulta');
-$fechaConoc      = $getCampoInputB26('Fecha de conocimiento local del caso');
-$fechaInvest     = $getCampoInputB26('Fecha de investigación (visita domiciliaria)');
-$fechaNotifEess  = $getCampoInputB26('Fecha de notificación EE.SS. a Red/Microred');
-$fechaNotifRed   = $getCampoInputB26('Fecha de notificación Red/Microred a Dirección de Salud');
-$fechaNotifCdc   = $getCampoInputB26('Fecha de notificación Dirección de Salud a CDC');
+$codigoReg       = $getCampoInputB26('b26_codigo_de_registro_n');
+$fechaConsulta   = $getCampoInputB26('b26_fecha_de_consulta');
+$fechaConoc      = $getCampoInputB26('b26_fecha_de_conocimiento_local_del_caso');
+$fechaInvest     = $getCampoInputB26('b26_fecha_de_investigacion_visita_domiciliaria');
+$fechaNotifEess  = $getCampoInputB26('b26_fecha_de_notificacion_ee_ss_a_red_microred');
+$fechaNotifRed   = $getCampoInputB26('b26_fecha_de_notificacion_red_microred_a_direccion_de_s');
+$fechaNotifCdc   = $getCampoInputB26('b26_fecha_de_notificacion_direccion_de_salud_a_cdc');
 ?>
 
-<div id="notificacionFechasB26Wrap" <?= ($enfermedad['cie10'] ?? null) === 'B26' ? '' : 'hidden' ?>>
+<div id="notificacionFechasB26Wrap" <?= ($enfermedad['cie10'] ?? null) === 'B26' ? '' : 'hidden style="display:none;"' ?>>
   <div class="fields thirds" style="margin-top:14px">
     <?php if ($codigoReg['name']): ?>
     <div class="field">
