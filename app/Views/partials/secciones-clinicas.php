@@ -40,14 +40,73 @@ if (($enfermedad['cie10'] ?? '') === 'B26') {
         'Hospitalización y egreso'
     ], true)));
 }
+if (($enfermedad['cie10'] ?? '') === 'P35.0') {
+    $secciones = array_values(array_filter($secciones, fn($s) => !in_array(trim($s['nombre']), [
+        'Datos de notificación e investigación del caso'
+    ], true)));
+}
+
+// Peticion 2, correccion post-Fase-7: guarda aditiva. Los nombres de
+// seccion tambien son cadenas del manifiesto -- si alguien corrige una
+// tilde o renombra una seccion de O95, antes el despacho por nombre (mas
+// abajo) fallaba en silencio: la seccion caia al renderizador generico en
+// vez de su partial a medida, o quedaba fuera de $O95_SECCIONES_SOLO_ANEXO_2
+// sin avisar. Se convierte en un fallo visible, mismo principio que la
+// validacion "todo o nada" de orden en cargar_fichas.php (Fase 6).
+if (($enfermedad['cie10'] ?? '') === 'O95') {
+    $O95_SECCIONES_SOLO_ANEXO_2 = [
+        'Antecedentes patológicos y obstétricos',
+        'Atención prenatal',
+        'Complicaciones',
+        'Hospitalizaciones',
+        'Parto o aborto',
+        'Entorno social y comunitario',
+        'Datos comunitarios',
+        'Las cuatro demoras',
+    ];
+    $O95_SECCIONES_DESPACHO_A_MEDIDA = [
+        'Datos del fallecimiento (Anexo 1)', // $secciones[0], ver mas abajo
+        'Antecedentes patológicos y obstétricos',
+        'Causas de defunción (Anexo 1)',
+        'Atención prenatal',
+        'Complicaciones',
+        'Referencia (Anexo 1)',
+        'Hospitalizaciones',
+        'Parto o aborto',
+        'Entorno social y comunitario',
+        'Datos comunitarios',
+        'Las cuatro demoras',
+    ];
+    $nombresSeccionesCargadasO95 = array_map(fn($s) => trim($s['nombre']), $secciones);
+    foreach (array_unique(array_merge($O95_SECCIONES_SOLO_ANEXO_2, $O95_SECCIONES_DESPACHO_A_MEDIDA)) as $nombreEsperadoO95) {
+        if (!in_array($nombreEsperadoO95, $nombresSeccionesCargadasO95, true)) {
+            throw new RuntimeException(
+                'secciones-clinicas.php: la seccion O95 "' . $nombreEsperadoO95 . '" no se encontro entre las '
+                . 'secciones cargadas del manifiesto/BD. El despacho a partials a medida y la marca de Anexo 2 '
+                . 'dependen de coincidencia EXACTA del nombre -- revisar manifiesto_fichas.json.'
+            );
+        }
+    }
+}
+
 $opcionesPorCatalogo = [];
 $numeroSeccion = $numeroSeccionInicial;
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad): void {
+// Precalculado fuera de $renderizarCampos porque adentro el nombre $campo ya
+// está tomado por la fila de campo_def de cada iteración del foreach (mismo
+// nombre que exige el contrato de campos-por-clave.php, ver Fase 2) — no se
+// puede resolver por clave "adentro" sin pisarlo. Solo se pide para B05: en
+// cualquier otra ficha la clave no existe por diseño (no es una clave
+// faltante real) y no hay que ensuciar $clavesFaltantesCampos con eso.
+$campoFechaUltSeg = (($enfermedad['cie10'] ?? '') === 'B05')
+    ? $campo('b05_fecha_ultimo_dia_seguimiento_contactos')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg): void {
     $campos = CampoDef::porSeccion($seccionId);
     $puedeVerSensibles = \App\Core\Auth::tieneRol('ADMIN');
     $campos = array_filter($campos, fn($c) => empty($c['sensible']) || $puedeVerSensibles);
-    
+
     $idsPadre = array_filter(array_column($campos, 'depende_de'));
     $camposBooleanos = array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !in_array($c['id'], $idsPadre));
     $camposOtros = array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || in_array($c['id'], $idsPadre));
@@ -57,7 +116,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
           <?php
           $tipoAnterior = null;
           foreach ($camposOtros as $campo):
-            if (($campo['clave'] ?? '') === 'b05_fecha_ultimo_dia_seguimiento_contactos' || (int)($campo['id'] ?? 0) === 16108) {
+            if (($campo['clave'] ?? '') === 'b05_fecha_ultimo_dia_seguimiento_contactos') {
                 continue;
             }
             $campo['obligatorio'] = (int) $campo['obligatorio'];
@@ -94,12 +153,12 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if ($tieneDependencia): ?></div><?php endif;
             $tipoAnterior = $campo['tipo'];
 
-            if (($campo['clave'] ?? '') === 'paciente_viajo_7_30_dias' || (int)($campo['id'] ?? 0) === 16095) {
-                $valPacienteViajo = $valoresCampos[16095] ?? '';
+            if (($campo['clave'] ?? '') === 'paciente_viajo_7_30_dias') {
+                $valPacienteViajo = $valoresCampos[$campo['id']] ?? '';
                 $esViajoInicial = ($valPacienteViajo === 'SI') || !empty($filasViajes ?? []);
                 ?>
                 </div>
-                <div id="b05-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_16095" data-valor-activador="SI" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esViajoInicial ? 'display: none;' : '' ?>" <?= !$esViajoInicial ? 'hidden' : '' ?>>
+                <div id="b05-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="SI" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esViajoInicial ? 'display: none;' : '' ?>" <?= !$esViajoInicial ? 'hidden' : '' ?>>
                   <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
                   <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
                 </div>
@@ -107,7 +166,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 <?php
             }
 
-            if (($campo['clave'] ?? '') === 'b05_total_de_casas' || (int)($campo['id'] ?? 0) === 16075) {
+            if (($campo['clave'] ?? '') === 'b05_total_de_casas') {
                 ?>
                 </div>
                 <div id="b05-wrapper-cadena-transmision" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 20px; margin-bottom: 24px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 18px 0;">
@@ -140,7 +199,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                   <div class="field" style="margin-top:16px; width:100%; max-width:320px;">
                     <label class="fl">Fecha de último día de seguimiento de contactos</label>
                     <div class="control mono">
-                      <input type="date" name="campo_16108" value="<?= e($valoresCampos[16108] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
+                      <input type="date" name="<?= $campoFechaUltSeg['name'] ?>" value="<?= e($campoFechaUltSeg['val']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
                     </div>
                   </div>
                 </div>
@@ -244,7 +303,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     </div>
     <?php endif; ?>
     <?php if (!empty($secciones)): ?>
-      <?php if (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($secciones[0]['orden'] ?? 0) === 1): ?>
+      <?php if (($enfermedad['cie10'] ?? '') === 'O95' && trim($secciones[0]['nombre'] ?? '') === 'Datos del fallecimiento (Anexo 1)'): ?>
         <?php require __DIR__ . '/datos-fallecimiento-o95.php'; ?>
       <?php else: ?>
         <?php $renderizarCampos((int) $secciones[0]['id']); ?>
@@ -260,10 +319,19 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
 <?php $numeroSeccion++; ?>
 
 <?php
-$valTipoFichaO95 = $valoresFijos['o95_tipo_ficha'] ?? $valoresCampos[14300] ?? $_POST['o95_tipo_ficha'] ?? 'ANEXO_1';
+// o95_tipo_de_ficha (Peticion 2, Agregado 1): antes no se persistia en
+// ningun lado -- $valoresCampos[14300] era v99_aseguradora, de otra ficha.
+// $campo(...)['val'] nunca es null (Fase 2), asi que hay que comparar con
+// '' explicitamente para no cortar la cadena de fallback antes de llegar a
+// $_POST (recarga de la pagina tras un error de validacion, antes de guardar).
+$campoTipoFichaO95 = $campo('o95_tipo_de_ficha');
+$valTipoFichaO95 = $valoresFijos['o95_tipo_ficha']
+    ?? ($campoTipoFichaO95['val'] !== '' ? $campoTipoFichaO95['val'] : null)
+    ?? $_POST['o95_tipo_ficha']
+    ?? 'ANEXO_1';
 foreach (array_slice($secciones, 1) as $seccion):
   $mostrarSeparadorSujeto((int) $seccion['id']);
-  $esAnexo2O95 = (($enfermedad['cie10'] ?? '') === 'O95' && ((int) ($seccion['orden'] ?? 0) === 2 || (int) ($seccion['orden'] ?? 0) === 4 || (int) ($seccion['orden'] ?? 0) === 5 || (int) ($seccion['orden'] ?? 0) >= 7));
+  $esAnexo2O95 = (($enfermedad['cie10'] ?? '') === 'O95' && in_array(trim($seccion['nombre']), $O95_SECCIONES_SOLO_ANEXO_2, true));
   $claseAnexo2O95 = $esAnexo2O95 ? ' o95-anexo-2-section' : '';
   $ocultoAnexo2O95 = ($esAnexo2O95 && $valTipoFichaO95 !== 'ANEXO_2') ? ' hidden style="display:none;"' : '';
 ?>
@@ -273,25 +341,25 @@ foreach (array_slice($secciones, 1) as $seccion):
       <h3><?= e($seccion['nombre']) ?></h3>
     </div>
     <div class="section-body">
-      <?php if (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 2): ?>
+      <?php if (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Antecedentes patológicos y obstétricos'): ?>
         <?php require __DIR__ . '/antecedentes-patologicos-obstetricos-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 3): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Causas de defunción (Anexo 1)'): ?>
         <?php require __DIR__ . '/causas-defuncion-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 4): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Atención prenatal'): ?>
         <?php require __DIR__ . '/atencion-prenatal-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 5): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Complicaciones'): ?>
         <?php require __DIR__ . '/complicaciones-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 6): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Referencia (Anexo 1)'): ?>
         <?php require __DIR__ . '/referencia-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 7): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Hospitalizaciones'): ?>
         <?php require __DIR__ . '/hospitalizaciones-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 8): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Parto o aborto'): ?>
         <?php require __DIR__ . '/parto-aborto-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 9): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Entorno social y comunitario'): ?>
         <?php require __DIR__ . '/entorno-social-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 10): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Datos comunitarios'): ?>
         <?php require __DIR__ . '/datos-comunitarios-o95.php'; ?>
-      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && (int) ($seccion['orden'] ?? 0) === 11): ?>
+      <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Las cuatro demoras'): ?>
         <?php require __DIR__ . '/demoras-o95.php'; ?>
       <?php elseif (trim($seccion['nombre']) === 'Cadena de transmisión'): ?>
         <?php if (($enfermedad['cie10'] ?? '') !== 'B05'): ?>
@@ -335,7 +403,7 @@ foreach (array_slice($secciones, 1) as $seccion):
         <?php $renderizarCampos((int) $seccion['id']); ?>
 
         <?php if (trim($seccion['nombre']) === 'Antecedentes vacunales' && ($enfermedad['cie10'] ?? '') === 'B05'): 
-          $valEstadoVacunal = $valoresCampos[16052] ?? '';
+          $valEstadoVacunal = $campo('b05_estado_vacunal')['val'];
           $esVacunadoInicial = in_array($valEstadoVacunal, ['VACUNADO', 'VACUNADO_INCOMPLETO'], true) || !empty($filasVacunas ?? []);
         ?>
           <div id="b05-wrapper-vacunas-registradas" style="margin-top: 18px; border-top: 1px solid var(--line-2); padding-top: 14px; <?= !$esVacunadoInicial ? 'display: none;' : '' ?>" <?= !$esVacunadoInicial ? 'hidden' : '' ?>>

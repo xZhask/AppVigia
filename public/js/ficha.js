@@ -2,6 +2,28 @@ document.addEventListener('DOMContentLoaded', function () {
   var selectorEnfermedad = document.getElementById('diseaseSel');
   var contenedorClinico = document.getElementById('secciones-clinicas');
 
+  // ---------- Peticion 2, Fase 4: resolucion de campos por clave ----------
+  // cargar_fichas.php regenera campo_def.id en cada recarga; ficha.js no
+  // puede seguir teniendo el numero pegado en el codigo. El servidor emite
+  // <script type="application/json" id="mapaCampos"> con [clave => name] de
+  // la enfermedad activa (ver campos-por-clave.php), y este mismo mapa se
+  // reemplaza entero cada vez que cambia de enfermedad (mas abajo, en el
+  // .then() del fetch de secciones-clinicas) para no quedarse con el de la
+  // ficha anterior.
+  var mapaCampos = {};
+  var mapaCamposEl = document.getElementById('mapaCampos');
+  if (mapaCamposEl) {
+    try {
+      mapaCampos = JSON.parse(mapaCamposEl.textContent || '{}');
+    } catch (e) {
+      mapaCampos = {};
+    }
+  }
+
+  function campoPorClave(clave) {
+    return mapaCampos[clave] || '';
+  }
+
   function renumerarSeccionesSiguientes() {
     if (!contenedorClinico) return;
     var siguiente = document.getElementById('numeroSiguienteSeccion');
@@ -94,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function sincronizarDescartadoPfa() {
     var tagCie = document.getElementById('cieTag');
     var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('A80') === -1 && !document.querySelector('[name="campo_15672"]')) return;
+    if (cieText.indexOf('A80') === -1) return;
 
     var selectClasificacion = null;
     document.querySelectorAll('.field').forEach(function (f) {
@@ -284,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!esB26) return;
 
-    var radContacto = document.querySelector('input[name="campo_13728"]:checked');
+    var radContacto = document.querySelector('input[name="' + campoPorClave('b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con') + '"]:checked');
     var valContacto = radContacto ? radContacto.value : '';
     var wrapDetalle = document.getElementById('wrapDetalleContactosB26');
     var esSiContacto = (valContacto === 'SI');
@@ -294,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function () {
       wrapDetalle.style.display = esSiContacto ? '' : 'none';
     }
 
-    var radGestante = document.querySelector('input[name="campo_13730"]:checked');
+    var radGestante = document.querySelector('input[name="' + campoPorClave('b26_tuvo_contacto_con_gestante') + '"]:checked');
     var valGestante = radGestante ? radGestante.value : '';
     var wrapGestanteDetalle = document.getElementById('wrapGestanteDetalleB26');
     var esSiGestante = esSiContacto && (valGestante === 'SI');
@@ -331,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!esB26) return;
 
     // 1. Inflamación de glándulas parótidas
-    var radParotidas = document.querySelector('input[name="campo_13708"]:checked');
+    var radParotidas = document.querySelector('input[name="' + campoPorClave('b26_presento_inflamacion_de_glandulas_parotidas') + '"]:checked');
     var valParotidas = radParotidas ? radParotidas.value : '';
     var wrapParotidasDetalle = document.getElementById('wrapParotidasDetalleB26');
     var esSiParotidas = (valParotidas === 'SI');
@@ -354,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // 3. Hospitalización
-    var radHosp = document.querySelector('input[name="campo_13720"]:checked');
+    var radHosp = document.querySelector('input[name="' + campoPorClave('b26_hospitalizacion') + '"]:checked');
     var valHosp = radHosp ? radHosp.value : '';
     var wrapHospDetalle = document.getElementById('wrapHospitalizacionDetalleB26');
     var esSiHosp = (valHosp === 'SI');
@@ -365,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // 4. Condición de egreso
-    var radEgreso = document.querySelector('input[name="campo_13724"]:checked');
+    var radEgreso = document.querySelector('input[name="' + campoPorClave('b26_condicion_de_egreso') + '"]:checked');
     var valEgreso = radEgreso ? radEgreso.value : '';
     var wrapEgresoRef = document.getElementById('wrapEgresoReferidoB26');
     var wrapEgresoFall = document.getElementById('wrapEgresoFallecidoB26');
@@ -502,6 +524,7 @@ document.addEventListener('DOMContentLoaded', function () {
       fetch('/casos/nuevo/secciones-clinicas?enfermedad_id=' + encodeURIComponent(enfermedadId))
         .then(function (resp) { return resp.json(); })
         .then(function (datos) {
+          mapaCampos = datos.mapaCampos || {};
           contenedorClinico.innerHTML = datos.html;
           contenedorClinico.style.opacity = '1';
 
@@ -541,6 +564,14 @@ document.addEventListener('DOMContentLoaded', function () {
           var b26FechasWrap = document.getElementById('notificacionFechasB26Wrap');
           if (b26FechasWrap) {
             b26FechasWrap.hidden = !esB26;
+            b26FechasWrap.style.display = esB26 ? '' : 'none';
+          }
+
+          var esP35 = (datos.cie10 === 'P35.0');
+          var p35FechasWrap = document.getElementById('notificacionFechasP35Wrap');
+          if (p35FechasWrap) {
+            p35FechasWrap.hidden = !esP35;
+            p35FechasWrap.style.display = esP35 ? '' : 'none';
           }
 
           document.querySelectorAll('.b05-field-wrap, .b05-elem').forEach(function(el) {
@@ -1521,7 +1552,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var wrapperVacunas = document.getElementById('b05-wrapper-vacunas-registradas');
     if (!wrapperVacunas) return;
 
-    var val = leerValorCampoPorNombre('campo_16052');
+    var val = leerValorCampoPorNombre(campoPorClave('b05_estado_vacunal'));
     var esVacunado = (val === 'VACUNADO' || val === 'VACUNADO_INCOMPLETO');
 
     if (esVacunado) {
@@ -1542,7 +1573,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.addEventListener('change', function(e) {
-    if (e.target && e.target.name === 'campo_16052') {
+    if (e.target && e.target.name === campoPorClave('b05_estado_vacunal')) {
       actualizarBloqueVacunasB05();
     }
   });
@@ -1554,7 +1585,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var wrapperViajes = document.getElementById('b05-wrapper-viajes-registrados');
     if (!wrapperViajes) return;
 
-    var val = leerValorCampoPorNombre('campo_16095');
+    var val = leerValorCampoPorNombre(campoPorClave('paciente_viajo_7_30_dias'));
     var esViajo = (val === 'SI');
 
     if (esViajo) {
@@ -1575,7 +1606,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.addEventListener('change', function(e) {
-    if (e.target && e.target.name === 'campo_16095') {
+    if (e.target && e.target.name === campoPorClave('paciente_viajo_7_30_dias')) {
       actualizarBloqueViajesB05();
     }
   });
@@ -1609,6 +1640,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     return '';
   }
+
+  // Dependencia de Grupo étnico -> Etnia / Pueblo étnico en O95. Declarado
+  // ANTES de actualizarEtapaFichaO95() (bug preexistente, no introducido por
+  // la Petición 2: la llamada incondicional de abajo, actualizarEtapaFichaO95(),
+  // ya se ejecutaba antes de que este `var` se asignara, así que
+  // O95_MAPA_ETNIAS era undefined y actualizarPuebloEtnicoO95() tiraba
+  // TypeError cada vez que O95 era la enfermedad activa al cargar la
+  // página -- lo que además abortaba en silencio el resto de
+  // actualizarEtapaFichaO95() (fallecimiento, referencia, antecedentes,
+  // etc. nunca se inicializaban). Se movió acá arriba, sin cambiar su
+  // contenido, al descubrirlo verificando la Fase 7 en el navegador.
+  var O95_MAPA_ETNIAS = {
+    'ANDINO': ['Quechua', 'Aymara', 'Jaqaru', 'Uro', 'Otro'],
+    'INDIGENA_AMAZONICO': ['Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Otro'],
+    'INDÍGENA AMAZÓNICO': ['Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Otro'],
+    'AFROPERUANO': ['Afroperuano'],
+    'AFRODESCENDIENTE': ['Afroperuano'],
+    'MESTIZO': ['No aplica'],
+    'ASIATICO_DESCENDIENTE': ['Chino-peruano', 'Japonés-peruano', 'Otro'],
+    'ASIÁTICO DESCENDIENTE': ['Chino-peruano', 'Japonés-peruano', 'Otro'],
+    'OTRO': ['Otro']
+  };
 
   // O95 Conmutación de etapas: Anexo 1 (Notificación inmediata) vs Anexo 2 (Investigación epidemiológica)
   function actualizarEtapaFichaO95() {
@@ -1689,19 +1742,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   actualizarEtapaFichaO95();
 
-  // Dependencia de Grupo étnico -> Etnia / Pueblo étnico en O95
-  var O95_MAPA_ETNIAS = {
-    'ANDINO': ['Quechua', 'Aymara', 'Jaqaru', 'Uro', 'Otro'],
-    'INDIGENA_AMAZONICO': ['Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Otro'],
-    'INDÍGENA AMAZÓNICO': ['Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Otro'],
-    'AFROPERUANO': ['Afroperuano'],
-    'AFRODESCENDIENTE': ['Afroperuano'],
-    'MESTIZO': ['No aplica'],
-    'ASIATICO_DESCENDIENTE': ['Chino-peruano', 'Japonés-peruano', 'Otro'],
-    'ASIÁTICO DESCENDIENTE': ['Chino-peruano', 'Japonés-peruano', 'Otro'],
-    'OTRO': ['Otro']
-  };
-
   function normalizarClaveGrupo(val) {
     if (!val) return '';
     return val.toString().trim().toUpperCase()
@@ -1743,7 +1783,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.addEventListener('change', function(e) {
-    if (e.target && (e.target.id === 'o95GrupoEtnicoSel' || e.target.name === 'campo_16110')) {
+    if (e.target && (e.target.id === 'o95GrupoEtnicoSel' || e.target.name === campoPorClave('o95_grupo_etnico'))) {
       puebloSelAttrReset();
       actualizarPuebloEtnicoO95();
     }
@@ -1778,11 +1818,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function calcularFechaHoraIngresoO95() {
-    var fechaFall = document.querySelector('input[name="campo_14306"]');
-    var horaFall = document.querySelector('input[name="campo_16116"]');
-    var diasInput = document.querySelector('input[name="campo_16123"]');
-    var horasInput = document.querySelector('input[name="campo_16124"]');
-    var minsInput = document.querySelector('input[name="campo_16125"]');
+    var fechaFall = document.querySelector('input[name="' + campoPorClave('o95_fecha_de_fallecimiento') + '"]');
+    var horaFall = document.querySelector('input[name="' + campoPorClave('o95_hora_de_fallecimiento') + '"]');
+    var diasInput = document.querySelector('input[name="' + campoPorClave('o95_permanencia_dias') + '"]');
+    var horasInput = document.querySelector('input[name="' + campoPorClave('o95_permanencia_horas') + '"]');
+    var minsInput = document.querySelector('input[name="' + campoPorClave('o95_permanencia_minutos') + '"]');
     var inputIngreso = document.getElementById('o95FechaHoraIngresoInput');
 
     if (!fechaFall || !fechaFall.value || !inputIngreso) return;
@@ -1830,7 +1870,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (chkEG.checked) inputEG.value = '';
     }
 
-    var radioLugar = document.querySelector('input[name="campo_14307"]:checked');
+    var radioLugar = document.querySelector('input[name="' + campoPorClave('o95_lugar_del_fallecimiento') + '"]:checked');
     var valLugar = radioLugar ? radioLugar.value : 'Establecimiento de salud';
 
     var wrapEess = document.getElementById('bloqueEessFallecimientoO95');
@@ -1931,7 +1971,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var distId = opt ? opt.getAttribute('data-dist-id') : '';
 
     var selTipoEess = document.getElementById('o95TipoEessSel');
-    var radioLugar = document.querySelector('input[name="campo_14307"]:checked');
+    var radioLugar = document.querySelector('input[name="' + campoPorClave('o95_lugar_del_fallecimiento') + '"]:checked');
     var valLugar = radioLugar ? radioLugar.value : '';
     var esSanidadPnp = (valLugar === 'Establecimiento de salud' && selTipoEess && (selTipoEess.value === 'EESS Sanidad FFAA/PNP' || selTipoEess.value === 'SANIDAD_PNP') && selIpress.value !== '');
 
@@ -1952,19 +1992,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.addEventListener('change', function(e) {
     if (!e.target) return;
-    if (e.target.id === 'o95IdiomaSel' || e.target.name === 'campo_14316' || e.target.id === 'o95TipoSeguroSel' || e.target.name === 'campo_14319') {
+    if (e.target.id === 'o95IdiomaSel' || e.target.name === campoPorClave('o95_idioma') || e.target.id === 'o95TipoSeguroSel' || e.target.name === campoPorClave('o95_tipo_de_seguro')) {
       actualizarOtrosCamposO95();
     }
     if (e.target.id === 'o95MomentoFallecimientoSel' ||
         e.target.id === 'o95EdadGestacionalDesconocidaChk' ||
-        e.target.name === 'campo_14307' ||
+        e.target.name === campoPorClave('o95_lugar_del_fallecimiento') ||
         e.target.id === 'o95TipoEessSel' ||
         e.target.id === 'o95IpressPnpSel' ||
-        e.target.name === 'campo_14306' ||
-        e.target.name === 'campo_16116') {
+        e.target.name === campoPorClave('o95_fecha_de_fallecimiento') ||
+        e.target.name === campoPorClave('o95_hora_de_fallecimiento')) {
       actualizarDatosFallecimientoO95();
     }
-    if (e.target.id === 'o95ReferidaSel' || e.target.name === 'campo_14309') {
+    if (e.target.id === 'o95ReferidaSel' || e.target.name === campoPorClave('o95_referida')) {
       actualizarReferenciaO95();
     }
     if (e.target.id === 'o95-fallecimiento-ubigeo-departamento') {
@@ -1987,7 +2027,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.addEventListener('input', function(e) {
     if (!e.target) return;
-    if (e.target.name === 'campo_16123' || e.target.name === 'campo_16124' || e.target.name === 'campo_16125') {
+    if (e.target.name === campoPorClave('o95_permanencia_dias') || e.target.name === campoPorClave('o95_permanencia_horas') || e.target.name === campoPorClave('o95_permanencia_minutos')) {
       calcularFechaHoraIngresoO95();
     }
   });
@@ -2097,8 +2137,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function sincronizarClasificacionO95(origenElemento) {
-    var selClasifFinal   = document.querySelector('[name="campo_14379"]');
-    var selClasifInicial = document.querySelector('[name="campo_14315"]');
+    var selClasifFinal   = document.querySelector('[name="' + campoPorClave('o95_clasificacion_final_de_la_muerte') + '"]');
+    var selClasifInicial = document.querySelector('[name="' + campoPorClave('o95_clasificacion_inicial') + '"]');
     var radiosClasif     = Array.from(document.querySelectorAll('input[name="clasificacion"]'));
     if (!radiosClasif.length) return;
 
@@ -2286,7 +2326,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.addEventListener('change', function(e) {
     if (!e.target) return;
-    if (e.target.id === 'o95CausaGenericaSel' || e.target.name === 'campo_14314') {
+    if (e.target.id === 'o95CausaGenericaSel' || e.target.name === campoPorClave('o95_causa_generica')) {
       actualizarCausasDefuncionO95();
     }
     if (e.target.classList.contains('o95PatologiaChk') ||
@@ -2468,7 +2508,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!container) return;
 
     // 6. Mejora del sistema: Si Momento del fallecimiento = EMBARAZO -> Establecer Tipo de parto = NO_APLICA, Fecha = No aplica
-    var selMomento = document.getElementById('o95MomentoFallecimientoSel') || document.querySelector('[name="campo_14304"]');
+    var selMomento = document.getElementById('o95MomentoFallecimientoSel') || document.querySelector('[name="' + campoPorClave('o95_momento_del_fallecimiento') + '"]');
     var valMomento = selMomento ? (selMomento.value || '').toUpperCase().trim() : '';
 
     var chkDescon = document.getElementById('o95FechaPartoDesconChk');
@@ -2647,7 +2687,12 @@ document.addEventListener('DOMContentLoaded', function () {
     var wrapContenido = document.getElementById('bloqueContenidoComunitarioO95');
 
     // 0. Autodetectar si Lugar de fallecimiento es extrainstitucional
-    var selLugarDef = document.getElementById('o95LugarFallecimientoSel') || document.querySelector('[name="campo_14300"]');
+    // Antes: 'campo_14300' es v99_aseguradora (otra ficha, ver MAPA_IDS_CAMPOS.md),
+    // nunca calzaba con nada del DOM -- esta autodeteccion nunca se disparaba.
+    // "Lugar del fallecimiento" son radios (o95-lugar-radio), no un <select>:
+    // hace falta :checked para leer el que el usuario realmente marco, si no
+    // siempre devuelve el primer radio del DOM sin importar cual esta activo.
+    var selLugarDef = document.getElementById('o95LugarFallecimientoSel') || document.querySelector('[name="' + campoPorClave('o95_lugar_del_fallecimiento') + '"]:checked');
     if (selLugarDef) {
       var vLugarDef = (selLugarDef.value || '').toUpperCase().trim();
       if (vLugarDef === 'DOMICILIO' || vLugarDef === 'TRAYECTO' || vLugarDef === 'OTRO') {
@@ -2764,10 +2809,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.addEventListener('change', function(e) {
     if (!e.target) return;
-    if (e.target.name === 'campo_13728' || e.target.name === 'campo_13730' || e.target.classList.contains('radio-contacto-caso-b26') || e.target.classList.contains('radio-contacto-gestante-b26')) {
+    if (e.target.name === campoPorClave('b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con') || e.target.name === campoPorClave('b26_tuvo_contacto_con_gestante') || e.target.classList.contains('radio-contacto-caso-b26') || e.target.classList.contains('radio-contacto-gestante-b26')) {
       actualizarLugarInfeccionB26();
     }
-    if (e.target.name === 'campo_13708' || e.target.name === 'campo_13720' || e.target.name === 'campo_13724' ||
+    if (e.target.name === campoPorClave('b26_presento_inflamacion_de_glandulas_parotidas') || e.target.name === campoPorClave('b26_hospitalizacion') || e.target.name === campoPorClave('b26_condicion_de_egreso') ||
         e.target.classList.contains('chk-complicacion-b26') || e.target.classList.contains('radio-parotidas-b26') ||
         e.target.classList.contains('radio-hospitalizacion-b26') || e.target.classList.contains('radio-egreso-b26')) {
       actualizarCuadroClinicoB26();
@@ -2793,7 +2838,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.target.name === 'etnia' || e.target.id === 'etniaSel') {
       actualizarEtniaOtra(true);
     }
-    if (e.target.name === 'clasificacion' || e.target.name === 'campo_14379' || e.target.name === 'campo_14315') {
+    if (e.target.name === 'clasificacion' || e.target.name === campoPorClave('o95_clasificacion_final_de_la_muerte') || e.target.name === campoPorClave('o95_clasificacion_inicial')) {
       sincronizarClasificacionO95(e.target);
     }
     if (e.target.id === 'investigadorProfesionSel') {
@@ -2806,16 +2851,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.target.classList.contains('o95SintomChk') ||
         e.target.classList.contains('o95ManPartChk') ||
         e.target.classList.contains('o95ManPlacChk') ||
-        e.target.name === 'campo_14300') {
+        e.target.name === campoPorClave('o95_lugar_del_fallecimiento')) {
       actualizarDatosComunitariosO95();
     }
-    if (e.target.name === 'campo_14357' ||
+    if (e.target.name === campoPorClave('o95_identificaron_signos_de_peligro') ||
         e.target.id === 'o95PersonaIdentificoSel' ||
-        e.target.name === 'campo_14359' ||
+        e.target.name === campoPorClave('o95_buscaron_ayuda') ||
         e.target.id === 'o95DecisionBuscarAyudaSel' ||
-        e.target.name === 'campo_14362' ||
+        e.target.name === campoPorClave('o95_hubo_dificultad_con_el_acceso_a_servicios_de_salud') ||
         e.target.classList.contains('o95DifAccesoChk') ||
-        e.target.name === 'campo_14365' ||
+        e.target.name === campoPorClave('o95_tuvo_dificultades_para_ser_atendida_en_el_ee_ss') ||
         e.target.classList.contains('o95DifAtencChk') ||
         e.target.id === 'o95PersonaBrindoInfoSel') {
       actualizarEntornoSocialO95();
@@ -2833,30 +2878,30 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.target.id === 'o95LugarPartoSel' ||
         e.target.id === 'o95TipoPartoSel' ||
         e.target.id === 'o95RespPartoSel' ||
-        e.target.name === 'campo_14355' ||
-        e.target.name === 'campo_14304') {
+        e.target.name === campoPorClave('o95_necropsia') ||
+        e.target.name === campoPorClave('o95_momento_del_fallecimiento')) {
       actualizarPartoAbortoO95();
     }
     if (e.target.id === 'o95ReferidaSel' ||
-        e.target.name === 'campo_14309' ||
+        e.target.name === campoPorClave('o95_referida') ||
         e.target.id === 'o95RespOrigenSel' ||
-        e.target.name === 'campo_16154' ||
+        e.target.name === campoPorClave('o95_responsable_atencion_eess_origen') ||
         e.target.id === 'o95FechaIngOrigenInput' ||
         e.target.id === 'o95HoraIngOrigenInput' ||
         e.target.id === 'o95FechaEgrOrigenInput' ||
         e.target.id === 'o95HoraEgrOrigenInput') {
       actualizarReferenciaO95();
     }
-    if (e.target.name === 'campo_14347') {
+    if (e.target.name === campoPorClave('o95_hospitalizaciones_en_la_gestacion_puerperio')) {
       actualizarHospitalizacionesO95();
     }
-    if (e.target.name === 'campo_14334' ||
-        e.target.name === 'campo_14338' ||
+    if (e.target.name === campoPorClave('o95_recibio_apn') ||
+        e.target.name === campoPorClave('o95_se_realizaron_visitas_domiciliarias') ||
         e.target.id === 'o95ResponsableApnSel' ||
-        e.target.name === 'campo_14341') {
+        e.target.name === campoPorClave('o95_responsable_de_la_apn')) {
       actualizarAtencionPrenatalO95();
     }
-    if (e.target.name === 'campo_16147' ||
+    if (e.target.name === campoPorClave('o95_tuvo_complicaciones') ||
         e.target.classList.contains('o95CompEmbChk') ||
         e.target.classList.contains('o95CompPartChk') ||
         e.target.classList.contains('o95CompPuerChk')) {
@@ -2898,7 +2943,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // B05 Clasificación final -> Sincronizar clasificación del caso al final del formulario
   function actualizarClasificacionCasoB05() {
-    var selectClasif = document.querySelector('[name="campo_16084"]');
+    var selectClasif = document.querySelector('[name="' + campoPorClave('b05_clasificacion') + '"]');
     if (!selectClasif) {
       selectClasif = Array.from(document.querySelectorAll('select')).find(function(sel) {
         return Array.from(sel.options).some(function(opt) { return opt.value === 'SARAMPION'; });
@@ -2918,7 +2963,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.addEventListener('change', function(e) {
-    if (e.target && (e.target.name === 'campo_16084' || (e.target.tagName === 'SELECT' && e.target.querySelector('option[value="SARAMPION"]')))) {
+    if (e.target && (e.target.name === campoPorClave('b05_clasificacion') || (e.target.tagName === 'SELECT' && e.target.querySelector('option[value="SARAMPION"]')))) {
       actualizarClasificacionCasoB05();
     }
   });
@@ -2928,10 +2973,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // B05 Cálculos automáticos para Sección VIII (Investigación epidemiológica)
   function calcularTotalesB05() {
     // 1. Total casas = Casas abiertas + Casas cerradas + Casas abandonadas
-    var inputAbiertas = document.querySelector('[name="campo_16072"]');
-    var inputCerradas = document.querySelector('[name="campo_16073"]');
-    var inputAbandonadas = document.querySelector('[name="campo_16074"]');
-    var inputTotalCasas = document.querySelector('[name="campo_16075"]');
+    var inputAbiertas = document.querySelector('[name="' + campoPorClave('b05_casas_abiertas') + '"]');
+    var inputCerradas = document.querySelector('[name="' + campoPorClave('b05_casas_cerradas') + '"]');
+    var inputAbandonadas = document.querySelector('[name="' + campoPorClave('b05_casas_abandonadas') + '"]');
+    var inputTotalCasas = document.querySelector('[name="' + campoPorClave('b05_total_de_casas') + '"]');
 
     if (inputTotalCasas && (inputAbiertas || inputCerradas || inputAbandonadas)) {
       var abiertas = parseInt(inputAbiertas ? inputAbiertas.value : 0, 10) || 0;
@@ -2948,11 +2993,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // 2. Total VAC = (<1 año) + (1-4 años) + (5-14 años) + (>15 años)
-    var inputVacMenor1 = document.querySelector('[name="campo_16104"]');
-    var inputVac14 = document.querySelector('[name="campo_16105"]');
-    var inputVac514 = document.querySelector('[name="campo_16106"]');
-    var inputVacMayor15 = document.querySelector('[name="campo_16107"]');
-    var inputTotalVac = document.querySelector('[name="campo_16080"]');
+    var inputVacMenor1 = document.querySelector('[name="' + campoPorClave('vacunados_bloqueo_menor_1') + '"]');
+    var inputVac14 = document.querySelector('[name="' + campoPorClave('vacunados_bloqueo_1_4') + '"]');
+    var inputVac514 = document.querySelector('[name="' + campoPorClave('vacunados_bloqueo_5_14') + '"]');
+    var inputVacMayor15 = document.querySelector('[name="' + campoPorClave('vacunados_bloqueo_mayor_15') + '"]');
+    var inputTotalVac = document.querySelector('[name="' + campoPorClave('b05_numero_de_vacunados_en_el_bloqueo') + '"]');
 
     if (inputTotalVac && (inputVacMenor1 || inputVac14 || inputVac514 || inputVacMayor15)) {
       var vMenor1 = parseInt(inputVacMenor1 ? inputVacMenor1.value : 0, 10) || 0;
@@ -2987,8 +3032,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
     if (e.target && e.target.name && (
-      e.target.name === 'campo_16072' || e.target.name === 'campo_16073' || e.target.name === 'campo_16074' ||
-      e.target.name === 'campo_16104' || e.target.name === 'campo_16105' || e.target.name === 'campo_16106' || e.target.name === 'campo_16107'
+      e.target.name === campoPorClave('b05_casas_abiertas') || e.target.name === campoPorClave('b05_casas_cerradas') || e.target.name === campoPorClave('b05_casas_abandonadas') ||
+      e.target.name === campoPorClave('vacunados_bloqueo_menor_1') || e.target.name === campoPorClave('vacunados_bloqueo_1_4') || e.target.name === campoPorClave('vacunados_bloqueo_5_14') || e.target.name === campoPorClave('vacunados_bloqueo_mayor_15')
     )) {
       calcularTotalesB05();
     }
@@ -2996,8 +3041,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.addEventListener('change', function(e) {
     if (e.target && e.target.name && (
-      e.target.name === 'campo_16072' || e.target.name === 'campo_16073' || e.target.name === 'campo_16074' ||
-      e.target.name === 'campo_16104' || e.target.name === 'campo_16105' || e.target.name === 'campo_16106' || e.target.name === 'campo_16107'
+      e.target.name === campoPorClave('b05_casas_abiertas') || e.target.name === campoPorClave('b05_casas_cerradas') || e.target.name === campoPorClave('b05_casas_abandonadas') ||
+      e.target.name === campoPorClave('vacunados_bloqueo_menor_1') || e.target.name === campoPorClave('vacunados_bloqueo_1_4') || e.target.name === campoPorClave('vacunados_bloqueo_5_14') || e.target.name === campoPorClave('vacunados_bloqueo_mayor_15')
     )) {
       calcularTotalesB05();
     }
