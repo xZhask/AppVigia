@@ -1,6 +1,8 @@
 <?php
 use App\Core\Csrf;
 
+require __DIR__ . '/../partials/campos-por-clave.php';
+
 $estados = [
     'ABIERTA'    => ['dot' => 'st-open',   'etiqueta' => 'Abierta'],
     'VALIDACION' => ['dot' => 'st-val',    'etiqueta' => 'Validación'],
@@ -19,6 +21,7 @@ $es = $estados[$caso['estado']];
 
 <form method="post" action="/casos/<?= (int) $caso['id'] ?>">
   <?= Csrf::campoOculto() ?>
+  <script type="application/json" id="mapaCampos"><?= json_encode($mapaClaveNombreCampos, JSON_UNESCAPED_UNICODE) ?></script>
 
   <div class="disease-pick">
     <div class="ic"><svg width="19" height="19" viewBox="0 0 19 19"><circle cx="9.5" cy="9.5" r="7" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M9.5 6v7M6 9.5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
@@ -63,13 +66,14 @@ $es = $estados[$caso['estado']];
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95'], true) ? 'hidden' : '' ?>>
+          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0'], true) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b05.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-o95.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b26.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-p350.php'; ?>
         </div>
       </div>
 
@@ -83,11 +87,11 @@ $es = $estados[$caso['estado']];
               <div class="control mono" style="color:var(--muted)"><?= e($valoresFijos['tipo_doc']) ?> <?= e($valoresFijos['num_doc']) ?></div>
               <span class="hint">No editable: es la identidad del persona</span>
             </div>
-            <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
+            <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); $campoNHCEdit = $campo('o95_n_de_historia_clinica'); ?>
             <div class="field o95-elem" <?= $esO95Edit ? '' : 'hidden style="display:none;"' ?>>
               <label class="fl">N.° de historia clínica</label>
               <div class="control mono">
-                <input type="text" name="campo_16109" value="<?= e($valoresCampos[16109] ?? '') ?>" placeholder="N.° H.C.…">
+                <input type="text" name="<?= $campoNHCEdit['name'] ?>" value="<?= e($campoNHCEdit['val']) ?>" placeholder="N.° H.C.…">
               </div>
             </div>
           </div>

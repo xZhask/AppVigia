@@ -385,6 +385,8 @@ class CasosController extends Controller
         $fechaInicioSintomas = '';
         $errorFechaInicioSintomas = null;
 
+        require __DIR__ . '/../Views/partials/campos-por-clave.php';
+
         ob_start();
         require __DIR__ . '/../Views/partials/secciones-clinicas.php';
         $html = ob_get_clean();
@@ -409,13 +411,14 @@ class CasosController extends Controller
 
         $isPfa = ($enfermedad['cie10'] ?? '') === 'A80';
         $isB05 = ($enfermedad['cie10'] ?? '') === 'B05';
-        $sinCaptacion = in_array($enfermedad['cie10'] ?? '', ['A80', 'B05', 'O95'], true);
+        $sinCaptacion = in_array($enfermedad['cie10'] ?? '', ['A80', 'B05', 'O95', 'P35.0'], true);
         $tieneAntecedentesEpi = !$isPfa && !$isB05 && ((int) ($enfermedad['usa_contactos'] ?? 0) === 1 || (int) ($enfermedad['usa_viajes'] ?? 0) === 1 || (int) ($enfermedad['usa_vacunas'] ?? 0) === 1 || (int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1 || ($enfermedad['cie10'] ?? null) === 'P96');
 
         echo json_encode([
             'html'                 => $html,
             'htmlMuestras'         => $htmlMuestras,
             'htmlClasificacionChips' => $htmlClasificacionChips,
+            'mapaCampos'           => $mapaClaveNombreCampos,
             'cie10'                => $enfermedad['cie10'] ?: '—',
             'usaCaptacion'         => !$sinCaptacion,
             'usaMuestras'          => (int) ($enfermedad['usa_muestras'] ?? 0) === 1,
@@ -929,10 +932,18 @@ class CasosController extends Controller
         $puedeVerSensibles = Auth::tieneRol('ADMIN');
 
         foreach ($campos as $campoId => $campo) {
-            if ($campoId === 13729 && isset($_POST['b26_lugar_tipo']) && is_array($_POST['b26_lugar_tipo'])) {
-                $matriz13729 = [];
+            // Peticion 2, Fase 5: estos 4 son casos especiales que escapan el
+            // motor de tipos (arman o combinan valores de $_POST con nombres
+            // literales, no campo_NNNN) y se identifican por clave, no por
+            // ID -- cargar_fichas.php regenera el ID en cada recarga, la
+            // clave es estable. No se rediseña la logica de cada uno; ver
+            // MAPA_IDS_CAMPOS.md y FASE2_RESOLVEDOR_POR_CLAVE.md para el
+            // porque de cada clave (b26_contactos_por_lugar existia; los
+            // otros tres no persistian antes de esta fase).
+            if ($campo['clave'] === 'b26_contactos_por_lugar' && isset($_POST['b26_lugar_tipo']) && is_array($_POST['b26_lugar_tipo'])) {
+                $matrizLugares = [];
                 foreach ($_POST['b26_lugar_tipo'] as $idx => $tipo) {
-                    $matriz13729[] = [
+                    $matrizLugares[] = [
                         'tipo'      => trim((string) $tipo),
                         'nombre'    => trim((string) ($_POST['b26_lugar_nombre'][$idx] ?? '')),
                         'direccion' => trim((string) ($_POST['b26_lugar_direccion'][$idx] ?? '')),
@@ -940,20 +951,26 @@ class CasosController extends Controller
                         'enfermos'  => trim((string) ($_POST['b26_lugar_enfermos'][$idx] ?? '')),
                     ];
                 }
-                $paraGuardar[13729] = json_encode($matriz13729, JSON_UNESCAPED_UNICODE);
-                $valoresCampos[13729] = $matriz13729;
+                $paraGuardar[$campoId] = json_encode($matrizLugares, JSON_UNESCAPED_UNICODE);
+                $valoresCampos[$campoId] = $matrizLugares;
                 continue;
             }
-            if ($campoId === 14301 && !empty($_POST['hora_notificacion'])) {
+            if ($campo['clave'] === 'o95_hora_de_la_notificacion' && !empty($_POST['hora_notificacion'])) {
                 $valFechaHora = trim($_POST['fecha_notif'] ?? '') . ' ' . trim($_POST['hora_notificacion']);
                 $valoresCampos[$campoId] = $valFechaHora;
                 $paraGuardar[$campoId] = $valFechaHora;
                 continue;
             }
-            if ($campoId === 14302 && !empty($_POST['identificado_por'])) {
+            if ($campo['clave'] === 'o95_identificado_por' && !empty($_POST['identificado_por'])) {
                 $valIdentificado = trim($_POST['identificado_por']);
                 $valoresCampos[$campoId] = $valIdentificado;
                 $paraGuardar[$campoId] = $valIdentificado;
+                continue;
+            }
+            if ($campo['clave'] === 'o95_tipo_de_ficha' && !empty($_POST['o95_tipo_ficha'])) {
+                $valTipoFicha = trim($_POST['o95_tipo_ficha']);
+                $valoresCampos[$campoId] = $valTipoFicha;
+                $paraGuardar[$campoId] = $valTipoFicha;
                 continue;
             }
             $tipo = $campo['tipo'];

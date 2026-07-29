@@ -61,17 +61,30 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <?php
   $cie10Actual = strtoupper(trim($enfermedad['cie10'] ?? ''));
   $esO95 = ($cie10Actual === 'O95');
-  $valTipoFichaO95 = $valoresFijos['o95_tipo_ficha'] ?? $valoresCampos[14300] ?? $_POST['o95_tipo_ficha'] ?? 'ANEXO_1';
+  $campoGrupoEtnicoO95 = $campo('o95_grupo_etnico');
+  $campoPuebloEtnicoO95 = $campo('o95_etnia_pueblo_etnico');
+  $campoIdiomaO95 = $campo('o95_idioma');
+  $campoIdiomaOtraO95 = $campo('o95_idioma_otra');
+  $campoNivelEduO95 = $campo('o95_nivel_educativo');
+  $campoEstadoCivilO95 = $campo('o95_estado_civil');
+  $campoOcupacionO95 = $campo('o95_ocupacion');
+  $campoTipoSeguroO95 = $campo('o95_tipo_de_seguro');
+  $campoSeguroOtroO95 = $campo('o95_tipo_de_seguro_otro');
+  $campoTipoFichaO95Nucleo = $campo('o95_tipo_de_ficha');
+  $valTipoFichaO95 = $valoresFijos['o95_tipo_ficha']
+      ?? ($campoTipoFichaO95Nucleo['val'] !== '' ? $campoTipoFichaO95Nucleo['val'] : null)
+      ?? $_POST['o95_tipo_ficha']
+      ?? 'ANEXO_1';
   $mostrarEtniaO95Anexo2 = ($esO95 && $valTipoFichaO95 === 'ANEXO_2');
   ?>
   <!-- Grupo étnico (O95 - Anexo 2) -->
   <div class="field o95-anexo-2-elem" id="campoGrupoEtnicoO95" <?= !$mostrarEtniaO95Anexo2 ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Grupo étnico</label>
     <div class="control">
-      <select id="o95GrupoEtnicoSel" name="campo_16110" data-nosearch="true">
+      <select id="o95GrupoEtnicoSel" name="<?= $campoGrupoEtnicoO95['name'] ?>" data-nosearch="true">
         <option value="">Seleccionar…</option>
         <?php foreach (['Mestizo', 'Andino', 'Indígena amazónico', 'Afroperuano', 'Asiático descendiente', 'Otro'] as $g): ?>
-          <option value="<?= $g ?>" <?= seleccionado($valoresCampos[16110] ?? '', $g) ?>><?= $g ?></option>
+          <option value="<?= $g ?>" <?= seleccionado($campoGrupoEtnicoO95['val'], $g) ?>><?= $g ?></option>
         <?php endforeach; ?>
       </select>
     </div>
@@ -81,7 +94,7 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <div class="field o95-anexo-2-elem" id="campoPuebloEtnicoO95" <?= !$mostrarEtniaO95Anexo2 ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Etnia / Pueblo étnico</label>
     <div class="control">
-      <select id="o95PuebloEtnicoSel" name="campo_16111" data-nosearch="true" data-valor-actual="<?= e($valoresCampos[16111] ?? '') ?>">
+      <select id="o95PuebloEtnicoSel" name="<?= $campoPuebloEtnicoO95['name'] ?>" data-nosearch="true" data-valor-actual="<?= e($campoPuebloEtnicoO95['val']) ?>">
         <option value="">Seleccionar…</option>
       </select>
     </div>
@@ -91,36 +104,36 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <div class="field o95-anexo-2-elem" id="campoIdiomaO95" <?= !$mostrarEtniaO95Anexo2 ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Idioma</label>
     <div class="control">
-      <select id="o95IdiomaSel" name="campo_14316" data-nosearch="true">
+      <select id="o95IdiomaSel" name="<?= $campoIdiomaO95['name'] ?>" data-nosearch="true">
         <option value="">Seleccionar…</option>
-        <option value="ESPANOL" <?= seleccionado($valoresCampos[14316] ?? '', 'ESPANOL') ?>>Español</option>
-        <option value="QUECHUA" <?= seleccionado($valoresCampos[14316] ?? '', 'QUECHUA') ?>>Quechua</option>
-        <option value="AYMARA" <?= seleccionado($valoresCampos[14316] ?? '', 'AYMARA') ?>>Aymara</option>
-        <option value="OTRA" <?= seleccionado($valoresCampos[14316] ?? '', 'OTRA') ?>>Otra</option>
+        <option value="ESPANOL" <?= seleccionado($campoIdiomaO95['val'], 'ESPANOL') ?>>Español</option>
+        <option value="QUECHUA" <?= seleccionado($campoIdiomaO95['val'], 'QUECHUA') ?>>Quechua</option>
+        <option value="AYMARA" <?= seleccionado($campoIdiomaO95['val'], 'AYMARA') ?>>Aymara</option>
+        <option value="OTRA" <?= seleccionado($campoIdiomaO95['val'], 'OTRA') ?>>Otra</option>
       </select>
     </div>
   </div>
 
-  <div class="field o95-anexo-2-elem" id="campoIdiomaOtraO95" <?= (!$mostrarEtniaO95Anexo2 || ($valoresCampos[14316] ?? '') !== 'OTRA') ? 'hidden style="display:none;"' : '' ?>>
+  <div class="field o95-anexo-2-elem" id="campoIdiomaOtraO95" <?= (!$mostrarEtniaO95Anexo2 || $campoIdiomaO95['val'] !== 'OTRA') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Especificar otro idioma</label>
     <div class="control">
-      <input type="text" name="campo_16113" value="<?= e($valoresCampos[16113] ?? '') ?>" placeholder="Especificar idioma…">
+      <input type="text" name="<?= $campoIdiomaOtraO95['name'] ?>" value="<?= e($campoIdiomaOtraO95['val']) ?>" placeholder="Especificar idioma…">
     </div>
   </div>
 
   <div class="field o95-anexo-2-elem" id="campoNivelEduO95" <?= !$mostrarEtniaO95Anexo2 ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Nivel educativo</label>
     <div class="control">
-      <select name="campo_14317" data-nosearch="true">
+      <select name="<?= $campoNivelEduO95['name'] ?>" data-nosearch="true">
         <option value="">Seleccionar…</option>
-        <option value="NINGUNO" <?= seleccionado($valoresCampos[14317] ?? '', 'NINGUNO') ?>>Ninguno</option>
-        <option value="PRIMARIA_INCOMPLETA" <?= seleccionado($valoresCampos[14317] ?? '', 'PRIMARIA_INCOMPLETA') ?>>Primaria incompleta</option>
-        <option value="PRIMARIA_COMPLETA" <?= seleccionado($valoresCampos[14317] ?? '', 'PRIMARIA_COMPLETA') ?>>Primaria completa</option>
-        <option value="SECUNDARIA_INCOMPLETA" <?= seleccionado($valoresCampos[14317] ?? '', 'SECUNDARIA_INCOMPLETA') ?>>Secundaria incompleta</option>
-        <option value="SECUNDARIA_COMPLETA" <?= seleccionado($valoresCampos[14317] ?? '', 'SECUNDARIA_COMPLETA') ?>>Secundaria completa</option>
-        <option value="SUPERIOR_UNIVERSITARIA" <?= seleccionado($valoresCampos[14317] ?? '', 'SUPERIOR_UNIVERSITARIA') ?>>Superior universitaria</option>
-        <option value="SUPERIOR_TECNICA" <?= seleccionado($valoresCampos[14317] ?? '', 'SUPERIOR_TECNICA') ?>>Superior técnica</option>
-        <option value="DESCONOCIDO" <?= seleccionado($valoresCampos[14317] ?? '', 'DESCONOCIDO') ?>>Desconocido</option>
+        <option value="NINGUNO" <?= seleccionado($campoNivelEduO95['val'], 'NINGUNO') ?>>Ninguno</option>
+        <option value="PRIMARIA_INCOMPLETA" <?= seleccionado($campoNivelEduO95['val'], 'PRIMARIA_INCOMPLETA') ?>>Primaria incompleta</option>
+        <option value="PRIMARIA_COMPLETA" <?= seleccionado($campoNivelEduO95['val'], 'PRIMARIA_COMPLETA') ?>>Primaria completa</option>
+        <option value="SECUNDARIA_INCOMPLETA" <?= seleccionado($campoNivelEduO95['val'], 'SECUNDARIA_INCOMPLETA') ?>>Secundaria incompleta</option>
+        <option value="SECUNDARIA_COMPLETA" <?= seleccionado($campoNivelEduO95['val'], 'SECUNDARIA_COMPLETA') ?>>Secundaria completa</option>
+        <option value="SUPERIOR_UNIVERSITARIA" <?= seleccionado($campoNivelEduO95['val'], 'SUPERIOR_UNIVERSITARIA') ?>>Superior universitaria</option>
+        <option value="SUPERIOR_TECNICA" <?= seleccionado($campoNivelEduO95['val'], 'SUPERIOR_TECNICA') ?>>Superior técnica</option>
+        <option value="DESCONOCIDO" <?= seleccionado($campoNivelEduO95['val'], 'DESCONOCIDO') ?>>Desconocido</option>
       </select>
     </div>
   </div>
@@ -128,15 +141,15 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <div class="field o95-anexo-2-elem" id="campoEstadoCivilO95" <?= !$mostrarEtniaO95Anexo2 ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Estado civil</label>
     <div class="control">
-      <select name="campo_14318" data-nosearch="true">
+      <select name="<?= $campoEstadoCivilO95['name'] ?>" data-nosearch="true">
         <option value="">Seleccionar…</option>
-        <option value="SOLTERA" <?= seleccionado($valoresCampos[14318] ?? '', 'SOLTERA') ?>>Soltera</option>
-        <option value="CASADA" <?= seleccionado($valoresCampos[14318] ?? '', 'CASADA') ?>>Casada</option>
-        <option value="CONVIVIENTE" <?= seleccionado($valoresCampos[14318] ?? '', 'CONVIVIENTE') ?>>Conviviente</option>
-        <option value="DIVORCIADA" <?= seleccionado($valoresCampos[14318] ?? '', 'DIVORCIADA') ?>>Divorciada</option>
-        <option value="SEPARADA" <?= seleccionado($valoresCampos[14318] ?? '', 'SEPARADA') ?>>Separada</option>
-        <option value="VIUDA" <?= seleccionado($valoresCampos[14318] ?? '', 'VIUDA') ?>>Viuda</option>
-        <option value="DESCONOCIDO" <?= seleccionado($valoresCampos[14318] ?? '', 'DESCONOCIDO') ?>>Desconocido</option>
+        <option value="SOLTERA" <?= seleccionado($campoEstadoCivilO95['val'], 'SOLTERA') ?>>Soltera</option>
+        <option value="CASADA" <?= seleccionado($campoEstadoCivilO95['val'], 'CASADA') ?>>Casada</option>
+        <option value="CONVIVIENTE" <?= seleccionado($campoEstadoCivilO95['val'], 'CONVIVIENTE') ?>>Conviviente</option>
+        <option value="DIVORCIADA" <?= seleccionado($campoEstadoCivilO95['val'], 'DIVORCIADA') ?>>Divorciada</option>
+        <option value="SEPARADA" <?= seleccionado($campoEstadoCivilO95['val'], 'SEPARADA') ?>>Separada</option>
+        <option value="VIUDA" <?= seleccionado($campoEstadoCivilO95['val'], 'VIUDA') ?>>Viuda</option>
+        <option value="DESCONOCIDO" <?= seleccionado($campoEstadoCivilO95['val'], 'DESCONOCIDO') ?>>Desconocido</option>
       </select>
     </div>
   </div>
@@ -144,28 +157,28 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <div class="field o95-anexo-2-elem" id="campoOcupacionO95" <?= !$mostrarEtniaO95Anexo2 ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Ocupación</label>
     <div class="control">
-      <input type="text" name="campo_16112" value="<?= e($valoresCampos[16112] ?? '') ?>" placeholder="Especificar ocupación…">
+      <input type="text" name="<?= $campoOcupacionO95['name'] ?>" value="<?= e($campoOcupacionO95['val']) ?>" placeholder="Especificar ocupación…">
     </div>
   </div>
 
   <div class="field o95-anexo-2-elem" id="campoTipoSeguroO95" <?= !$mostrarEtniaO95Anexo2 ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Tipo de seguro</label>
     <div class="control">
-      <select id="o95TipoSeguroSel" name="campo_14319" data-nosearch="true">
+      <select id="o95TipoSeguroSel" name="<?= $campoTipoSeguroO95['name'] ?>" data-nosearch="true">
         <option value="">Seleccionar…</option>
-        <option value="SIS" <?= seleccionado($valoresCampos[14319] ?? '', 'SIS') ?>>SIS</option>
-        <option value="ESSALUD" <?= seleccionado($valoresCampos[14319] ?? '', 'ESSALUD') ?>>EsSalud</option>
-        <option value="PRIVADO" <?= seleccionado($valoresCampos[14319] ?? '', 'PRIVADO') ?>>Privado</option>
-        <option value="OTROS" <?= seleccionado($valoresCampos[14319] ?? '', 'OTROS') ?>>Otros</option>
-        <option value="NO_TIENE" <?= seleccionado($valoresCampos[14319] ?? '', 'NO_TIENE') ?>>No tiene seguro</option>
+        <option value="SIS" <?= seleccionado($campoTipoSeguroO95['val'], 'SIS') ?>>SIS</option>
+        <option value="ESSALUD" <?= seleccionado($campoTipoSeguroO95['val'], 'ESSALUD') ?>>EsSalud</option>
+        <option value="PRIVADO" <?= seleccionado($campoTipoSeguroO95['val'], 'PRIVADO') ?>>Privado</option>
+        <option value="OTROS" <?= seleccionado($campoTipoSeguroO95['val'], 'OTROS') ?>>Otros</option>
+        <option value="NO_TIENE" <?= seleccionado($campoTipoSeguroO95['val'], 'NO_TIENE') ?>>No tiene seguro</option>
       </select>
     </div>
   </div>
 
-  <div class="field o95-anexo-2-elem" id="campoSeguroOtroO95" <?= (!$mostrarEtniaO95Anexo2 || ($valoresCampos[14319] ?? '') !== 'OTROS') ? 'hidden style="display:none;"' : '' ?>>
+  <div class="field o95-anexo-2-elem" id="campoSeguroOtroO95" <?= (!$mostrarEtniaO95Anexo2 || $campoTipoSeguroO95['val'] !== 'OTROS') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Especificar otro seguro</label>
     <div class="control">
-      <input type="text" name="campo_16114" value="<?= e($valoresCampos[16114] ?? '') ?>" placeholder="Especificar tipo de seguro…">
+      <input type="text" name="<?= $campoSeguroOtroO95['name'] ?>" value="<?= e($campoSeguroOtroO95['val']) ?>" placeholder="Especificar tipo de seguro…">
     </div>
   </div>
 

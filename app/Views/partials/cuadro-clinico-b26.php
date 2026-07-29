@@ -13,28 +13,53 @@
 
 $esB26Cuadro = (($enfermedad['cie10'] ?? null) === 'B26');
 
-// Extraer valores existentes
-$valFechaInicioSintomas = $valoresFijos['fecha_inicio_sintomas'] ?? $valoresCampos[13707] ?? $valoresCampos['b26_fecha_de_inicio_de_sintomas'] ?? '';
+$campoParotidas = $campo('b26_presento_inflamacion_de_glandulas_parotidas');
+$campoFechaParotiditis = $campo('b26_fecha_de_inicio_de_parotiditis');
+$campoDiasParotiditis = $campo('b26_n_de_dias_de_duracion');
+$campoLocalizacion = $campo('b26_localizacion');
+$campoSubman = $campo('b26_inflamacion_de_glandulas_submandibulares');
+$campoSubling = $campo('b26_inflamacion_de_glandulas_sublinguales');
+$campoOrquitis = $campo('b26_orquitis');
+$campoOoforitis = $campo('b26_ooforitis');
+$campoAudicion = $campo('b26_perdida_de_audicion');
+$campoEncefalitis = $campo('b26_encefalitis');
+$campoMeningitis = $campo('b26_meningitis');
+$campoOtrasComp = $campo('b26_otras');
+$campoHosp = $campo('b26_hospitalizacion');
+$campoEstablecimientoHosp = $campo('b26_establecimiento');
+$campoFechaHosp = $campo('b26_fecha_de_hospitalizacion');
+$campoDiasHosp = $campo('b26_n_de_dias');
+$campoCondicionEgreso = $campo('b26_condicion_de_egreso');
+$campoFechaEgreso = $campo('b26_fecha_de_egreso');
+$campoReferidoA = $campo('b26_referido_a');
+$campoCausaMuerte = $campo('b26_causa_de_muerte');
+
+// Extraer valores existentes. "Fecha de inicio de sintomas" es un campo fijo
+// de caso.fecha_inicio_sintomas (name="fecha_inicio_sintomas" literal, mas
+// abajo) -- el campo_def b26_fecha_de_inicio_de_sintomas existe pero ningun
+// input postea a el, es un duplicado conceptual sin usar; no se resuelve por
+// clave porque nunca fue alcanzable.
+$valFechaInicioSintomas = $valoresFijos['fecha_inicio_sintomas'] ?? '';
 
 // Glándulas parótidas
-$rawParotidas = $valoresCampos[13708] ?? $valoresCampos['b26_presento_inflamacion_de_glandulas_parotidas'] ?? '';
+$rawParotidas = $campoParotidas['val'];
 $valParotidas = (string) (is_array($rawParotidas) ? ($rawParotidas['valor'] ?? '') : $rawParotidas);
 if ($valParotidas === '1') $valParotidas = 'SI';
 if ($valParotidas === '0') $valParotidas = 'NO';
 
-$valFechaParotiditis = $valoresCampos[13709] ?? $valoresCampos['b26_fecha_de_inicio_de_parotiditis'] ?? '';
-$valDiasParotiditis = $valoresCampos[13710] ?? $valoresCampos['b26_n_de_dias_de_duracion'] ?? '';
-$valLocalizacion = $valoresCampos[13711] ?? $valoresCampos['b26_localizacion'] ?? '';
+$valFechaParotiditis = $campoFechaParotiditis['val'];
+$valDiasParotiditis = $campoDiasParotiditis['val'];
+$valLocalizacion = $campoLocalizacion['val'];
 
 // Otras glándulas salivales
-$rawSubman = $valoresCampos[13712] ?? $valoresCampos['b26_inflamacion_de_glandulas_submandibulares'] ?? '';
+$rawSubman = $campoSubman['val'];
 $valSubman = (string) (is_array($rawSubman) ? ($rawSubman['valor'] ?? '') : $rawSubman);
-$rawSubling = $valoresCampos[13713] ?? $valoresCampos['b26_inflamacion_de_glandulas_sublinguales'] ?? '';
+$rawSubling = $campoSubling['val'];
 $valSubling = (string) (is_array($rawSubling) ? ($rawSubling['valor'] ?? '') : $rawSubling);
 
 // Complicaciones (SI_NO_FECHA)
-$parserComplicacion = function ($campoId, $clave) use ($valoresCampos): array {
-    $raw = $valoresCampos[$campoId] ?? $valoresCampos[$clave] ?? [];
+$parserComplicacion = function (array $campoResuelto): array {
+    $raw = $campoResuelto['val'];
     if (is_string($raw)) {
         $json = json_decode($raw, true);
         if (is_array($json)) $raw = $json;
@@ -49,28 +74,28 @@ $parserComplicacion = function ($campoId, $clave) use ($valoresCampos): array {
     ];
 };
 
-$compOrquitis = $parserComplicacion(13714, 'b26_orquitis');
-$compOoforitis = $parserComplicacion(13715, 'b26_ooforitis');
-$compAudicion  = $parserComplicacion(13716, 'b26_perdida_de_audicion');
-$compEncefalitis = $parserComplicacion(13717, 'b26_encefalitis');
-$compMeningitis = $parserComplicacion(13718, 'b26_meningitis');
-$compOtras     = $parserComplicacion(13719, 'b26_otras');
+$compOrquitis = $parserComplicacion($campoOrquitis);
+$compOoforitis = $parserComplicacion($campoOoforitis);
+$compAudicion  = $parserComplicacion($campoAudicion);
+$compEncefalitis = $parserComplicacion($campoEncefalitis);
+$compMeningitis = $parserComplicacion($campoMeningitis);
+$compOtras     = $parserComplicacion($campoOtrasComp);
 
 // Hospitalización
-$rawHosp = $valoresCampos[13720] ?? $valoresCampos['b26_hospitalizacion'] ?? $valoresFijos['hospitalizado'] ?? '';
+$rawHosp = $campoHosp['val'] !== '' ? $campoHosp['val'] : ($valoresFijos['hospitalizado'] ?? '');
 $valHosp = (string) (is_array($rawHosp) ? ($rawHosp['valor'] ?? '') : $rawHosp);
 if ($valHosp === '1') $valHosp = 'SI';
 if ($valHosp === '0') $valHosp = 'NO';
 
-$valEstablecimientoHosp = $valoresCampos[13721] ?? $valoresCampos['b26_establecimiento'] ?? '';
-$valFechaHosp = $valoresCampos[13722] ?? $valoresCampos['b26_fecha_de_hospitalizacion'] ?? '';
-$valDiasHosp = $valoresCampos[13723] ?? $valoresCampos['b26_n_de_dias'] ?? '';
+$valEstablecimientoHosp = $campoEstablecimientoHosp['val'];
+$valFechaHosp = $campoFechaHosp['val'];
+$valDiasHosp = $campoDiasHosp['val'];
 
 // Condición de egreso
-$valCondicionEgreso = $valoresCampos[13724] ?? $valoresCampos['b26_condicion_de_egreso'] ?? '';
-$valFechaEgreso = $valoresCampos[13725] ?? $valoresCampos['b26_fecha_de_egreso'] ?? '';
-$valReferidoA = $valoresCampos[13726] ?? $valoresCampos['b26_referido_a'] ?? '';
-$valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte'] ?? '';
+$valCondicionEgreso = $campoCondicionEgreso['val'];
+$valFechaEgreso = $campoFechaEgreso['val'];
+$valReferidoA = $campoReferidoA['val'];
+$valCausaMuerte = $campoCausaMuerte['val'];
 ?>
 
 <div class="card section b26-cuadro-clinico-card" id="cardCuadroClinicoB26" <?= $esB26Cuadro ? '' : 'hidden style="display:none;"' ?>>
@@ -100,11 +125,11 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <div class="control" style="margin-top:6px">
         <div style="display:flex;gap:20px;align-items:center" id="wrapParotidasB26">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13708" value="SI" class="radio-parotidas-b26" <?= ($valParotidas === 'SI') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoParotidas['name'] ?>" value="SI" class="radio-parotidas-b26" <?= ($valParotidas === 'SI') ? 'checked' : '' ?>>
             <span>Sí</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13708" value="NO" class="radio-parotidas-b26" <?= ($valParotidas === 'NO') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoParotidas['name'] ?>" value="NO" class="radio-parotidas-b26" <?= ($valParotidas === 'NO') ? 'checked' : '' ?>>
             <span>No</span>
           </label>
         </div>
@@ -116,13 +141,13 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <div class="field">
         <label class="fl">Fecha de inicio de parotiditis</label>
         <div class="control mono">
-          <input type="date" id="fechaInicioParotiditisB26" name="campo_13709" value="<?= e($valFechaParotiditis) ?>" max="<?= date('Y-m-d') ?>">
+          <input type="date" id="fechaInicioParotiditisB26" name="<?= $campoFechaParotiditis['name'] ?>" value="<?= e($valFechaParotiditis) ?>" max="<?= date('Y-m-d') ?>">
         </div>
       </div>
       <div class="field">
         <label class="fl">N.º de días de duración</label>
         <div class="control mono">
-          <input type="number" min="1" step="1" name="campo_13710" value="<?= e($valDiasParotiditis) ?>" placeholder="1" class="inp-dias-pos-b26" style="text-align:center">
+          <input type="number" min="1" step="1" name="<?= $campoDiasParotiditis['name'] ?>" value="<?= e($valDiasParotiditis) ?>" placeholder="1" class="inp-dias-pos-b26" style="text-align:center">
         </div>
       </div>
       <div class="field">
@@ -130,11 +155,11 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
         <div class="control" style="margin-top:8px">
           <div style="display:flex;gap:16px;align-items:center">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:13.5px">
-              <input type="radio" name="campo_13711" value="UNILATERAL" <?= (strtoupper($valLocalizacion) === 'UNILATERAL') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoLocalizacion['name'] ?>" value="UNILATERAL" <?= (strtoupper($valLocalizacion) === 'UNILATERAL') ? 'checked' : '' ?>>
               <span>Unilateral</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:13.5px">
-              <input type="radio" name="campo_13711" value="BILATERAL" <?= (strtoupper($valLocalizacion) === 'BILATERAL') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoLocalizacion['name'] ?>" value="BILATERAL" <?= (strtoupper($valLocalizacion) === 'BILATERAL') ? 'checked' : '' ?>>
               <span>Bilateral</span>
             </label>
           </div>
@@ -152,11 +177,11 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
         <div class="control" style="margin-top:6px">
           <div style="display:flex;gap:20px;align-items:center">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="campo_13712" value="1" <?= ($valSubman === '1' || $valSubman === 'SI') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoSubman['name'] ?>" value="1" <?= ($valSubman === '1' || $valSubman === 'SI') ? 'checked' : '' ?>>
               <span>Sí</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="campo_13712" value="0" <?= ($valSubman === '0' || $valSubman === 'NO') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoSubman['name'] ?>" value="0" <?= ($valSubman === '0' || $valSubman === 'NO') ? 'checked' : '' ?>>
               <span>No</span>
             </label>
           </div>
@@ -167,11 +192,11 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
         <div class="control" style="margin-top:6px">
           <div style="display:flex;gap:20px;align-items:center">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="campo_13713" value="1" <?= ($valSubling === '1' || $valSubling === 'SI') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoSubling['name'] ?>" value="1" <?= ($valSubling === '1' || $valSubling === 'SI') ? 'checked' : '' ?>>
               <span>Sí</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="campo_13713" value="0" <?= ($valSubling === '0' || $valSubling === 'NO') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoSubling['name'] ?>" value="0" <?= ($valSubling === '0' || $valSubling === 'NO') ? 'checked' : '' ?>>
               <span>No</span>
             </label>
           </div>
@@ -189,13 +214,13 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <!-- Orquitis -->
       <div class="box-complicacion-b26" style="padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02))">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
-          <input type="checkbox" name="campo_13714[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compOrquitis['marcado'] === 'SI') ? 'checked' : '' ?>>
+          <input type="checkbox" name="<?= $campoOrquitis['name'] ?>[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compOrquitis['marcado'] === 'SI') ? 'checked' : '' ?>>
           <span>Orquitis</span>
         </label>
         <div class="wrap-fecha-complicacion" style="margin-top:10px;<?= ($compOrquitis['marcado'] === 'SI') ? '' : 'display:none;' ?>">
           <label class="fl" style="font-size:12px">Fecha de inicio de Orquitis</label>
           <div class="control mono">
-            <input type="date" name="campo_13714[fecha]" value="<?= e($compOrquitis['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compOrquitis['marcado'] === 'SI') ? '' : 'disabled' ?>>
+            <input type="date" name="<?= $campoOrquitis['name'] ?>[fecha]" value="<?= e($compOrquitis['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compOrquitis['marcado'] === 'SI') ? '' : 'disabled' ?>>
           </div>
         </div>
       </div>
@@ -203,13 +228,13 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <!-- Ooforitis -->
       <div class="box-complicacion-b26" style="padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02))">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
-          <input type="checkbox" name="campo_13715[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compOoforitis['marcado'] === 'SI') ? 'checked' : '' ?>>
+          <input type="checkbox" name="<?= $campoOoforitis['name'] ?>[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compOoforitis['marcado'] === 'SI') ? 'checked' : '' ?>>
           <span>Ooforitis</span>
         </label>
         <div class="wrap-fecha-complicacion" style="margin-top:10px;<?= ($compOoforitis['marcado'] === 'SI') ? '' : 'display:none;' ?>">
           <label class="fl" style="font-size:12px">Fecha de inicio de Ooforitis</label>
           <div class="control mono">
-            <input type="date" name="campo_13715[fecha]" value="<?= e($compOoforitis['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compOoforitis['marcado'] === 'SI') ? '' : 'disabled' ?>>
+            <input type="date" name="<?= $campoOoforitis['name'] ?>[fecha]" value="<?= e($compOoforitis['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compOoforitis['marcado'] === 'SI') ? '' : 'disabled' ?>>
           </div>
         </div>
       </div>
@@ -217,13 +242,13 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <!-- Pérdida de audición -->
       <div class="box-complicacion-b26" style="padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02))">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
-          <input type="checkbox" name="campo_13716[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compAudicion['marcado'] === 'SI') ? 'checked' : '' ?>>
+          <input type="checkbox" name="<?= $campoAudicion['name'] ?>[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compAudicion['marcado'] === 'SI') ? 'checked' : '' ?>>
           <span>Pérdida de audición</span>
         </label>
         <div class="wrap-fecha-complicacion" style="margin-top:10px;<?= ($compAudicion['marcado'] === 'SI') ? '' : 'display:none;' ?>">
           <label class="fl" style="font-size:12px">Fecha de inicio de Pérdida de audición</label>
           <div class="control mono">
-            <input type="date" name="campo_13716[fecha]" value="<?= e($compAudicion['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compAudicion['marcado'] === 'SI') ? '' : 'disabled' ?>>
+            <input type="date" name="<?= $campoAudicion['name'] ?>[fecha]" value="<?= e($compAudicion['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compAudicion['marcado'] === 'SI') ? '' : 'disabled' ?>>
           </div>
         </div>
       </div>
@@ -231,13 +256,13 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <!-- Encefalitis -->
       <div class="box-complicacion-b26" style="padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02))">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
-          <input type="checkbox" name="campo_13717[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compEncefalitis['marcado'] === 'SI') ? 'checked' : '' ?>>
+          <input type="checkbox" name="<?= $campoEncefalitis['name'] ?>[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compEncefalitis['marcado'] === 'SI') ? 'checked' : '' ?>>
           <span>Encefalitis</span>
         </label>
         <div class="wrap-fecha-complicacion" style="margin-top:10px;<?= ($compEncefalitis['marcado'] === 'SI') ? '' : 'display:none;' ?>">
           <label class="fl" style="font-size:12px">Fecha de inicio de Encefalitis</label>
           <div class="control mono">
-            <input type="date" name="campo_13717[fecha]" value="<?= e($compEncefalitis['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compEncefalitis['marcado'] === 'SI') ? '' : 'disabled' ?>>
+            <input type="date" name="<?= $campoEncefalitis['name'] ?>[fecha]" value="<?= e($compEncefalitis['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compEncefalitis['marcado'] === 'SI') ? '' : 'disabled' ?>>
           </div>
         </div>
       </div>
@@ -245,13 +270,13 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <!-- Meningitis -->
       <div class="box-complicacion-b26" style="padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02))">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
-          <input type="checkbox" name="campo_13718[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compMeningitis['marcado'] === 'SI') ? 'checked' : '' ?>>
+          <input type="checkbox" name="<?= $campoMeningitis['name'] ?>[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compMeningitis['marcado'] === 'SI') ? 'checked' : '' ?>>
           <span>Meningitis</span>
         </label>
         <div class="wrap-fecha-complicacion" style="margin-top:10px;<?= ($compMeningitis['marcado'] === 'SI') ? '' : 'display:none;' ?>">
           <label class="fl" style="font-size:12px">Fecha de inicio de Meningitis</label>
           <div class="control mono">
-            <input type="date" name="campo_13718[fecha]" value="<?= e($compMeningitis['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compMeningitis['marcado'] === 'SI') ? '' : 'disabled' ?>>
+            <input type="date" name="<?= $campoMeningitis['name'] ?>[fecha]" value="<?= e($compMeningitis['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compMeningitis['marcado'] === 'SI') ? '' : 'disabled' ?>>
           </div>
         </div>
       </div>
@@ -259,20 +284,20 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <!-- Otras -->
       <div class="box-complicacion-b26" style="padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02))">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
-          <input type="checkbox" name="campo_13719[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compOtras['marcado'] === 'SI') ? 'checked' : '' ?>>
+          <input type="checkbox" name="<?= $campoOtrasComp['name'] ?>[marcado]" value="SI" class="chk-complicacion-b26" <?= ($compOtras['marcado'] === 'SI') ? 'checked' : '' ?>>
           <span>Otras (especificar)</span>
         </label>
         <div class="wrap-fecha-complicacion" style="margin-top:10px;<?= ($compOtras['marcado'] === 'SI') ? '' : 'display:none;' ?>">
           <div style="margin-bottom:8px">
             <label class="fl" style="font-size:12px">Especifique complicación</label>
             <div class="control">
-              <input type="text" name="campo_13719[especifique]" value="<?= e($compOtras['especifique']) ?>" placeholder="Especifique…" class="inp-fecha-complicacion-b26" <?= ($compOtras['marcado'] === 'SI') ? '' : 'disabled' ?>>
+              <input type="text" name="<?= $campoOtrasComp['name'] ?>[especifique]" value="<?= e($compOtras['especifique']) ?>" placeholder="Especifique…" class="inp-fecha-complicacion-b26" <?= ($compOtras['marcado'] === 'SI') ? '' : 'disabled' ?>>
             </div>
           </div>
           <div>
             <label class="fl" style="font-size:12px">Fecha de inicio</label>
             <div class="control mono">
-              <input type="date" name="campo_13719[fecha]" value="<?= e($compOtras['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compOtras['marcado'] === 'SI') ? '' : 'disabled' ?>>
+              <input type="date" name="<?= $campoOtrasComp['name'] ?>[fecha]" value="<?= e($compOtras['fecha']) ?>" max="<?= date('Y-m-d') ?>" class="inp-fecha-complicacion-b26" <?= ($compOtras['marcado'] === 'SI') ? '' : 'disabled' ?>>
             </div>
           </div>
         </div>
@@ -290,11 +315,11 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <div class="control" style="margin-top:6px">
         <div style="display:flex;gap:20px;align-items:center" id="wrapHospitalizacionB26">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13720" value="SI" class="radio-hospitalizacion-b26" <?= ($valHosp === 'SI') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoHosp['name'] ?>" value="SI" class="radio-hospitalizacion-b26" <?= ($valHosp === 'SI') ? 'checked' : '' ?>>
             <span>Sí</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13720" value="NO" class="radio-hospitalizacion-b26" <?= ($valHosp === 'NO') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoHosp['name'] ?>" value="NO" class="radio-hospitalizacion-b26" <?= ($valHosp === 'NO') ? 'checked' : '' ?>>
             <span>No</span>
           </label>
         </div>
@@ -306,19 +331,19 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <div class="field">
         <label class="fl">Nombre del EE.SS.</label>
         <div class="control">
-          <input type="text" name="campo_13721" value="<?= e($valEstablecimientoHosp) ?>" placeholder="Nombre del establecimiento…">
+          <input type="text" name="<?= $campoEstablecimientoHosp['name'] ?>" value="<?= e($valEstablecimientoHosp) ?>" placeholder="Nombre del establecimiento…">
         </div>
       </div>
       <div class="field">
         <label class="fl">Fecha de hospitalización</label>
         <div class="control mono">
-          <input type="date" id="fechaHospitalizacionB26" name="campo_13722" value="<?= e($valFechaHosp) ?>" max="<?= date('Y-m-d') ?>">
+          <input type="date" id="fechaHospitalizacionB26" name="<?= $campoFechaHosp['name'] ?>" value="<?= e($valFechaHosp) ?>" max="<?= date('Y-m-d') ?>">
         </div>
       </div>
       <div class="field">
         <label class="fl">N.° de días hospitalizado</label>
         <div class="control mono">
-          <input type="number" min="1" step="1" name="campo_13723" value="<?= e($valDiasHosp) ?>" placeholder="1" class="inp-dias-pos-b26" style="text-align:center">
+          <input type="number" min="1" step="1" name="<?= $campoDiasHosp['name'] ?>" value="<?= e($valDiasHosp) ?>" placeholder="1" class="inp-dias-pos-b26" style="text-align:center">
         </div>
       </div>
     </div>
@@ -333,19 +358,19 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <div class="control" style="margin-top:6px">
         <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap" id="wrapEgresoB26">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13724" value="ALTA_MEDICA" class="radio-egreso-b26" <?= ($valCondicionEgreso === 'ALTA_MEDICA') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoCondicionEgreso['name'] ?>" value="ALTA_MEDICA" class="radio-egreso-b26" <?= ($valCondicionEgreso === 'ALTA_MEDICA') ? 'checked' : '' ?>>
             <span>Alta médica</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13724" value="ALTA_VOLUNTARIA" class="radio-egreso-b26" <?= ($valCondicionEgreso === 'ALTA_VOLUNTARIA') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoCondicionEgreso['name'] ?>" value="ALTA_VOLUNTARIA" class="radio-egreso-b26" <?= ($valCondicionEgreso === 'ALTA_VOLUNTARIA') ? 'checked' : '' ?>>
             <span>Alta voluntaria</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13724" value="REFERIDO" class="radio-egreso-b26" <?= ($valCondicionEgreso === 'REFERIDO') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoCondicionEgreso['name'] ?>" value="REFERIDO" class="radio-egreso-b26" <?= ($valCondicionEgreso === 'REFERIDO') ? 'checked' : '' ?>>
             <span>Referido</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13724" value="FALLECIDO" class="radio-egreso-b26" <?= ($valCondicionEgreso === 'FALLECIDO') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoCondicionEgreso['name'] ?>" value="FALLECIDO" class="radio-egreso-b26" <?= ($valCondicionEgreso === 'FALLECIDO') ? 'checked' : '' ?>>
             <span>Fallecido</span>
           </label>
         </div>
@@ -357,7 +382,7 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <div class="field">
         <label class="fl">Fecha de egreso</label>
         <div class="control mono">
-          <input type="date" id="fechaEgresoB26" name="campo_13725" value="<?= e($valFechaEgreso) ?>" max="<?= date('Y-m-d') ?>">
+          <input type="date" id="fechaEgresoB26" name="<?= $campoFechaEgreso['name'] ?>" value="<?= e($valFechaEgreso) ?>" max="<?= date('Y-m-d') ?>">
         </div>
       </div>
     </div>
@@ -367,7 +392,7 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <div class="field">
         <label class="fl">*Referido a (EESS de referencia)</label>
         <div class="control">
-          <input type="text" name="campo_13726" value="<?= e($valReferidoA) ?>" placeholder="Nombre del EE.SS. de referencia…">
+          <input type="text" name="<?= $campoReferidoA['name'] ?>" value="<?= e($valReferidoA) ?>" placeholder="Nombre del EE.SS. de referencia…">
         </div>
       </div>
     </div>
@@ -377,7 +402,7 @@ $valCausaMuerte = $valoresCampos[13727] ?? $valoresCampos['b26_causa_de_muerte']
       <div class="field">
         <label class="fl">Causa de muerte</label>
         <div class="control">
-          <input type="text" name="campo_13727" value="<?= e($valCausaMuerte) ?>" placeholder="Causa de muerte…">
+          <input type="text" name="<?= $campoCausaMuerte['name'] ?>" value="<?= e($valCausaMuerte) ?>" placeholder="Causa de muerte…">
         </div>
       </div>
     </div>

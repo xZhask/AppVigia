@@ -3,21 +3,33 @@
  * Plantilla especializada para la Sección 8: Parto o aborto (Anexo 2) de Muerte Materna (O95).
  */
 
-$valFechaParto     = $valoresCampos[14351] ?? '';
-$valFechaPartoDesc = $valoresCampos[16160] ?? '';
-$valFechaPartoNA   = $valoresCampos[16161] ?? '';
+$campoFechaParto = $campo('o95_fecha_de_parto_o_aborto');
+$campoFechaPartoDesc = $campo('o95_fecha_parto_desconocida');
+$campoFechaPartoNA = $campo('o95_fecha_parto_no_aplica');
+$campoLugarParto = $campo('o95_lugar_de_parto_o_aborto');
+$campoLugarPartoEess = $campo('o95_lugar_parto_eess_nombre');
+$campoLugarPartoOtro = $campo('o95_lugar_parto_otro');
+$campoTipoParto = $campo('o95_tipo_de_parto');
+$campoRespParto = $campo('o95_responsable_de_la_atencion_del_parto_o_aborto');
+$campoRespPartoOtro = $campo('o95_responsable_parto_otro');
+$campoNecropsia = $campo('o95_necropsia');
+$campoCausaNecropsia = $campo('o95_diagnostico_causa_cie_10_necropsia');
 
-$valLugarParto     = $valoresCampos[14352] ?? '';
-$valLugarPartoEess = $valoresCampos[16162] ?? '';
-$valLugarPartoOtro = $valoresCampos[16163] ?? '';
+$valFechaParto     = $campoFechaParto['val'];
+$valFechaPartoDesc = $campoFechaPartoDesc['val'];
+$valFechaPartoNA   = $campoFechaPartoNA['val'];
 
-$valTipoParto      = $valoresCampos[14353] ?? '';
+$valLugarParto     = $campoLugarParto['val'];
+$valLugarPartoEess = $campoLugarPartoEess['val'];
+$valLugarPartoOtro = $campoLugarPartoOtro['val'];
 
-$valRespParto      = $valoresCampos[14354] ?? '';
-$valRespPartoOtro  = $valoresCampos[16164] ?? '';
+$valTipoParto      = $campoTipoParto['val'];
 
-$valNecropsia      = $valoresCampos[14355] ?? '';
-$valCausaNecropsia = $valoresCampos[14356] ?? '';
+$valRespParto      = $campoRespParto['val'];
+$valRespPartoOtro  = $campoRespPartoOtro['val'];
+
+$valNecropsia      = $campoNecropsia['val'];
+$valCausaNecropsia = $campoCausaNecropsia['val'];
 
 $esFechaPartoDesc = ($valFechaPartoDesc === '1' || strtoupper((string)$valFechaPartoDesc) === 'SI');
 $esFechaPartoNA   = ($valFechaPartoNA === '1' || strtoupper((string)$valFechaPartoNA) === 'SI');
@@ -36,16 +48,16 @@ $esNecropsiaSi = ($valNecropsia === '1' || strtoupper((string)$valNecropsia) ===
       <label class="fl">Fecha de parto o aborto</label>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <div class="control mono" style="flex:1; min-width:150px;">
-          <input type="date" id="o95FechaPartoInput" name="campo_14351" value="<?= e($valFechaParto) ?>" max="<?= date('Y-m-d') ?>" <?= ($esFechaPartoDesc || $esFechaPartoNA) ? 'disabled' : '' ?>>
+          <input type="date" id="o95FechaPartoInput" name="<?= $campoFechaParto['name'] ?>" value="<?= e($valFechaParto) ?>" max="<?= date('Y-m-d') ?>" <?= ($esFechaPartoDesc || $esFechaPartoNA) ? 'disabled' : '' ?>>
         </div>
         <div style="display:inline-flex; align-items:center; gap:12px; background:var(--surface-2); padding:7px 12px; border-radius:var(--radius-sm, 8px); border:1px solid var(--line);">
           <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:0.8125rem; font-weight:600; color:var(--ink); user-select:none;">
-            <input type="checkbox" id="o95FechaPartoDesconChk" name="campo_16160" value="1" <?= $esFechaPartoDesc ? 'checked' : '' ?> style="accent-color:var(--accent); width:15px; height:15px;">
+            <input type="checkbox" id="o95FechaPartoDesconChk" name="<?= $campoFechaPartoDesc['name'] ?>" value="1" <?= $esFechaPartoDesc ? 'checked' : '' ?> style="accent-color:var(--accent); width:15px; height:15px;">
             <span>Desconocida</span>
           </label>
           <span style="color:var(--line); margin:0 2px;">|</span>
           <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:0.8125rem; font-weight:600; color:var(--ink); user-select:none;">
-            <input type="checkbox" id="o95FechaPartoNoAplicaChk" name="campo_16161" value="1" <?= $esFechaPartoNA ? 'checked' : '' ?> style="accent-color:var(--accent); width:15px; height:15px;">
+            <input type="checkbox" id="o95FechaPartoNoAplicaChk" name="<?= $campoFechaPartoNA['name'] ?>" value="1" <?= $esFechaPartoNA ? 'checked' : '' ?> style="accent-color:var(--accent); width:15px; height:15px;">
             <span>No aplica</span>
           </label>
         </div>
@@ -56,7 +68,7 @@ $esNecropsiaSi = ($valNecropsia === '1' || strtoupper((string)$valNecropsia) ===
     <div class="field" style="grid-column: span 1;">
       <label class="fl">Lugar de parto o aborto</label>
       <div class="control">
-        <select id="o95LugarPartoSel" name="campo_14352">
+        <select id="o95LugarPartoSel" name="<?= $campoLugarParto['name'] ?>">
           <option value="">Seleccionar lugar…</option>
           <option value="DOMICILIO" <?= seleccionado($valLugarParto, 'DOMICILIO') ?>>Domicilio</option>
           <option value="EESS" <?= seleccionado($valLugarParto, 'EESS') ?>>En EE.SS.</option>
@@ -72,14 +84,14 @@ $esNecropsiaSi = ($valNecropsia === '1' || strtoupper((string)$valNecropsia) ===
     <div class="field" id="bloqueLugarPartoEessO95" <?= !$esLugarEess ? 'hidden style="display:none;"' : '' ?>>
       <label class="fl">Nombre del EE.SS. del parto o aborto</label>
       <div class="control">
-        <input type="text" id="o95LugarPartoEessInput" name="campo_16162" value="<?= e($valLugarPartoEess) ?>" placeholder="Nombre del EE.SS.…">
+        <input type="text" id="o95LugarPartoEessInput" name="<?= $campoLugarPartoEess['name'] ?>" value="<?= e($valLugarPartoEess) ?>" placeholder="Nombre del EE.SS.…">
       </div>
     </div>
 
     <div class="field" id="bloqueLugarPartoOtroO95" <?= !$esLugarOtro ? 'hidden style="display:none;"' : '' ?>>
       <label class="fl">Especificar otro lugar</label>
       <div class="control">
-        <input type="text" id="o95LugarPartoOtroInput" name="campo_16163" value="<?= e($valLugarPartoOtro) ?>" placeholder="Especificar lugar…">
+        <input type="text" id="o95LugarPartoOtroInput" name="<?= $campoLugarPartoOtro['name'] ?>" value="<?= e($valLugarPartoOtro) ?>" placeholder="Especificar lugar…">
       </div>
     </div>
   </div>
@@ -90,7 +102,7 @@ $esNecropsiaSi = ($valNecropsia === '1' || strtoupper((string)$valNecropsia) ===
     <div class="field">
       <label class="fl">Tipo de parto</label>
       <div class="control">
-        <select id="o95TipoPartoSel" name="campo_14353">
+        <select id="o95TipoPartoSel" name="<?= $campoTipoParto['name'] ?>">
           <option value="">Seleccionar tipo…</option>
           <option value="VAGINAL" <?= seleccionado($valTipoParto, 'VAGINAL') ?>>Vaginal</option>
           <option value="CESAREA" <?= seleccionado($valTipoParto, 'CESAREA') ?>>Cesárea</option>
@@ -105,7 +117,7 @@ $esNecropsiaSi = ($valNecropsia === '1' || strtoupper((string)$valNecropsia) ===
     <div class="field">
       <label class="fl">Responsable de la atención del parto o aborto</label>
       <div class="control">
-        <select id="o95RespPartoSel" name="campo_14354">
+        <select id="o95RespPartoSel" name="<?= $campoRespParto['name'] ?>">
           <option value="">Seleccionar responsable…</option>
           <option value="MED_G_O" <?= seleccionado($valRespParto, 'MED_G_O') ?>>Méd. G-O</option>
           <option value="MED_INTENSIVISTA" <?= seleccionado($valRespParto, 'MED_INTENSIVISTA') ?>>Méd. intensivista</option>
@@ -128,7 +140,7 @@ $esNecropsiaSi = ($valNecropsia === '1' || strtoupper((string)$valNecropsia) ===
   <div id="bloqueRespPartoOtroO95" style="margin-bottom:16px; max-width:400px;" <?= !$esRespPartoOtro ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Especificar otro responsable</label>
     <div class="control">
-      <input type="text" id="o95RespPartoOtroInput" name="campo_16164" value="<?= e($valRespPartoOtro) ?>" placeholder="Especificar profesión/cargo…">
+      <input type="text" id="o95RespPartoOtroInput" name="<?= $campoRespPartoOtro['name'] ?>" value="<?= e($valRespPartoOtro) ?>" placeholder="Especificar profesión/cargo…">
     </div>
   </div>
 
@@ -137,11 +149,11 @@ $esNecropsiaSi = ($valNecropsia === '1' || strtoupper((string)$valNecropsia) ===
     <label class="fl" style="font-weight:700; color:var(--accent-deep); margin-bottom:8px;">¿Necropsia? <span class="req">*</span></label>
     <div class="control-radio-group">
       <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; font-weight:600;">
-        <input type="radio" name="campo_14355" value="1" id="o95NecropsiaSi" <?= $esNecropsiaSi ? 'checked' : '' ?> style="accent-color:var(--accent);">
+        <input type="radio" name="<?= $campoNecropsia['name'] ?>" value="1" id="o95NecropsiaSi" <?= $esNecropsiaSi ? 'checked' : '' ?> style="accent-color:var(--accent);">
         <span>SÍ</span>
       </label>
       <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; font-weight:600;">
-        <input type="radio" name="campo_14355" value="0" id="o95NecropsiaNo" <?= (!$esNecropsiaSi && $valNecropsia !== '') ? 'checked' : '' ?> style="accent-color:var(--accent);">
+        <input type="radio" name="<?= $campoNecropsia['name'] ?>" value="0" id="o95NecropsiaNo" <?= (!$esNecropsiaSi && $valNecropsia !== '') ? 'checked' : '' ?> style="accent-color:var(--accent);">
         <span>NO</span>
       </label>
     </div>
@@ -151,7 +163,7 @@ $esNecropsiaSi = ($valNecropsia === '1' || strtoupper((string)$valNecropsia) ===
   <div id="bloqueNecropsiaCausaO95" style="margin-top:12px; max-width:500px;" <?= !$esNecropsiaSi ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Diagnóstico / causa CIE-10 (necropsia)</label>
     <div class="control">
-      <input type="text" id="o95CausaNecropsiaInput" name="campo_14356" value="<?= e($valCausaNecropsia) ?>" placeholder="Diagnóstico o código CIE-10 de necropsia…">
+      <input type="text" id="o95CausaNecropsiaInput" name="<?= $campoCausaNecropsia['name'] ?>" value="<?= e($valCausaNecropsia) ?>" placeholder="Diagnóstico o código CIE-10 de necropsia…">
     </div>
   </div>
 </div>

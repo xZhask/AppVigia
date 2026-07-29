@@ -7,15 +7,20 @@
 
 $esB26Card = (($enfermedad['cie10'] ?? null) === 'B26');
 
+$campoContactoCaso = $campo('b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con');
+$campoContactosPorLugar = $campo('b26_contactos_por_lugar');
+$campoContactoGestante = $campo('b26_tuvo_contacto_con_gestante');
+$campoTrimestreGestanteContacto = $campo('b26_trimestre_de_gestacion_contacto');
+
 // Extraer valores existentes
-$valDirInf = $valoresCampos['b26_inf_direccion'] ?? $valoresCampos[13728]['direccion'] ?? '';
+$valDirInf = $valoresCampos['b26_inf_direccion'] ?? '';
 $valDepInf = $valoresCampos['b26_inf_departamento_id'] ?? '';
 $valProvInf = $valoresCampos['b26_inf_provincia_id'] ?? '';
 $valDistInf = $valoresCampos['b26_inf_distrito_id'] ?? '';
-$valLocInf = $valoresCampos['b26_inf_localidad'] ?? $valoresCampos[13728]['localidad'] ?? '';
+$valLocInf = $valoresCampos['b26_inf_localidad'] ?? '';
 
-// Campo 13728: ¿En las últimas 2 a 4 semanas estuvo en contacto con otro caso de parotiditis?
-$rawContactoCaso = $valoresCampos[13728] ?? $valoresCampos['b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con'] ?? '';
+// ¿En las últimas 2 a 4 semanas estuvo en contacto con otro caso de parotiditis?
+$rawContactoCaso = $campoContactoCaso['val'];
 if (is_array($rawContactoCaso)) {
     $valContactoCaso = $rawContactoCaso['valor'] ?? '';
 } else {
@@ -24,9 +29,9 @@ if (is_array($rawContactoCaso)) {
 if ($valContactoCaso === '1') $valContactoCaso = 'SI';
 if ($valContactoCaso === '0') $valContactoCaso = 'NO';
 
-// Campo 13729: Contactos por lugar (Matriz dinámicas)
-$rawMatriz = $valoresCampos[13729] ?? $valoresCampos['b26_contactos_por_lugar'] ?? [];
-$matrizContactos = is_array($rawMatriz) ? $rawMatriz : (json_decode($rawMatriz, true) ?? []);
+// Contactos por lugar (Matriz dinámica)
+$rawMatriz = $campoContactosPorLugar['val'];
+$matrizContactos = is_array($rawMatriz) ? $rawMatriz : (json_decode((string) $rawMatriz, true) ?? []);
 
 $filasLugaresDynamic = [];
 if (!empty($matrizContactos)) {
@@ -47,8 +52,8 @@ if (!empty($matrizContactos)) {
     }
 }
 
-// Campo 13730: ¿Tuvo contacto con gestante?
-$rawContactoGestante = $valoresCampos[13730] ?? $valoresCampos['b26_tuvo_contacto_con_gestante'] ?? '';
+// ¿Tuvo contacto con gestante?
+$rawContactoGestante = $campoContactoGestante['val'];
 if (is_array($rawContactoGestante)) {
     $valContactoGestante = $rawContactoGestante['valor'] ?? '';
 } else {
@@ -57,8 +62,8 @@ if (is_array($rawContactoGestante)) {
 if ($valContactoGestante === '1') $valContactoGestante = 'SI';
 if ($valContactoGestante === '0') $valContactoGestante = 'NO';
 
-$valFechaContactoGestante = $valoresCampos['b26_fecha_contacto_gestante'] ?? $valoresCampos[13730]['fecha'] ?? '';
-$valTrimestreGestanteContacto = $valoresCampos[13731] ?? $valoresCampos['b26_trimestre_de_gestacion_contacto'] ?? '';
+$valFechaContactoGestante = $valoresCampos['b26_fecha_contacto_gestante'] ?? '';
+$valTrimestreGestanteContacto = $campoTrimestreGestanteContacto['val'];
 
 // Closure para renderizar cada fila dinámica de lugar
 $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '', 'direccion' => '', 'sanos' => '', 'enfermos' => '']): void {
@@ -169,15 +174,15 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
       <div class="control" style="margin-top:6px">
         <div style="display:flex;gap:20px;align-items:center" id="wrapContactoCasoB26">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13728" value="SI" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'SI') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="SI" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'SI') ? 'checked' : '' ?>>
             <span>Sí</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13728" value="NO" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'NO') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="NO" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'NO') ? 'checked' : '' ?>>
             <span>No</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="campo_13728" value="IGNORADO" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'IGNORADO') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="IGNORADO" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'IGNORADO') ? 'checked' : '' ?>>
             <span>Ignorado</span>
           </label>
         </div>
@@ -213,15 +218,15 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
         <div class="control" style="margin-top:6px">
           <div style="display:flex;gap:20px;align-items:center" id="wrapContactoGestanteB26">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="campo_13730" value="SI" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'SI') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoContactoGestante['name'] ?>" value="SI" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'SI') ? 'checked' : '' ?>>
               <span>Sí</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="campo_13730" value="NO" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'NO') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoContactoGestante['name'] ?>" value="NO" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'NO') ? 'checked' : '' ?>>
               <span>No</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="campo_13730" value="IGNORADO" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'IGNORADO') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoContactoGestante['name'] ?>" value="IGNORADO" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'IGNORADO') ? 'checked' : '' ?>>
               <span>Ignorado</span>
             </label>
           </div>
@@ -239,7 +244,7 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
         <div class="field">
           <label class="fl">Trimestre de gestación en que sucedió el contacto</label>
           <div class="control">
-            <select name="campo_13731" data-nosearch="true">
+            <select name="<?= $campoTrimestreGestanteContacto['name'] ?>" data-nosearch="true">
               <option value="">Seleccionar…</option>
               <option value="I" <?= seleccionado($valTrimestreGestanteContacto, 'I') ?>>I Trimestre</option>
               <option value="II" <?= seleccionado($valTrimestreGestanteContacto, 'II') ?>>II Trimestre</option>

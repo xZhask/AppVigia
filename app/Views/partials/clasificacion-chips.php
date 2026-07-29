@@ -18,7 +18,10 @@ if ($esO95Chips) {
         'POR_DETERMINAR' => ['dot' => 'dot-des', 'etiqueta' => 'Por determinar'],
     ];
 
-    $valCausaClasif = $valoresCampos[14379] ?? ($valoresCampos[14315] ?? '');
+    $valCausaClasif = $campo('o95_clasificacion_final_de_la_muerte')['val'];
+    if ($valCausaClasif === '') {
+        $valCausaClasif = $campo('o95_clasificacion_inicial')['val'];
+    }
     if ($valCausaClasif && in_array($valCausaClasif, array_keys($opcionesClasificacion), true)) {
         $clasificacionActual = $valCausaClasif;
     } elseif (!in_array($clasificacionActual, array_keys($opcionesClasificacion), true)) {

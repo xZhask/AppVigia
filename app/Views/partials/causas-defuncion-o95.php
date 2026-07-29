@@ -8,23 +8,31 @@
  * - Clasificación inicial y Clasificación final de la muerte materna.
  */
 
-$valCausaFinal = $valoresCampos[14311] ?? ($valoresCampos[14374] ?? '');
-$valCausaFinalCie = $valoresCampos[16134] ?? '';
+$campoCausaFinal = $campo('o95_causa_final_probable');
+$campoCausaFinalCie = $campo('o95_causa_final_cie10');
+$campoCausaInter = $campo('o95_causa_intermedia_probable');
+$campoCausaInterCie = $campo('o95_causa_intermedia_cie10');
+$campoCausaBasica = $campo('o95_causa_basica_probable');
+$campoCausaBasicaCie = $campo('o95_causa_basica_cie10');
+$campoCausaAsociada = $campo('o95_causa_asociada');
+$campoCausaAsociadaCie = $campo('o95_causa_asociada_cie10');
+$campoCausaGenerica = $campo('o95_causa_generica');
+$campoCausaGenericaOtra = $campo('o95_causa_generica_otra');
+$campoClasifInicial = $campo('o95_clasificacion_inicial');
+$campoClasifFinal = $campo('o95_clasificacion_final_de_la_muerte');
 
-$valCausaInter = $valoresCampos[14312] ?? ($valoresCampos[14375] ?? '');
-$valCausaInterCie = $valoresCampos[16135] ?? '';
-
-$valCausaBasica = $valoresCampos[14313] ?? ($valoresCampos[14376] ?? '');
-$valCausaBasicaCie = $valoresCampos[16136] ?? '';
-
-$valCausaAsociada = $valoresCampos[14377] ?? '';
-$valCausaAsociadaCie = $valoresCampos[16181] ?? '';
-
-$valCausaGenerica = $valoresCampos[14314] ?? ($valoresCampos[14378] ?? '');
-$valCausaGenericaOtra = $valoresCampos[16137] ?? '';
-
-$valClasifInicial = $valoresCampos[14315] ?? '';
-$valClasifFinal   = $valoresCampos[14379] ?? '';
+$valCausaFinal = $campoCausaFinal['val'];
+$valCausaFinalCie = $campoCausaFinalCie['val'];
+$valCausaInter = $campoCausaInter['val'];
+$valCausaInterCie = $campoCausaInterCie['val'];
+$valCausaBasica = $campoCausaBasica['val'];
+$valCausaBasicaCie = $campoCausaBasicaCie['val'];
+$valCausaAsociada = $campoCausaAsociada['val'];
+$valCausaAsociadaCie = $campoCausaAsociadaCie['val'];
+$valCausaGenerica = $campoCausaGenerica['val'];
+$valCausaGenericaOtra = $campoCausaGenericaOtra['val'];
+$valClasifInicial = $campoClasifInicial['val'];
+$valClasifFinal   = $campoClasifFinal['val'];
 ?>
 
 <div id="bloqueCausasDefuncionO95">
@@ -43,12 +51,12 @@ $valClasifFinal   = $valoresCampos[14379] ?? '';
           <td><strong style="color:var(--ink-1); font-weight:600;">Causa final probable</strong></td>
           <td>
             <div class="control mono">
-              <input type="text" name="campo_16134" value="<?= e($valCausaFinalCie) ?>" placeholder="Ej: O72.1" style="text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">
+              <input type="text" name="<?= $campoCausaFinalCie['name'] ?>" value="<?= e($valCausaFinalCie) ?>" placeholder="Ej: O72.1" style="text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">
             </div>
           </td>
           <td>
             <div class="control">
-              <input type="text" name="campo_14311" value="<?= e($valCausaFinal) ?>" placeholder="Descripción de la causa final…">
+              <input type="text" name="<?= $campoCausaFinal['name'] ?>" value="<?= e($valCausaFinal) ?>" placeholder="Descripción de la causa final…">
             </div>
           </td>
         </tr>
@@ -56,12 +64,12 @@ $valClasifFinal   = $valoresCampos[14379] ?? '';
           <td><strong style="color:var(--ink-1); font-weight:600;">Causa intermedia probable</strong></td>
           <td>
             <div class="control mono">
-              <input type="text" name="campo_16135" value="<?= e($valCausaInterCie) ?>" placeholder="Ej: O85" style="text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">
+              <input type="text" name="<?= $campoCausaInterCie['name'] ?>" value="<?= e($valCausaInterCie) ?>" placeholder="Ej: O85" style="text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">
             </div>
           </td>
           <td>
             <div class="control">
-              <input type="text" name="campo_14312" value="<?= e($valCausaInter) ?>" placeholder="Descripción de la causa intermedia…">
+              <input type="text" name="<?= $campoCausaInter['name'] ?>" value="<?= e($valCausaInter) ?>" placeholder="Descripción de la causa intermedia…">
             </div>
           </td>
         </tr>
@@ -69,12 +77,12 @@ $valClasifFinal   = $valoresCampos[14379] ?? '';
           <td><strong style="color:var(--ink-1); font-weight:600;">Causa básica probable</strong></td>
           <td>
             <div class="control mono">
-              <input type="text" name="campo_16136" value="<?= e($valCausaBasicaCie) ?>" placeholder="Ej: O95" style="text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">
+              <input type="text" name="<?= $campoCausaBasicaCie['name'] ?>" value="<?= e($valCausaBasicaCie) ?>" placeholder="Ej: O95" style="text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">
             </div>
           </td>
           <td>
             <div class="control">
-              <input type="text" name="campo_14313" value="<?= e($valCausaBasica) ?>" placeholder="Descripción de la causa básica…">
+              <input type="text" name="<?= $campoCausaBasica['name'] ?>" value="<?= e($valCausaBasica) ?>" placeholder="Descripción de la causa básica…">
             </div>
           </td>
         </tr>
@@ -82,12 +90,12 @@ $valClasifFinal   = $valoresCampos[14379] ?? '';
           <td><strong style="color:var(--ink-1); font-weight:600;">Causa asociada</strong></td>
           <td>
             <div class="control mono">
-              <input type="text" name="campo_16181" value="<?= e($valCausaAsociadaCie) ?>" placeholder="Ej: O99" style="text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">
+              <input type="text" name="<?= $campoCausaAsociadaCie['name'] ?>" value="<?= e($valCausaAsociadaCie) ?>" placeholder="Ej: O99" style="text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">
             </div>
           </td>
           <td>
             <div class="control">
-              <input type="text" name="campo_14377" value="<?= e($valCausaAsociada) ?>" placeholder="Descripción de la causa asociada…">
+              <input type="text" name="<?= $campoCausaAsociada['name'] ?>" value="<?= e($valCausaAsociada) ?>" placeholder="Descripción de la causa asociada…">
             </div>
           </td>
         </tr>
@@ -119,7 +127,7 @@ $valClasifFinal   = $valoresCampos[14379] ?? '';
     <div class="field">
       <label class="fl">Causa genérica</label>
       <div class="control">
-        <select id="o95CausaGenericaSel" name="campo_14314" data-nosearch="true">
+        <select id="o95CausaGenericaSel" name="<?= $campoCausaGenerica['name'] ?>" data-nosearch="true">
           <option value="">Seleccionar…</option>
           <option value="HEMORRAGIA" <?= seleccionado($valCausaGenerica, 'HEMORRAGIA') ?>>Hemorragia</option>
           <option value="HIPERTENSION_GESTACIONAL" <?= seleccionado($valCausaGenerica, 'HIPERTENSION_GESTACIONAL') ?>>Hipertensión gestacional</option>
@@ -134,7 +142,7 @@ $valClasifFinal   = $valoresCampos[14379] ?? '';
     <div class="field" id="bloqueCausaGenericaOtraO95" <?= !$esOtraCausaGen ? 'hidden style="display:none;"' : '' ?>>
       <label class="fl">Especificar otra causa genérica</label>
       <div class="control">
-        <input type="text" name="campo_16137" value="<?= e($valCausaGenericaOtra) ?>" placeholder="Especificar otra causa…">
+        <input type="text" name="<?= $campoCausaGenericaOtra['name'] ?>" value="<?= e($valCausaGenericaOtra) ?>" placeholder="Especificar otra causa…">
       </div>
     </div>
   </div>
@@ -143,7 +151,7 @@ $valClasifFinal   = $valoresCampos[14379] ?? '';
     <div class="field">
       <label class="fl">Clasificación inicial de la muerte materna</label>
       <div class="control">
-        <select name="campo_14315" data-nosearch="true">
+        <select name="<?= $campoClasifInicial['name'] ?>" data-nosearch="true">
           <option value="">Seleccionar…</option>
           <option value="DIRECTA" <?= seleccionado($valClasifInicial, 'DIRECTA') ?>>Directa</option>
           <option value="INDIRECTA" <?= seleccionado($valClasifInicial, 'INDIRECTA') ?>>Indirecta</option>
@@ -156,7 +164,7 @@ $valClasifFinal   = $valoresCampos[14379] ?? '';
     <div class="field">
       <label class="fl">Clasificación final de la muerte materna</label>
       <div class="control">
-        <select name="campo_14379" data-nosearch="true">
+        <select name="<?= $campoClasifFinal['name'] ?>" data-nosearch="true">
           <option value="">Seleccionar…</option>
           <option value="DIRECTA" <?= seleccionado($valClasifFinal, 'DIRECTA') ?>>Directa</option>
           <option value="INDIRECTA" <?= seleccionado($valClasifFinal, 'INDIRECTA') ?>>Indirecta</option>

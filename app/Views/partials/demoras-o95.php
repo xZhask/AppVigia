@@ -3,24 +3,30 @@
  * Plantilla especializada para la Sección 11: Las cuatro demoras (Anexo 2) de Muerte Materna (O95).
  */
 
-$raw1 = $valoresCampos[14380] ?? '';
-$raw2 = $valoresCampos[14381] ?? '';
-$raw3 = $valoresCampos[14382] ?? '';
-$raw4 = $valoresCampos[14383] ?? '';
+$campoDemora1 = $campo('o95_1_demora_en_la_identificacion_del_problema');
+$campoDemora2 = $campo('o95_2_demora_en_la_decision_de_buscar_ayuda');
+$campoDemora3 = $campo('o95_3_demora_en_acceder_a_los_servicios_de_salud');
+$campoDemora4 = $campo('o95_4_demora_en_recibir_tratamiento_adecuado_y_oportuno');
+$campoObsDemoras = $campo('o95_observaciones_demoras');
+
+$raw1 = $campoDemora1['val'];
+$raw2 = $campoDemora2['val'];
+$raw3 = $campoDemora3['val'];
+$raw4 = $campoDemora4['val'];
 
 $val1 = is_array($raw1) ? ($raw1['EN_LA_IDENTIFICACION_DEL_PROBLEMA'] ?? '') : (string)$raw1;
 $val2 = is_array($raw2) ? ($raw2['EN_LA_DECISION_DE_BUSCAR_AYUDA'] ?? '') : (string)$raw2;
 $val3 = is_array($raw3) ? ($raw3['EN_ACCEDER_A_LOS_SERVICIOS_DE_SALUD'] ?? '') : (string)$raw3;
 $val4 = is_array($raw4) ? ($raw4['EN_RECIBIR_TRATAMIENTO_ADECUADO_Y_OPORTUNO'] ?? '') : (string)$raw4;
 
-$valObs = $valoresCampos[16182] ?? '';
+$valObs = $campoObsDemoras['val'];
 
 $demoras = [
     [
         'num' => '1.ª DEMORA',
         'titulo' => 'En la identificación del problema',
         'sugerencia' => 'Retraso en la identificación del problema: La gestante, la familia o la comunidad no reconocieron los signos de alarma o la gravedad de la situación.',
-        'campo' => 'campo_14380[EN_LA_IDENTIFICACION_DEL_PROBLEMA]',
+        'campo' => $campoDemora1['name'] . '[EN_LA_IDENTIFICACION_DEL_PROBLEMA]',
         'val' => (string)$val1,
         'pos' => 'bottom'
     ],
@@ -28,7 +34,7 @@ $demoras = [
         'num' => '2.ª DEMORA',
         'titulo' => 'En la decisión de buscar ayuda',
         'sugerencia' => 'Retraso en la toma de decisión para buscar atención en un establecimiento de salud.',
-        'campo' => 'campo_14381[EN_LA_DECISION_DE_BUSCAR_AYUDA]',
+        'campo' => $campoDemora2['name'] . '[EN_LA_DECISION_DE_BUSCAR_AYUDA]',
         'val' => (string)$val2,
         'pos' => 'bottom'
     ],
@@ -36,7 +42,7 @@ $demoras = [
         'num' => '3.ª DEMORA',
         'titulo' => 'En acceder a los servicios de salud',
         'sugerencia' => 'Dificultad para acceder al establecimiento de salud por distancia, transporte, condiciones geográficas u otras barreras.',
-        'campo' => 'campo_14382[EN_ACCEDER_A_LOS_SERVICIOS_DE_SALUD]',
+        'campo' => $campoDemora3['name'] . '[EN_ACCEDER_A_LOS_SERVICIOS_DE_SALUD]',
         'val' => (string)$val3,
         'pos' => 'bottom'
     ],
@@ -44,7 +50,7 @@ $demoras = [
         'num' => '4.ª DEMORA',
         'titulo' => 'En recibir tratamiento adecuado y oportuno',
         'sugerencia' => 'Retraso en la atención por falta de capacidad resolutiva, personal, equipamiento, insumos u otros factores del establecimiento.',
-        'campo' => 'campo_14383[EN_RECIBIR_TRATAMIENTO_ADECUADO_Y_OPORTUNO]',
+        'campo' => $campoDemora4['name'] . '[EN_RECIBIR_TRATAMIENTO_ADECUADO_Y_OPORTUNO]',
         'val' => (string)$val4,
         'pos' => 'top'
     ],
@@ -195,7 +201,7 @@ $demoras = [
   <div style="margin-top:16px;">
     <label class="fl" style="font-weight:600; color:var(--ink);">OBSERVACIONES: Anote información adicional relevante</label>
     <div class="control">
-      <textarea name="campo_16182" rows="3" placeholder="Observaciones o notas adicionales sobre las cuatro demoras…" style="width:100%; font-family:inherit; font-size:0.875rem; padding:10px 12px; border-radius:var(--radius-sm, 8px); border:1px solid var(--line); background:var(--surface); color:var(--ink); resize:vertical;"><?= e($valObs) ?></textarea>
+      <textarea name="<?= $campoObsDemoras['name'] ?>" rows="3" placeholder="Observaciones o notas adicionales sobre las cuatro demoras…" style="width:100%; font-family:inherit; font-size:0.875rem; padding:10px 12px; border-radius:var(--radius-sm, 8px); border:1px solid var(--line); background:var(--surface); color:var(--ink); resize:vertical;"><?= e($valObs) ?></textarea>
     </div>
   </div>
 </div>

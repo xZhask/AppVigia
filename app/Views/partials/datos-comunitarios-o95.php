@@ -3,28 +3,38 @@
  * Plantilla especializada para la Sección 10: Datos comunitarios (Anexo 2) de Muerte Materna (O95).
  */
 
-$valSintomOpts = $valoresCampos[14369] ?? [];
+$campoSintomOpts = $campo('o95_sintomatologia_o_molestias');
+$campoSintomOtro = $campo('o95_sintomatologia_otro');
+$campoManPartOpts = $campo('o95_maniobras_usadas_durante_el_parto');
+$campoManPartOtro = $campo('o95_maniobras_parto_otro');
+$campoManPlacOpts = $campo('o95_maniobras_usadas_para_retirar_la_placenta');
+$campoManPlacOtro = $campo('o95_maniobras_placenta_otro');
+$campoTiemDomH = $campo('o95_tiempo_domicilio_eess_horas');
+$campoTiemDomM = $campo('o95_tiempo_domicilio_eess_minutos');
+$campoTipoEessCercano = $campo('o95_tipo_de_establecimiento_mas_cercano');
+
+$valSintomOpts = $campoSintomOpts['val'];
 if (!is_array($valSintomOpts)) {
     $valSintomOpts = array_filter(array_map('trim', explode(',', (string)$valSintomOpts)));
 }
-$valSintomOtro = $valoresCampos[16176] ?? '';
+$valSintomOtro = $campoSintomOtro['val'];
 
-$valManPartOpts = $valoresCampos[14370] ?? [];
+$valManPartOpts = $campoManPartOpts['val'];
 if (!is_array($valManPartOpts)) {
     $valManPartOpts = array_filter(array_map('trim', explode(',', (string)$valManPartOpts)));
 }
-$valManPartOtro = $valoresCampos[16177] ?? '';
+$valManPartOtro = $campoManPartOtro['val'];
 
-$valManPlacOpts = $valoresCampos[14371] ?? [];
+$valManPlacOpts = $campoManPlacOpts['val'];
 if (!is_array($valManPlacOpts)) {
     $valManPlacOpts = array_filter(array_map('trim', explode(',', (string)$valManPlacOpts)));
 }
-$valManPlacOtro = $valoresCampos[16178] ?? '';
+$valManPlacOtro = $campoManPlacOtro['val'];
 
-$valTiemDomH = isset($valoresCampos[16179]) && $valoresCampos[16179] !== '' ? (int)$valoresCampos[16179] : 0;
-$valTiemDomM = isset($valoresCampos[16180]) && $valoresCampos[16180] !== '' ? (int)$valoresCampos[16180] : 0;
+$valTiemDomH = $campoTiemDomH['val'] !== '' ? (int) $campoTiemDomH['val'] : 0;
+$valTiemDomM = $campoTiemDomM['val'] !== '' ? (int) $campoTiemDomM['val'] : 0;
 
-$valTipoEessCercano = $valoresCampos[14373] ?? '';
+$valTipoEessCercano = $campoTipoEessCercano['val'];
 
 $esSintomOtro = in_array('OTRO', array_map('strtoupper', $valSintomOpts), true);
 $esManPartOtro = in_array('OTRO', array_map('strtoupper', $valManPartOpts), true);
@@ -33,8 +43,12 @@ $esManPlacOtro = in_array('OTRO', array_map('strtoupper', $valManPlacOpts), true
 $esManPartNoUso = in_array('NO_SE_USO', array_map('strtoupper', $valManPartOpts), true);
 $esManPlacNoUso = in_array('NO_SE_USO', array_map('strtoupper', $valManPlacOpts), true);
 
-// Sugerencia de lugar extrainstitucional
-$valLugarDef = $valoresCampos[14300] ?? '';
+// Sugerencia de lugar extrainstitucional. Antes leía $valoresCampos[14300],
+// que es v99_aseguradora (de la ficha V99, no de O95: ver MAPA_IDS_CAMPOS.md
+// "14300 | O95 | ID de otra ficha") -- para un caso real de O95 esa clave
+// nunca tiene valor, así que la sugerencia jamás se activaba por esta vía.
+// Se corrige para leer el campo real de esta misma ficha.
+$valLugarDef = $campo('o95_lugar_del_fallecimiento')['val'];
 $valLugarDefUp = strtoupper((string)$valLugarDef);
 $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos($valLugarDefUp, 'TRAYECTO') !== false || strpos($valLugarDefUp, 'OTRO') !== false);
 ?>
@@ -79,7 +93,7 @@ $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos
             $checked = in_array($cod, $valSintomOpts, true) || in_array(strtoupper($lbl), array_map('strtoupper', $valSintomOpts), true);
         ?>
           <label class="choice" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; color:var(--ink);">
-            <input type="checkbox" name="campo_14369[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> class="o95SintomChk" data-codigo="<?= $cod ?>">
+            <input type="checkbox" name="<?= $campoSintomOpts['name'] ?>[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> class="o95SintomChk" data-codigo="<?= $cod ?>">
             <span><?= e($lbl) ?></span>
           </label>
         <?php endforeach; ?>
@@ -88,7 +102,7 @@ $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos
       <div id="bloqueSintomatologiaOtroO95" style="margin-top:10px; max-width:450px;" <?= !$esSintomOtro ? 'hidden style="display:none;"' : '' ?>>
         <label class="fl">Especificar otra sintomatología</label>
         <div class="control">
-          <input type="text" name="campo_16176" value="<?= e($valSintomOtro) ?>" placeholder="Especificar sintomatología…">
+          <input type="text" name="<?= $campoSintomOtro['name'] ?>" value="<?= e($valSintomOtro) ?>" placeholder="Especificar sintomatología…">
         </div>
       </div>
     </div>
@@ -110,7 +124,7 @@ $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos
             $disabled = ($esManPartNoUso && $cod !== 'NO_SE_USO');
         ?>
           <label class="choice" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; color:var(--ink);">
-            <input type="checkbox" name="campo_14370[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> <?= $disabled ? 'disabled' : '' ?> class="o95ManPartChk" data-codigo="<?= $cod ?>">
+            <input type="checkbox" name="<?= $campoManPartOpts['name'] ?>[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> <?= $disabled ? 'disabled' : '' ?> class="o95ManPartChk" data-codigo="<?= $cod ?>">
             <span style="<?= $disabled ? 'opacity:0.5;' : '' ?>"><?= e($lbl) ?></span>
           </label>
         <?php endforeach; ?>
@@ -119,7 +133,7 @@ $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos
       <div id="bloqueManiobrasPartoOtroO95" style="margin-top:10px; max-width:450px;" <?= !$esManPartOtro ? 'hidden style="display:none;"' : '' ?>>
         <label class="fl">Especificar otra maniobra durante el parto</label>
         <div class="control">
-          <input type="text" name="campo_16177" value="<?= e($valManPartOtro) ?>" placeholder="Especificar maniobra…">
+          <input type="text" name="<?= $campoManPartOtro['name'] ?>" value="<?= e($valManPartOtro) ?>" placeholder="Especificar maniobra…">
         </div>
       </div>
     </div>
@@ -141,7 +155,7 @@ $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos
             $disabled = ($esManPlacNoUso && $cod !== 'NO_SE_USO');
         ?>
           <label class="choice" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; color:var(--ink);">
-            <input type="checkbox" name="campo_14371[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> <?= $disabled ? 'disabled' : '' ?> class="o95ManPlacChk" data-codigo="<?= $cod ?>">
+            <input type="checkbox" name="<?= $campoManPlacOpts['name'] ?>[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> <?= $disabled ? 'disabled' : '' ?> class="o95ManPlacChk" data-codigo="<?= $cod ?>">
             <span style="<?= $disabled ? 'opacity:0.5;' : '' ?>"><?= e($lbl) ?></span>
           </label>
         <?php endforeach; ?>
@@ -150,7 +164,7 @@ $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos
       <div id="bloqueManiobrasPlacentaOtroO95" style="margin-top:10px; max-width:450px;" <?= !$esManPlacOtro ? 'hidden style="display:none;"' : '' ?>>
         <label class="fl">Especificar otra maniobra para retirar placenta</label>
         <div class="control">
-          <input type="text" name="campo_16178" value="<?= e($valManPlacOtro) ?>" placeholder="Especificar maniobra…">
+          <input type="text" name="<?= $campoManPlacOtro['name'] ?>" value="<?= e($valManPlacOtro) ?>" placeholder="Especificar maniobra…">
         </div>
       </div>
     </div>
@@ -163,13 +177,13 @@ $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos
         <div class="fields pairs" style="margin-top:6px; max-width:380px;">
           <div class="field-inline" style="display:flex; align-items:center; gap:8px;">
             <div class="control" style="width:90px;">
-              <input type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" id="o95TiempoDomicilioEessHorasInput" name="campo_16179" value="<?= $valTiemDomH ?>" placeholder="0" class="solo-enteros" style="text-align:center;">
+              <input type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" id="o95TiempoDomicilioEessHorasInput" name="<?= $campoTiemDomH['name'] ?>" value="<?= $valTiemDomH ?>" placeholder="0" class="solo-enteros" style="text-align:center;">
             </div>
             <span style="font-size:0.875rem;">Horas</span>
           </div>
           <div class="field-inline" style="display:flex; align-items:center; gap:8px;">
             <div class="control" style="width:90px;">
-              <input type="number" min="0" max="59" step="1" inputmode="numeric" pattern="[0-9]*" id="o95TiempoDomicilioEessMinutosInput" name="campo_16180" value="<?= $valTiemDomM ?>" placeholder="0" class="solo-enteros" style="text-align:center;">
+              <input type="number" min="0" max="59" step="1" inputmode="numeric" pattern="[0-9]*" id="o95TiempoDomicilioEessMinutosInput" name="<?= $campoTiemDomM['name'] ?>" value="<?= $valTiemDomM ?>" placeholder="0" class="solo-enteros" style="text-align:center;">
             </div>
             <span style="font-size:0.875rem;">Minutos</span>
           </div>
@@ -180,7 +194,7 @@ $esExtrainstitucional = (strpos($valLugarDefUp, 'DOMICILIO') !== false || strpos
       <div class="field">
         <label class="fl">Tipo de establecimiento más cercano</label>
         <div class="control">
-          <select id="o95TipoEessCercanoSel" name="campo_14373">
+          <select id="o95TipoEessCercanoSel" name="<?= $campoTipoEessCercano['name'] ?>">
             <option value="">Seleccionar tipo…</option>
             <option value="PUESTO_DE_SALUD" <?= seleccionado($valTipoEessCercano, 'PUESTO_DE_SALUD') ?>>Puesto de Salud</option>
             <option value="CENTRO_DE_SALUD" <?= seleccionado($valTipoEessCercano, 'CENTRO_DE_SALUD') ?>>Centro de Salud</option>

@@ -6,12 +6,33 @@
  * - Etapa de la ficha (o95_tipo_ficha: ANEXO_1 Notificación inmediata / ANEXO_2 Investigación epidemiológica)
  */
 $esO95 = ($enfermedad['cie10'] ?? '') === 'O95';
-$valHoraNotif = $valoresFijos['hora_notificacion'] ?? $valoresCampos[14301] ?? date('H:i');
+
+// Peticion 2, Fase 5: hora_notificacion/identificado_por/o95_tipo_ficha son
+// "casos especiales" que CasosController.php guarda por clave (no por
+// campo_NNNN, para que ficha.js los pueda seguir seleccionando por name=
+// literal). Antes de esto ninguno de los tres se guardaba nunca: 14301 y
+// 14302 no existían en campo_def (ver MAPA_IDS_CAMPOS.md, "codigo
+// inalcanzable"), y 14300 (o95_tipo_ficha) era v99_aseguradora de otra
+// ficha. $campo(...)['val'] nunca es null, así que hay que comparar contra
+// '' antes de seguir la cadena de fallback.
+$campoHoraNotifO95 = $campo('o95_hora_de_la_notificacion');
+$campoIdentificadoPorO95 = $campo('o95_identificado_por');
+$campoTipoFichaO95Notif = $campo('o95_tipo_de_ficha');
+
+$valHoraNotif = $valoresFijos['hora_notificacion']
+    ?? ($campoHoraNotifO95['val'] !== '' ? $campoHoraNotifO95['val'] : null)
+    ?? date('H:i');
 if (strlen($valHoraNotif) > 5) {
     $valHoraNotif = substr($valHoraNotif, 11, 5);
 }
-$valIdentificadoPor = $valoresFijos['identificado_por'] ?? $valoresFijos['tipo_captacion'] ?? $valoresCampos[14302] ?? 'ACTIVA';
-$valTipoFicha = $valoresFijos['o95_tipo_ficha'] ?? $valoresCampos[14300] ?? $_POST['o95_tipo_ficha'] ?? 'ANEXO_1';
+$valIdentificadoPor = $valoresFijos['identificado_por']
+    ?? $valoresFijos['tipo_captacion']
+    ?? ($campoIdentificadoPorO95['val'] !== '' ? $campoIdentificadoPorO95['val'] : null)
+    ?? 'ACTIVA';
+$valTipoFicha = $valoresFijos['o95_tipo_ficha']
+    ?? ($campoTipoFichaO95Notif['val'] !== '' ? $campoTipoFichaO95Notif['val'] : null)
+    ?? $_POST['o95_tipo_ficha']
+    ?? 'ANEXO_1';
 ?>
 <div id="notificacionFechasO95Wrap" class="o95-elem" style="margin-top: 14px;" <?= !$esO95 ? 'hidden' : '' ?>>
   <div class="fields thirds" style="margin-bottom:14px;">

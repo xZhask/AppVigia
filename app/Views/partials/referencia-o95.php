@@ -7,11 +7,31 @@ use App\Core\Database;
 
 $pdo = Database::conexion();
 
-$valReferida = $valoresCampos[14309] ?? '';
-$valEessOrigen = $valoresCampos[14310] ?? '';
-$valDep = $valoresCampos[16131] ?? '';
-$valProv = $valoresCampos[16132] ?? '';
-$valDist = $valoresCampos[16133] ?? '';
+$campoReferida = $campo('o95_referida');
+$campoEessOrigen = $campo('o95_ee_ss_de_origen_de_la_referencia');
+$campoDepReferencia = $campo('o95_referencia_dep_id');
+$campoProvReferencia = $campo('o95_referencia_prov_id');
+$campoDistReferencia = $campo('o95_referencia_dist_id');
+$campoNumRefInst = $campo('o95_n_de_referencias_institucionales');
+$campoFechaIngOrigen = $campo('o95_fecha_ingreso_eess_origen');
+$campoHoraIngOrigen = $campo('o95_hora_ingreso_eess_origen');
+$campoFechaEgrOrigen = $campo('o95_fecha_egreso_eess_origen');
+$campoHoraEgrOrigen = $campo('o95_hora_egreso_eess_origen');
+$campoDemoraDias = $campo('o95_demora_referencia_dias');
+$campoDemoraHoras = $campo('o95_demora_referencia_horas');
+$campoRespOrigen = $campo('o95_responsable_atencion_eess_origen');
+$campoRespOrigenOtro = $campo('o95_responsable_eess_origen_otro');
+$campoInstDestino = $campo('o95_institucion_destino_referencia');
+$campoEessDestino = $campo('o95_eess_destino_referencia');
+$campoFechaIngDestino = $campo('o95_fecha_ingreso_eess_destino');
+$campoHoraIngDestino = $campo('o95_hora_ingreso_eess_destino');
+$campoTipoFichaO95Ref = $campo('o95_tipo_de_ficha');
+
+$valReferida = $campoReferida['val'];
+$valEessOrigen = $campoEessOrigen['val'];
+$valDep = $campoDepReferencia['val'];
+$valProv = $campoProvReferencia['val'];
+$valDist = $campoDistReferencia['val'];
 
 // Cargar Ubigeo para Referencia (Departamento, Provincia, Distrito)
 $depsReferencia = $pdo->query("SELECT id, nombre FROM departamento ORDER BY nombre")->fetchAll();
@@ -31,27 +51,30 @@ if ($valProv) {
 }
 
 // Anexo 2
-$valNumRefInst = isset($valoresCampos[14346]) && $valoresCampos[14346] !== '' ? (int)$valoresCampos[14346] : 0;
+$valNumRefInst = $campoNumRefInst['val'] !== '' ? (int) $campoNumRefInst['val'] : 0;
 
-$valFechaIngOrigen = $valoresCampos[16148] ?? '';
-$valHoraIngOrigen  = $valoresCampos[16149] ?? '';
+$valFechaIngOrigen = $campoFechaIngOrigen['val'];
+$valHoraIngOrigen  = $campoHoraIngOrigen['val'];
 
-$valFechaEgrOrigen = $valoresCampos[16150] ?? '';
-$valHoraEgrOrigen  = $valoresCampos[16151] ?? '';
+$valFechaEgrOrigen = $campoFechaEgrOrigen['val'];
+$valHoraEgrOrigen  = $campoHoraEgrOrigen['val'];
 
-$valDemoraDias  = isset($valoresCampos[16152]) && $valoresCampos[16152] !== '' ? (int)$valoresCampos[16152] : 0;
-$valDemoraHoras = isset($valoresCampos[16153]) && $valoresCampos[16153] !== '' ? (int)$valoresCampos[16153] : 0;
+$valDemoraDias  = $campoDemoraDias['val'] !== '' ? (int) $campoDemoraDias['val'] : 0;
+$valDemoraHoras = $campoDemoraHoras['val'] !== '' ? (int) $campoDemoraHoras['val'] : 0;
 
-$valRespOrigen     = $valoresCampos[16154] ?? '';
-$valRespOrigenOtro = $valoresCampos[16155] ?? '';
+$valRespOrigen     = $campoRespOrigen['val'];
+$valRespOrigenOtro = $campoRespOrigenOtro['val'];
 
-$valInstDestino = $valoresCampos[16156] ?? '';
-$valEessDestino = $valoresCampos[16157] ?? '';
+$valInstDestino = $campoInstDestino['val'];
+$valEessDestino = $campoEessDestino['val'];
 
-$valFechaIngDestino = $valoresCampos[16158] ?? '';
-$valHoraIngDestino  = $valoresCampos[16159] ?? '';
+$valFechaIngDestino = $campoFechaIngDestino['val'];
+$valHoraIngDestino  = $campoHoraIngDestino['val'];
 
-$valTipoFichaO95 = $valoresFijos['o95_tipo_ficha'] ?? $valoresCampos[14300] ?? $_POST['o95_tipo_ficha'] ?? 'ANEXO_1';
+$valTipoFichaO95 = $valoresFijos['o95_tipo_ficha']
+    ?? ($campoTipoFichaO95Ref['val'] !== '' ? $campoTipoFichaO95Ref['val'] : null)
+    ?? $_POST['o95_tipo_ficha']
+    ?? 'ANEXO_1';
 
 $esReferidaSi = (strtoupper((string)$valReferida) === 'SI' || $valReferida === '1');
 $esAnexo2 = ($valTipoFichaO95 === 'ANEXO_2');
@@ -63,7 +86,7 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
   <div class="field" style="margin-bottom:14px; max-width:280px;">
     <label class="fl">¿Referida? <span class="req">*</span></label>
     <div class="control">
-      <select id="o95ReferidaSel" name="campo_14309" data-nosearch="true">
+      <select id="o95ReferidaSel" name="<?= $campoReferida['name'] ?>" data-nosearch="true">
         <option value="NO" <?= seleccionado($valReferida, 'NO') ?>>NO</option>
         <option value="SI" <?= seleccionado($valReferida, 'SI') ?>>SI</option>
       </select>
@@ -75,7 +98,7 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
     <div class="field" style="margin-bottom:14px;">
       <label class="fl">EE.SS. de origen de la referencia</label>
       <div class="control">
-        <input type="text" name="campo_14310" value="<?= e($valEessOrigen) ?>" placeholder="Nombre del EE.SS. que refiere…">
+        <input type="text" name="<?= $campoEessOrigen['name'] ?>" value="<?= e($valEessOrigen) ?>" placeholder="Nombre del EE.SS. que refiere…">
       </div>
     </div>
 
@@ -92,9 +115,9 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       $departamentoSeleccionado = $valDep;
       $provinciaSeleccionada = $valProv;
       $distritoSeleccionado = $valDist;
-      $nombreCampoDepartamento = 'campo_16131';
-      $nombreCampoProvincia = 'campo_16132';
-      $nombreCampoDistrito = 'campo_16133';
+      $nombreCampoDepartamento = $campoDepReferencia['name'];
+      $nombreCampoProvincia = $campoProvReferencia['name'];
+      $nombreCampoDistrito = $campoDistReferencia['name'];
       $distritoRequerido = false;
       require __DIR__ . '/selector-ubigeo.php';
       ?>
@@ -111,7 +134,7 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
     <div class="field" style="margin-bottom:14px; max-width:280px;">
       <label class="fl">N.° de referencias institucionales</label>
       <div class="control">
-        <input type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" id="o95NumRefInstInput" name="campo_14346" value="<?= $valNumRefInst ?>" placeholder="0" class="solo-enteros">
+        <input type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" id="o95NumRefInstInput" name="<?= $campoNumRefInst['name'] ?>" value="<?= $valNumRefInst ?>" placeholder="0" class="solo-enteros">
       </div>
     </div>
 
@@ -120,13 +143,13 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       <div class="field">
         <label class="fl">Fecha de ingreso al EE.SS. origen</label>
         <div class="control mono">
-          <input type="date" id="o95FechaIngOrigenInput" name="campo_16148" value="<?= e($valFechaIngOrigen) ?>" max="<?= date('Y-m-d') ?>">
+          <input type="date" id="o95FechaIngOrigenInput" name="<?= $campoFechaIngOrigen['name'] ?>" value="<?= e($valFechaIngOrigen) ?>" max="<?= date('Y-m-d') ?>">
         </div>
       </div>
       <div class="field">
         <label class="fl">Hora de ingreso (HH:MM)</label>
         <div class="control mono">
-          <input type="time" id="o95HoraIngOrigenInput" name="campo_16149" value="<?= e($valHoraIngOrigen) ?>">
+          <input type="time" id="o95HoraIngOrigenInput" name="<?= $campoHoraIngOrigen['name'] ?>" value="<?= e($valHoraIngOrigen) ?>">
         </div>
       </div>
     </div>
@@ -136,13 +159,13 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       <div class="field">
         <label class="fl">Fecha de egreso del EE.SS. origen</label>
         <div class="control mono">
-          <input type="date" id="o95FechaEgrOrigenInput" name="campo_16150" value="<?= e($valFechaEgrOrigen) ?>" max="<?= date('Y-m-d') ?>">
+          <input type="date" id="o95FechaEgrOrigenInput" name="<?= $campoFechaEgrOrigen['name'] ?>" value="<?= e($valFechaEgrOrigen) ?>" max="<?= date('Y-m-d') ?>">
         </div>
       </div>
       <div class="field">
         <label class="fl">Hora de egreso (HH:MM)</label>
         <div class="control mono">
-          <input type="time" id="o95HoraEgrOrigenInput" name="campo_16151" value="<?= e($valHoraEgrOrigen) ?>">
+          <input type="time" id="o95HoraEgrOrigenInput" name="<?= $campoHoraEgrOrigen['name'] ?>" value="<?= e($valHoraEgrOrigen) ?>">
         </div>
       </div>
     </div>
@@ -153,13 +176,13 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       <div class="fields pairs" style="margin-top:6px; max-width:400px;">
         <div class="field-inline" style="display:flex; align-items:center; gap:8px;">
           <div class="control" style="width:90px;">
-            <input type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" id="o95DemoraDiasInput" name="campo_16152" value="<?= $valDemoraDias ?>" placeholder="0" class="solo-enteros" style="text-align:center;">
+            <input type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" id="o95DemoraDiasInput" name="<?= $campoDemoraDias['name'] ?>" value="<?= $valDemoraDias ?>" placeholder="0" class="solo-enteros" style="text-align:center;">
           </div>
           <span style="font-size:0.875rem;">Días</span>
         </div>
         <div class="field-inline" style="display:flex; align-items:center; gap:8px;">
           <div class="control" style="width:90px;">
-            <input type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" id="o95DemoraHorasInput" name="campo_16153" value="<?= $valDemoraHoras ?>" placeholder="0" class="solo-enteros" style="text-align:center;">
+            <input type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" id="o95DemoraHorasInput" name="<?= $campoDemoraHoras['name'] ?>" value="<?= $valDemoraHoras ?>" placeholder="0" class="solo-enteros" style="text-align:center;">
           </div>
           <span style="font-size:0.875rem;">Horas</span>
         </div>
@@ -171,7 +194,7 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       <div class="field">
         <label class="fl">Responsable de la atención en EE.SS. origen</label>
         <div class="control">
-          <select id="o95RespOrigenSel" name="campo_16154">
+          <select id="o95RespOrigenSel" name="<?= $campoRespOrigen['name'] ?>">
             <option value="">Seleccionar responsable…</option>
             <?php foreach (['Médico G-O', 'Médico intensivista', 'Médico residente', 'Médico general', 'Obstetra', 'Enfermera(o)', 'Interno', 'Técnico', 'Otro', 'Desconocido'] as $respItem): ?>
               <option value="<?= $respItem ?>" <?= seleccionado($valRespOrigen, $respItem) ?>><?= $respItem ?></option>
@@ -183,7 +206,7 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       <div class="field" id="bloqueRespOrigenOtroO95" <?= !$esRespOrigenOtro ? 'hidden style="display:none;"' : '' ?>>
         <label class="fl">Especificar otro responsable</label>
         <div class="control">
-          <input type="text" name="campo_16155" value="<?= e($valRespOrigenOtro) ?>" placeholder="Especificar profesión/cargo…">
+          <input type="text" name="<?= $campoRespOrigenOtro['name'] ?>" value="<?= e($valRespOrigenOtro) ?>" placeholder="Especificar profesión/cargo…">
         </div>
       </div>
     </div>
@@ -193,7 +216,7 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       <div class="field">
         <label class="fl">Institución destino de la referencia</label>
         <div class="control">
-          <select name="campo_16156">
+          <select name="<?= $campoInstDestino['name'] ?>">
             <option value="">Seleccionar institución…</option>
             <?php foreach (['EESS IGSS / Gobierno Regional', 'EESS EsSalud', 'EESS SSFFAA / PNP', 'EESS Privado'] as $instItem): ?>
               <option value="<?= $instItem ?>" <?= seleccionado($valInstDestino, $instItem) ?>><?= $instItem ?></option>
@@ -205,7 +228,7 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       <div class="field">
         <label class="fl">EE.SS. destino de la referencia</label>
         <div class="control">
-          <input type="text" name="campo_16157" value="<?= e($valEessDestino) ?>" placeholder="Nombre del EE.SS. destino…">
+          <input type="text" name="<?= $campoEessDestino['name'] ?>" value="<?= e($valEessDestino) ?>" placeholder="Nombre del EE.SS. destino…">
         </div>
       </div>
     </div>
@@ -215,13 +238,13 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       <div class="field">
         <label class="fl">Fecha de ingreso al EE.SS. destino</label>
         <div class="control mono">
-          <input type="date" name="campo_16158" value="<?= e($valFechaIngDestino) ?>" max="<?= date('Y-m-d') ?>">
+          <input type="date" name="<?= $campoFechaIngDestino['name'] ?>" value="<?= e($valFechaIngDestino) ?>" max="<?= date('Y-m-d') ?>">
         </div>
       </div>
       <div class="field">
         <label class="fl">Hora de ingreso EE.SS. destino (HH:MM)</label>
         <div class="control mono">
-          <input type="time" name="campo_16159" value="<?= e($valHoraIngDestino) ?>">
+          <input type="time" name="<?= $campoHoraIngDestino['name'] ?>" value="<?= e($valHoraIngDestino) ?>">
         </div>
       </div>
     </div>

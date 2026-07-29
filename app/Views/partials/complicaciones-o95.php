@@ -3,25 +3,33 @@
  * Plantilla especializada para la Sección 6: Complicaciones del embarazo, parto o puerperio actual (Anexo 2) de Muerte Materna (O95).
  */
 
-$valTuvoComp = $valoresCampos[16147] ?? '';
+$campoTuvoComp = $campo('o95_tuvo_complicaciones');
+$campoCompEmb = $campo('o95_complicaciones_del_embarazo');
+$campoCompEmbOtro = $campo('o95_complicaciones_embarazo_otro');
+$campoCompPart = $campo('o95_complicaciones_del_parto');
+$campoCompPartOtro = $campo('o95_complicaciones_parto_otro');
+$campoCompPuer = $campo('o95_complicaciones_del_puerperio');
+$campoCompPuerOtro = $campo('o95_complicaciones_puerperio_otro');
 
-$valCompEmb = $valoresCampos[14342] ?? [];
+$valTuvoComp = $campoTuvoComp['val'];
+
+$valCompEmb = $campoCompEmb['val'];
 if (!is_array($valCompEmb)) {
     $valCompEmb = array_filter(array_map('trim', explode(',', (string)$valCompEmb)));
 }
-$valCompEmbOtro = $valoresCampos[16144] ?? '';
+$valCompEmbOtro = $campoCompEmbOtro['val'];
 
-$valCompPart = $valoresCampos[14343] ?? [];
+$valCompPart = $campoCompPart['val'];
 if (!is_array($valCompPart)) {
     $valCompPart = array_filter(array_map('trim', explode(',', (string)$valCompPart)));
 }
-$valCompPartOtro = $valoresCampos[16145] ?? '';
+$valCompPartOtro = $campoCompPartOtro['val'];
 
-$valCompPuer = $valoresCampos[14344] ?? [];
+$valCompPuer = $campoCompPuer['val'];
 if (!is_array($valCompPuer)) {
     $valCompPuer = array_filter(array_map('trim', explode(',', (string)$valCompPuer)));
 }
-$valCompPuerOtro = $valoresCampos[16146] ?? '';
+$valCompPuerOtro = $campoCompPuerOtro['val'];
 
 $esTuvoSi = (strtoupper((string)$valTuvoComp) === 'SI' || $valTuvoComp === '1');
 $esEmbOtro = in_array('OTRO', array_map('strtoupper', $valCompEmb), true);
@@ -35,15 +43,15 @@ $esPuerOtro = in_array('OTRO', array_map('strtoupper', $valCompPuer), true);
     <label class="fl" style="font-weight:700; color:var(--accent-deep); margin-bottom:8px;">¿Tuvo complicaciones? <span class="req">*</span></label>
     <div class="control-radio-group">
       <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; font-weight:600;">
-        <input type="radio" name="campo_16147" value="SI" id="o95TuvoCompSi" <?= $esTuvoSi ? 'checked' : '' ?> style="accent-color:var(--accent);">
+        <input type="radio" name="<?= $campoTuvoComp['name'] ?>" value="SI" id="o95TuvoCompSi" <?= $esTuvoSi ? 'checked' : '' ?> style="accent-color:var(--accent);">
         <span>SÍ</span>
       </label>
       <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; font-weight:600;">
-        <input type="radio" name="campo_16147" value="NO" id="o95TuvoCompNo" <?= (strtoupper((string)$valTuvoComp) === 'NO' || $valTuvoComp === '0') ? 'checked' : '' ?> style="accent-color:var(--accent);">
+        <input type="radio" name="<?= $campoTuvoComp['name'] ?>" value="NO" id="o95TuvoCompNo" <?= (strtoupper((string)$valTuvoComp) === 'NO' || $valTuvoComp === '0') ? 'checked' : '' ?> style="accent-color:var(--accent);">
         <span>NO</span>
       </label>
       <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; font-weight:600;">
-        <input type="radio" name="campo_16147" value="DESCONOCIDO" id="o95TuvoCompDescon" <?= (strtoupper((string)$valTuvoComp) === 'DESCONOCIDO') ? 'checked' : '' ?> style="accent-color:var(--accent);">
+        <input type="radio" name="<?= $campoTuvoComp['name'] ?>" value="DESCONOCIDO" id="o95TuvoCompDescon" <?= (strtoupper((string)$valTuvoComp) === 'DESCONOCIDO') ? 'checked' : '' ?> style="accent-color:var(--accent);">
         <span>Desconocido</span>
       </label>
     </div>
@@ -80,7 +88,7 @@ $esPuerOtro = in_array('OTRO', array_map('strtoupper', $valCompPuer), true);
             $checked = in_array($cod, $valCompEmb, true) || in_array(strtoupper($lbl), array_map('strtoupper', $valCompEmb), true);
         ?>
           <label class="choice" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; color:var(--ink);">
-            <input type="checkbox" name="campo_14342[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> class="o95CompEmbChk" data-codigo="<?= $cod ?>">
+            <input type="checkbox" name="<?= $campoCompEmb['name'] ?>[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> class="o95CompEmbChk" data-codigo="<?= $cod ?>">
             <span style="<?= $cod === 'NINGUNA' ? 'font-weight:700; color:var(--accent-deep);' : '' ?>"><?= e($lbl) ?></span>
           </label>
         <?php endforeach; ?>
@@ -89,7 +97,7 @@ $esPuerOtro = in_array('OTRO', array_map('strtoupper', $valCompPuer), true);
       <div id="bloqueCompEmbOtroO95" style="margin-top:12px; max-width:400px;" <?= !$esEmbOtro ? 'hidden style="display:none;"' : '' ?>>
         <label class="fl">Especificar otra complicación del embarazo</label>
         <div class="control">
-          <input type="text" id="o95CompEmbOtroInput" name="campo_16144" value="<?= e($valCompEmbOtro) ?>" placeholder="Especificar complicación…">
+          <input type="text" id="o95CompEmbOtroInput" name="<?= $campoCompEmbOtro['name'] ?>" value="<?= e($valCompEmbOtro) ?>" placeholder="Especificar complicación…">
         </div>
       </div>
     </div>
@@ -118,7 +126,7 @@ $esPuerOtro = in_array('OTRO', array_map('strtoupper', $valCompPuer), true);
             $checked = in_array($cod, $valCompPart, true) || in_array(strtoupper($lbl), array_map('strtoupper', $valCompPart), true);
         ?>
           <label class="choice" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; color:var(--ink);">
-            <input type="checkbox" name="campo_14343[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> class="o95CompPartChk" data-codigo="<?= $cod ?>">
+            <input type="checkbox" name="<?= $campoCompPart['name'] ?>[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> class="o95CompPartChk" data-codigo="<?= $cod ?>">
             <span style="<?= $cod === 'NINGUNA' ? 'font-weight:700; color:var(--accent-deep);' : '' ?>"><?= e($lbl) ?></span>
           </label>
         <?php endforeach; ?>
@@ -127,7 +135,7 @@ $esPuerOtro = in_array('OTRO', array_map('strtoupper', $valCompPuer), true);
       <div id="bloqueCompPartOtroO95" style="margin-top:12px; max-width:400px;" <?= !$esPartOtro ? 'hidden style="display:none;"' : '' ?>>
         <label class="fl">Especificar otra complicación del parto</label>
         <div class="control">
-          <input type="text" id="o95CompPartOtroInput" name="campo_16145" value="<?= e($valCompPartOtro) ?>" placeholder="Especificar complicación…">
+          <input type="text" id="o95CompPartOtroInput" name="<?= $campoCompPartOtro['name'] ?>" value="<?= e($valCompPartOtro) ?>" placeholder="Especificar complicación…">
         </div>
       </div>
     </div>
@@ -156,7 +164,7 @@ $esPuerOtro = in_array('OTRO', array_map('strtoupper', $valCompPuer), true);
             $checked = in_array($cod, $valCompPuer, true) || in_array(strtoupper($lbl), array_map('strtoupper', $valCompPuer), true);
         ?>
           <label class="choice" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; color:var(--ink);">
-            <input type="checkbox" name="campo_14344[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> class="o95CompPuerChk" data-codigo="<?= $cod ?>">
+            <input type="checkbox" name="<?= $campoCompPuer['name'] ?>[]" value="<?= $cod ?>" <?= $checked ? 'checked' : '' ?> class="o95CompPuerChk" data-codigo="<?= $cod ?>">
             <span style="<?= $cod === 'NINGUNA' ? 'font-weight:700; color:var(--accent-deep);' : '' ?>"><?= e($lbl) ?></span>
           </label>
         <?php endforeach; ?>
@@ -165,7 +173,7 @@ $esPuerOtro = in_array('OTRO', array_map('strtoupper', $valCompPuer), true);
       <div id="bloqueCompPuerOtroO95" style="margin-top:12px; max-width:400px;" <?= !$esPuerOtro ? 'hidden style="display:none;"' : '' ?>>
         <label class="fl">Especificar otra complicación del puerperio</label>
         <div class="control">
-          <input type="text" id="o95CompPuerOtroInput" name="campo_16146" value="<?= e($valCompPuerOtro) ?>" placeholder="Especificar complicación…">
+          <input type="text" id="o95CompPuerOtroInput" name="<?= $campoCompPuerOtro['name'] ?>" value="<?= e($valCompPuerOtro) ?>" placeholder="Especificar complicación…">
         </div>
       </div>
     </div>
