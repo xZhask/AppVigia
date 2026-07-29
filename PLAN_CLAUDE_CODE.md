@@ -81,6 +81,17 @@ Estas reglas aplican a **todas** las fases. Violarlas invalida el trabajo de la 
 - `prefers-reduced-motion` respetado (ya está definido).
 - Sin `localStorage` ni `sessionStorage`.
 
+### 7. Cambios de esquema de base de datos
+- Ningún `ALTER TABLE` se ejecuta desde `scratch/`. `scratch/` está fuera del
+  índice de git (`.gitignore`) y no deja historia — un `ALTER` ahí es un
+  cambio de esquema que nadie más puede reproducir.
+- Todo cambio de esquema se escribe primero como archivo numerado en
+  `sql/migraciones/NN_descripcion.sql`, se aplica desde ahí, y se refleja en
+  `sql/01_esquema_actual.sql` en el mismo commit.
+- Ver `PETICION_01_ESQUEMA_REPRODUCIBLE.md` para el porqué: ocho `ALTER`
+  ejecutados desde `scratch/` dejaron el esquema versionado desactualizado
+  durante semanas sin que nadie lo notara.
+
 ### Al cerrar cada fase, verificar:
 - [ ] ¿Se modificó algún valor existente de `theme.css`? → debe ser **no**
 - [ ] ¿Hay algún emoji usado como icono? → debe ser **no**

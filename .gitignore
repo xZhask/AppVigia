@@ -1,6 +1,11 @@
 # Respaldos generados por scripts/respaldo_bd.ps1 — nunca versionar dumps de la BD.
 /backups/
 
+# Scripts descartables de exploracion/depuracion puntual, sin valor de
+# historia (ver PETICION_01_ESQUEMA_REPRODUCIBLE.md Fase 4). Cambios de
+# esquema van en sql/migraciones/, no aqui — ver PLAN_CLAUDE_CODE.md.
+/scratch/
+
 # Exports crudos del padrón RENIPRESS (fuente de datos, no código).
 /USLR*.xls
 /USLR*.xlsx
