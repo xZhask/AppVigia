@@ -34,7 +34,7 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
     <label class="fl">Localidad</label>
     <div class="control"><input type="text" name="localidad" value="<?= e($valoresFijos['localidad'] ?? '') ?>"></div>
   </div>
-  <div class="field wide">
+  <div class="field wide" data-nucleo-campo="direccion" <?= $nucleoOmite('direccion') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Domicilio actual</label>
     <div class="control"><input type="text" name="direccion" value="<?= e($valoresFijos['direccion'] ?? '') ?>"></div>
   </div>

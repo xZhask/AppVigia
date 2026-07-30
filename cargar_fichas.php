@@ -117,7 +117,7 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // declarativo"). Lista de OMISIONES, no de inclusiones: el default es
 // "se muestran todos", así que agregar este mecanismo no cambia nada en
 // ninguna ficha hasta que una declare una omisión explícita.
-const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'etnia', 'nombre_tutor', 'celular_tutor', 'gestante'];
+const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'etnia', 'nombre_tutor', 'celular_tutor', 'gestante'];
 
 // Listas de opciones tan genéricas que se comparten entre fichas en vez de
 // crear un catálogo por ficha (se detectan por contenido exacto, no por
