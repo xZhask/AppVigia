@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../app/Core/Autoload.php';
+require __DIR__ . '/../../app/Core/Autoload.php';
 
 use App\Core\Database;
 
