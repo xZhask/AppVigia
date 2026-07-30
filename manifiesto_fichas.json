@@ -3559,12 +3559,28 @@
                 ]
             },
             "nucleo_omitidos": [
-                "gestante"
+                "gestante",
+                "nacionalidad",
+                "etnia",
+                "direccion",
+                "nombre_tutor",
+                "celular_tutor"
             ],
             "secciones": [
                 {
-                    "nombre": "Datos de filiación y tutores",
+                    "nombre": "Registro",
                     "orden": 1,
+                    "campos": [
+                        {
+                            "etiqueta": "N.° de orden nacional",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Datos de filiación y tutores",
+                    "orden": 2,
                     "campos": [
                         {
                             "etiqueta": "Nombre del padre",
@@ -3590,7 +3606,7 @@
                 },
                 {
                     "nombre": "Conocimiento del caso y primer notificante",
-                    "orden": 2,
+                    "orden": 3,
                     "campos": [
                         {
                             "etiqueta": "Conocimiento del caso",
@@ -3625,7 +3641,7 @@
                 },
                 {
                     "nombre": "Cuadro clínico",
-                    "orden": 3,
+                    "orden": 4,
                     "campos": [
                         {
                             "etiqueta": "Fecha de inicio de síntomas generales (pródromos)",
@@ -3751,7 +3767,7 @@
                 },
                 {
                     "nombre": "Examen físico",
-                    "orden": 4,
+                    "orden": 5,
                     "campos": [
                         {
                             "etiqueta": "Fecha de examen físico",
@@ -3845,7 +3861,7 @@
                 },
                 {
                     "nombre": "Hospitalización y defunción",
-                    "orden": 5,
+                    "orden": 6,
                     "campos": [
                         {
                             "etiqueta": "Hospitalización",
@@ -3934,7 +3950,7 @@
                 },
                 {
                     "nombre": "Antecedentes de vacuna antipolio",
-                    "orden": 6,
+                    "orden": 7,
                     "campos": [
                         {
                             "etiqueta": "Vacunado contra polio",
@@ -3996,7 +4012,7 @@
                 },
                 {
                     "nombre": "Fuente probable de infección",
-                    "orden": 7,
+                    "orden": 8,
                     "campos": [
                         {
                             "etiqueta": "¿Viajes realizados en los 30 días antes?",
@@ -4044,7 +4060,7 @@
                 },
                 {
                     "nombre": "Cadena de transmisión",
-                    "orden": 8,
+                    "orden": 9,
                     "campos": [
                         {
                             "etiqueta": "Notas de investigación de la cadena de transmisión",
@@ -4055,7 +4071,7 @@
                 },
                 {
                     "nombre": "Acciones de control",
-                    "orden": 9,
+                    "orden": 10,
                     "campos": [
                         {
                             "etiqueta": "Bloqueo de vacunación (operación barrido)",
@@ -4159,7 +4175,7 @@
                 },
                 {
                     "nombre": "Seguimiento de secuelas",
-                    "orden": 10,
+                    "orden": 11,
                     "campos": [
                         {
                             "etiqueta": "Fechas de seguimiento (30\/60\/90\/180 días)",
@@ -4232,7 +4248,7 @@
                 },
                 {
                     "nombre": "Evaluación final de secuelas",
-                    "orden": 11,
+                    "orden": 12,
                     "campos": [
                         {
                             "etiqueta": "Fecha de evaluación final de secuelas",
@@ -4268,7 +4284,7 @@
                 },
                 {
                     "nombre": "Electromiografía",
-                    "orden": 12,
+                    "orden": 13,
                     "campos": [
                         {
                             "etiqueta": "Realizado por",
@@ -4289,7 +4305,7 @@
                 },
                 {
                     "nombre": "Clasificación final y criterios",
-                    "orden": 13,
+                    "orden": 14,
                     "campos": [
                         {
                             "etiqueta": "Clasificación final",
