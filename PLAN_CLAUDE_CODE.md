@@ -91,6 +91,13 @@ Estas reglas aplican a **todas** las fases. Violarlas invalida el trabajo de la 
 - Ver `PETICION_01_ESQUEMA_REPRODUCIBLE.md` para el porqué: ocho `ALTER`
   ejecutados desde `scratch/` dejaron el esquema versionado desactualizado
   durante semanas sin que nadie lo notara.
+- Todo `mysqldump` en este entorno (cliente MySQL 8.4, servidor MariaDB
+  11.8) lleva `--column-statistics=0`: sin ese flag, el dump se trunca en
+  silencio (sale con código de salida 0, como si nada hubiera fallado) al
+  intentar leer `information_schema.COLUMN_STATISTICS`, que no existe en
+  MariaDB. Lleva además `--result-file`, nunca redirección ni tubería (ver
+  Petición 1, Fase 1: en PowerShell 5, `| Out-File` reescribe el flujo y
+  puede introducir BOM y CRLF dentro del dump).
 
 ### Al cerrar cada fase, verificar:
 - [ ] ¿Se modificó algún valor existente de `theme.css`? → debe ser **no**
