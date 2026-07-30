@@ -525,6 +525,11 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (resp) { return resp.json(); })
         .then(function (datos) {
           mapaCampos = datos.mapaCampos || {};
+          // El nodo <script id="mapaCampos"> queda en el DOM despues del
+          // primer render; si no se reescribe aca, miente sobre la
+          // enfermedad activa para cualquier lector futuro (misma trampa
+          // que un campo_ID regenerado, ver Fase 7).
+          if (mapaCamposEl) mapaCamposEl.textContent = JSON.stringify(mapaCampos);
           contenedorClinico.innerHTML = datos.html;
           contenedorClinico.style.opacity = '1';
 
