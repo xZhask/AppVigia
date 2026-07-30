@@ -263,3 +263,8 @@ con mensajes claros, y las filas correctas quedan importadas.
   usuario.
 - Al terminar cada fase, abrir la vista junto al mockup y comparar. Si algo se
   ve distinto, se corrige antes de avanzar.
+
+Las variaciones por ficha se declaran en manifiesto_fichas.json, no con condiciones por CIE-10 en código compartido.
+Nada de IDs de campo_def en el código: $campo('clave') desde campos-por-clave.php.
+Ningún ALTER TABLE desde scratch/: va a sql/migraciones/.
+Al cerrar cada cambio de ficha: verificar_fichas.php y comparación visual contra vigia-mockup.html.
