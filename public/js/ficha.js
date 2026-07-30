@@ -588,6 +588,18 @@ document.addEventListener('DOMContentLoaded', function () {
             el.hidden = esB26;
             el.style.display = esB26 ? 'none' : '';
           });
+
+          // nucleo_omitidos: la tarjeta "Datos del paciente" no se vuelve a
+          // renderizar en este fetch (solo la seccion clinica), asi que hay
+          // que reocultar/mostrar a mano los campos del nucleo declarados
+          // como omitidos por la ficha nueva. datos.nucleoOmitidos ya viene
+          // decodificado del manifiesto (via enfermedad.nucleo_omitidos).
+          var nucleoOmitidos = datos.nucleoOmitidos || [];
+          document.querySelectorAll('[data-nucleo-campo]').forEach(function (el) {
+            var omitido = nucleoOmitidos.indexOf(el.getAttribute('data-nucleo-campo')) !== -1;
+            el.hidden = omitido;
+            el.style.display = omitido ? 'none' : '';
+          });
           var captGrid = document.querySelector('.b26-capt-grid');
           if (captGrid) {
             if (esB26) {
@@ -1674,7 +1686,8 @@ document.addEventListener('DOMContentLoaded', function () {
       o95FechasWrap.style.display = esO95 ? '' : 'none';
     }
 
-    // Ocultar Sexo, Celular, Nacionalidad, Localidad cuando es O95
+    // Ocultar Sexo cuando es O95 (Celular/Nacionalidad/Localidad/Etnia/
+    // Gestante/Tutor ya se manejan por nucleo_omitidos, ver mas arriba)
     document.querySelectorAll('.o95-hide').forEach(function(el) {
       el.hidden = esO95;
       el.style.display = esO95 ? 'none' : '';
@@ -1688,14 +1701,6 @@ document.addEventListener('DOMContentLoaded', function () {
         el.style.display = esO95 ? '' : 'none';
       }
     });
-
-    // Ocultar Gestante cuando es O95
-    var campoGestante = document.getElementById('campoGestante');
-    var campoSemanas = document.getElementById('campoSemanasGestacion');
-    if (esO95) {
-      if (campoGestante) { campoGestante.hidden = true; campoGestante.style.display = 'none'; }
-      if (campoSemanas) { campoSemanas.hidden = true; campoSemanas.style.display = 'none'; }
-    }
 
     if (!esO95) {
       // Para enfermedades generales: mostrar etnia general, ocultar grupo/pueblo O95

@@ -111,6 +111,14 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
     'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones'],
 ];
 
+// Campos del núcleo compartido de "Datos del paciente" (columnas fijas de
+// persona/caso, pintadas por datos-paciente-nucleo.php, no campo_def) que
+// una ficha puede declarar que NO pide (Petición 2, sesión "núcleo
+// declarativo"). Lista de OMISIONES, no de inclusiones: el default es
+// "se muestran todos", así que agregar este mecanismo no cambia nada en
+// ninguna ficha hasta que una declare una omisión explícita.
+const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'etnia', 'nombre_tutor', 'celular_tutor', 'gestante'];
+
 // Listas de opciones tan genéricas que se comparten entre fichas en vez de
 // crear un catálogo por ficha (se detectan por contenido exacto, no por
 // nombre — cualquier campo con exactamente esta lista de opciones cae acá).
@@ -266,6 +274,14 @@ function validarManifiesto(array $manifiesto): void
                 }
             }
         }
+
+        if (!empty($ficha['nucleo_omitidos'])) {
+            foreach ($ficha['nucleo_omitidos'] as $campoNucleo) {
+                if (!in_array($campoNucleo, NUCLEO_OMITIBLES, true)) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_omitidos incluye \"{$campoNucleo}\", que no es un campo omitible del núcleo. Válidos: " . implode(', ', NUCLEO_OMITIBLES) . ".");
+                }
+            }
+        }
     }
 }
 
@@ -415,7 +431,13 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // quedado de una corrida anterior.
     $columnasDeclaradas = $fichaManifiesto['columnas_tablas_hija'] ?? [];
     $tablasHijas = $fichaManifiesto['tablas_hijas'] ?? [];
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ? WHERE id = ?')->execute([
+    // nucleo_omitidos (Petición 2, sesión "núcleo declarativo"): mismo
+    // criterio que columnas_tablas_hija -- no toca campo_def/seccion_def, se
+    // aplica siempre aunque la ficha esté bloqueada más abajo, y si el
+    // manifiesto no la declara se deja NULL explícito (no se conserva un
+    // valor de una corrida anterior).
+    $nucleoOmitidosDeclarados = $fichaManifiesto['nucleo_omitidos'] ?? null;
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -424,6 +446,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($tablasHijas['caso_muestra']) ? 1 : 0,
         !empty($tablasHijas['caso_viaje']) ? 1 : 0,
         !empty($tablasHijas['caso_vacuna']) ? 1 : 0,
+        !empty($nucleoOmitidosDeclarados) ? json_encode($nucleoOmitidosDeclarados, JSON_UNESCAPED_UNICODE) : null,
         $enfermedadId,
     ]);
 

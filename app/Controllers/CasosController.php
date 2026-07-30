@@ -414,11 +414,23 @@ class CasosController extends Controller
         $sinCaptacion = in_array($enfermedad['cie10'] ?? '', ['A80', 'B05', 'O95', 'P35.0'], true);
         $tieneAntecedentesEpi = !$isPfa && !$isB05 && ((int) ($enfermedad['usa_contactos'] ?? 0) === 1 || (int) ($enfermedad['usa_viajes'] ?? 0) === 1 || (int) ($enfermedad['usa_vacunas'] ?? 0) === 1 || (int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1 || ($enfermedad['cie10'] ?? null) === 'P96');
 
+        // nucleo_omitidos: cambiar de enfermedad en "Nueva ficha" solo
+        // reemplaza la sección clínica vía AJAX -- la tarjeta de "Datos del
+        // paciente" (datos-paciente-nucleo.php) no se vuelve a renderizar.
+        // Se manda la lista decodificada para que el JS reoculte/muestre los
+        // campos del núcleo de la nueva ficha (ver public/js/ficha.js).
+        $nucleoOmitidosDecoded = [];
+        if (!empty($enfermedad['nucleo_omitidos'])) {
+            $decoded = json_decode($enfermedad['nucleo_omitidos'], true);
+            $nucleoOmitidosDecoded = is_array($decoded) ? $decoded : [];
+        }
+
         echo json_encode([
             'html'                 => $html,
             'htmlMuestras'         => $htmlMuestras,
             'htmlClasificacionChips' => $htmlClasificacionChips,
             'mapaCampos'           => $mapaClaveNombreCampos,
+            'nucleoOmitidos'       => $nucleoOmitidosDecoded,
             'cie10'                => $enfermedad['cie10'] ?: '—',
             'usaCaptacion'         => !$sinCaptacion,
             'usaMuestras'          => (int) ($enfermedad['usa_muestras'] ?? 0) === 1,

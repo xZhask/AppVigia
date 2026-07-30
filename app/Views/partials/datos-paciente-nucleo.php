@@ -4,20 +4,33 @@
  */
 $puedeVerEtnia = \App\Core\Auth::tieneRol('ADMIN');
 $esB05 = (($enfermedad['cie10'] ?? null) === 'B05');
-$esO95 = (($enfermedad['cie10'] ?? null) === 'O95');
+
+// nucleo_omitidos (Petición 2, sesión "núcleo declarativo"): reemplaza las
+// condiciones por CIE-10 sueltas que este partial tenía para decidir qué
+// campos del núcleo compartido (columnas fijas de persona/caso, no
+// campo_def) pide cada ficha. Declarado en el manifiesto por ficha,
+// persistido en enfermedad.nucleo_omitidos por cargar_fichas.php. Default
+// "se muestran todos" si la ficha no declara nada.
+$nucleoOmitidos = [];
+if (!empty($enfermedad['nucleo_omitidos'])) {
+    $decodificado = json_decode($enfermedad['nucleo_omitidos'], true);
+    $nucleoOmitidos = is_array($decodificado) ? $decodificado : [];
+}
+$nucleoOmite = fn(string $campoNucleo): bool => in_array($campoNucleo, $nucleoOmitidos, true);
+
 require __DIR__ . '/datos-paciente-b05-loader.php';
 ?>
 <!-- 1. Celular, Nacionalidad, Localidad -->
 <div class="fields thirds" style="margin-top:14px">
-  <div class="field o95-hide" <?= $esO95 ? 'hidden style="display:none;"' : '' ?>>
+  <div class="field" data-nucleo-campo="celular" <?= $nucleoOmite('celular') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">N.° de celular</label>
     <div class="control mono"><input type="text" name="celular" value="<?= e($valoresFijos['celular'] ?? '') ?>" maxlength="20"></div>
   </div>
-  <div class="field o95-hide" <?= $esO95 ? 'hidden style="display:none;"' : '' ?>>
+  <div class="field" data-nucleo-campo="nacionalidad" <?= $nucleoOmite('nacionalidad') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Nacionalidad</label>
     <div class="control"><input type="text" name="nacionalidad" value="<?= e($valoresFijos['nacionalidad'] ?? '') ?>"></div>
   </div>
-  <div class="field o95-hide" <?= $esO95 ? 'hidden style="display:none;"' : '' ?>>
+  <div class="field" data-nucleo-campo="localidad" <?= $nucleoOmite('localidad') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Localidad</label>
     <div class="control"><input type="text" name="localidad" value="<?= e($valoresFijos['localidad'] ?? '') ?>"></div>
   </div>
@@ -183,7 +196,7 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   </div>
 
   <!-- Etnia / raza (Enfermedades Generales) -->
-  <div class="field o95-hide" id="campoEtniaRazaGral" <?= $esO95 ? 'hidden style="display:none;"' : '' ?>>
+  <div class="field" id="campoEtniaRazaGral" data-nucleo-campo="etnia" <?= $nucleoOmite('etnia') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Etnia / raza</label>
     <div class="control">
       <select id="etniaSel" name="etnia" data-nosearch="true">
@@ -227,14 +240,14 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
 </div>
 
 <!-- 3b. Nombre de Madre/Responsable/Tutor y Celular del tutor (En la siguiente fila después de Etnia) -->
-<div class="fields halves o95-hide" style="margin-top:14px" <?= $esO95 ? 'hidden style="display:none;"' : '' ?>>
-  <div class="field">
+<div class="fields halves" style="margin-top:14px">
+  <div class="field" data-nucleo-campo="nombre_tutor" <?= $nucleoOmite('nombre_tutor') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Nombre de la madre / tutor / responsable</label>
     <div class="control">
       <input type="text" name="nombre_tutor" value="<?= e($valoresFijos['nombre_tutor'] ?? '') ?>" placeholder="Nombre completo de la madre, tutor o responsable…">
     </div>
   </div>
-  <div class="field">
+  <div class="field" data-nucleo-campo="celular_tutor" <?= $nucleoOmite('celular_tutor') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">N.° Celular del tutor / responsable</label>
     <div class="control mono">
       <input type="text" name="celular_tutor" value="<?= e($valoresFijos['celular_tutor'] ?? '') ?>" placeholder="N.° celular del tutor o contacto…" maxlength="20">
@@ -243,9 +256,8 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
 </div>
 
 <!-- 4. ¿Gestante? + Semanas de gestación (General) / Trimestre de gestación (Solo B26) -->
-<?php if (!in_array(strtoupper(trim($enfermedad['cie10'] ?? '')), ['A80', 'O95'], true)): ?>
 <?php $esB26Gest = (($enfermedad['cie10'] ?? '') === 'B26'); ?>
-<div class="fields thirds" style="margin-top:14px">
+<div class="fields thirds" data-nucleo-campo="gestante" style="margin-top:14px" <?= $nucleoOmite('gestante') ? 'hidden style="display:none;"' : '' ?>>
   <div class="field" id="campoGestante" hidden>
     <label class="fl">¿Gestante?</label>
     <div class="control">
@@ -272,7 +284,6 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
     </div>
   </div>
 </div>
-<?php endif; ?>
 
 <!-- 5. Debajo de Gestante / Semanas: Lugar probable de parto + Menor de edad / Tutor (B05) -->
 <div class="b05-field-wrap" <?= $esB05 ? '' : 'hidden' ?>>

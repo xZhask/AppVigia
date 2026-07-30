@@ -1091,6 +1091,10 @@
                     "profilaxis"
                 ]
             },
+            "nucleo_omitidos": [
+                "nombre_tutor",
+                "celular_tutor"
+            ],
             "secciones": [
                 {
                     "nombre": "Signos y síntomas",
@@ -3554,6 +3558,9 @@
                     "observaciones"
                 ]
             },
+            "nucleo_omitidos": [
+                "gestante"
+            ],
             "secciones": [
                 {
                     "nombre": "Datos de filiación y tutores",
@@ -7457,6 +7464,15 @@
                 "caso_viaje": false,
                 "caso_vacuna": false
             },
+            "nucleo_omitidos": [
+                "celular",
+                "nacionalidad",
+                "localidad",
+                "etnia",
+                "nombre_tutor",
+                "celular_tutor",
+                "gestante"
+            ],
             "secciones": [
                 {
                     "nombre": "Datos de notificación",
