@@ -81,9 +81,9 @@ $casoCaptadoEn   = $campoP35('p35_0_caso_captado_en');
   </div>
 
   <?php if ($casoCaptadoEn['name']): ?>
-  <div style="margin-top:16px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px;">
+  <div style="margin-top:16px; border-top: 1px solid var(--line-2); padding-top: 14px;">
     <label class="fl" style="font-weight:600; margin-bottom:10px; display:block;">Caso captado en:</label>
-    <div style="display:flex; flex-wrap:wrap; gap:16px 24px; align-items:center;">
+    <div class="control-radio-group" style="display:flex; flex-wrap:wrap; gap:16px 24px; align-items:center;">
       <?php
       $optsCapt = [
           'Emergencia' => 'Emergencia',
@@ -95,8 +95,8 @@ $casoCaptadoEn   = $campoP35('p35_0_caso_captado_en');
       foreach ($optsCapt as $oVal => $oLabel):
           $chk = ($valCapt === $oVal || $valCapt === strtoupper(str_replace(' ', '_', $oVal))) ? 'checked' : '';
       ?>
-        <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-main, #e2e8f0);">
-          <input type="radio" name="<?= $casoCaptadoEn['name'] ?>" value="<?= e($oVal) ?>" <?= $chk ?> style="accent-color:var(--accent, #00f2fe);">
+        <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:14px;">
+          <input type="radio" name="<?= $casoCaptadoEn['name'] ?>" value="<?= e($oVal) ?>" <?= $chk ?>>
           <span><?= e($oLabel) ?></span>
         </label>
       <?php endforeach; ?>

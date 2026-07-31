@@ -629,6 +629,7 @@ document.addEventListener('DOMContentLoaded', function () {
           actualizarTutorB05();
           actualizarEtapaFichaO95();
           actualizarEtniaOtra(false);
+          actualizarPuebloEtnicoB05();
           actualizarGestante();
           actualizarLugarInfeccionB26(datos.cie10);
           actualizarCuadroClinicoB26(datos.cie10);
@@ -1658,17 +1659,24 @@ document.addEventListener('DOMContentLoaded', function () {
     return '';
   }
 
-  // Dependencia de Grupo étnico -> Etnia / Pueblo étnico en O95. Declarado
-  // ANTES de actualizarEtapaFichaO95() (bug preexistente, no introducido por
-  // la Petición 2: la llamada incondicional de abajo, actualizarEtapaFichaO95(),
+  // Dependencia de Grupo étnico -> Etnia / Pueblo étnico. Declarado ANTES de
+  // actualizarEtapaFichaO95() (bug preexistente, no introducido por la
+  // Petición 2: la llamada incondicional de abajo, actualizarEtapaFichaO95(),
   // ya se ejecutaba antes de que este `var` se asignara, así que
-  // O95_MAPA_ETNIAS era undefined y actualizarPuebloEtnicoO95() tiraba
+  // MAPA_GRUPO_ETNICO era undefined y actualizarPuebloEtnicoO95() tiraba
   // TypeError cada vez que O95 era la enfermedad activa al cargar la
   // página -- lo que además abortaba en silencio el resto de
   // actualizarEtapaFichaO95() (fallecimiento, referencia, antecedentes,
   // etc. nunca se inicializaban). Se movió acá arriba, sin cambiar su
   // contenido, al descubrirlo verificando la Fase 7 en el navegador.
-  var O95_MAPA_ETNIAS = {
+  //
+  // Renombrado de O95_MAPA_ETNIAS: reutilizado por B05 (cascada Etnia/raza
+  // del núcleo -> Pueblo étnico o etnia), no es exclusivo de O95. Las claves
+  // AFRODESCENDIENTE/ASIÁTICO DESCENDIENTE ya estaban acá desde antes --
+  // son los valores que usa #etniaSel del núcleo, distintos a los de
+  // #o95GrupoEtnicoSel (AFROPERUANO/ASIATICO_DESCENDIENTE) -- así que esta
+  // misma tabla ya servía para las dos convenciones sin tocarla.
+  var MAPA_GRUPO_ETNICO = {
     'ANDINO': ['Quechua', 'Aymara', 'Jaqaru', 'Uro', 'Otro'],
     'INDIGENA_AMAZONICO': ['Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Otro'],
     'INDÍGENA AMAZÓNICO': ['Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Otro'],
@@ -1759,9 +1767,14 @@ document.addEventListener('DOMContentLoaded', function () {
       .replace(/\s+/g, '_');
   }
 
-  function actualizarPuebloEtnicoO95() {
-    var grupoSel = document.getElementById('o95GrupoEtnicoSel');
-    var puebloSel = document.getElementById('o95PuebloEtnicoSel');
+  // Compartida por O95 (#o95GrupoEtnicoSel -> #o95PuebloEtnicoSel) y B05
+  // (#etniaSel del núcleo -> #b05PuebloEtnicoSel). Mismo contrato: arranca
+  // el <select> destino vacío, lo repuebla según MAPA_GRUPO_ETNICO, e
+  // intenta preseleccionar el valor ya guardado (vía data-valor-actual en
+  // la primera pasada, o el .value actual en cambios posteriores).
+  function actualizarCascadaEtnica(grupoSelId, puebloSelId) {
+    var grupoSel = document.getElementById(grupoSelId);
+    var puebloSel = document.getElementById(puebloSelId);
     if (!grupoSel || !puebloSel) return;
 
     var grupoRaw = grupoSel.value || '';
@@ -1770,19 +1783,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     puebloSel.innerHTML = '<option value="">Seleccionar…</option>';
 
-    var opciones = O95_MAPA_ETNIAS[grupoRaw] || O95_MAPA_ETNIAS[grupoNorm] || null;
+    var opciones = MAPA_GRUPO_ETNICO[grupoRaw] || MAPA_GRUPO_ETNICO[grupoNorm] || null;
 
     if (opciones && opciones.length > 0) {
+      // 2026-07-30: la condición original de autoselección de opción
+      // única era "!valorPrevio" -- si el grupo anterior también tenía
+      // una sola opción distinta (ej. Mestizo="No aplica" ->
+      // Afrodescendiente="Afroperuano"), valorPrevio quedaba con el
+      // valor del grupo VIEJO (no vacío) y bloqueaba la autoselección
+      // del nuevo, aunque ese valor viejo no exista en la lista nueva.
+      // Ahora depende de si valorPrevio de verdad coincidió con alguna
+      // opción real de ESTE grupo, no de si había cualquier valor previo.
+      var seleccionoAlgo = false;
       opciones.forEach(function(opt) {
         var el = document.createElement('option');
         el.value = opt;
         el.textContent = opt;
         if (opt === valorPrevio) {
           el.selected = true;
+          seleccionoAlgo = true;
         }
         puebloSel.appendChild(el);
       });
-      if (opciones.length === 1 && !valorPrevio) {
+      if (opciones.length === 1 && !seleccionoAlgo) {
         puebloSel.value = opciones[0];
       }
     }
@@ -1792,15 +1815,27 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function actualizarPuebloEtnicoO95() {
+    actualizarCascadaEtnica('o95GrupoEtnicoSel', 'o95PuebloEtnicoSel');
+  }
+
+  function actualizarPuebloEtnicoB05() {
+    actualizarCascadaEtnica('etniaSel', 'b05PuebloEtnicoSel');
+  }
+
   document.addEventListener('change', function(e) {
     if (e.target && (e.target.id === 'o95GrupoEtnicoSel' || e.target.name === campoPorClave('o95_grupo_etnico'))) {
-      puebloSelAttrReset();
+      puebloSelAttrReset('o95PuebloEtnicoSel');
       actualizarPuebloEtnicoO95();
+    }
+    if (e.target && (e.target.id === 'etniaSel' || e.target.name === 'etnia')) {
+      puebloSelAttrReset('b05PuebloEtnicoSel');
+      actualizarPuebloEtnicoB05();
     }
   });
 
-  function puebloSelAttrReset() {
-    var puebloSel = document.getElementById('o95PuebloEtnicoSel');
+  function puebloSelAttrReset(puebloSelId) {
+    var puebloSel = document.getElementById(puebloSelId);
     if (puebloSel) puebloSel.removeAttribute('data-valor-actual');
   }
 
@@ -2938,6 +2973,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   actualizarPuebloEtnicoO95();
+  actualizarPuebloEtnicoB05();
   actualizarOtrosCamposO95();
   actualizarDatosFallecimientoO95();
   actualizarReferenciaO95();

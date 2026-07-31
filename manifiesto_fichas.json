@@ -4460,9 +4460,30 @@
                         {
                             "clave": "b05_pueblo_etnico_o_etnia",
                             "etiqueta": "Pueblo étnico o etnia",
-                            "tipo": "TEXTO",
+                            "tipo": "SELECT",
                             "orden": 1,
-                            "obligatorio": false
+                            "obligatorio": false,
+                            "opciones": [
+                                "Quechua",
+                                "Aymara",
+                                "Jaqaru",
+                                "Uro",
+                                "Asháninka",
+                                "Awajún",
+                                "Shipibo-Konibo",
+                                "Yánesha",
+                                "Kukama Kukamiria",
+                                "Achuar",
+                                "Bora",
+                                "Matsés",
+                                "Ese Eja",
+                                "Harakbut",
+                                "Afroperuano",
+                                "No aplica",
+                                "Chino-peruano",
+                                "Japonés-peruano",
+                                "Otro"
+                            ]
                         },
                         {
                             "clave": "b05_ocupacion",
@@ -4640,9 +4661,14 @@
                         {
                             "clave": "b05_hospitalizado",
                             "etiqueta": "Hospitalizado",
-                            "tipo": "BOOLEANO",
+                            "tipo": "SELECT",
                             "orden": 11,
-                            "obligatorio": false
+                            "obligatorio": false,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Desconocido"
+                            ]
                         },
                         {
                             "clave": "b05_fecha_de_hospitalizacion",
@@ -4651,7 +4677,7 @@
                             "orden": 12,
                             "obligatorio": false,
                             "depende_de": "Hospitalizado",
-                            "valor_activador": "1"
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "b05_establecimiento_de_hospitalizacion",
@@ -4660,7 +4686,7 @@
                             "orden": 13,
                             "obligatorio": false,
                             "depende_de": "Hospitalizado",
-                            "valor_activador": "1"
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "b05_n_de_historia_clinica",
@@ -4669,14 +4695,19 @@
                             "orden": 14,
                             "obligatorio": false,
                             "depende_de": "Hospitalizado",
-                            "valor_activador": "1"
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "b05_fallecido",
                             "etiqueta": "Fallecido",
-                            "tipo": "BOOLEANO",
+                            "tipo": "SELECT",
                             "orden": 15,
-                            "obligatorio": false
+                            "obligatorio": false,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Desconocido"
+                            ]
                         },
                         {
                             "clave": "b05_fecha_de_defuncion",
@@ -4685,7 +4716,7 @@
                             "orden": 16,
                             "obligatorio": false,
                             "depende_de": "Fallecido",
-                            "valor_activador": "1"
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "b05_causa_basica_de_defuncion",
@@ -4694,7 +4725,7 @@
                             "orden": 17,
                             "obligatorio": false,
                             "depende_de": "Fallecido",
-                            "valor_activador": "1"
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "b05_antecedente_de_vacunacion_contra_sarampion",

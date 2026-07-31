@@ -128,6 +128,9 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $opciones = $opcionesPorCatalogo[$campo['catalogo_id']];
             }
             $esSubgrupo = ($campo['tipo'] === 'GRUPO_SI_NO' && $tipoAnterior === 'GRUPO_SI_NO');
+            if (($campo['clave'] ?? '') === 'b05_hospitalizado') {
+                ?></div><div class="eyebrow" style="margin-bottom:12px">Condición del paciente</div><div class="fields" style="margin-bottom:16px"><?php
+            }
             $tieneDependencia = !empty($campo['depende_de']);
             if ($tieneDependencia):
                 $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);

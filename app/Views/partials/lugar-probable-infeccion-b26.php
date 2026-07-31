@@ -8,14 +8,20 @@
 $esB26Card = (($enfermedad['cie10'] ?? null) === 'B26');
 
 // Este partial se incluye sin condición aunque B26 no sea la ficha activa
-// (mismo motivo que notificacion-fechas-b26.php): $campo resuelve siempre
-// contra la B26 real, no contra $enfermedad.
-$campo = $resolvedorPara('B26');
+// (mismo motivo que notificacion-fechas-b26.php): $campoB26 resuelve
+// siempre contra la B26 real, no contra $enfermedad.
+//
+// Petición 2, cotejo B05/O95 (2026-07-30): esto asignaba $campo (el
+// resolvedor AMBIENTE), no una variable propia -- pisaba $campo para el
+// resto de la misma carga de página, incluido secciones-clinicas.php,
+// que se incluye después. Ver el comentario equivalente y más largo en
+// notificacion-fechas-o95.php.
+$campoB26 = $resolvedorPara('B26');
 
-$campoContactoCaso = $campo('b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con');
-$campoContactosPorLugar = $campo('b26_contactos_por_lugar');
-$campoContactoGestante = $campo('b26_tuvo_contacto_con_gestante');
-$campoTrimestreGestanteContacto = $campo('b26_trimestre_de_gestacion_contacto');
+$campoContactoCaso = $campoB26('b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con');
+$campoContactosPorLugar = $campoB26('b26_contactos_por_lugar');
+$campoContactoGestante = $campoB26('b26_tuvo_contacto_con_gestante');
+$campoTrimestreGestanteContacto = $campoB26('b26_trimestre_de_gestacion_contacto');
 
 // Extraer valores existentes
 $valDirInf = $valoresCampos['b26_inf_direccion'] ?? '';

@@ -14,30 +14,36 @@
 $esB26Cuadro = (($enfermedad['cie10'] ?? null) === 'B26');
 
 // Este partial se incluye sin condición aunque B26 no sea la ficha activa
-// (mismo motivo que notificacion-fechas-b26.php): $campo resuelve siempre
-// contra la B26 real, no contra $enfermedad.
-$campo = $resolvedorPara('B26');
+// (mismo motivo que notificacion-fechas-b26.php): $campoB26 resuelve
+// siempre contra la B26 real, no contra $enfermedad.
+//
+// Petición 2, cotejo B05/O95 (2026-07-30): esto asignaba $campo (el
+// resolvedor AMBIENTE), no una variable propia -- pisaba $campo para el
+// resto de la misma carga de página, incluido secciones-clinicas.php,
+// que se incluye después. Ver el comentario equivalente y más largo en
+// notificacion-fechas-o95.php.
+$campoB26 = $resolvedorPara('B26');
 
-$campoParotidas = $campo('b26_presento_inflamacion_de_glandulas_parotidas');
-$campoFechaParotiditis = $campo('b26_fecha_de_inicio_de_parotiditis');
-$campoDiasParotiditis = $campo('b26_n_de_dias_de_duracion');
-$campoLocalizacion = $campo('b26_localizacion');
-$campoSubman = $campo('b26_inflamacion_de_glandulas_submandibulares');
-$campoSubling = $campo('b26_inflamacion_de_glandulas_sublinguales');
-$campoOrquitis = $campo('b26_orquitis');
-$campoOoforitis = $campo('b26_ooforitis');
-$campoAudicion = $campo('b26_perdida_de_audicion');
-$campoEncefalitis = $campo('b26_encefalitis');
-$campoMeningitis = $campo('b26_meningitis');
-$campoOtrasComp = $campo('b26_otras');
-$campoHosp = $campo('b26_hospitalizacion');
-$campoEstablecimientoHosp = $campo('b26_establecimiento');
-$campoFechaHosp = $campo('b26_fecha_de_hospitalizacion');
-$campoDiasHosp = $campo('b26_n_de_dias');
-$campoCondicionEgreso = $campo('b26_condicion_de_egreso');
-$campoFechaEgreso = $campo('b26_fecha_de_egreso');
-$campoReferidoA = $campo('b26_referido_a');
-$campoCausaMuerte = $campo('b26_causa_de_muerte');
+$campoParotidas = $campoB26('b26_presento_inflamacion_de_glandulas_parotidas');
+$campoFechaParotiditis = $campoB26('b26_fecha_de_inicio_de_parotiditis');
+$campoDiasParotiditis = $campoB26('b26_n_de_dias_de_duracion');
+$campoLocalizacion = $campoB26('b26_localizacion');
+$campoSubman = $campoB26('b26_inflamacion_de_glandulas_submandibulares');
+$campoSubling = $campoB26('b26_inflamacion_de_glandulas_sublinguales');
+$campoOrquitis = $campoB26('b26_orquitis');
+$campoOoforitis = $campoB26('b26_ooforitis');
+$campoAudicion = $campoB26('b26_perdida_de_audicion');
+$campoEncefalitis = $campoB26('b26_encefalitis');
+$campoMeningitis = $campoB26('b26_meningitis');
+$campoOtrasComp = $campoB26('b26_otras');
+$campoHosp = $campoB26('b26_hospitalizacion');
+$campoEstablecimientoHosp = $campoB26('b26_establecimiento');
+$campoFechaHosp = $campoB26('b26_fecha_de_hospitalizacion');
+$campoDiasHosp = $campoB26('b26_n_de_dias');
+$campoCondicionEgreso = $campoB26('b26_condicion_de_egreso');
+$campoFechaEgreso = $campoB26('b26_fecha_de_egreso');
+$campoReferidoA = $campoB26('b26_referido_a');
+$campoCausaMuerte = $campoB26('b26_causa_de_muerte');
 
 // Extraer valores existentes. "Fecha de inicio de sintomas" es un campo fijo
 // de caso.fecha_inicio_sintomas (name="fecha_inicio_sintomas" literal, mas

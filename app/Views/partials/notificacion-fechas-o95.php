@@ -8,9 +8,19 @@
 $esO95 = ($enfermedad['cie10'] ?? '') === 'O95';
 
 // Este partial se incluye sin condición aunque O95 no sea la ficha activa
-// (mismo motivo que notificacion-fechas-b26.php): $campo resuelve siempre
-// contra la O95 real, no contra $enfermedad.
-$campo = $resolvedorPara('O95');
+// (mismo motivo que notificacion-fechas-b26.php): $campoO95 resuelve
+// siempre contra la O95 real, no contra $enfermedad.
+//
+// Petición 2, cotejo B05/O95 (2026-07-30): esto asignaba $campo (el
+// resolvedor AMBIENTE), no una variable propia -- pisaba $campo para el
+// resto de la misma carga de página, incluido secciones-clinicas.php,
+// que se incluye después y quedaba resolviendo contra O95 en vez de
+// contra la ficha real activa. Con id => null en silencio nunca se
+// notó; con $campo() lanzando excepción por clave inexistente (ver
+// campos-por-clave.php) se convirtió en un 500 al cargar B05 u O95
+// directo por URL. Mismo bug, mismo origen, que ya tenían
+// cuadro-clinico-b26.php y lugar-probable-infeccion-b26.php.
+$campoO95 = $resolvedorPara('O95');
 
 // Peticion 2, Fase 5: hora_notificacion/identificado_por/o95_tipo_ficha son
 // "casos especiales" que CasosController.php guarda por clave (no por
@@ -20,9 +30,9 @@ $campo = $resolvedorPara('O95');
 // inalcanzable"), y 14300 (o95_tipo_ficha) era v99_aseguradora de otra
 // ficha. $campo(...)['val'] nunca es null, así que hay que comparar contra
 // '' antes de seguir la cadena de fallback.
-$campoHoraNotifO95 = $campo('o95_hora_de_la_notificacion');
-$campoIdentificadoPorO95 = $campo('o95_identificado_por');
-$campoTipoFichaO95Notif = $campo('o95_tipo_de_ficha');
+$campoHoraNotifO95 = $campoO95('o95_hora_de_la_notificacion');
+$campoIdentificadoPorO95 = $campoO95('o95_identificado_por');
+$campoTipoFichaO95Notif = $campoO95('o95_tipo_de_ficha');
 
 $valHoraNotif = $valoresFijos['hora_notificacion']
     ?? ($campoHoraNotifO95['val'] !== '' ? $campoHoraNotifO95['val'] : null)
