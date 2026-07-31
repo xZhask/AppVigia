@@ -15,8 +15,13 @@
  *      trae "opciones" en el manifiesto, o si un "tipo" no es reconocido,
  *      el script aborta con excepción ANTES de escribir nada (se valida
  *      todo el manifiesto primero). Nunca inserta con catalogo_id NULL.
- *   3. Convención de clave única: "{cie10}_{slug(etiqueta)}", igual para
- *      las 23 fichas (sin sufijos hexadecimales ni por lote).
+ *   3. Convención de clave única: si el campo trae "clave" en el
+ *      manifiesto, es autoritativa y se usa tal cual (validada única por
+ *      ficha en validarManifiesto()); si no la trae, se deriva como
+ *      "{cie10}_{slug(etiqueta)}". La derivada cambia si se reescribe la
+ *      etiqueta (p. ej. al cotejar contra el PDF MINSA) -- por eso el
+ *      código que necesita una clave estable entre recargas debe fijarla
+ *      explícita en el manifiesto, no confiar en la derivación.
  *   4. Protege datos capturados: si una enfermedad tiene caso_valor
  *      asociados a sus campo_def actuales, NO se borra — se reporta y hay
  *      que confirmar explícitamente con --confirmar-perdida=<CIE10>.
@@ -282,6 +287,30 @@ function validarManifiesto(array $manifiesto): void
                 }
             }
         }
+
+        // Clave explícita: si un campo trae "clave" en el manifiesto, es
+        // autoritativa (insertarCampo() ya no la deriva de la etiqueta para
+        // ese campo -- ver claveCampo()). Antes "clave" no lo leía nadie: la
+        // etiqueta podía reescribirse para cotejar contra el PDF MINSA y la
+        // clave real en campo_def cambiaba con ella en la siguiente recarga,
+        // sin que el string literal ya escrito en las vistas se enterara
+        // (auditoría de O95, 62/141 claves desincronizadas). Acá solo se
+        // valida que dos campos de la misma ficha no declaren la misma
+        // clave explícita -- la colisión real que ya existía en O95
+        // ("categoria_del_ee_ss" en dos secciones) y en A80/A33/Y07/Z21.
+        $clavesExplicitasFicha = [];
+        foreach ($ficha['secciones'] as $seccion) {
+            foreach ($seccion['campos'] as $campo) {
+                $claveExplicita = trim((string) ($campo['clave'] ?? ''));
+                if ($claveExplicita === '') {
+                    continue;
+                }
+                if (isset($clavesExplicitasFicha[$claveExplicita])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} tiene dos campos con la misma \"clave\" explícita: \"{$claveExplicita}\" (\"{$clavesExplicitasFicha[$claveExplicita]}\" y \"{$campo['etiqueta']}\").");
+                }
+                $clavesExplicitasFicha[$claveExplicita] = $campo['etiqueta'];
+            }
+        }
     }
 }
 
@@ -367,7 +396,20 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
 {
     $tipo = $campo['tipo'];
     $etiqueta = $campo['etiqueta'];
-    $clave = claveCampo($cie10, $etiqueta, $clavesUsadas);
+    $claveExplicita = trim((string) ($campo['clave'] ?? ''));
+    if ($claveExplicita !== '') {
+        // Autoritativa: validarManifiesto() ya garantizó que no colisiona
+        // con otra clave explícita de la misma ficha; esto además cubre que
+        // no colisione con una clave derivada de otro campo sin "clave"
+        // propia, en el orden que sea que se procesen.
+        if (isset($clavesUsadas[$claveExplicita])) {
+            throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" declara \"clave\": \"{$claveExplicita}\", que ya está en uso por otro campo de la misma ficha.");
+        }
+        $clave = mb_substr($claveExplicita, 0, 60);
+        $clavesUsadas[$clave] = true;
+    } else {
+        $clave = claveCampo($cie10, $etiqueta, $clavesUsadas);
+    }
     $sensible = !empty($campo['sensible']) ? 1 : 0;
 
     $catalogoId = null;

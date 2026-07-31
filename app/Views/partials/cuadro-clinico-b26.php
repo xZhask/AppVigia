@@ -13,6 +13,11 @@
 
 $esB26Cuadro = (($enfermedad['cie10'] ?? null) === 'B26');
 
+// Este partial se incluye sin condición aunque B26 no sea la ficha activa
+// (mismo motivo que notificacion-fechas-b26.php): $campo resuelve siempre
+// contra la B26 real, no contra $enfermedad.
+$campo = $resolvedorPara('B26');
+
 $campoParotidas = $campo('b26_presento_inflamacion_de_glandulas_parotidas');
 $campoFechaParotiditis = $campo('b26_fecha_de_inicio_de_parotiditis');
 $campoDiasParotiditis = $campo('b26_n_de_dias_de_duracion');

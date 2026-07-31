@@ -74,16 +74,22 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <?php
   $cie10Actual = strtoupper(trim($enfermedad['cie10'] ?? ''));
   $esO95 = ($cie10Actual === 'O95');
-  $campoGrupoEtnicoO95 = $campo('o95_grupo_etnico');
-  $campoPuebloEtnicoO95 = $campo('o95_etnia_pueblo_etnico');
-  $campoIdiomaO95 = $campo('o95_idioma');
-  $campoIdiomaOtraO95 = $campo('o95_idioma_otra');
-  $campoNivelEduO95 = $campo('o95_nivel_educativo');
-  $campoEstadoCivilO95 = $campo('o95_estado_civil');
-  $campoOcupacionO95 = $campo('o95_ocupacion');
-  $campoTipoSeguroO95 = $campo('o95_tipo_de_seguro');
-  $campoSeguroOtroO95 = $campo('o95_tipo_de_seguro_otro');
-  $campoTipoFichaO95Nucleo = $campo('o95_tipo_de_ficha');
+  // Este bloque se renderiza sin condición aunque O95 no sea la ficha
+  // activa (mismo motivo que notificacion-fechas-b26.php, ver ese
+  // archivo): $campoO95Nucleo resuelve siempre contra la O95 real, no
+  // contra $enfermedad. Nombre propio (no shadow de $campo global): este
+  // archivo es compartido por las 24 fichas, no exclusivo de O95.
+  $campoO95Nucleo = $resolvedorPara('O95');
+  $campoGrupoEtnicoO95 = $campoO95Nucleo('o95_grupo_etnico');
+  $campoPuebloEtnicoO95 = $campoO95Nucleo('o95_etnia_pueblo_etnico');
+  $campoIdiomaO95 = $campoO95Nucleo('o95_idioma');
+  $campoIdiomaOtraO95 = $campoO95Nucleo('o95_idioma_otra');
+  $campoNivelEduO95 = $campoO95Nucleo('o95_nivel_educativo');
+  $campoEstadoCivilO95 = $campoO95Nucleo('o95_estado_civil');
+  $campoOcupacionO95 = $campoO95Nucleo('o95_ocupacion');
+  $campoTipoSeguroO95 = $campoO95Nucleo('o95_tipo_de_seguro');
+  $campoSeguroOtroO95 = $campoO95Nucleo('o95_tipo_de_seguro_otro');
+  $campoTipoFichaO95Nucleo = $campoO95Nucleo('o95_tipo_de_ficha');
   $valTipoFichaO95 = $valoresFijos['o95_tipo_ficha']
       ?? ($campoTipoFichaO95Nucleo['val'] !== '' ? $campoTipoFichaO95Nucleo['val'] : null)
       ?? $_POST['o95_tipo_ficha']

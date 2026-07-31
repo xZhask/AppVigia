@@ -7,6 +7,11 @@
  */
 $esO95 = ($enfermedad['cie10'] ?? '') === 'O95';
 
+// Este partial se incluye sin condición aunque O95 no sea la ficha activa
+// (mismo motivo que notificacion-fechas-b26.php): $campo resuelve siempre
+// contra la O95 real, no contra $enfermedad.
+$campo = $resolvedorPara('O95');
+
 // Peticion 2, Fase 5: hora_notificacion/identificado_por/o95_tipo_ficha son
 // "casos especiales" que CasosController.php guarda por clave (no por
 // campo_NNNN, para que ficha.js los pueda seguir seleccionando por name=

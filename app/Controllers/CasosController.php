@@ -430,6 +430,12 @@ class CasosController extends Controller
             'htmlMuestras'         => $htmlMuestras,
             'htmlClasificacionChips' => $htmlClasificacionChips,
             'mapaCampos'           => $mapaClaveNombreCampos,
+            // Mismo detector que el shell (nueva/index.php, fichas/editar.php),
+            // mismo aviso (solo visible con app.debug): antes esta llamada AJAX
+            // no exponía nada de esto, así que las claves faltantes de un
+            // partial a medida que solo se dispara por acá (los 11 de O95)
+            // eran invisibles incluso con app.debug encendido.
+            'avisoClavesFaltantes' => $avisoClavesFaltantesCampos(),
             'nucleoOmitidos'       => $nucleoOmitidosDecoded,
             'cie10'                => $enfermedad['cie10'] ?: '—',
             'usaCaptacion'         => !$sinCaptacion,

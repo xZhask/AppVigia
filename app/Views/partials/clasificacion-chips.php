@@ -18,9 +18,13 @@ if ($esO95Chips) {
         'POR_DETERMINAR' => ['dot' => 'dot-des', 'etiqueta' => 'Por determinar'],
     ];
 
-    $valCausaClasif = $campo('o95_clasificacion_final_de_la_muerte')['val'];
+    // Este partial se incluye sin condición aunque O95 no sea la ficha
+    // activa (mismo motivo que notificacion-fechas-b26.php): $campo
+    // resuelve siempre contra la O95 real, no contra $enfermedad.
+    $campoO95Chips = $resolvedorPara('O95');
+    $valCausaClasif = $campoO95Chips('o95_clasificacion_final_de_la_muerte')['val'];
     if ($valCausaClasif === '') {
-        $valCausaClasif = $campo('o95_clasificacion_inicial')['val'];
+        $valCausaClasif = $campoO95Chips('o95_clasificacion_inicial')['val'];
     }
     if ($valCausaClasif && in_array($valCausaClasif, array_keys($opcionesClasificacion), true)) {
         $clasificacionActual = $valCausaClasif;

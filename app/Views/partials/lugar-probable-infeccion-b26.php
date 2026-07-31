@@ -7,6 +7,11 @@
 
 $esB26Card = (($enfermedad['cie10'] ?? null) === 'B26');
 
+// Este partial se incluye sin condición aunque B26 no sea la ficha activa
+// (mismo motivo que notificacion-fechas-b26.php): $campo resuelve siempre
+// contra la B26 real, no contra $enfermedad.
+$campo = $resolvedorPara('B26');
+
 $campoContactoCaso = $campo('b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con');
 $campoContactosPorLugar = $campo('b26_contactos_por_lugar');
 $campoContactoGestante = $campo('b26_tuvo_contacto_con_gestante');
@@ -133,7 +138,7 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
     <div class="eyebrow" style="margin-bottom:12px">Ubicación del probable contagio</div>
     
     <div class="fields" style="margin-bottom:14px">
-      <div class="field">
+      <div class="field wide">
         <label class="fl">Dirección</label>
         <div class="control">
           <input type="text" name="b26_inf_direccion" value="<?= e($valDirInf) ?>" placeholder="Dirección del lugar probable de infección…">
@@ -156,7 +161,7 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
     </div>
 
     <div class="fields" style="margin-bottom:20px">
-      <div class="field">
+      <div class="field wide">
         <label class="fl">Localidad</label>
         <div class="control">
           <input type="text" name="b26_inf_localidad" value="<?= e($valLocInf) ?>" placeholder="Localidad o caserío…">

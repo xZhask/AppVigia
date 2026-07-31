@@ -87,7 +87,7 @@ $es = $estados[$caso['estado']];
               <div class="control mono" style="color:var(--muted)"><?= e($valoresFijos['tipo_doc']) ?> <?= e($valoresFijos['num_doc']) ?></div>
               <span class="hint">No editable: es la identidad del persona</span>
             </div>
-            <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); $campoNHCEdit = $campo('o95_n_de_historia_clinica'); ?>
+            <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); $campoNHCEdit = $resolvedorPara('O95')('o95_n_de_historia_clinica'); ?>
             <div class="field o95-elem" <?= $esO95Edit ? '' : 'hidden style="display:none;"' ?>>
               <label class="fl">N.° de historia clínica</label>
               <div class="control mono">
@@ -256,4 +256,5 @@ $es = $estados[$caso['estado']];
       </div>
     </aside>
   </div>
+  <?= $avisoClavesFaltantesCampos() ?>
 </form>

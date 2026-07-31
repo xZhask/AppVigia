@@ -9,9 +9,12 @@ $pdo = Database::conexion();
 
 $campoReferida = $campo('o95_referida');
 $campoEessOrigen = $campo('o95_ee_ss_de_origen_de_la_referencia');
-$campoDepReferencia = $campo('o95_referencia_dep_id');
-$campoProvReferencia = $campo('o95_referencia_prov_id');
-$campoDistReferencia = $campo('o95_referencia_dist_id');
+// Mismo caso que datos-fallecimiento-o95.php: sigue siendo TEXTO, el valor
+// que viaja es el código INEI que ya entrega selector-ubigeo.php (ver
+// PENDIENTES.md, hallazgo A.7).
+$campoDepReferencia = $campo('o95_departamento_origen_de_la_referencia');
+$campoProvReferencia = $campo('o95_provincia_origen_de_la_referencia');
+$campoDistReferencia = $campo('o95_distrito_origen_de_la_referencia');
 $campoNumRefInst = $campo('o95_n_de_referencias_institucionales');
 $campoFechaIngOrigen = $campo('o95_fecha_ingreso_eess_origen');
 $campoHoraIngOrigen = $campo('o95_hora_ingreso_eess_origen');

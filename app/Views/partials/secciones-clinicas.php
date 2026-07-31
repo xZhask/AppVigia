@@ -99,7 +99,7 @@ $numeroSeccion = $numeroSeccionInicial;
 // cualquier otra ficha la clave no existe por diseño (no es una clave
 // faltante real) y no hay que ensuciar $clavesFaltantesCampos con eso.
 $campoFechaUltSeg = (($enfermedad['cie10'] ?? '') === 'B05')
-    ? $campo('b05_fecha_ultimo_dia_seguimiento_contactos')
+    ? $campo('b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
 $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg): void {
@@ -116,7 +116,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
           <?php
           $tipoAnterior = null;
           foreach ($camposOtros as $campo):
-            if (($campo['clave'] ?? '') === 'b05_fecha_ultimo_dia_seguimiento_contactos') {
+            if (($campo['clave'] ?? '') === 'b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos') {
                 continue;
             }
             $campo['obligatorio'] = (int) $campo['obligatorio'];
@@ -324,7 +324,13 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
 // $campo(...)['val'] nunca es null (Fase 2), asi que hay que comparar con
 // '' explicitamente para no cortar la cadena de fallback antes de llegar a
 // $_POST (recarga de la pagina tras un error de validacion, antes de guardar).
-$campoTipoFichaO95 = $campo('o95_tipo_de_ficha');
+// Mismo patrón que $campoFechaUltSeg más arriba: con $campo() lanzando
+// excepción por clave inexistente, esta clave solo se pide cuando la
+// ficha activa es realmente O95 -- en cualquier otra no es una clave
+// faltante real, es una clave que no le corresponde a esa ficha.
+$campoTipoFichaO95 = (($enfermedad['cie10'] ?? '') === 'O95')
+    ? $campo('o95_tipo_de_ficha')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 $valTipoFichaO95 = $valoresFijos['o95_tipo_ficha']
     ?? ($campoTipoFichaO95['val'] !== '' ? $campoTipoFichaO95['val'] : null)
     ?? $_POST['o95_tipo_ficha']

@@ -19,7 +19,14 @@ $campoFechaFallecimiento = $campo('o95_fecha_de_fallecimiento');
 $campoHoraFallecimiento = $campo('o95_hora_de_fallecimiento');
 $campoLugarFallecimiento = $campo('o95_lugar_del_fallecimiento');
 $campoTipoEess = $campo('o95_tipo_eess_fallecimiento');
-$campoEessPnpId = $campo('o95_eess_fallecimiento_id');
+// Petición 2, cotejo O95 (2026-07-30): "Establecimiento Sanidad PNP" es
+// diseño de la app, no del PDF -- cuando "Lugar de fallecimiento" es
+// "EESS Sanidad FFAA/PNP", este campo guarda el id del padrón de IPRESS
+// PNP elegido (ver $estPnpList más abajo), del que se autocompletan
+// categoría y ubigeo; para cualquier otro tipo de EESS, el nombre se
+// digita a mano en $campoNombreEess. Confirmado contra el código, no
+// contra el PDF (que no distingue esto como campo aparte).
+$campoEessPnpId = $campo('o95_establecimiento_sanidad_pnp');
 $campoNombreEess = $campo('o95_nombre_eess_fallecimiento');
 $campoPermanenciaDias = $campo('o95_permanencia_dias');
 $campoPermanenciaHoras = $campo('o95_permanencia_horas');
@@ -28,9 +35,19 @@ $campoLugarOtroEspecificar = $campo('o95_lugar_fallecimiento_otro_especificar');
 $campoCategoriaEess = $campo('o95_categoria_del_ee_ss');
 $campoFechaHoraIngreso = $campo('o95_fecha_y_hora_de_ingreso_al_ee_ss');
 $campoResponsableAtencion = $campo('o95_responsable_de_la_atencion');
-$campoDepFallecimiento = $campo('o95_fallecimiento_dep_id');
-$campoProvFallecimiento = $campo('o95_fallecimiento_prov_id');
-$campoDistFallecimiento = $campo('o95_fallecimiento_dist_id');
+// Petición 2, cotejo O95 (2026-07-30): estas 3 claves apuntaban a un campo
+// que nunca existió con esa forma (código pedía "..._dep_id" como si fuera
+// un ubigeo con FK numérica; el manifiesto solo tiene TEXTO libre). Se usa
+// el campo real -- sigue siendo TEXTO, pero el valor que manda a POST es el
+// código INEI que ya vienen entregando los <select> de selector-ubigeo.php
+// (distrito.id/provincia.id/departamento.id, que EN LA BASE ya son el
+// código INEI -- char(2)/char(4)/char(6), no un autoincremental), así que
+// no hace falta ningún cambio de tipo, solo de clave. Ver PENDIENTES.md,
+// hallazgo A.7: sin FK real desde campo_def/caso_valor hacia distrito, así
+// que nada evita un código inválido si algo escribe fuera de este selector.
+$campoDepFallecimiento = $campo('o95_departamento_fallecimiento');
+$campoProvFallecimiento = $campo('o95_provincia_fallecimiento');
+$campoDistFallecimiento = $campo('o95_distrito_fallecimiento');
 $campoTipoFichaO95 = $campo('o95_tipo_de_ficha');
 
 $valLugar = $campoLugarFallecimiento['val'] !== '' ? $campoLugarFallecimiento['val'] : 'Establecimiento de salud';

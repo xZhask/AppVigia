@@ -3,50 +3,18 @@
  * Campos específicos de notificación e investigación para Síndrome de Rubéola Congénita (P35.0).
  * Se muestran en la tarjeta superior 1. Notificación.
  */
-use App\Models\CampoDef;
-use App\Models\Enfermedad;
-use App\Models\SeccionDef;
+// Resuelve contra P35.0 explícita, no la $enfermedad activa en esta carga
+// de página: mismo motivo que notificacion-fechas-b26.php (ver ese
+// archivo). $resolvedorPara la expone campos-por-clave.php.
+$campoP35 = $resolvedorPara('P35.0');
 
-$enfP35Obj = Enfermedad::buscarPorCie10('P35.0');
-$seccionesP35 = $enfP35Obj ? SeccionDef::porEnfermedad((int) $enfP35Obj['id']) : [];
-$secNotifP35 = null;
-foreach ($seccionesP35 as $s) {
-    if (trim($s['nombre']) === 'Datos de notificación e investigación del caso') {
-        $secNotifP35 = $s;
-        break;
-    }
-}
-
-$camposNotifP35 = $secNotifP35 ? CampoDef::porSeccion((int) $secNotifP35['id']) : [];
-$campoMapP35 = [];
-foreach ($camposNotifP35 as $c) {
-    $campoMapP35[$c['clave']] = $c;
-}
-
-// No usa $campo() de campos-por-clave.php: mismo motivo que
-// notificacion-fechas-b26.php (ver ese archivo) -- este partial se incluye
-// sin condicion aunque P35.0 no sea la ficha activa, así que resuelve
-// siempre contra la P35.0 real, no contra $enfermedad.
-$getCampoInputP35 = function(string $clave) use ($campoMapP35, $valoresCampos, $erroresCampos) {
-    $c = $campoMapP35[$clave] ?? null;
-    if (!$c) return ['id' => null, 'name' => '', 'val' => '', 'err' => null];
-    $val = $valoresCampos[$c['id']] ?? '';
-    $err = $erroresCampos[$c['id']] ?? null;
-    return [
-        'id' => $c['id'],
-        'name' => 'campo_' . $c['id'],
-        'val' => $val,
-        'err' => $err
-    ];
-};
-
-$codigoReg       = $getCampoInputP35('p35_0_codigo_de_registro_n');
-$fechaConoc      = $getCampoInputP35('p35_0_fecha_de_conocimiento_local_del_caso');
-$fechaNotifEess  = $getCampoInputP35('p35_0_fecha_de_notificacion_eess_a_red_microred');
-$fechaNotifRed   = $getCampoInputP35('p35_0_fecha_notif_red_microred_a_direccion_salud');
-$fechaNotifCdc   = $getCampoInputP35('p35_0_fecha_notif_direccion_salud_a_cdc');
-$fechaInvest     = $getCampoInputP35('p35_0_fecha_de_investigacion_visita_domiciliaria');
-$casoCaptadoEn   = $getCampoInputP35('p35_0_caso_captado_en');
+$codigoReg       = $campoP35('p35_0_codigo_de_registro_n');
+$fechaConoc      = $campoP35('p35_0_fecha_de_conocimiento_local_del_caso');
+$fechaNotifEess  = $campoP35('p35_0_fecha_de_notificacion_eess_a_red_microred');
+$fechaNotifRed   = $campoP35('p35_0_fecha_notif_red_microred_a_direccion_salud');
+$fechaNotifCdc   = $campoP35('p35_0_fecha_notif_direccion_salud_a_cdc');
+$fechaInvest     = $campoP35('p35_0_fecha_de_investigacion_visita_domiciliaria');
+$casoCaptadoEn   = $campoP35('p35_0_caso_captado_en');
 ?>
 
 <div id="notificacionFechasP35Wrap" <?= ($enfermedad['cie10'] ?? null) === 'P35.0' ? '' : 'hidden style="display:none;"' ?>>

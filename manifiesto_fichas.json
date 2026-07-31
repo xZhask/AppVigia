@@ -3491,6 +3491,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a33_atendido_por_parto",
                             "etiqueta": "Atendido por",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -4287,6 +4288,7 @@
                     "orden": 13,
                     "campos": [
                         {
+                            "clave": "a80_realizado_por_electromiografia",
                             "etiqueta": "Realizado por",
                             "tipo": "TEXTO",
                             "orden": 1
@@ -4695,7 +4697,7 @@
                             "valor_activador": "1"
                         },
                         {
-                            "clave": "antecedente_vacunacion_sarampion",
+                            "clave": "b05_antecedente_de_vacunacion_contra_sarampion",
                             "etiqueta": "Antecedente de vacunación contra sarampión",
                             "tipo": "SELECT",
                             "orden": 18,
@@ -4783,7 +4785,7 @@
                             ]
                         },
                         {
-                            "clave": "especificar_otra_captacion_caso",
+                            "clave": "b05_especificar_otra_captacion_del_caso",
                             "etiqueta": "Especificar otra captación del caso",
                             "tipo": "TEXTO",
                             "orden": 2,
@@ -4857,7 +4859,7 @@
                             ]
                         },
                         {
-                            "clave": "reporto_otras_febriles_eruptivas",
+                            "clave": "b05_se_han_reportado_otras_enfermedades_eruptivas_febri",
                             "etiqueta": "¿Se han reportado otras enfermedades eruptivas febriles en su jurisdicción?",
                             "tipo": "SELECT",
                             "orden": 9,
@@ -4869,7 +4871,7 @@
                             ]
                         },
                         {
-                            "clave": "especificar_otras_febriles_eruptivas",
+                            "clave": "b05_especificar_otras_enfermedades_eruptivas_febriles_r",
                             "etiqueta": "Especificar otras enfermedades eruptivas febriles reportadas",
                             "tipo": "TEXTO",
                             "orden": 10,
@@ -4884,7 +4886,7 @@
                     "orden": 7,
                     "campos": [
                         {
-                            "clave": "b05_contacto_con",
+                            "clave": "b05_entre_7_a_30_dias_antes_de_la_erupcion_cutanea_el_c",
                             "etiqueta": "Entre 7 a 30 días antes de la erupción cutánea, el caso tuvo contacto con:",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -4898,7 +4900,7 @@
                             ]
                         },
                         {
-                            "clave": "especificar_otro_contacto",
+                            "clave": "b05_si_es_otros_especificar",
                             "etiqueta": "Si es otros, especificar",
                             "tipo": "TEXTO",
                             "orden": 2,
@@ -4907,7 +4909,7 @@
                             "valor_activador": "OTROS"
                         },
                         {
-                            "clave": "paciente_viajo_7_30_dias",
+                            "clave": "b05_paciente_viajo_entre_los_7_a_30_dias_antes_del_inic",
                             "etiqueta": "Paciente viajó entre los 7 a 30 días antes del inicio de la erupción",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -4919,14 +4921,14 @@
                             ]
                         },
                         {
-                            "clave": "latitud_domicilio",
+                            "clave": "b05_latitud_del_domicilio",
                             "etiqueta": "Latitud del domicilio",
                             "tipo": "TEXTO",
                             "orden": 4,
                             "obligatorio": false
                         },
                         {
-                            "clave": "longitud_domicilio",
+                            "clave": "b05_longitud_del_domicilio",
                             "etiqueta": "Longitud del domicilio",
                             "tipo": "TEXTO",
                             "orden": 5,
@@ -4990,7 +4992,7 @@
                             ]
                         },
                         {
-                            "clave": "b05_casos_cumplen_definicion",
+                            "clave": "b05_n_casos_que_cumplen_definicion_de_caso",
                             "etiqueta": "N.º casos que cumplen definición de caso",
                             "tipo": "NUMERO",
                             "orden": 6,
@@ -4999,7 +5001,7 @@
                             "valor_activador": "SI"
                         },
                         {
-                            "clave": "b05_casos_nuevos_sistema",
+                            "clave": "b05_n_casos_nuevos_que_ingresan_al_sistema",
                             "etiqueta": "N.º casos nuevos que ingresan al sistema",
                             "tipo": "NUMERO",
                             "orden": 7,
@@ -5008,7 +5010,7 @@
                             "valor_activador": "SI"
                         },
                         {
-                            "clave": "b05_casos_ya_en_vigilancia",
+                            "clave": "b05_n_casos_que_ya_se_encuentran_en_sistema_de_vigilanc",
                             "etiqueta": "N.º casos que ya se encuentran en sistema de vigilancia",
                             "tipo": "NUMERO",
                             "orden": 8,
@@ -5065,7 +5067,7 @@
                             ]
                         },
                         {
-                            "clave": "b05_fecha_ultimo_dia_seguimiento_contactos",
+                            "clave": "b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos",
                             "etiqueta": "Fecha de último día de seguimiento de contactos",
                             "tipo": "FECHA",
                             "orden": 14,
@@ -5099,7 +5101,7 @@
                             "valor_activador": "SI"
                         },
                         {
-                            "clave": "vacunados_bloqueo_menor_1",
+                            "clave": "b05_numero_de_vacunados_en_bloqueo_1_ano",
                             "etiqueta": "Número de vacunados en bloqueo (< 1 año)",
                             "tipo": "NUMERO",
                             "orden": 18,
@@ -5108,7 +5110,7 @@
                             "valor_activador": "SI"
                         },
                         {
-                            "clave": "vacunados_bloqueo_1_4",
+                            "clave": "b05_numero_de_vacunados_en_bloqueo_1_4_anos",
                             "etiqueta": "Número de vacunados en bloqueo (1 - 4 años)",
                             "tipo": "NUMERO",
                             "orden": 19,
@@ -5117,7 +5119,7 @@
                             "valor_activador": "SI"
                         },
                         {
-                            "clave": "vacunados_bloqueo_5_14",
+                            "clave": "b05_numero_de_vacunados_en_bloqueo_5_14_anos",
                             "etiqueta": "Número de vacunados en bloqueo (5 - 14 años)",
                             "tipo": "NUMERO",
                             "orden": 20,
@@ -5126,7 +5128,7 @@
                             "valor_activador": "SI"
                         },
                         {
-                            "clave": "vacunados_bloqueo_mayor_15",
+                            "clave": "b05_numero_de_vacunados_en_bloqueo_15_anos",
                             "etiqueta": "Número de vacunados en bloqueo (> 15 años)",
                             "tipo": "NUMERO",
                             "orden": 21,
@@ -5183,7 +5185,7 @@
                             ]
                         },
                         {
-                            "clave": "b05_criterio_de_confirmacion",
+                            "clave": "b05_criterio_para_confirmacion",
                             "etiqueta": "Criterio para confirmación",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -5197,7 +5199,7 @@
                             "valor_activador": "SARAMPION,RUBEOLA"
                         },
                         {
-                            "clave": "resultado_confirmacion_laboratorio",
+                            "clave": "b05_si_fue_confirmacion_por_laboratorio_indicar_resulta",
                             "etiqueta": "Si fue confirmación por Laboratorio, indicar resultado",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -5230,7 +5232,7 @@
                             "valor_activador": "DESCARTADO"
                         },
                         {
-                            "clave": "otro_criterio_descarte",
+                            "clave": "b05_otro_criterio_de_descarte",
                             "etiqueta": "Otro criterio de descarte",
                             "tipo": "TEXTO",
                             "orden": 5,
@@ -5252,7 +5254,7 @@
                             ]
                         },
                         {
-                            "clave": "pais_importacion",
+                            "clave": "b05_si_es_importado_indicar_pais_de_importacion",
                             "etiqueta": "Si es importado, indicar país de importación",
                             "tipo": "TEXTO",
                             "orden": 7,
@@ -5275,7 +5277,7 @@
                             "obligatorio": false
                         },
                         {
-                            "clave": "observaciones",
+                            "clave": "b05_observaciones",
                             "etiqueta": "Observaciones",
                             "tipo": "TEXTAREA",
                             "orden": 10,
@@ -5518,18 +5520,21 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_recibio_arv_nino",
                             "etiqueta": "¿Recibió ARV?",
                             "tipo": "BOOLEANO",
                             "orden": 5,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_fecha_de_inicio_de_arv_nino",
                             "etiqueta": "Fecha de inicio de ARV",
                             "tipo": "FECHA",
                             "orden": 6,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_abandono_terapia_arv_nino",
                             "etiqueta": "¿Abandonó terapia ARV?",
                             "tipo": "BOOLEANO",
                             "orden": 7,
@@ -6995,6 +7000,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_grado_de_instruccion_agresor",
                             "etiqueta": "Grado de instrucción",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -7007,6 +7013,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_completa_incompleta_agresor",
                             "etiqueta": "Completa \/ Incompleta",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -7017,12 +7024,14 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_tiene_empleo_remunerado_agresor",
                             "etiqueta": "¿Tiene empleo remunerado?",
                             "tipo": "BOOLEANO",
                             "orden": 4,
                             "sensible": true
                         },
                         {
+                            "clave": "y07_ocupacion_agresor",
                             "etiqueta": "Ocupación",
                             "tipo": "TEXTO",
                             "orden": 5,
@@ -7761,7 +7770,7 @@
                             ]
                         },
                         {
-                            "clave": "o95_eess_fallecimiento_id",
+                            "clave": "o95_establecimiento_sanidad_pnp",
                             "etiqueta": "Establecimiento Sanidad PNP",
                             "tipo": "TEXTO",
                             "orden": 18,
@@ -7777,7 +7786,7 @@
                             "sensible": false
                         },
                         {
-                            "clave": "o95_fallecimiento_dep_id",
+                            "clave": "o95_departamento_fallecimiento",
                             "etiqueta": "Departamento (Fallecimiento)",
                             "tipo": "TEXTO",
                             "orden": 20,
@@ -7785,7 +7794,7 @@
                             "sensible": false
                         },
                         {
-                            "clave": "o95_fallecimiento_prov_id",
+                            "clave": "o95_provincia_fallecimiento",
                             "etiqueta": "Provincia (Fallecimiento)",
                             "tipo": "TEXTO",
                             "orden": 21,
@@ -7793,7 +7802,7 @@
                             "sensible": false
                         },
                         {
-                            "clave": "o95_fallecimiento_dist_id",
+                            "clave": "o95_distrito_fallecimiento",
                             "etiqueta": "Distrito (Fallecimiento)",
                             "tipo": "TEXTO",
                             "orden": 22,
@@ -8414,7 +8423,7 @@
                             "sensible": false
                         },
                         {
-                            "clave": "o95_referencia_dep_id",
+                            "clave": "o95_departamento_origen_de_la_referencia",
                             "etiqueta": "Departamento (Origen de la referencia)",
                             "tipo": "TEXTO",
                             "orden": 4,
@@ -8422,7 +8431,7 @@
                             "sensible": false
                         },
                         {
-                            "clave": "o95_referencia_prov_id",
+                            "clave": "o95_provincia_origen_de_la_referencia",
                             "etiqueta": "Provincia (Origen de la referencia)",
                             "tipo": "TEXTO",
                             "orden": 5,
@@ -8430,7 +8439,7 @@
                             "sensible": false
                         },
                         {
-                            "clave": "o95_referencia_dist_id",
+                            "clave": "o95_distrito_origen_de_la_referencia",
                             "etiqueta": "Distrito (Origen de la referencia)",
                             "tipo": "TEXTO",
                             "orden": 6,

@@ -124,7 +124,7 @@ if ($puedeElegirEstablecimiento) {
               </div>
               <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span><?php endif; ?>
             </div>
-            <?php $esO95Index = (($enfermedad['cie10'] ?? null) === 'O95'); $campoNHCNueva = $campo('o95_n_de_historia_clinica'); ?>
+            <?php $esO95Index = (($enfermedad['cie10'] ?? null) === 'O95'); $campoNHCNueva = $resolvedorPara('O95')('o95_n_de_historia_clinica'); ?>
             <div class="field o95-elem" <?= $esO95Index ? '' : 'hidden style="display:none;"' ?>>
               <label class="fl">N.° de historia clínica</label>
               <div class="control mono">
@@ -319,4 +319,5 @@ if ($puedeElegirEstablecimiento) {
       </div>
     </aside>
   </div>
+  <?= $avisoClavesFaltantesCampos() ?>
 </form>

@@ -3,51 +3,22 @@
  * Campos específicos de notificación para Sarampión / Rubéola / Febriles eruptivas (B05).
  * Se muestran en la tarjeta superior 1. Notificación en lugar de la sección clínica inferior.
  */
-use App\Models\CampoDef;
-use App\Models\CatalogoItem;
-use App\Models\Enfermedad;
-use App\Models\SeccionDef;
-
-$enfB05Obj = Enfermedad::buscarPorCie10('B05');
-$seccionesB05 = $enfB05Obj ? SeccionDef::porEnfermedad((int) $enfB05Obj['id']) : [];
-$secNotif = null;
-foreach ($seccionesB05 as $s) {
-    if (trim($s['nombre']) === 'Datos de notificación e identificación del caso') {
-        $secNotif = $s;
-        break;
-    }
-}
-
-$camposNotif = $secNotif ? CampoDef::porSeccion((int) $secNotif['id']) : [];
-$campoMap = [];
-foreach ($camposNotif as $c) {
-    $campoMap[trim($c['etiqueta'])] = $c;
-}
-
-$getCampoInput = function(string $etiqueta) use ($campoMap, $valoresCampos, $erroresCampos) {
-    $c = $campoMap[$etiqueta] ?? null;
-    if (!$c) return ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => []];
-    $val = $valoresCampos[$c['id']] ?? '';
-    $err = $erroresCampos[$c['id']] ?? null;
-    $opciones = [];
-    if ($c['catalogo_id']) {
-        $opciones = CatalogoItem::porCatalogo((int) $c['catalogo_id']);
-    }
-    return [
-        'id' => $c['id'],
-        'name' => 'campo_' . $c['id'],
-        'val' => $val,
-        'err' => $err,
-        'opciones' => $opciones
-    ];
-};
-
-$enfermedadNotif = $getCampoInput('Enfermedad notificada');
-$codigoReg       = $getCampoInput('Código de registro');
-$fechaIdentif    = $getCampoInput('Fecha de identificación local del caso (o consulta)');
-$fechaInvest     = $getCampoInput('Fecha de investigación (visita domiciliaria)');
-$personalSalud   = $getCampoInput('Nombre de personal de salud que atiende el caso');
-$telefonoPers    = $getCampoInput('Teléfono del personal de salud');
+// Petición 2, cotejo B05 (2026-07-30): este partial tenía su PROPIO
+// resolvedor local, por etiqueta en vez de por clave -- un tercer
+// mecanismo aparte de $campo() y $resolvedorPara(). Se auditaron las 6
+// etiquetas contra campo_def real: ninguna estaba desincronizada (a
+// diferencia de las 62 claves de O95), pero se migra igual para no dejar
+// un tercer resolvedor local vivo (ver campos-por-clave.php). Este
+// partial se incluye sin condición aunque B05 no sea la ficha activa
+// (mismo motivo que notificacion-fechas-b26.php): $campoB05 resuelve
+// siempre contra la B05 real, no contra $enfermedad.
+$campoB05 = $resolvedorPara('B05');
+$enfermedadNotif = $campoB05('b05_enfermedad_notificada');
+$codigoReg       = $campoB05('b05_codigo_de_registro');
+$fechaIdentif    = $campoB05('b05_fecha_de_identificacion_local_del_caso_o_consulta');
+$fechaInvest     = $campoB05('b05_fecha_de_investigacion_visita_domiciliaria');
+$personalSalud   = $campoB05('b05_nombre_de_personal_de_salud_que_atiende_el_caso');
+$telefonoPers    = $campoB05('b05_telefono_del_personal_de_salud');
 ?>
 
 <div id="notificacionFechasB05Wrap" <?= ($enfermedad['cie10'] ?? null) === 'B05' ? '' : 'hidden' ?>>

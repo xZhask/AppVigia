@@ -97,3 +97,122 @@ definido en el manifiesto todavía — se dejó fuera a propósito porque
 necesita una sección condicional (activarse solo si la clasificación
 final es 2 o 3) que el motor de fichas no soporta hoy. Resolver cuando
 se valide la ficha Y59.0.
+
+## 6. `fecha_notif` derivable de la cabecera estándar MINSA — esperar a tener más fichas cotejadas
+
+`fecha_notif` (columna NOT NULL de `caso`, de la que derivan
+`semana_epi`/`anio_epi`, el badge de SE, la curva epidemiológica, los
+reportes por semana y la detección de duplicados) se pide hoy como
+input aparte, en vez de derivarse de la cabecera estándar MINSA (Nro.
+de ficha, fecha de conocimiento local, fecha de investigación, fecha
+de notificación EE.SS.→Red/Microred→DISA→DGE) cuando esa ficha la
+tiene como `campo_def`.
+
+Se evaluó un conteo contra el manifiesto (2026-07-30) para decidir si
+vale un mecanismo declarativo tipo `"fecha_notif_desde": "<clave>"`
+por ficha. Tres correcciones a ese análisis, para no repetirlas:
+
+1. **El denominador correcto es el PDF, no el manifiesto.** El conteo
+   inicial dio 2/24 (B26, P35.0) porque son las únicas dos fichas
+   cotejadas contra el PDF hasta ahora — la cabecera se agregó *porque*
+   se cotejaron, no es representativa de cuántas la tienen en la ficha
+   real. Conteo contra el PDF: ~11/24. Las 9 restantes van
+   apareciendo conforme avanza el cotejo ficha por ficha.
+2. **El mecanismo no necesita que las 6 fechas coincidan.**
+   `fecha_notif_desde` es un puntero a UN campo por ficha, no un mapeo
+   de los seis. Cada ficha nombra cuál de sus propias fechas es la
+   canónica — B05 apuntaría a "fecha de identificación local", Z21 a
+   "fecha de reporte" — así que da igual que a B05 le falte la cadena
+   de escalamiento completa o que Z21 tenga una sola fecha suelta: el
+   mecanismo no exige que las 6 existan, solo que exista LA que se
+   declare como canónica.
+3. **No es la misma clase de problema que el ítem 3 de este documento.**
+   Ahí el campo obligatorio está oculto por el anexo activo (el
+   servidor exige algo que el formulario nunca mostró). Acá el campo
+   origen de `fecha_notif_desde` está siempre visible en el
+   formulario: declararlo `obligatorio: true` en el manifiesto alcanza
+   para garantizar que no llegue vacío a un NOT NULL. No hace falta
+   validación cruzada.
+
+**Decisión:** no construir el mecanismo todavía — pero por costo, no
+por los motivos de arriba. El retrofit es barato (una línea nueva en
+el manifiesto por ficha, sin migración de datos: `fecha_notif` es
+columna de `caso`, no de `caso_valor`), así que esperar no cuesta
+nada y permite diseñarlo viendo 5-6 casos reales en vez de 2.
+
+**Regla mientras se espera:** seguir agregando la cabecera como
+campos `campo_def` normales al cotejar cada ficha contra el PDF,
+dejando `fecha_notif` como input visible y redundante con ella. Cuando
+5 o 6 fichas tengan la cabecera (o su fecha canónica equivalente),
+construir `fecha_notif_desde` y hacer el retrofit de todas juntas.
+
+## 7. Normalizar `clave` explícita en los ~870 campos restantes del manifiesto
+
+`cargar_fichas.php` ahora trata `"clave"` del manifiesto como
+autoritativa cuando está presente (antes era decorativa: `claveCampo()`
+la recalculaba siempre desde la etiqueta, ignorando lo que dijera el
+JSON — así se desincronizaron las 62 claves de O95 y las 22 de B05 que
+se corrigieron el 2026-07-30). Ese cambio solo se aprovechó para O95
+(62 campos) y B05 (22 campos) hasta ahora; el resto del manifiesto
+(~870 campos de las otras 22 fichas) sigue derivando la clave de la
+etiqueta en cada recarga, sin que `"clave"` la fije.
+
+**Trabajo pendiente:** mismo patrón que la normalización de `"orden"`
+en la Fase 6 — escribir en `"clave"` el valor que `claveCampo()`
+produce hoy para cada uno de esos ~870 campos, cambio cero de
+comportamiento (queda igual a lo que ya hay en `campo_def`), pero deja
+de ser derivable-y-por lo tanto fragile ante una futura reescritura de
+etiqueta durante el cotejo contra el PDF.
+
+**Por qué no se hizo junto con O95/B05:** un diff de 935 campos tapaba
+las decisiones puntuales de esa ronda (las 62 correcciones de O95, la
+excepción de `eess_fallecimiento_id`, los 6 campos de ubigeo). Hacerlo
+aparte, cuando no compite con otra revisión, deja ver mejor el
+resultado.
+
+**Beneficio agregado, no solo cosmético:** con las 935 claves
+explícitas, la validación de unicidad que `validarManifiesto()` ya
+aplica a las claves explícitas (agregada 2026-07-30) pasa a cubrir
+*todo* el manifiesto en vez de solo lo declarado a mano. Las claves
+duplicadas de A80 (`a80_realizado_por`), A33, Y07 y Z21 que venían
+pendientes desde hace semanas ya se desambiguaron a mano el
+2026-07-30 (una clave nueva por cada segunda fila, sin tocar
+etiquetas); si algo similar vuelve a aparecer en las ~870 restantes,
+esta normalización lo va a mostrar solo, sin tener que buscarlo caso
+por caso.
+
+## 8. Ubigeo de O95 (fallecimiento y referencia) sin integridad referencial real — falta un tipo UBIGEO en el motor (hallazgo A.7)
+
+Al corregir las 6 claves de ubigeo de O95 (`o95_departamento_fallecimiento`
+/ `_provincia_fallecimiento` / `_distrito_fallecimiento` y sus 3
+equivalentes de "Origen de la referencia"), se mantuvo el selector
+encadenado departamento → provincia → distrito (`selector-ubigeo.php`,
+mismo componente que usa el núcleo del paciente) en vez de volver esos
+campos a texto libre. Funciona porque `distrito.id`/`provincia.id`/
+`departamento.id` YA son el código INEI (`char(6)`/`char(4)`/`char(2)`,
+no un autoincremental) — el `<select>` manda ese código como valor, y el
+campo de `campo_def` (tipo `TEXTO`) lo guarda tal cual, sin necesidad de
+cambiar de tipo.
+
+**La pérdida real:** a diferencia del ubigeo del núcleo del paciente
+(`caso.distrito_id`, columna con FK de verdad a `distrito.id`), estos 6
+campos viven en `caso_valor` como cualquier otro campo dinámico — nada en
+el esquema impide que se guarde un código que no exista en `distrito`.
+La integridad depende enteramente de que el único punto de entrada sea
+el `<select>` de `selector-ubigeo.php`; un futuro import, una API, o un
+`UPDATE` a mano no tienen ninguna barrera.
+
+**Causa de fondo (hallazgo A.7):** el motor de fichas (`campo_def.tipo`)
+no tiene un tipo `UBIGEO` — solo `TEXTO`, `NUMERO`, `FECHA`, `SELECT`,
+`MULTISELECT`, `BOOLEANO`, `GRUPO_SI_NO`, `CRONOLOGIA`, `MATRIZ`. Un tipo
+`UBIGEO` de verdad permitiría declarar la FK a `distrito` a nivel de
+`campo_def` (o al menos validarla en el servidor al guardar), en vez de
+confiar en que el único camino de escritura sea un `<select>` que nunca
+cambió. Mientras no exista, cualquier otra ficha que necesite un ubigeo
+fuera del núcleo del paciente (van a aparecer más — P96 ya usa un
+patrón similar para "Residencia de la madre") va a repetir esta misma
+pérdida.
+
+**No resuelto ahora:** crear el tipo `UBIGEO` es un cambio de motor
+(schema de `campo_def`, `cargar_fichas.php`, `campo-dinamico.php`,
+`verificar_fichas.php`), no algo que quepa en una corrección de claves.
