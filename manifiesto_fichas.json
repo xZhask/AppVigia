@@ -2724,6 +2724,7 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "b04x_poblacion_especifica",
                             "etiqueta": "Población específica",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -2737,6 +2738,7 @@
                             ]
                         },
                         {
+                            "clave": "b04x_orientacion_sexual",
                             "etiqueta": "Orientación sexual",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -2755,6 +2757,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "b04x_lugares_a_los_que_asistio",
                             "etiqueta": "Lugares a los que asistió",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -2771,6 +2774,7 @@
                             ]
                         },
                         {
+                            "clave": "b04x_exposiciones_en_los_ultimos_21_dias",
                             "etiqueta": "Exposiciones en los últimos 21 días",
                             "tipo": "MULTISELECT",
                             "orden": 2,
@@ -2791,6 +2795,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_exposicion_con_caso_probable_o_confirmado",
                             "etiqueta": "¿Exposición con caso probable o confirmado?",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -2801,11 +2806,13 @@
                             ]
                         },
                         {
+                            "clave": "b04x_contacto_directo_y_frecuente_con_animales",
                             "etiqueta": "¿Contacto directo y frecuente con animales?",
                             "tipo": "BOOLEANO",
                             "orden": 4
                         },
                         {
+                            "clave": "b04x_animales_especificar",
                             "etiqueta": "Animales (especificar)",
                             "tipo": "MULTISELECT",
                             "orden": 5,
@@ -2825,6 +2832,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "b04x_estado_inmunologico_deprimido",
                             "etiqueta": "Estado inmunológico deprimido",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -2836,18 +2844,21 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_por_enfermedad_especificar",
                             "etiqueta": "Por enfermedad (especificar)",
                             "tipo": "TEXTO",
                             "orden": 2,
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_por_medicacion_especificar",
                             "etiqueta": "Por medicación (especificar)",
                             "tipo": "TEXTO",
                             "orden": 3,
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_infeccion_vih",
                             "etiqueta": "Infección VIH",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -2859,30 +2870,35 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_fecha_de_diagnostico_vih",
                             "etiqueta": "Fecha de diagnóstico VIH",
                             "tipo": "FECHA",
                             "orden": 5,
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_recibe_tar",
                             "etiqueta": "Recibe TAR",
                             "tipo": "BOOLEANO",
                             "orden": 6,
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_ultimo_recuento_cd4",
                             "etiqueta": "Último recuento CD4",
                             "tipo": "NUMERO",
                             "orden": 7,
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_fecha_del_recuento_cd4",
                             "etiqueta": "Fecha del recuento CD4",
                             "tipo": "FECHA",
                             "orden": 8,
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_its_en_los_ultimos_12_meses",
                             "etiqueta": "ITS en los últimos 12 meses",
                             "tipo": "MULTISELECT",
                             "orden": 9,
@@ -2897,6 +2913,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b04x_comorbilidades",
                             "etiqueta": "Comorbilidades",
                             "tipo": "MULTISELECT",
                             "orden": 10,
@@ -2907,6 +2924,7 @@
                             ]
                         },
                         {
+                            "clave": "b04x_cicatriz_por_vacuna_variolica_nacidos_hasta_1978",
                             "etiqueta": "Cicatriz por vacuna variólica (nacidos hasta 1978)",
                             "tipo": "SELECT",
                             "orden": 11,
@@ -2923,16 +2941,19 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "b04x_fecha_de_inicio_de_sintomas_fis",
                             "etiqueta": "Fecha de inicio de síntomas (FIS)",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "b04x_fecha_de_inicio_del_exantema_agudo",
                             "etiqueta": "Fecha de inicio del exantema agudo",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "b04x_signos_y_sintomas",
                             "etiqueta": "Signos y síntomas",
                             "tipo": "MULTISELECT",
                             "orden": 3,
@@ -2952,6 +2973,7 @@
                             ]
                         },
                         {
+                            "clave": "b04x_distribucion_del_sarpullido",
                             "etiqueta": "Distribución del sarpullido",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -2961,6 +2983,7 @@
                             ]
                         },
                         {
+                            "clave": "b04x_secuencia_de_aparicion_por_zona",
                             "etiqueta": "Secuencia de aparición por zona",
                             "tipo": "MATRIZ",
                             "orden": 5,
@@ -2979,6 +3002,7 @@
                             ]
                         },
                         {
+                            "clave": "b04x_numero_de_lesiones",
                             "etiqueta": "Número de lesiones",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -2990,6 +3014,7 @@
                             ]
                         },
                         {
+                            "clave": "b04x_estadio_de_los_exantemas",
                             "etiqueta": "Estadio de los exantemas",
                             "tipo": "MULTISELECT",
                             "orden": 7,
@@ -3002,6 +3027,7 @@
                             ]
                         },
                         {
+                            "clave": "b04x_tipo_de_presentacion",
                             "etiqueta": "Tipo de presentación",
                             "tipo": "SELECT",
                             "orden": 8,
@@ -3017,71 +3043,85 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "b04x_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "b04x_fecha_de_ingreso",
                             "etiqueta": "Fecha de ingreso",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "b04x_fecha_de_egreso",
                             "etiqueta": "Fecha de egreso",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "b04x_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "b04x_motivo_de_ingreso",
                             "etiqueta": "Motivo de ingreso",
                             "tipo": "TEXTO",
                             "orden": 5
                         },
                         {
+                            "clave": "b04x_dx_de_egreso_1",
                             "etiqueta": "Dx de egreso 1",
                             "tipo": "TEXTO",
                             "orden": 6
                         },
                         {
+                            "clave": "b04x_dx_de_egreso_2",
                             "etiqueta": "Dx de egreso 2",
                             "tipo": "TEXTO",
                             "orden": 7
                         },
                         {
+                            "clave": "b04x_uci",
                             "etiqueta": "UCI",
                             "tipo": "BOOLEANO",
                             "orden": 8
                         },
                         {
+                            "clave": "b04x_fecha_de_ingreso_a_uci",
                             "etiqueta": "Fecha de ingreso a UCI",
                             "tipo": "FECHA",
                             "orden": 9
                         },
                         {
+                            "clave": "b04x_defuncion",
                             "etiqueta": "Defunción",
                             "tipo": "BOOLEANO",
                             "orden": 10
                         },
                         {
+                            "clave": "b04x_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
                             "orden": 11
                         },
                         {
+                            "clave": "b04x_clasificacion_de_la_defuncion",
                             "etiqueta": "Clasificación de la defunción",
                             "tipo": "TEXTO",
                             "orden": 12
                         },
                         {
+                            "clave": "b04x_alta_clinico_epidemiologica",
                             "etiqueta": "Alta clínico-epidemiológica",
                             "tipo": "BOOLEANO",
                             "orden": 13
                         },
                         {
+                            "clave": "b04x_fecha_de_alta_clinico_epidemiologica",
                             "etiqueta": "Fecha de alta clínico-epidemiológica",
                             "tipo": "FECHA",
                             "orden": 14
@@ -3093,6 +3133,7 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "b04x_clasificacion",
                             "etiqueta": "Clasificación",
                             "tipo": "SELECT",
                             "orden": 1,
