@@ -393,6 +393,61 @@ de B05 — ninguna sirve tal cual para P35.0):
   misma tabla repetible de `caso_muestra`, con filas adicionales de
   fecha posterior — no es trabajo extra una vez resuelto lo anterior.
 
+**E. BUG, prioridad alta — "Referencia para localizar" hardcodeada a
+B05 dentro del partial que comparten las 24 fichas**
+
+Encontrado al reportar la Fase 6 (pregunta 3, ítem 18 del PDF de
+P35.0). No es un hueco de contenido de P35.0 — es la **misma familia
+de bug que A y C**: `datos-paciente-nucleo.php` (el partial de "Datos
+del paciente" que usan las 24 fichas) tiene un bloque
+`b05-field-wrap` que solo se muestra cuando `$esB05` es verdadero,
+con el campo "Referencia para localizar (a la altura de o cerca de:
+Iglesia, fundo, comercio, etc.)" adentro, como `campo_def` propio de
+B05 (`b05_referencia_para_localizar_cerca_de_iglesia_fundo_co`) — no
+como parte del núcleo declarativo (`nucleo_omitidos`/`data-nucleo-campo`)
+que ya usan `celular`/`nacionalidad`/`localidad`/`direccion`/etc. Para
+que otra ficha (P35.0 u otra) pudiera pedir este mismo dato, hoy
+tendría que declarar su propio `campo_def` con el mismo texto — el
+campo de B05 no es reutilizable ni generalizable sin tocar el bloque
+`b05-field-wrap`. No arreglado (no era parte del alcance pedido).
+
+**F. Pendiente de decisión, prioridad media — Edad en meses/días
+(ítem 11 del PDF de P35.0)**
+
+El núcleo solo calcula edad en **años**: `edadDesdeFecha()`
+(`app/Core/ayudantes.php:371`) hace `$nacimiento->diff(new
+DateTime())->y` sobre `persona.fecha_nac` — el `->y` descarta meses y
+días. Ninguna de las 24 fichas captura edad en una unidad más fina,
+ni siquiera A33 (Tétanos neonatal) o A80 (PFA), que también notifican
+pacientes muy jóvenes. Cambiarlo afectaría a las 24 fichas, no solo a
+P35.0 (para quien es más relevante: un paciente de 3 meses se ve hoy
+como "0 años"). **Decisión del usuario, no implementar** hasta que se
+decida el alcance real (¿cambio de unidad solo para P35.0 vía un
+campo `campo_def` propio, o cambio de unidad del núcleo para las 24?).
+
+**G. Pendiente de decisión, prioridad media — "Tiempo de residencia"
+(ítem 18 del PDF de P35.0)**
+
+No existe en ningún lado del sistema: ni en el núcleo (`persona`/`caso`)
+ni como `campo_def` de ninguna de las 24 fichas. Candidato directo a
+agregarse como `campo_def` propio de P35.0 (mismo patrón que "N.° de
+historia clínica", resuelto en esta sesión) cuando se decida hacerlo
+— no bloqueado por nada, a diferencia de B/D/lo de arriba.
+
+**H. Pendiente de decisión, prioridad media — "Pueblo étnico" (ítem
+15 del PDF de P35.0, texto libre)**
+
+Sin equivalente reusable. El núcleo tiene "Etnia/raza" (`persona.etnia`,
+ENUM cerrado: Mestizo/Andino/Asiático descendiente/Afrodescendiente/
+Indígena amazónico/Otro) — corresponde al ítem 16, no al 15. B05 y O95
+tienen algo con nombre parecido ("Pueblo étnico o etnia" / "Etnia /
+Pueblo étnico") pero ambos son `SELECT` de catálogo cerrado, que
+fusiona pueblo+etnia en un solo campo — no el texto libre separado que
+pide el ítem 15 de P35.0. Reusar el campo de B05/O95 tal cual
+degradaría el dato (de texto libre a lista cerrada) o exigiría
+inventar un catálogo de "pueblos" que hoy no existe. Candidato más
+simple: `campo_def` TEXTO propio de P35.0, sin reusar nada de B05/O95.
+
 - **Fase 4**: ✅ cerrada (commit `a3c35db`). Los 10 pares
   `depende_de`/`valor_activador` declarados y verificados con render
   real (oculto sin disparador, visible con el disparador forzado).
@@ -401,8 +456,7 @@ de B05 — ninguna sirve tal cual para P35.0):
   (antes no lo hacía, igual que el hallazgo de `columnas_sujeto` en la
   Fase 2) sin afectar a las otras 7 fichas que usan viajes.
 - **Fase 5.2**: cerrada como decisión (sin código) — ver C/D arriba.
-- **Fase 6** (verificaciones a reportar, sin implementar nada): no
-  revisada. Pendientes de responder: edad en meses/días del núcleo
-  (vs. años), N.° de Historia Clínica, Tiempo de residencia y
-  Referencia para localizar en el bloque de domicilio, Pueblo étnico
-  vs. Etnia/raza, y el estado de `o95_establecimiento_sanidad_pnp`.
+- **Fase 6**: ✅ reportada, sin implementar (commit `ff892e0` cerró
+  aparte el único ítem que sí se implementó: N.° de historia clínica,
+  campo 35 de P35.0, copiando el patrón de B05/Y59.0). El resto queda
+  en E/F/G/H arriba.
