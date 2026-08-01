@@ -1230,11 +1230,13 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a36_temperatura_c",
                             "etiqueta": "Temperatura °C",
                             "tipo": "NUMERO",
                             "orden": 1
                         },
                         {
+                            "clave": "a36_signos_clinicos",
                             "etiqueta": "Signos clínicos",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 2,
@@ -1252,6 +1254,7 @@
                             ]
                         },
                         {
+                            "clave": "a36_presencia_de_placa_seudomembrana",
                             "etiqueta": "Presencia de placa (seudomembrana)",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 3,
@@ -1269,6 +1272,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a36_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -1279,6 +1283,7 @@
                             ]
                         },
                         {
+                            "clave": "a36_antibiotico_antes_del_ingreso",
                             "etiqueta": "¿Antibiótico antes del ingreso?",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -1288,6 +1293,7 @@
                             ]
                         },
                         {
+                            "clave": "a36_antibiotico_antes_del_ingreso_especificar",
                             "etiqueta": "Antibiótico antes del ingreso (especificar)",
                             "tipo": "TEXTO",
                             "orden": 3,
@@ -1295,6 +1301,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
                             "orden": 4,
@@ -1302,6 +1309,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 5,
@@ -1309,6 +1317,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_tratamiento_recibido",
                             "etiqueta": "Tratamiento recibido",
                             "tipo": "MULTISELECT",
                             "orden": 6,
@@ -1320,6 +1329,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_tratamiento_especificar",
                             "etiqueta": "Tratamiento (especificar)",
                             "tipo": "TEXTO",
                             "orden": 7,
@@ -1327,6 +1337,7 @@
                             "valor_activador": "ANTIBIOTICO"
                         },
                         {
+                            "clave": "a36_egreso_del_hospital",
                             "etiqueta": "Egreso del hospital",
                             "tipo": "SELECT",
                             "orden": 8,
@@ -1340,6 +1351,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_fecha_de_alta",
                             "etiqueta": "Fecha de alta",
                             "tipo": "FECHA",
                             "orden": 9,
@@ -1347,6 +1359,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
                             "orden": 10,
@@ -1354,6 +1367,7 @@
                             "valor_activador": "FALLECIO"
                         },
                         {
+                            "clave": "a36_complicaciones",
                             "etiqueta": "Complicaciones",
                             "tipo": "MULTISELECT",
                             "orden": 11,
@@ -1372,6 +1386,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a36_estuvo_en_contacto_con_un_posible_caso_de_difteria",
                             "etiqueta": "¿Estuvo en contacto con un posible caso de difteria?",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -1382,6 +1397,7 @@
                             ]
                         },
                         {
+                            "clave": "a36_sabe_si_hay_casos_similares_en_la_zona",
                             "etiqueta": "¿Sabe si hay casos similares en la zona?",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -1392,6 +1408,7 @@
                             ]
                         },
                         {
+                            "clave": "a36_aislamiento_domiciliario",
                             "etiqueta": "Aislamiento domiciliario",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -1402,6 +1419,7 @@
                             ]
                         },
                         {
+                            "clave": "a36_fecha_de_aislamiento",
                             "etiqueta": "Fecha de aislamiento",
                             "tipo": "FECHA",
                             "orden": 4,
@@ -1409,6 +1427,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_vacunacion_contra_difteria",
                             "etiqueta": "Vacunación contra difteria",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -1419,6 +1438,7 @@
                             ]
                         },
                         {
+                            "clave": "a36_numero_de_dosis",
                             "etiqueta": "Número de dosis",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -1431,6 +1451,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_refuerzos",
                             "etiqueta": "Refuerzos",
                             "tipo": "SELECT",
                             "orden": 7,
@@ -1442,6 +1463,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a36_fecha_de_ultima_dosis",
                             "etiqueta": "Fecha de última dosis",
                             "tipo": "FECHA",
                             "orden": 8,
