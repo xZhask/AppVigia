@@ -9958,31 +9958,37 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "p96_edad_gestacional_semanas",
                             "etiqueta": "Edad gestacional (semanas)",
                             "tipo": "NUMERO",
                             "orden": 1
                         },
                         {
+                            "clave": "p96_fecha_de_nacimiento",
                             "etiqueta": "Fecha de nacimiento",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "p96_hora_de_nacimiento",
                             "etiqueta": "Hora de nacimiento",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "p96_fecha_de_muerte",
                             "etiqueta": "Fecha de muerte",
                             "tipo": "FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "p96_hora_de_muerte",
                             "etiqueta": "Hora de muerte",
                             "tipo": "TEXTO",
                             "orden": 5
                         },
                         {
+                            "clave": "p96_peso_al_nacer_gramos",
                             "etiqueta": "Peso al nacer (gramos)",
                             "tipo": "NUMERO",
                             "orden": 6
@@ -9994,6 +10000,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "p96_tipo_de_muerte",
                             "etiqueta": "Tipo de muerte",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -10009,11 +10016,13 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "p96_causa_basica_de_muerte",
                             "etiqueta": "Causa básica de muerte",
                             "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
+                            "clave": "p96_diagnostico_cie_10",
                             "etiqueta": "Diagnóstico CIE-10",
                             "tipo": "TEXTO",
                             "orden": 2
@@ -10025,11 +10034,13 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "p96_n_de_dias_de_estancia_hospitalaria",
                             "etiqueta": "N.° de días de estancia hospitalaria",
                             "tipo": "NUMERO",
                             "orden": 1
                         },
                         {
+                            "clave": "p96_lugar_del_parto",
                             "etiqueta": "Lugar del parto",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -10039,6 +10050,7 @@
                             ]
                         },
                         {
+                            "clave": "p96_momento_de_ocurrencia_del_fallecimiento",
                             "etiqueta": "Momento de ocurrencia del fallecimiento",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -10049,6 +10061,7 @@
                             ]
                         },
                         {
+                            "clave": "p96_lugar_de_la_muerte",
                             "etiqueta": "Lugar de la muerte",
                             "tipo": "SELECT",
                             "orden": 4,
