@@ -7947,6 +7947,7 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "v99_fuente_de_financiamiento",
                             "etiqueta": "Fuente de financiamiento",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -7963,51 +7964,61 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "v99_n_de_hc_de_emergencia",
                             "etiqueta": "N.° de HC de emergencia",
                             "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
+                            "clave": "v99_n_de_hc_de_hospitalizacion",
                             "etiqueta": "N.° de HC de hospitalización",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "v99_referido_de_un_ee_ss",
                             "etiqueta": "¿Referido de un EE.SS.?",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "v99_nombre_del_ee_ss_de_referencia",
                             "etiqueta": "Nombre del EE.SS. de referencia",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "v99_fecha_de_ingreso_al_establecimiento",
                             "etiqueta": "Fecha de ingreso al establecimiento",
                             "tipo": "FECHA",
                             "orden": 5
                         },
                         {
+                            "clave": "v99_diagnostico_medico_dx_1",
                             "etiqueta": "Diagnóstico médico Dx 1",
                             "tipo": "TEXTO",
                             "orden": 6
                         },
                         {
+                            "clave": "v99_diagnostico_medico_dx_2",
                             "etiqueta": "Diagnóstico médico Dx 2",
                             "tipo": "TEXTO",
                             "orden": 7
                         },
                         {
+                            "clave": "v99_diagnostico_medico_dx_3",
                             "etiqueta": "Diagnóstico médico Dx 3",
                             "tipo": "TEXTO",
                             "orden": 8
                         },
                         {
+                            "clave": "v99_fecha_de_egreso_del_establecimiento",
                             "etiqueta": "Fecha de egreso del establecimiento",
                             "tipo": "FECHA",
                             "orden": 9
                         },
                         {
+                            "clave": "v99_condicion_de_egreso",
                             "etiqueta": "Condición de egreso",
                             "tipo": "SELECT",
                             "orden": 10,
@@ -8018,6 +8029,7 @@
                             ]
                         },
                         {
+                            "clave": "v99_requiere_rehabilitacion",
                             "etiqueta": "¿Requiere rehabilitación?",
                             "tipo": "BOOLEANO",
                             "orden": 11
@@ -8029,16 +8041,19 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "v99_fecha_del_accidente",
                             "etiqueta": "Fecha del accidente",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "v99_hora_del_accidente",
                             "etiqueta": "Hora del accidente",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "v99_via_donde_ocurrio",
                             "etiqueta": "Vía donde ocurrió",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -8053,6 +8068,7 @@
                             ]
                         },
                         {
+                            "clave": "v99_tipo_de_accidente",
                             "etiqueta": "Tipo de accidente",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -8071,6 +8087,7 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "v99_el_lesionado_se_encontraba_en",
                             "etiqueta": "El lesionado se encontraba en",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -8091,6 +8108,7 @@
                             ]
                         },
                         {
+                            "clave": "v99_ubicacion_del_lesionado",
                             "etiqueta": "Ubicación del lesionado",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -8101,6 +8119,7 @@
                             ]
                         },
                         {
+                            "clave": "v99_traslado_del_lesionado_por",
                             "etiqueta": "Traslado del lesionado por",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -8122,6 +8141,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "v99_tipo_de_vehiculo_del_ocasionante",
                             "etiqueta": "Tipo de vehículo del ocasionante",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -8142,6 +8162,7 @@
                             ]
                         },
                         {
+                            "clave": "v99_condicion_del_vehiculo_ocasionante",
                             "etiqueta": "Condición del vehículo ocasionante",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -8160,6 +8181,7 @@
                     "rol_sujeto": "CONDUCTOR",
                     "campos": [
                         {
+                            "clave": "v99_n_de_licencia_de_conducir",
                             "etiqueta": "N.° de licencia de conducir",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -8170,6 +8192,7 @@
                             ]
                         },
                         {
+                            "clave": "v99_comisaria_donde_se_registra_la_denuncia_policial",
                             "etiqueta": "Comisaría donde se registra la denuncia policial",
                             "tipo": "TEXTO",
                             "orden": 2
@@ -8181,21 +8204,25 @@
                     "orden": 7,
                     "campos": [
                         {
+                            "clave": "v99_n_de_poliza_soat",
                             "etiqueta": "N.° de póliza SOAT",
                             "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
+                            "clave": "v99_n_de_placa_del_vehiculo",
                             "etiqueta": "N.° de placa del vehículo",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "v99_nombre_del_dueno_de_la_poliza_soat",
                             "etiqueta": "Nombre del dueño de la póliza SOAT",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "v99_aseguradora",
                             "etiqueta": "Aseguradora",
                             "tipo": "SELECT",
                             "orden": 4,
