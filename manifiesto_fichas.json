@@ -6528,6 +6528,7 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a50_investigacion_de",
                             "etiqueta": "Investigación de",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -6537,6 +6538,7 @@
                             ]
                         },
                         {
+                            "clave": "a50_nivel_del_establecimiento",
                             "etiqueta": "Nivel del establecimiento",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -6559,12 +6561,14 @@
                     "_corregido": "PENDIENTES_POST_FASE5.md punto 1: DEFINICION_FICHAS_B_C_D.md sección 0.b exige sensible=1 para sífilis, igual que VIH\/violencia. Se marca toda esta sección y la de sífilis congénita (clínicas); el 'Encabezado' (investigación de \/ nivel del establecimiento) queda fuera por ser clasificación administrativa, no dato clínico ni identificatorio.",
                     "campos": [
                         {
+                            "clave": "a50_fur",
                             "etiqueta": "FUR",
                             "tipo": "FECHA",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_recibio_atencion_prenatal",
                             "etiqueta": "¿Recibió atención prenatal?",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -6576,18 +6580,21 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_fecha_de_primer_control_prenatal",
                             "etiqueta": "Fecha de primer control prenatal",
                             "tipo": "FECHA",
                             "orden": 3,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_edad_gestacional_en_el_primer_control_prenatal",
                             "etiqueta": "Edad gestacional en el primer control prenatal",
                             "tipo": "NUMERO",
                             "orden": 4,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_pruebas_no_treponemicas_rpr_vdrl",
                             "etiqueta": "Pruebas no treponémicas (RPR, VDRL)",
                             "tipo": "MATRIZ",
                             "orden": 5,
@@ -6604,6 +6611,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_pruebas_treponemicas_tpha_tppa_fta_abs_elisa_rapida",
                             "etiqueta": "Pruebas treponémicas (TPHA, TPPA, FTA Abs, ELISA, Rápida o Dual)",
                             "tipo": "MATRIZ",
                             "orden": 6,
@@ -6620,6 +6628,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_fue_la_madre_adecuadamente_tratada_durante_el_embar",
                             "etiqueta": "¿Fue la madre adecuadamente tratada durante el embarazo?",
                             "tipo": "SELECT",
                             "orden": 7,
@@ -6631,6 +6640,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_motivo_si_no_fue_tratada",
                             "etiqueta": "Motivo (si no fue tratada)",
                             "tipo": "SELECT",
                             "orden": 8,
@@ -6643,6 +6653,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_contacto_s_sexual_es_tratado_s",
                             "etiqueta": "Contacto(s) sexual(es) tratado(s)",
                             "tipo": "SELECT",
                             "orden": 9,
@@ -6654,12 +6665,14 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_n_de_contactos_sexuales_tratados",
                             "etiqueta": "N.° de contactos sexuales tratados",
                             "tipo": "NUMERO",
                             "orden": 10,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_clasificacion_de_caso_de_sifilis_en_la_gestante",
                             "etiqueta": "Clasificación de caso de sífilis en la gestante",
                             "tipo": "SELECT",
                             "orden": 11,
@@ -6679,12 +6692,14 @@
                     "rol_sujeto": "RECIEN_NACIDO",
                     "campos": [
                         {
+                            "clave": "a50_fecha_de_parto_culminacion_del_embarazo",
                             "etiqueta": "Fecha de parto \/ culminación del embarazo",
                             "tipo": "FECHA",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_lugar_del_parto",
                             "etiqueta": "Lugar del parto",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -6695,6 +6710,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_estado_vital",
                             "etiqueta": "Estado vital",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -6707,24 +6723,28 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_fecha_de_fallecimiento",
                             "etiqueta": "Fecha de fallecimiento",
                             "tipo": "FECHA",
                             "orden": 4,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_peso_al_nacimiento_gramos",
                             "etiqueta": "Peso al nacimiento (gramos)",
                             "tipo": "NUMERO",
                             "orden": 5,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_edad_gestacional_estimada_semanas",
                             "etiqueta": "Edad gestacional estimada (semanas)",
                             "tipo": "NUMERO",
                             "orden": 6,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_criterios_de_caso_de_sifilis_congenita",
                             "etiqueta": "Criterios de caso de sífilis congénita",
                             "tipo": "MULTISELECT",
                             "orden": 7,
@@ -6738,24 +6758,28 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_fecha_de_los_test_titulo_4x_madre",
                             "etiqueta": "Fecha de los test (título 4x madre)",
                             "tipo": "FECHA",
                             "orden": 8,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_titulo_de_la_madre",
                             "etiqueta": "Título de la madre",
                             "tipo": "TEXTO",
                             "orden": 9,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_titulo_del_nino",
                             "etiqueta": "Título del niño",
                             "tipo": "TEXTO",
                             "orden": 10,
                             "sensible": true
                         },
                         {
+                            "clave": "a50_tratamiento_del_nino",
                             "etiqueta": "Tratamiento del niño",
                             "tipo": "SELECT",
                             "orden": 11,
@@ -6769,6 +6793,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "a50_clasificacion_final_del_nino_mortinato_o_aborto",
                             "etiqueta": "Clasificación final del niño, mortinato o aborto",
                             "tipo": "SELECT",
                             "orden": 12,
