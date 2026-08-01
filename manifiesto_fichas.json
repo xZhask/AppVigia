@@ -3529,21 +3529,25 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a35_fecha_de_inicio_de_lesion",
                             "etiqueta": "Fecha de inicio de lesión",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a35_fecha_de_inicio_de_sintomas",
                             "etiqueta": "Fecha de inicio de síntomas",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a35_no_recuerda_dia",
                             "etiqueta": "No recuerda día",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "a35_herida",
                             "etiqueta": "Herida",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -3553,6 +3557,7 @@
                             ]
                         },
                         {
+                            "clave": "a35_tipo_de_herida",
                             "etiqueta": "Tipo de herida",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -3562,16 +3567,19 @@
                             ]
                         },
                         {
+                            "clave": "a35_causa_de_la_herida",
                             "etiqueta": "Causa de la herida",
                             "tipo": "TEXTO",
                             "orden": 6
                         },
                         {
+                            "clave": "a35_lugar_de_la_herida",
                             "etiqueta": "Lugar de la herida",
                             "tipo": "TEXTO",
                             "orden": 7
                         },
                         {
+                            "clave": "a35_signos_y_sintomas",
                             "etiqueta": "Signos y síntomas",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 8,
@@ -3586,6 +3594,7 @@
                             ]
                         },
                         {
+                            "clave": "a35_complicaciones",
                             "etiqueta": "Complicaciones",
                             "tipo": "TEXTAREA",
                             "orden": 9
@@ -3597,6 +3606,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a35_paciente_atendido_por",
                             "etiqueta": "Paciente atendido por",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -3608,41 +3618,49 @@
                             ]
                         },
                         {
+                            "clave": "a35_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "BOOLEANO",
                             "orden": 2
                         },
                         {
+                            "clave": "a35_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "a35_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "a35_n_h_c",
                             "etiqueta": "N.° H.C.",
                             "tipo": "TEXTO",
                             "orden": 5
                         },
                         {
+                            "clave": "a35_tiempo_de_hospitalizacion_dias",
                             "etiqueta": "Tiempo de hospitalización (días)",
                             "tipo": "NUMERO",
                             "orden": 6
                         },
                         {
+                            "clave": "a35_condiciones_de_alta",
                             "etiqueta": "Condiciones de alta",
                             "tipo": "TEXTO",
                             "orden": 7
                         },
                         {
+                            "clave": "a35_fecha_de_alta",
                             "etiqueta": "Fecha de alta",
                             "tipo": "FECHA",
                             "orden": 8
                         },
                         {
+                            "clave": "a35_fallecido",
                             "etiqueta": "Fallecido",
                             "tipo": "SELECT",
                             "orden": 9,
@@ -3653,6 +3671,7 @@
                             ]
                         },
                         {
+                            "clave": "a35_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
                             "orden": 10
@@ -3664,6 +3683,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a35_diagnostico_definitivo",
                             "etiqueta": "Diagnóstico definitivo",
                             "tipo": "SELECT",
                             "orden": 1,
