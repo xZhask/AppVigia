@@ -7602,6 +7602,7 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "y07_institucion_que_registra",
                             "etiqueta": "Institución que registra",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -7615,12 +7616,14 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_que_otras_instituciones",
                             "etiqueta": "Qué otras instituciones",
                             "tipo": "TEXTO",
                             "orden": 2,
                             "sensible": true
                         },
                         {
+                            "clave": "y07_tipo_de_establecimiento",
                             "etiqueta": "Tipo de establecimiento",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -7638,12 +7641,14 @@
                     "rol_sujeto": "CASO_INDICE",
                     "campos": [
                         {
+                            "clave": "y07_se_encuentra_gestando",
                             "etiqueta": "¿Se encuentra gestando?",
                             "tipo": "BOOLEANO",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "y07_estado_civil",
                             "etiqueta": "Estado civil",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -7658,6 +7663,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_grado_de_instruccion",
                             "etiqueta": "Grado de instrucción",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -7670,6 +7676,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_completa_incompleta",
                             "etiqueta": "Completa \/ Incompleta",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -7680,12 +7687,14 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_tiene_empleo_remunerado",
                             "etiqueta": "¿Tiene empleo remunerado?",
                             "tipo": "BOOLEANO",
                             "orden": 5,
                             "sensible": true
                         },
                         {
+                            "clave": "y07_ocupacion",
                             "etiqueta": "Ocupación",
                             "tipo": "TEXTO",
                             "orden": 6,
@@ -7699,6 +7708,7 @@
                     "rol_sujeto": "AGRESOR",
                     "campos": [
                         {
+                            "clave": "y07_vinculo_con_la_victima",
                             "etiqueta": "Vínculo con la víctima",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -7757,6 +7767,7 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "y07_estado_del_agresor",
                             "etiqueta": "Estado del agresor",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -7769,6 +7780,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_tipo_de_violencia",
                             "etiqueta": "Tipo de violencia",
                             "tipo": "MULTISELECT",
                             "orden": 2,
@@ -7781,6 +7793,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_medio_utilizado",
                             "etiqueta": "Medio utilizado",
                             "tipo": "MULTISELECT",
                             "orden": 3,
@@ -7793,6 +7806,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_motivo_expresado",
                             "etiqueta": "Motivo expresado",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -7807,12 +7821,14 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_es_la_primera_vez_que_es_agredido_a",
                             "etiqueta": "¿Es la primera vez que es agredido(a)?",
                             "tipo": "BOOLEANO",
                             "orden": 5,
                             "sensible": true
                         },
                         {
+                            "clave": "y07_durante_la_semana_cuantas_veces_fue_agredido_a",
                             "etiqueta": "Durante la semana, ¿cuántas veces fue agredido(a)?",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -7828,6 +7844,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_durante_el_ultimo_mes_cuantas_veces",
                             "etiqueta": "Durante el último mes, ¿cuántas veces?",
                             "tipo": "SELECT",
                             "orden": 7,
@@ -7843,6 +7860,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "y07_lugar_de_la_agresion",
                             "etiqueta": "Lugar de la agresión",
                             "tipo": "SELECT",
                             "orden": 8,
@@ -7861,6 +7879,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "y07_medidas_tomadas",
                             "etiqueta": "Medidas tomadas",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -7881,12 +7900,14 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "y07_fue_derivado",
                             "etiqueta": "¿Fue derivado?",
                             "tipo": "BOOLEANO",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "y07_donde_derivacion",
                             "etiqueta": "¿Dónde? (derivación)",
                             "tipo": "MULTISELECT",
                             "orden": 2,
