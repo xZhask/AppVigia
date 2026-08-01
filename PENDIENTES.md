@@ -350,17 +350,57 @@ funciona bien en `GRUPO_SI_NO`. **Decisión (2026-08-01): se queda como
 se arregle, B se resuelve solo convirtiendo los 4 campos a `MATRIZ` —
 no es trabajo nuevo, es la misma conversión que hoy degradaría.
 
-- **Fase 4** (10 `depende_de` nuevos): no empezada. Depende de que la
-  Fase 0 ya congeló las claves (hecho), así que no hay riesgo de que un
-  renombre las rompa — se puede hacer en cualquier momento.
-- **Fase 5.1** (`caso_viaje` + columna "semana de gestación", migración
-  numerada + `columnas_tablas_hija`): no empezada.
-- **Fase 5.2** (`caso_muestra`, laboratorio P35.0 ítems 42-43): no
-  empezada. La petición pide explícitamente parar y proponer opción
-  (a) ampliar `caso_muestra` vs (b) dejarlo como deuda en
-  `PENDIENTES.md` — no elegir por cuenta propia. Falta incluso el
-  paso previo: revisar qué columnas tiene `caso_muestra` hoy y cómo
-  las usan A80 y las demás fichas con `usa_muestras=1`.
+**C. BUG, prioridad alta — `muestras.php` tiene las columnas de
+serología hardcodeadas a B05 con `if ($esB05)`, no declarativas**
+
+`caso_muestra` ya tiene columnas `resultado_igm`, `fecha_result_igm`,
+`resultado_igg`, `fecha_result_igg`, `genotipo`, `resultado_pcr`,
+`fecha_result_pcr`, pero `app/Views/partials/tablas-hijas/muestras.php`
+solo las pinta dentro de una rama `if ($esB05)` — no pasan por
+`columnas_tablas_hija.caso_muestra` (el mecanismo que sí usan A80 y el
+resto de las 13 fichas con `usa_muestras=1`), ni están en
+`COLUMNAS_TABLA_HIJA_VALIDAS` de `cargar_fichas.php`. Es el mismo
+antipatrón `if (cie10 === 'X')` en código compartido que la Fase 2 de
+esta petición acabó de eliminar para P96 — preexistente, encontrado al
+investigar la Fase 5.2, no introducido por esta sesión. No arreglado
+(no era parte del alcance pedido).
+
+**D. Cotejo incompleto de P35.0, prioridad media — laboratorio (ítems
+42-43) sin capturar. BLOQUEADA POR C, no retomar antes**
+
+El bloque VI del PDF (ítems 42-43) pide, por muestra: tipo de muestra,
+fecha de obtención, fecha de resultado, IgM (-/+), IgG (-/+ con
+Titulación), y Genotipo para hisopado nasal y faríngeo — más un
+segundo bloque (ítem 43, solo casos confirmados de SRC: seguimiento de
+excreción viral desde los 3 meses de edad hasta 2 pruebas negativas
+con 1 mes de intervalo). **Decisión (2026-08-01): se queda sin
+laboratorio, documentado como deuda, hasta que C esté resuelto.**
+
+Lo que hace falta cuando se retome (no es solo "activar" las columnas
+de B05 — ninguna sirve tal cual para P35.0):
+- Tipos de muestra propios: "1.ª muestra serológica" / "2.ª muestra
+  serológica" / "Hisopado nasal y faríngeo" (B05 usa
+  SUERO/HNF_FAR/ORINA — mismo concepto, vocabulario distinto).
+- IgM e IgG con 2 estados puros `(-)/(+)` (B05 los modela con 4:
+  Pendiente/Positivo/Negativo/Indeterminado).
+- Columna **Titulación** para IgG: no existe ninguna en `caso_muestra`.
+- Catálogo de **genotipos de rubéola**: las 18 opciones que hoy tiene
+  `genotipo` (D8, B3, H1...) son nomenclatura OMS **de sarampión** —
+  reutilizarlas mostraría genotipos equivocados. Ni siquiera una
+  versión acotada (solo P35.0, sin tocar B05) puede reusar ese
+  catálogo tal cual.
+- El ítem 43 (seguimiento viral) **no** necesita modelado nuevo: es la
+  misma tabla repetible de `caso_muestra`, con filas adicionales de
+  fecha posterior — no es trabajo extra una vez resuelto lo anterior.
+
+- **Fase 4**: ✅ cerrada (commit `a3c35db`). Los 10 pares
+  `depende_de`/`valor_activador` declarados y verificados con render
+  real (oculto sin disparador, visible con el disparador forzado).
+- **Fase 5.1**: ✅ cerrada (commit `607882b`). `caso_viaje.semana_gestacion`
+  agregada; `viajes.php` generalizado para leer `columnas_tablas_hija`
+  (antes no lo hacía, igual que el hallazgo de `columnas_sujeto` en la
+  Fase 2) sin afectar a las otras 7 fichas que usan viajes.
+- **Fase 5.2**: cerrada como decisión (sin código) — ver C/D arriba.
 - **Fase 6** (verificaciones a reportar, sin implementar nada): no
   revisada. Pendientes de responder: edad en meses/días del núcleo
   (vs. años), N.° de Historia Clínica, Tiempo de residencia y
