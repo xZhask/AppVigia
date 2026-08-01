@@ -4,9 +4,17 @@
  * $filasViajes (array de ['pais','fecha_salida','fecha_retorno']).
  * `pais` se usa como "lugar visitado" libre (nacional o internacional);
  * no se normaliza contra distrito_id en esta fase.
+ *
+ * $columnasViaje (PETICION_P35_RUBEOLA_CONGENITA.md Fase 5.1): a
+ * diferencia de vacunas.php/contactos.php, este partial nunca había leído
+ * columnas_tablas_hija.caso_viaje -- las 5 columnas base se muestran
+ * siempre para las 8 fichas que usan viajes (igual que antes); solo
+ * "semana_gestacion" (columna extra, propia de P35.0) es condicional.
  */
 $erroresViajes = $erroresViajes ?? [];
-$filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha_retorno' => ''], ?array $error = null): void {
+$columnasViaje = $columnasViaje ?? ['pais', 'fecha_salida', 'fecha_retorno'];
+$mostrarColViaje = fn(string $col) => in_array($col, $columnasViaje, true);
+$filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''], ?array $error = null) use ($mostrarColViaje): void {
     $errorSalida = $error['fecha_salida'] ?? null;
     $errorRetorno = $error['fecha_retorno'] ?? null;
     ?>
@@ -42,6 +50,13 @@ $filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha
         <div class="control mono <?= $errorRetorno ? 'err' : '' ?>"><input type="date" name="viaje_fecha_retorno[]" value="<?= e($fila['fecha_retorno'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         <?php if ($errorRetorno): ?><span class="hint err"><?= e($errorRetorno) ?></span><?php endif; ?>
       </div>
+      <?php if ($mostrarColViaje('semana_gestacion')): ?>
+      <!-- Semana de gestación (columna extra, propia de fichas que la declaren) -->
+      <div class="field" style="flex:1; min-width:130px">
+        <label class="fl">Semana de gestación</label>
+        <div class="control mono"><input type="number" min="0" max="45" name="viaje_semana_gestacion[]" value="<?= e($fila['semana_gestacion'] ?? '') ?>"></div>
+      </div>
+      <?php endif; ?>
       <!-- 5. Transporte retorno -->
       <div class="field" style="flex:1; min-width:130px">
         <label class="fl">Transporte retorno</label>

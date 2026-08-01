@@ -327,6 +327,7 @@ CREATE TABLE `caso_viaje` (
   `distrito_id` char(6) DEFAULT NULL,
   `fecha_salida` date DEFAULT NULL,
   `fecha_retorno` date DEFAULT NULL,
+  `semana_gestacion` smallint(6) DEFAULT NULL,
   `transporte_ida` varchar(40) DEFAULT NULL,
   `transporte_retorno` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`id`),

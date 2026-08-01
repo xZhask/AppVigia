@@ -168,6 +168,9 @@ $accionEtiquetas = [
             <div class="field"><label class="fl">Lugar visitado</label><div class="control" style="background:var(--paper)"><?= e($vj['pais'] ?? '—') ?></div></div>
             <div class="field"><label class="fl">Fecha de salida</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vj['fecha_salida']) ?: '—') ?></div></div>
             <div class="field"><label class="fl">Fecha de retorno</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vj['fecha_retorno']) ?: '—') ?></div></div>
+            <?php if (!empty($vj['semana_gestacion'])): ?>
+            <div class="field"><label class="fl">Semana de gestación</label><div class="control mono" style="background:var(--paper)"><?= e($vj['semana_gestacion']) ?></div></div>
+            <?php endif; ?>
           </div></div>
         <?php endforeach; endif; ?>
 

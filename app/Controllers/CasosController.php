@@ -1707,6 +1707,7 @@ class CasosController extends Controller
         $retornos = $_POST['viaje_fecha_retorno'] ?? [];
         $transportesIda = $_POST['viaje_transporte_ida'] ?? [];
         $transportesRetorno = $_POST['viaje_transporte_retorno'] ?? [];
+        $semanasGestacion = $_POST['viaje_semana_gestacion'] ?? [];
 
         $filas = [];
         $errores = [];
@@ -1716,8 +1717,9 @@ class CasosController extends Controller
             $retornoTxt = trim((string) ($retornos[$i] ?? ''));
             $transIda = trim((string) ($transportesIda[$i] ?? ''));
             $transRetorno = trim((string) ($transportesRetorno[$i] ?? ''));
+            $semanaGestacionTxt = trim((string) ($semanasGestacion[$i] ?? ''));
 
-            if ($lugar === '' && $salidaTxt === '' && $retornoTxt === '' && $transIda === '' && $transRetorno === '') {
+            if ($lugar === '' && $salidaTxt === '' && $retornoTxt === '' && $transIda === '' && $transRetorno === '' && $semanaGestacionTxt === '') {
                 continue;
             }
 
@@ -1745,6 +1747,7 @@ class CasosController extends Controller
                 'pais'               => $lugar !== '' ? $lugar : null,
                 'fecha_salida'       => $salidaIso,
                 'fecha_retorno'      => $retornoIso,
+                'semana_gestacion'   => $semanaGestacionTxt !== '' ? (int) $semanaGestacionTxt : null,
                 'transporte_ida'     => $transIda !== '' ? $transIda : null,
                 'transporte_retorno' => $transRetorno !== '' ? $transRetorno : null,
             ];

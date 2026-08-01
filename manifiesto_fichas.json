@@ -6255,6 +6255,14 @@
                 "caso_viaje": true,
                 "caso_vacuna": false
             },
+            "columnas_tablas_hija": {
+                "caso_viaje": [
+                    "pais",
+                    "fecha_salida",
+                    "fecha_retorno",
+                    "semana_gestacion"
+                ]
+            },
             "nucleo_omitidos": [
                 "gestante",
                 "celular",

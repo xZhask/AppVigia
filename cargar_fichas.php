@@ -112,7 +112,7 @@ const TIPOS_VALIDOS = ['TEXTO', 'NUMERO', 'FECHA', 'BOOLEANO', 'SELECT', 'MULTIS
 const COLUMNAS_TABLA_HIJA_VALIDAS = [
     'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h'],
     'caso_vacuna'   => ['dosis', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
-    'caso_viaje'    => ['pais', 'fecha_salida', 'fecha_retorno'],
+    'caso_viaje'    => ['pais', 'fecha_salida', 'fecha_retorno', 'semana_gestacion'],
     'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones'],
 ];
 
