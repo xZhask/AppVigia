@@ -1490,61 +1490,73 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a95_fiebre",
                             "etiqueta": "Fiebre",
                             "tipo": "SI_NO_FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a95_ictericia",
                             "etiqueta": "Ictericia",
                             "tipo": "SI_NO_FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a95_pulso_lento_en_relacion_a_la_fiebre",
                             "etiqueta": "Pulso lento en relación a la fiebre",
                             "tipo": "SI_NO_FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "a95_hemorragia_nasal",
                             "etiqueta": "Hemorragia nasal",
                             "tipo": "SI_NO_FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "a95_melena_hematemesis",
                             "etiqueta": "Melena \/ hematemesis",
                             "tipo": "SI_NO_FECHA",
                             "orden": 5
                         },
                         {
+                            "clave": "a95_petequias",
                             "etiqueta": "Petequias",
                             "tipo": "SI_NO_FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "a95_diarreas",
                             "etiqueta": "Diarreas",
                             "tipo": "SI_NO_FECHA",
                             "orden": 7
                         },
                         {
+                            "clave": "a95_hipertension",
                             "etiqueta": "Hipertensión",
                             "tipo": "SI_NO_FECHA",
                             "orden": 8
                         },
                         {
+                            "clave": "a95_oliguria",
                             "etiqueta": "Oliguria",
                             "tipo": "SI_NO_FECHA",
                             "orden": 9
                         },
                         {
+                            "clave": "a95_proteinuria",
                             "etiqueta": "Proteinuria",
                             "tipo": "SI_NO_FECHA",
                             "orden": 10
                         },
                         {
+                            "clave": "a95_coluria",
                             "etiqueta": "Coluria",
                             "tipo": "SI_NO_FECHA",
                             "orden": 11
                         },
                         {
+                            "clave": "a95_hepatomegalia",
                             "etiqueta": "Hepatomegalia",
                             "tipo": "SI_NO_FECHA",
                             "orden": 12
@@ -1556,21 +1568,25 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a95_tiempo_que_reside_en_domicilio_actual_anos",
                             "etiqueta": "Tiempo que reside en domicilio actual (años)",
                             "tipo": "NUMERO",
                             "orden": 1
                         },
                         {
+                            "clave": "a95_tiempo_que_reside_en_domicilio_actual_meses",
                             "etiqueta": "Tiempo que reside en domicilio actual (meses)",
                             "tipo": "NUMERO",
                             "orden": 2
                         },
                         {
+                            "clave": "a95_si_reside_menos_de_6_meses_donde_vivia_anteriorment",
                             "etiqueta": "Si reside menos de 6 meses, ¿dónde vivía anteriormente?",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "a95_localidades_visitadas_en_los_ultimos_10_dias",
                             "etiqueta": "Localidades visitadas en los últimos 10 días",
                             "tipo": "TEXTAREA",
                             "orden": 4
@@ -1582,6 +1598,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a95_casos_reportados_en_los_ultimos_10_dias",
                             "etiqueta": "Casos reportados en los últimos 10 días",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 1,
@@ -1593,11 +1610,13 @@
                             ]
                         },
                         {
+                            "clave": "a95_cuantas_personas_viven_en_su_casa",
                             "etiqueta": "Cuántas personas viven en su casa",
                             "tipo": "NUMERO",
                             "orden": 2
                         },
                         {
+                            "clave": "a95_viajo_en_los_ultimos_6_meses",
                             "etiqueta": "¿Viajó en los últimos 6 meses?",
                             "tipo": "BOOLEANO",
                             "orden": 3
@@ -1609,51 +1628,61 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "a95_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "a95_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a95_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "a95_n_h_c",
                             "etiqueta": "N.° H.C.",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "a95_tiempo_de_enfermedad_al_momento_de_la_hospitalizaci",
                             "etiqueta": "Tiempo de enfermedad al momento de la hospitalización (días)",
                             "tipo": "NUMERO",
                             "orden": 5
                         },
                         {
+                            "clave": "a95_tiempo_de_traslado_desde_el_domicilio_horas",
                             "etiqueta": "Tiempo de traslado desde el domicilio (horas)",
                             "tipo": "NUMERO",
                             "orden": 6
                         },
                         {
+                            "clave": "a95_tiempo_de_traslado_desde_el_domicilio_minutos",
                             "etiqueta": "Tiempo de traslado desde el domicilio (minutos)",
                             "tipo": "NUMERO",
                             "orden": 7
                         },
                         {
+                            "clave": "a95_dx_de_ingreso_1",
                             "etiqueta": "Dx de ingreso 1",
                             "tipo": "TEXTO",
                             "orden": 8
                         },
                         {
+                            "clave": "a95_dx_de_ingreso_2",
                             "etiqueta": "Dx de ingreso 2",
                             "tipo": "TEXTO",
                             "orden": 9
                         },
                         {
+                            "clave": "a95_condicion_de_egreso",
                             "etiqueta": "Condición de egreso",
                             "tipo": "SELECT",
                             "orden": 10,
@@ -1663,16 +1692,19 @@
                             ]
                         },
                         {
+                            "clave": "a95_dx_de_egreso",
                             "etiqueta": "Dx de egreso",
                             "tipo": "TEXTO",
                             "orden": 11
                         },
                         {
+                            "clave": "a95_fecha_de_egreso",
                             "etiqueta": "Fecha de egreso",
                             "tipo": "FECHA",
                             "orden": 12
                         },
                         {
+                            "clave": "a95_necropsia",
                             "etiqueta": "Necropsia",
                             "tipo": "BOOLEANO",
                             "orden": 13,
@@ -1681,6 +1713,7 @@
                             "_corregido": "restaurado campo_def.depende_de\/valor_activador, perdido en la recarga (CIERRE_RECARGA_Y_FASE5.md Parte 0)"
                         },
                         {
+                            "clave": "a95_dx_macroscopico",
                             "etiqueta": "Dx macroscópico",
                             "tipo": "TEXTO",
                             "orden": 14,
@@ -1688,6 +1721,7 @@
                             "valor_activador": "FALLECIDO"
                         },
                         {
+                            "clave": "a95_dx_microscopico",
                             "etiqueta": "Dx microscópico",
                             "tipo": "TEXTO",
                             "orden": 15,
@@ -1695,6 +1729,7 @@
                             "valor_activador": "FALLECIDO"
                         },
                         {
+                            "clave": "a95_fecha_de_necropsia",
                             "etiqueta": "Fecha de necropsia",
                             "tipo": "FECHA",
                             "orden": 16,
@@ -1710,6 +1745,7 @@
                     "_corregido": "v1.0 tenía un campo 'Clasificación final' SELECT (Confirmado\/Descartado) redundante: enfermedad.opciones_clasificacion ya está fijado a CONFIRMADO,DESCARTADO para esta ficha (sql\/32_fix_tosferina_fiebreamarilla.sql), así que ese valor vive en caso.clasificacion (núcleo), no en campo_def — igual que en Difteria. Se retira del manifiesto; solo quedan el criterio y el Dx de descarte, que sí son propios de esta ficha.",
                     "campos": [
                         {
+                            "clave": "a95_criterio_de_clasificacion",
                             "etiqueta": "Criterio de clasificación",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -1720,6 +1756,7 @@
                             ]
                         },
                         {
+                            "clave": "a95_dx_de_descarte",
                             "etiqueta": "Dx de descarte",
                             "tipo": "TEXTO",
                             "orden": 2
