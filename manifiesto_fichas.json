@@ -6343,6 +6343,13 @@
                                 "Consultorio externo",
                                 "Búsqueda institucional"
                             ]
+                        },
+                        {
+                            "clave": "p35_0_n_de_historia_clinica",
+                            "etiqueta": "N.° de historia clínica",
+                            "tipo": "TEXTO",
+                            "orden": 8,
+                            "obligatorio": false
                         }
                     ]
                 },
