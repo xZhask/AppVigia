@@ -1782,31 +1782,37 @@
                     "_corregido": "usa_viajes=0 para esta ficha: no hay caso_viaje habilitado, así que 'Lugar de contagio' (localidad\/distrito\/provincia\/departamento) SÍ debe modelarse en campo_def (v1.0 lo había excluido por error, asumiendo que iba a tabla hija).",
                     "campos": [
                         {
+                            "clave": "b55_lugar_de_contagio_localidad",
                             "etiqueta": "Lugar de contagio: localidad",
                             "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
+                            "clave": "b55_lugar_de_contagio_distrito",
                             "etiqueta": "Lugar de contagio: distrito",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "b55_lugar_de_contagio_provincia",
                             "etiqueta": "Lugar de contagio: provincia",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "b55_lugar_de_contagio_departamento",
                             "etiqueta": "Lugar de contagio: departamento",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "b55_tiempo_de_permanencia_en_el_lugar_de_contagio",
                             "etiqueta": "Tiempo de permanencia en el lugar de contagio",
                             "tipo": "TEXTO",
                             "orden": 5
                         },
                         {
+                            "clave": "b55_actividad_que_desarrollo_durante_el_contagio",
                             "etiqueta": "Actividad que desarrolló durante el contagio",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -1825,6 +1831,7 @@
                             ]
                         },
                         {
+                            "clave": "b55_existen_otras_personas_con_lesiones_similares_en_su",
                             "etiqueta": "¿Existen otras personas con lesiones similares en su vivienda o localidad?",
                             "tipo": "BOOLEANO",
                             "orden": 7
@@ -1836,6 +1843,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "b55_sintomas",
                             "etiqueta": "Síntomas",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -1855,6 +1863,7 @@
                             ]
                         },
                         {
+                            "clave": "b55_antecedente_de_otras_enfermedades",
                             "etiqueta": "Antecedente de otras enfermedades",
                             "tipo": "MULTISELECT",
                             "orden": 2,
@@ -1866,26 +1875,31 @@
                             ]
                         },
                         {
+                            "clave": "b55_alergia_a_medicinas",
                             "etiqueta": "Alergia a medicinas",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "b55_alergia_a_medicinas_especificar",
                             "etiqueta": "Alergia a medicinas (especificar)",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "b55_fecha_de_ultima_regla",
                             "etiqueta": "Fecha de última regla",
                             "tipo": "FECHA",
                             "orden": 5
                         },
                         {
+                            "clave": "b55_mac_usado",
                             "etiqueta": "MAC usado",
                             "tipo": "TEXTO",
                             "orden": 6
                         },
                         {
+                            "clave": "b55_medicinas_usadas_actualmente",
                             "etiqueta": "Medicinas usadas actualmente",
                             "tipo": "TEXTAREA",
                             "orden": 7
@@ -1897,16 +1911,19 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "b55_n_de_lesiones_activas",
                             "etiqueta": "N.° de lesiones activas",
                             "tipo": "NUMERO",
                             "orden": 1
                         },
                         {
+                            "clave": "b55_n_de_cicatrices",
                             "etiqueta": "N.° de cicatrices",
                             "tipo": "NUMERO",
                             "orden": 2
                         },
                         {
+                            "clave": "b55_lesiones",
                             "etiqueta": "Lesiones",
                             "tipo": "MATRIZ",
                             "orden": 3,
@@ -1928,26 +1945,31 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "b55_enfermedad_mucosa",
                             "etiqueta": "Enfermedad mucosa",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "b55_fecha_de_inicio_de_sintomas_mucosa",
                             "etiqueta": "Fecha de inicio de síntomas mucosa",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "b55_tiempo_anos",
                             "etiqueta": "Tiempo (años)",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "b55_tiempo_meses",
                             "etiqueta": "Tiempo (meses)",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "b55_compromiso_de_estructuras",
                             "etiqueta": "Compromiso de estructuras",
                             "tipo": "MATRIZ",
                             "orden": 5,
@@ -1981,6 +2003,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "b55_signos_de_leishmaniasis_visceral",
                             "etiqueta": "Signos de leishmaniasis visceral",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -2008,6 +2031,7 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "b55_forma",
                             "etiqueta": "Forma",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -2018,6 +2042,7 @@
                             ]
                         },
                         {
+                            "clave": "b55_situacion",
                             "etiqueta": "Situación",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -2029,6 +2054,7 @@
                             ]
                         },
                         {
+                            "clave": "b55_tratamiento",
                             "etiqueta": "Tratamiento",
                             "tipo": "SELECT",
                             "orden": 3,
