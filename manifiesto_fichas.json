@@ -3963,6 +3963,7 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a80_n_de_orden_nacional",
                             "etiqueta": "N.° de orden nacional",
                             "tipo": "TEXTO",
                             "orden": 1
@@ -3974,21 +3975,25 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a80_nombre_del_padre",
                             "etiqueta": "Nombre del padre",
                             "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
+                            "clave": "a80_nombre_de_la_madre",
                             "etiqueta": "Nombre de la madre",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "a80_residencia_permanente_direccion_localidad",
                             "etiqueta": "Residencia permanente (dirección \/ localidad)",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "a80_residencia_provisional_direccion_localidad",
                             "etiqueta": "Residencia provisional (dirección \/ localidad)",
                             "tipo": "TEXTO",
                             "orden": 4
@@ -4000,6 +4005,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a80_conocimiento_del_caso",
                             "etiqueta": "Conocimiento del caso",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -4009,21 +4015,25 @@
                             ]
                         },
                         {
+                            "clave": "a80_primer_notificante_persona_que_vio_el_caso_por_prim",
                             "etiqueta": "Primer notificante (persona que vio el caso por primera vez)",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "a80_institucion_establecimiento_de_salud_del_notificant",
                             "etiqueta": "Institución \/ Establecimiento de Salud del notificante",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "a80_direccion_del_notificante",
                             "etiqueta": "Dirección del notificante",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "a80_telefono_del_notificante",
                             "etiqueta": "Teléfono del notificante",
                             "tipo": "TEXTO",
                             "orden": 5
@@ -4035,26 +4045,31 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "a80_fecha_de_inicio_de_sintomas_generales_prodromos",
                             "etiqueta": "Fecha de inicio de síntomas generales (pródromos)",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a80_fecha_de_la_fiebre_al_inicio",
                             "etiqueta": "Fecha de la fiebre al inicio",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a80_fecha_de_la_deficiencia_motora",
                             "etiqueta": "Fecha de la deficiencia motora",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "a80_n_de_dias_con_paralisis",
                             "etiqueta": "N.° de días con parálisis",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "a80_progresion_de_la_paralisis",
                             "etiqueta": "Progresión de la parálisis",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -4065,6 +4080,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_sintomas",
                             "etiqueta": "Síntomas",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 6,
@@ -4077,6 +4093,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_signos",
                             "etiqueta": "Signos",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 7,
@@ -4087,6 +4104,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_caracteristicas_paresia_paralisis_etc",
                             "etiqueta": "Características (paresia, parálisis, etc.)",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 8,
@@ -4103,6 +4121,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_localizacion_de_la_paralisis",
                             "etiqueta": "Localización de la parálisis",
                             "tipo": "MATRIZ",
                             "orden": 9,
@@ -4121,6 +4140,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_musculos_respiratorios",
                             "etiqueta": "Músculos respiratorios",
                             "tipo": "SELECT",
                             "orden": 10,
@@ -4130,6 +4150,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_musculos_cervicales",
                             "etiqueta": "Músculos cervicales",
                             "tipo": "SELECT",
                             "orden": 11,
@@ -4139,6 +4160,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_cara_lado_afectado",
                             "etiqueta": "Cara (lado afectado)",
                             "tipo": "SELECT",
                             "orden": 12,
@@ -4150,6 +4172,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_breve_descripcion_de_sensorio_marcha_y_paralisis",
                             "etiqueta": "Breve descripción de sensorio, marcha y parálisis",
                             "tipo": "TEXTAREA",
                             "orden": 13
@@ -4161,26 +4184,31 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "a80_fecha_de_examen_fisico",
                             "etiqueta": "Fecha de examen físico",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a80_realizado_por",
                             "etiqueta": "Realizado por",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "a80_dx_inicial_1",
                             "etiqueta": "Dx inicial 1",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "a80_dx_inicial_2",
                             "etiqueta": "Dx inicial 2",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "a80_fuerza_muscular",
                             "etiqueta": "Fuerza muscular",
                             "tipo": "MATRIZ",
                             "orden": 5,
@@ -4198,6 +4226,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_tono_muscular",
                             "etiqueta": "Tono muscular",
                             "tipo": "MATRIZ",
                             "orden": 6,
@@ -4216,6 +4245,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_reflejos",
                             "etiqueta": "Reflejos",
                             "tipo": "MATRIZ",
                             "orden": 7,
@@ -4233,6 +4263,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_signos_de_irritacion_meningea",
                             "etiqueta": "Signos de irritación meníngea",
                             "tipo": "MATRIZ",
                             "orden": 8,
@@ -4255,6 +4286,7 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "a80_hospitalizacion",
                             "etiqueta": "Hospitalización",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -4265,6 +4297,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 2,
@@ -4272,6 +4305,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
                             "orden": 3,
@@ -4279,6 +4313,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_servicio",
                             "etiqueta": "Servicio",
                             "tipo": "TEXTO",
                             "orden": 4,
@@ -4286,6 +4321,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_n_h_c",
                             "etiqueta": "N.° H.C.",
                             "tipo": "TEXTO",
                             "orden": 5,
@@ -4293,6 +4329,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_n_cama",
                             "etiqueta": "N.° cama",
                             "tipo": "TEXTO",
                             "orden": 6,
@@ -4300,6 +4337,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_ciudad",
                             "etiqueta": "Ciudad",
                             "tipo": "TEXTO",
                             "orden": 7,
@@ -4307,6 +4345,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_fallecido",
                             "etiqueta": "Fallecido",
                             "tipo": "SELECT",
                             "orden": 8,
@@ -4317,6 +4356,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_fecha_de_fallecimiento",
                             "etiqueta": "Fecha de fallecimiento",
                             "tipo": "FECHA",
                             "orden": 9,
@@ -4324,6 +4364,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_causa",
                             "etiqueta": "Causa",
                             "tipo": "TEXTO",
                             "orden": 10,
@@ -4331,6 +4372,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_informe_de_necropsia",
                             "etiqueta": "Informe de necropsia",
                             "tipo": "TEXTAREA",
                             "orden": 11,
@@ -4344,6 +4386,7 @@
                     "orden": 7,
                     "campos": [
                         {
+                            "clave": "a80_vacunado_contra_polio",
                             "etiqueta": "Vacunado contra polio",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -4354,6 +4397,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_n_de_dosis_recibidas",
                             "etiqueta": "N.° de dosis recibidas",
                             "tipo": "NUMERO",
                             "orden": 2,
@@ -4361,6 +4405,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_verificada_con_carne",
                             "etiqueta": "Verificada con carné",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -4372,6 +4417,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_fecha_de_ultima_dosis_recibida",
                             "etiqueta": "Fecha de última dosis recibida",
                             "tipo": "FECHA",
                             "orden": 4,
@@ -4379,6 +4425,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_establecimiento_donde_fue_vacunado",
                             "etiqueta": "Establecimiento donde fue vacunado",
                             "tipo": "TEXTO",
                             "orden": 5,
@@ -4386,6 +4433,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_direccion_del_establecimiento_de_vacunacion",
                             "etiqueta": "Dirección del establecimiento de vacunación",
                             "tipo": "TEXTO",
                             "orden": 6,
@@ -4393,6 +4441,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_ciudad_del_establecimiento_de_vacunacion",
                             "etiqueta": "Ciudad del establecimiento de vacunación",
                             "tipo": "TEXTO",
                             "orden": 7,
@@ -4406,6 +4455,7 @@
                     "orden": 8,
                     "campos": [
                         {
+                            "clave": "a80_viajes_realizados_en_los_30_dias_antes",
                             "etiqueta": "¿Viajes realizados en los 30 días antes?",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -4415,6 +4465,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_a_donde_lugar_de_viaje",
                             "etiqueta": "A dónde (lugar de viaje)",
                             "tipo": "TEXTO",
                             "orden": 2,
@@ -4422,6 +4473,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_visitas_recibidas_en_los_30_dias_antes",
                             "etiqueta": "Visitas recibidas en los 30 días antes",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -4431,6 +4483,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_de_donde_visitas",
                             "etiqueta": "De dónde (visitas)",
                             "tipo": "TEXTO",
                             "orden": 4,
@@ -4438,6 +4491,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_existen_otros_casos_semejantes_en_el_area",
                             "etiqueta": "¿Existen otros casos semejantes en el área?",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -4454,6 +4508,7 @@
                     "orden": 9,
                     "campos": [
                         {
+                            "clave": "a80_notas_de_investigacion_de_la_cadena_de_transmision",
                             "etiqueta": "Notas de investigación de la cadena de transmisión",
                             "tipo": "TEXTAREA",
                             "orden": 1
@@ -4465,6 +4520,7 @@
                     "orden": 10,
                     "campos": [
                         {
+                            "clave": "a80_bloqueo_de_vacunacion_operacion_barrido",
                             "etiqueta": "Bloqueo de vacunación (operación barrido)",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -4474,6 +4530,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_bloqueo_localidad_es",
                             "etiqueta": "Bloqueo: Localidad(es)",
                             "tipo": "TEXTO",
                             "orden": 2,
@@ -4481,6 +4538,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_bloqueo_fecha_de_inicio",
                             "etiqueta": "Bloqueo: Fecha de inicio",
                             "tipo": "FECHA",
                             "orden": 3,
@@ -4488,6 +4546,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_busqueda_activa_comunitaria_institucional",
                             "etiqueta": "Búsqueda activa comunitaria \/ institucional",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -4497,6 +4556,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_busqueda_activa_n_casos_hallados",
                             "etiqueta": "Búsqueda activa: N.° casos hallados",
                             "tipo": "NUMERO",
                             "orden": 5,
@@ -4504,6 +4564,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_busqueda_activa_n_que_ingresan_al_sistema",
                             "etiqueta": "Búsqueda activa: N.° que ingresan al sistema",
                             "tipo": "NUMERO",
                             "orden": 6,
@@ -4511,6 +4572,7 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_busqueda_activa_n_descartados_no_cumplen_criterio",
                             "etiqueta": "Búsqueda activa: N.° descartados (no cumplen criterio)",
                             "tipo": "NUMERO",
                             "orden": 7,
@@ -4518,46 +4580,55 @@
                             "valor_activador": "SI"
                         },
                         {
+                            "clave": "a80_vacunados_1_ano",
                             "etiqueta": "Vacunados < 1 año",
                             "tipo": "NUMERO",
                             "orden": 8
                         },
                         {
+                            "clave": "a80_vacunados_1_4_anos",
                             "etiqueta": "Vacunados 1 – 4 años",
                             "tipo": "NUMERO",
                             "orden": 9
                         },
                         {
+                            "clave": "a80_vacunados_5_14_anos",
                             "etiqueta": "Vacunados 5 – 14 años",
                             "tipo": "NUMERO",
                             "orden": 10
                         },
                         {
+                            "clave": "a80_vacunados_15_anos",
                             "etiqueta": "Vacunados > 15 años",
                             "tipo": "NUMERO",
                             "orden": 11
                         },
                         {
+                            "clave": "a80_total_vac_poblacion_vacunada",
                             "etiqueta": "TOTAL VAC (Población vacunada)",
                             "tipo": "NUMERO",
                             "orden": 12
                         },
                         {
+                            "clave": "a80_casas_abiertas_casa_donde_se_vacuno",
                             "etiqueta": "Casas abiertas (casa donde se vacunó)",
                             "tipo": "NUMERO",
                             "orden": 13
                         },
                         {
+                            "clave": "a80_casas_cerradas_sus_residentes_han_salido",
                             "etiqueta": "Casas cerradas (sus residentes han salido)",
                             "tipo": "NUMERO",
                             "orden": 14
                         },
                         {
+                            "clave": "a80_casas_abandonadas",
                             "etiqueta": "Casas abandonadas",
                             "tipo": "NUMERO",
                             "orden": 15
                         },
                         {
+                            "clave": "a80_total_casas",
                             "etiqueta": "TOTAL CASAS",
                             "tipo": "NUMERO",
                             "orden": 16
@@ -4569,6 +4640,7 @@
                     "orden": 11,
                     "campos": [
                         {
+                            "clave": "a80_fechas_de_seguimiento_30_60_90_180_dias",
                             "etiqueta": "Fechas de seguimiento (30\/60\/90\/180 días)",
                             "tipo": "MATRIZ",
                             "orden": 1,
@@ -4584,6 +4656,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_evaluacion_del_trofismo_fuerza_tono_atrofia_sensibi",
                             "etiqueta": "Evaluación del trofismo (fuerza, tono, atrofia, sensibilidad) a 30\/60\/90\/180 días",
                             "tipo": "MATRIZ",
                             "orden": 2,
@@ -4612,6 +4685,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_evaluacion_de_reflejos_a_30_60_90_180_dias",
                             "etiqueta": "Evaluación de reflejos a 30\/60\/90\/180 días",
                             "tipo": "MATRIZ",
                             "orden": 3,
@@ -4631,6 +4705,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_comentarios_de_seguimiento_de_secuelas",
                             "etiqueta": "Comentarios de seguimiento de secuelas",
                             "tipo": "TEXTAREA",
                             "orden": 4
@@ -4642,11 +4717,13 @@
                     "orden": 12,
                     "campos": [
                         {
+                            "clave": "a80_fecha_de_evaluacion_final_de_secuelas",
                             "etiqueta": "Fecha de evaluación final de secuelas",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a80_tipo_de_secuela",
                             "etiqueta": "Tipo de secuela",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -4658,6 +4735,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_localizacion",
                             "etiqueta": "Localización",
                             "tipo": "MULTISELECT",
                             "orden": 3,
@@ -4684,11 +4762,13 @@
                             "orden": 1
                         },
                         {
+                            "clave": "a80_fecha_de_electromiografia",
                             "etiqueta": "Fecha de electromiografía",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a80_conclusion_de_electromiografia",
                             "etiqueta": "Conclusión de electromiografía",
                             "tipo": "TEXTAREA",
                             "orden": 3
@@ -4700,6 +4780,7 @@
                     "orden": 14,
                     "campos": [
                         {
+                            "clave": "a80_clasificacion_final",
                             "etiqueta": "Clasificación final",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -4712,6 +4793,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_especificar_clasificacion",
                             "etiqueta": "Especificar clasificación",
                             "tipo": "TEXTO",
                             "orden": 2,
@@ -4719,11 +4801,13 @@
                             "valor_activador": "DESCARTADO"
                         },
                         {
+                            "clave": "a80_fecha_de_clasificacion",
                             "etiqueta": "Fecha de clasificación",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "a80_criterio_de_clasificacion",
                             "etiqueta": "Criterio de clasificación",
                             "tipo": "MULTISELECT",
                             "orden": 4,
@@ -4736,6 +4820,7 @@
                             ]
                         },
                         {
+                            "clave": "a80_se_ha_descartado",
                             "etiqueta": "Se ha descartado",
                             "tipo": "MULTISELECT",
                             "orden": 5,
@@ -4751,6 +4836,7 @@
                             "valor_activador": "DESCARTADO"
                         },
                         {
+                            "clave": "a80_especificar_diagnostico_descartado",
                             "etiqueta": "Especificar diagnóstico descartado",
                             "tipo": "TEXTO",
                             "orden": 6,
@@ -4758,6 +4844,7 @@
                             "valor_activador": "OTRO"
                         },
                         {
+                            "clave": "a80_observaciones_generales",
                             "etiqueta": "Observaciones generales",
                             "tipo": "TEXTAREA",
                             "orden": 7
