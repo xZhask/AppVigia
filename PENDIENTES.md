@@ -65,7 +65,27 @@ Si se necesita hacer alguno obligatorio, la validación de servidor
 primero tiene que aprender a excluir campos de secciones no visibles
 para el anexo actual.
 
-## 4. El cargador salta en silencio las secciones sin campos
+## 4. El cargador salta en silencio las secciones sin campos — ✅ cerrado (solo el reporte)
+
+Cerrado 2026-08-01. `cargar_fichas.php` no se tocó (sigue omitiendo
+`seccion_def` para toda sección con `"campos": []`, a propósito — eso
+no era el problema). El cambio fue en `verificar_fichas.php`: el mismo
+criterio que ya excluía estas secciones de lo esperado
+(`empty($s['campos']) && isset($s['_nota'])`) ahora además las junta en
+`secciones_informativas_omitidas` por ficha (JSON y Markdown), y el
+reporte las lista explícitamente bajo "Secciones informativas, omitidas
+a propósito" con su `_nota`, en vez de no mencionarlas. No cambia
+`estado` (`OK`/`CON_DIFERENCIAS`) de ninguna ficha ni el código de
+salida — es solo visibilidad.
+
+La red de seguridad que pedía este ítem sigue intacta: una sección
+nueva con `"campos": []` que a alguien se le olvide y por eso no traiga
+`"_nota"` NO cae en esta excepción — sigue evaluándose como esperada y,
+al no existir en la BD, se sigue reportando como "sección faltante"
+igual que antes.
+
+<details>
+<summary>Redacción original del pendiente (contexto histórico)</summary>
 
 `cargar_fichas.php:476-478` omite crear `seccion_def` para cualquier
 sección del manifiesto con `"campos": []` ("sección informativa: no
@@ -87,6 +107,8 @@ manifiesto y olvida definirle campos, desaparece de la base sin aviso y
 que el verificador liste estas secciones como "informativas, omitidas a
 propósito" en su reporte, en vez de tratarlas como si no existieran en
 el manifiesto.
+
+</details>
 
 ## 5. Hueco de contenido en Y59.0 (ESAVI): Anexo 6.2
 

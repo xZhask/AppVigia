@@ -179,6 +179,7 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
         'campos_encontrados' => 0,
         'secciones_faltantes' => [],
         'secciones_sobrantes' => [],
+        'secciones_informativas_omitidas' => [],
         'secciones_orden_incorrecto' => [],
         'diferencias_por_seccion' => [],
         'estado' => 'OK',
@@ -200,10 +201,19 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
 
     // Secciones del manifiesto que sí representan contenido esperable en
     // campo_def (se excluyen las que son puramente informativas / viven en
-    // tabla hija, marcadas con "campos": [] y una "_nota").
+    // tabla hija, marcadas con "campos": [] y una "_nota") -- mismo criterio
+    // que cargar_fichas.php al decidir si genera seccion_def. No quedan
+    // invisibles: se listan en 'secciones_informativas_omitidas'
+    // (PENDIENTES.md ítem 4) para que agregar una sección sin campos y sin
+    // querer siga siendo visible en el reporte, aunque no cuente como
+    // diferencia.
     $seccionesManifiesto = [];
     foreach ($fichaManifiesto['secciones'] as $idx => $s) {
         if (empty($s['campos']) && isset($s['_nota'])) {
+            $item['secciones_informativas_omitidas'][] = [
+                'nombre' => $s['nombre'],
+                'nota' => $s['_nota'],
+            ];
             continue; // informativa: no se exige como seccion_def
         }
         $seccionesManifiesto[$idx] = $s;
@@ -467,7 +477,7 @@ $fechaHoy = date('Y-m-d');
 echo "# REPORTE_VERIFICACION.md\n\n";
 echo "Generado por `verificar_fichas.php` el {$fechaHoy} comparando la base de datos contra `manifiesto_fichas.json`.\n\n";
 echo "No se modificó ninguna definición de ficha ni la base de datos: esta es una corrida de solo lectura.\n\n";
-echo "**Metodología.** Las secciones y campos se emparejan por nombre/etiqueta normalizada (sin tildes, mayúsculas ni signos de puntuación), primero por coincidencia exacta y luego por similitud aproximada (contención o distancia de Levenshtein relativa ≤ 0.30). Para los campos SELECT/MULTISELECT/GRUPO_SI_NO/CRONOLOGIA (los mismos tipos que `cargar_fichas.php` exige con catálogo), además se verifica: que `catalogo_id` no sea NULL, que ese catálogo tenga al menos un `catalogo_item`, y que sus opciones (emparejadas con la misma normalización) coincidan con las del manifiesto — desde RECARGA_FICHAS.md Fase 4 (antes era una limitación conocida, ver INFORME_CARGADOR.md hallazgo A.2b). Desde CIERRE_RECARGA_Y_FASE5.md Parte 0, también se verifica que `campo_def.sensible` y la dependencia condicional (`depende_de`/`valor_activador`) coincidan con el manifiesto — la recarga de la Fase 3 los perdía en silencio porque no formaban parte del esquema del manifiesto todavía. Desde la Petición 2 (Fase 6), también se compara `seccion_def.orden` y `campo_def.orden` contra el `\"orden\"` explícito del manifiesto (si el manifiesto no lo trae para una ficha, no se compara — cargar_fichas.php sigue asignándolo por posición del array para esa ficha). Limitación que sigue vigente: si una ficha consolida en la BD varias secciones del manifiesto en una sola (o al revés), puede reportarse una 'sección faltante' que en realidad solo cambió de nombre/agrupación — revisar el detalle antes de asumir contenido perdido.\n\n";
+echo "**Metodología.** Las secciones y campos se emparejan por nombre/etiqueta normalizada (sin tildes, mayúsculas ni signos de puntuación), primero por coincidencia exacta y luego por similitud aproximada (contención o distancia de Levenshtein relativa ≤ 0.30). Para los campos SELECT/MULTISELECT/GRUPO_SI_NO/CRONOLOGIA (los mismos tipos que `cargar_fichas.php` exige con catálogo), además se verifica: que `catalogo_id` no sea NULL, que ese catálogo tenga al menos un `catalogo_item`, y que sus opciones (emparejadas con la misma normalización) coincidan con las del manifiesto — desde RECARGA_FICHAS.md Fase 4 (antes era una limitación conocida, ver INFORME_CARGADOR.md hallazgo A.2b). Desde CIERRE_RECARGA_Y_FASE5.md Parte 0, también se verifica que `campo_def.sensible` y la dependencia condicional (`depende_de`/`valor_activador`) coincidan con el manifiesto — la recarga de la Fase 3 los perdía en silencio porque no formaban parte del esquema del manifiesto todavía. Desde la Petición 2 (Fase 6), también se compara `seccion_def.orden` y `campo_def.orden` contra el `\"orden\"` explícito del manifiesto (si el manifiesto no lo trae para una ficha, no se compara — cargar_fichas.php sigue asignándolo por posición del array para esa ficha). Limitación que sigue vigente: si una ficha consolida en la BD varias secciones del manifiesto en una sola (o al revés), puede reportarse una 'sección faltante' que en realidad solo cambió de nombre/agrupación — revisar el detalle antes de asumir contenido perdido. Las secciones puramente informativas del manifiesto (`\"campos\": []` con una `\"_nota\"` explicando por qué, mismo criterio que usa `cargar_fichas.php` para no generarles `seccion_def`) no cuentan como esperadas ni se reportan como faltantes, pero tampoco quedan invisibles: se listan por ficha como \"informativas, omitidas a propósito\" (PENDIENTES.md ítem 4) — si una sección nueva se agrega sin campos y sin `\"_nota\"`, no cae en esta excepción y sigue reportándose como sección faltante, igual que antes.\n\n";
 echo "---\n\n";
 
 echo "## Resumen\n\n";
@@ -518,6 +528,14 @@ foreach ($resultado as $item) {
     if (!$item['existe_en_bd']) {
         echo "> ❌ No existe ninguna enfermedad con este CIE-10 en la base de datos.\n\n";
         continue;
+    }
+
+    if ($item['secciones_informativas_omitidas']) {
+        echo "**Secciones informativas, omitidas a propósito** (sin campos en el manifiesto -- `cargar_fichas.php` no genera `seccion_def` para ellas, así que tampoco se exigen acá):\n\n";
+        foreach ($item['secciones_informativas_omitidas'] as $s) {
+            echo "- «{$s['nombre']}» — {$s['nota']}\n";
+        }
+        echo "\n";
     }
 
     if ($item['estado'] === 'OK') {
