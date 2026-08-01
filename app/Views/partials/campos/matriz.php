@@ -5,19 +5,71 @@ $filas = $config['filas'] ?? [];
 $columnas = $config['columnas'] ?? [];
 $valores = is_array($valor) ? $valor : [];
 
-// Determinar si las columnas son un conjunto cerrado de opciones exclusivas por fila
-// (ej. DIM, AUS, NORM, IGN o AUS, PRES, IGN o SI, NO, IGN)
-$esSeleccionUnica = true;
-if (empty($columnas)) {
-    $esSeleccionUnica = false;
-} else {
-    foreach ($columnas as $col) {
-        $colUpper = mb_strtoupper(trim($col));
-        if (mb_strlen($colUpper) > 20 || str_contains($colUpper, 'FECHA') || str_contains($colUpper, 'DOSIS') || str_contains($colUpper, 'DIAS') || str_contains($colUpper, 'DÍAS') || str_contains($colUpper, 'DIA') || str_contains($colUpper, 'DÍA') || str_contains($colUpper, 'N.°') || str_contains($colUpper, 'CANTIDAD') || str_contains($colUpper, 'MM')) {
-            $esSeleccionUnica = false;
-            break;
+// Palabras que delatan una columna de entrada libre (fecha, dosis, una
+// cantidad...) en vez de un código de opción cerrada. Usadas por columna,
+// no por fila entera (PENDIENTES.md, Fases 3-6, ítem A) -- así una sola
+// columna de fecha ya no arrastra a modo texto libre a las demás columnas
+// de la misma fila (bug real en Z21 "Pruebas diagnósticas" y en Y59.0
+// "Signos y síntomas": ambas tienen una columna "Fecha..." junto a otras
+// que no lo son).
+$palabrasLibres = ['FECHA', 'DOSIS', 'DIAS', 'DÍAS', 'DIA', 'DÍA', 'N.°', 'CANTIDAD', 'MM'];
+
+// Una columna es candidata a radio exclusivo (como DIM/AUS/NORM/IGN o
+// SI/NO/IGN/PROXIMAL/DISTAL, las 5 matrices de A80 que sí deben seguir
+// siendo 100% radio) solo si, además de no matchear $palabrasLibres y no
+// ser larga, está escrita TODA en mayúsculas en el manifiesto. Ese
+// requisito extra es lo que evita que una etiqueta de columna común y
+// corriente -- "Total", "Descripción", "Código CIE-10", "Cara" -- cuele
+// como si fuera una opción exclusiva más: en las 24 fichas actuales, la
+// convención de mayúsculas SIEMPRE marca un código cerrado real (nunca al
+// revés), así que es una señal fiable, no una coincidencia.
+$columnaEsRadio = function (string $col) use ($palabrasLibres): bool {
+    $col = trim($col);
+    if ($col === '' || mb_strlen($col) > 20 || mb_strtoupper($col) !== $col) {
+        return false;
+    }
+    foreach ($palabrasLibres as $palabra) {
+        if (str_contains($col, $palabra)) {
+            return false;
         }
     }
+    return true;
+};
+$esFecha = fn (string $texto): bool => str_contains(mb_strtoupper($texto), 'FECHA');
+
+// Elegibilidad de radio por columna (misma para todas las filas, ya que
+// depende solo del encabezado de columna).
+$columnasRadio = [];
+foreach ($columnas as $cIdx => $col) {
+    if ($columnaEsRadio((string) $col)) {
+        $columnasRadio[$cIdx] = true;
+    }
+}
+
+// Tres modos por CAMPO:
+//  - 'radio':   todas las columnas son exclusivas -> idéntico a como
+//               funcionaba siempre (A80: Localización de la parálisis,
+//               Fuerza/Tono muscular, Reflejos, Signos meníngeos).
+//               Formato de valor SIN CAMBIOS: $valores[$fIdx] = "<columna
+//               elegida>".
+//  - 'libre':   ninguna columna es exclusiva -> idéntico a como
+//               funcionaba siempre, salvo que texto-vs-fecha ahora se
+//               decide por columna (o por fila, ver $filaEsFecha más
+//               abajo), no solo por fila. Formato SIN CAMBIOS:
+//               $valores[$fIdx][$cIdx] = "...".
+//  - 'hibrido': mezcla real de columnas exclusivas y libres en la misma
+//               fila. Las exclusivas comparten un único radio por fila
+//               bajo la clave reservada '_radio' (no colisiona con los
+//               índices enteros 0..n-1 de columna); las libres siguen
+//               usando $valores[$fIdx][$cIdx]. Ningún campo de las 24
+//               fichas actuales cae acá (verificado) -- es la capacidad
+//               nueva que pide el ítem A, sin datos guardados que migrar.
+if (empty($columnas) || empty($columnasRadio)) {
+    $modo = 'libre';
+} elseif (count($columnasRadio) === count($columnas)) {
+    $modo = 'radio';
+} else {
+    $modo = 'hibrido';
 }
 ?>
 <div class="field wide grupo-si-no-field">
@@ -34,24 +86,32 @@ if (empty($columnas)) {
       </thead>
       <tbody>
         <?php foreach ($filas as $fIdx => $fila):
-          $valFila = $esSeleccionUnica ? ($valores[$fIdx] ?? ($valores[(string)$fIdx] ?? '')) : null;
-          $esFechaFila = str_contains(mb_strtoupper($fila), 'FECHA');
+          $filaEsFecha = $esFecha((string) $fila);
+          $valFilaRadio = null;
+          if ($modo === 'radio') {
+              $valFilaRadio = $valores[$fIdx] ?? ($valores[(string) $fIdx] ?? '');
+          } elseif ($modo === 'hibrido') {
+              $valFilaRadio = $valores[$fIdx]['_radio'] ?? '';
+          }
         ?>
           <tr class="grupo-si-no-row">
             <td style="font-size: 12px; font-weight: 500; color: var(--ink); padding: 8px 12px; border-bottom: 1px solid var(--line-2);"><?= e($fila) ?></td>
             <?php foreach ($columnas as $cIdx => $col): ?>
               <td style="padding: 4px 8px; border-bottom: 1px solid var(--line-2); text-align: center;">
-                <?php if ($esSeleccionUnica):
-                  $isSel = (string)$valFila === (string)$col || (string)$valFila === (string)$cIdx;
+                <?php if (isset($columnasRadio[$cIdx])):
+                  $isSel = (string) $valFilaRadio === (string) $col || (string) $valFilaRadio === (string) $cIdx;
+                  $nombreRadio = $modo === 'radio' ? "{$nombreCampo}[{$fIdx}]" : "{$nombreCampo}[{$fIdx}][_radio]";
                 ?>
                   <div class="seg" style="display:inline-flex; width: 100%;">
                     <label class="seg-label <?= $isSel ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer; padding: 4px 8px; border-radius:6px;" title="<?= e($col) ?>">
-                      <input type="radio" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>]" value="<?= e($col) ?>" class="sr-only" <?= $isSel ? 'checked' : '' ?>>
+                      <input type="radio" name="<?= e($nombreRadio) ?>" value="<?= e($col) ?>" class="sr-only" <?= $isSel ? 'checked' : '' ?>>
                       <?= e($col) ?>
                     </label>
                   </div>
-                <?php else: ?>
-                  <input type="<?= $esFechaFila ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaFila ? '' : '—' ?>" style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;">
+                <?php else:
+                  $esFechaCelda = $esFecha((string) $col) || $filaEsFecha;
+                ?>
+                  <input type="<?= $esFechaCelda ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaCelda ? '' : '—' ?>" style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;">
                 <?php endif; ?>
               </td>
             <?php endforeach; ?>

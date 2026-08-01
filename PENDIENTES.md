@@ -348,7 +348,71 @@ avisos) OK. Sin warnings de PHP atribuibles a estos cambios.
 ### Fases 3 a 6
 
 **A. BUG, prioridad alta — `campos/matriz.php` detecta tipo de celda por
-fila, no por columna; Z21 y Y59.0 ya pierden sus columnas de fecha**
+fila, no por columna; Z21 y Y59.0 ya pierden sus columnas de fecha —
+✅ cerrado**
+
+Cerrado 2026-08-01. Antes de tocar el partial se enumeraron los 21
+campos `MATRIZ` reales de las 24 fichas (11 fichas los usan: A37.0 (2),
+B01 (1), B26 (1), B55 (2), A44 (2), B04X (1), A80 (7), Z21 (1), B24
+(1), A50 (2), Y59.0 (1) — es toda la superficie real, la lista original
+de abajo tenía a "Chagas" y "B05" de más y le faltaba A50). Con eso se
+confirmaron los 2 casos ya conocidos y aparecieron **3 bugs más de la
+misma familia, no documentados hasta ahora**:
+- **A50**, sus 2 campos (`Pruebas no treponémicas`, `Pruebas
+  treponémicas`): columna "Fecha" pintándose como texto libre, mismo
+  patrón que Z21/Y59.0.
+- **A37.0** "Antibióticos recibidos": columna "Fecha de inicio"
+  pintándose como texto libre.
+- **B24** "Enfermedades indicadoras de SIDA": bug inverso — columnas
+  "Descripción"/"Código CIE-10" (ninguna tiene una palabra que dispare
+  el modo libre) caían en modo **radio**, forzando a elegir entre
+  escribir la descripción O el código, nunca ambos. El más serio de los
+  3: no perdía calidad de dato, impedía capturarlo.
+
+**Arreglo:** por columna (no por fila), no por matriz completa:
+- Tipo texto/fecha: fecha si la etiqueta de columna O la de fila
+  contiene "FECHA" (el "o fila" preserva el único caso real que
+  dependía de la fila — A80 "Fechas de seguimiento", filas "Fecha
+  programada"/"Fecha que se realizó", columnas "30/60/90/180 días" sin
+  la palabra "fecha").
+- Radio vs. libre: una columna solo es candidata a radio si además de
+  no matchear las palabras de siempre (fecha/dosis/días/n.°/cantidad/mm)
+  está escrita TODA en mayúsculas en el manifiesto — así se distinguen
+  los códigos cerrados reales (`DIM/AUS/NORM/IGN`, `SI/NO/IGN/
+  PROXIMAL/DISTAL`, `AUS/PRES/IGN`, las 5 matrices 100% radio de A80)
+  de una etiqueta de columna común (`Total`, `Descripción`, `Cara`) que
+  sin ese filtro colaría como opción exclusiva (el bug de B24 de
+  arriba, y por qué "detectar por columna" a secas —sin el requisito de
+  mayúsculas— habría sido peor que no tocar nada).
+- Modo híbrido nuevo: cuando una fila mezcla columnas radio y libres,
+  las radio comparten un único grupo bajo la clave reservada `_radio`
+  (no colisiona con los índices enteros de columna) y las libres siguen
+  en `[fIdx][cIdx]` — probado con un campo sintético (no existe hoy en
+  ninguna ficha), mecánica confirmada sin colisión de nombres.
+
+Los 2 modos que ya eran 100% correctos (radio puro: 5 campos de A80;
+libre puro: el resto) quedan con el mismo formato de valor de siempre
+— sin datos capturados que migrar (`caso_valor` en 0 filas para los 21
+campos, verificado antes de tocar nada).
+
+**Verificado con render real, campo por campo y ficha por ficha**
+(`scratch/test_render_matriz_item_a.php`, no commiteado —
+`/scratch` está en `.gitignore`, mismo patrón que
+`test_render_b26.php`): render aislado de los 21 campos (vacío +
+prefill fabricado) antes/después, diff línea por línea contra la
+corrida sin el fix — coincide exactamente con lo esperado (los 5 bugs
+corregidos, cero cambios en los 16 campos restantes). Además, render de
+página completa (`nueva/index.php`) de las 11 fichas con sesión ADMIN
+real (B24 y Z21 son fichas confidenciales — sin ADMIN,
+`secciones-clinicas.php` filtra sus campos `sensible` y esconde el bug
+detrás de "Todavía no hay campos clínicos definidos aquí", no relacionado
+con este fix); A80 (7 campos `MATRIZ` en una sola página) confirma que
+usar closures locales en vez de `function`/`const` de nivel superior no
+revienta con "Cannot redeclare" al repetirse el `require`. 0
+excepciones, 0 warnings/notices con `E_ALL`.
+
+<details>
+<summary>Redacción original del pendiente (contexto histórico)</summary>
 
 `app/Views/partials/campos/matriz.php` decide un solo modo de render
 para la matriz COMPLETA (radios exclusivos vs. texto/fecha libre), y
@@ -376,8 +440,11 @@ Chagas, Mpox, A37.0, B01, B55, A44, B04X, A50, B24, además de Z21 y
 Y59.0). No intentado en esta sesión — verificar con cada ficha antes de
 tocar el partial compartido.
 
+</details>
+
 **B. Cotejo incompleto de P35.0, prioridad media — 17 fechas de
-manifestación sin capturar. BLOQUEADA POR A, no retomar antes**
+manifestación sin capturar. Ya NO bloqueada por A (A cerrado
+2026-08-01) — sigue sin implementar, es trabajo aparte**
 
 El ítem 34 del PDF pide, por cada una de las 17 manifestaciones
 clínicas, marcar Sí/No/Desconocido **y** la fecha en que apareció. El
@@ -391,6 +458,15 @@ funciona bien en `GRUPO_SI_NO`. **Decisión (2026-08-01): se queda como
 `GRUPO_SI_NO`, sin las 17 fechas, hasta que A esté resuelto.** Cuando A
 se arregle, B se resuelve solo convirtiendo los 4 campos a `MATRIZ` —
 no es trabajo nuevo, es la misma conversión que hoy degradaría.
+
+**Nota (2026-08-01, mismo día que se cerró A):** con A resuelto, la
+conversión ya no degradaría — una `MATRIZ` con columnas `Sí/No/
+Desconocido/Fecha de manifestación` tendría 3 columnas radio (mayúsculas,
+sin palabra libre) + 1 columna fecha en modo híbrido, exactamente el
+caso que A dejó preparado. No se implementó acá: no era parte de lo
+pedido (solo el fix del partial), y toca manifiesto + posible migración
+de las 17 respuestas ya capturadas en los 4 `GRUPO_SI_NO` actuales, que
+merece su propia revisión.
 
 **C. BUG, prioridad alta — `muestras.php` tiene las columnas de
 serología hardcodeadas a B05 con `if ($esB05)`, no declarativas**
