@@ -203,7 +203,13 @@ $es = $estados[$caso['estado']];
           <?php endif; ?>
 
           <?php if ($mostrarResidenciaMadre): ?>
-            <?php require __DIR__ . '/../partials/tablas-hijas/residencia-madre.php'; ?>
+            <?php
+            $rolActual = 'MADRE';
+            $columnasDeclaradas = columnasSujeto($enfermedad['columnas_sujeto'] ?? null, $rolActual);
+            $tituloBloque = tituloSujeto($enfermedad['titulo_sujeto'] ?? null, $rolActual);
+            $valoresSujetoActual = $sujetoMadre ?? [];
+            require __DIR__ . '/../partials/tablas-hijas/residencia-madre.php';
+            ?>
           <?php endif; ?>
         </div>
       </div>

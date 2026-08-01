@@ -66,6 +66,45 @@ function tieneSujeto(?string $columnasSujetoJson, string $rol): bool
     return columnasSujeto($columnasSujetoJson, $rol) !== [];
 }
 
+/**
+ * Metadatos columna → control para el bloque de identidad/residencia de un
+ * sujeto secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2). El orden de
+ * las claves es el orden canónico de render -- ver
+ * tablas-hijas/residencia-madre.php, que lo usa vía array_intersect_key()
+ * para que el bloque se pinte siempre en este orden sin importar el orden
+ * en que columnas_sujeto las declare en el manifiesto. Sigue el orden de
+ * los ítems 23-29 del PDF de P35.0 (identidad), con direccion/distrito_id
+ * al final (el caso de P96, residencia solamente).
+ */
+function metaColumnasSujeto(): array
+{
+    return [
+        'tipo_doc'         => ['label' => 'Tipo de documento', 'kind' => 'tipo_doc'],
+        'doc'              => ['label' => 'N.° de documento', 'kind' => 'texto'],
+        'apellidos'        => ['label' => 'Apellidos', 'kind' => 'texto'],
+        'nombres'          => ['label' => 'Nombres', 'kind' => 'texto'],
+        'sexo'             => ['label' => 'Sexo', 'kind' => 'sexo'],
+        'edad'             => ['label' => 'Edad (años)', 'kind' => 'numero'],
+        'fecha_nacimiento' => ['label' => 'Fecha de nacimiento', 'kind' => 'fecha'],
+        'nacionalidad'     => ['label' => 'Nacionalidad', 'kind' => 'texto'],
+        'ocupacion'        => ['label' => 'Ocupación', 'kind' => 'texto'],
+        'direccion'        => ['label' => 'Dirección', 'kind' => 'texto_wide'],
+        'distrito_id'      => ['label' => null, 'kind' => 'ubigeo'],
+    ];
+}
+
+/**
+ * Título del bloque de un sujeto secundario, con default explícito cuando
+ * la ficha declara columnas_sujeto para el rol pero no titulo_sujeto
+ * (verificar_fichas.php avisa de este caso, no bloquea -- ver Fase 2b).
+ */
+function tituloSujeto(?string $tituloSujetoJson, string $rol): string
+{
+    $decodificado = $tituloSujetoJson ? json_decode($tituloSujetoJson, true) : null;
+    $titulo = is_array($decodificado) ? ($decodificado[$rol] ?? null) : null;
+    return $titulo ?? ('Datos de ' . mb_strtolower($rol));
+}
+
 function e(mixed $valor): string
 {
     return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');

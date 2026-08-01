@@ -241,16 +241,35 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
 };
 
 $rolPrevio = null;
+// Bridge hacia el bloque de identidad/residencia de un rol secundario
+// (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2): [rol => [columna => valor]].
+// Vacío en la mayoría de los llamadores (nada que prefil para una ficha
+// nueva); nueva/index.php, editar.php y el endpoint AJAX lo definen.
+$valoresSujetoPorRol = $valoresSujetoPorRol ?? [];
 
-$mostrarSeparadorSujeto = function(int $seccionId) use (&$rolPrevio) {
+$mostrarSeparadorSujeto = function(int $seccionId) use (&$rolPrevio, $enfermedad, $valoresSujetoPorRol) {
     $campos = \App\Models\CampoDef::porSeccion($seccionId);
     $rolActual = !empty($campos) ? $campos[0]['rol_sujeto'] : 'CASO_INDICE';
-    
+
     if ($rolActual !== $rolPrevio) {
         $nombreRol = ucwords(strtolower(str_replace('_', ' ', $rolActual)));
         echo '<div style="margin: 24px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 600; font-size: 16px;">';
         echo '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: text-bottom; margin-right: 6px;"><circle cx="12" cy="7" r="4"></circle><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path></svg>';
         echo 'Sujeto: ' . htmlspecialchars($nombreRol) . '</div>';
+
+        // Ancla el bloque de identidad/residencia justo antes de la primera
+        // sección de este rol -- solo si la ficha lo declara. P96 no llega
+        // acá nunca (ninguna de sus secciones cambia de rol_sujeto), así
+        // que sigue en su tarjeta de siempre ("Antecedentes epidemiológicos").
+        if (tieneSujeto($enfermedad['columnas_sujeto'] ?? null, $rolActual)) {
+            $columnasDeclaradas = columnasSujeto($enfermedad['columnas_sujeto'] ?? null, $rolActual);
+            $tituloBloque = tituloSujeto($enfermedad['titulo_sujeto'] ?? null, $rolActual);
+            $valoresSujetoActual = $valoresSujetoPorRol[$rolActual] ?? [];
+            echo '<div class="card section" style="margin-bottom:20px"><div class="section-body">';
+            require __DIR__ . '/tablas-hijas/residencia-madre.php';
+            echo '</div></div>';
+        }
+
         $rolPrevio = $rolActual;
     }
 };
