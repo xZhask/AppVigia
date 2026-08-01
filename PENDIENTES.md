@@ -146,7 +146,25 @@ dejando `fecha_notif` como input visible y redundante con ella. Cuando
 5 o 6 fichas tengan la cabecera (o su fecha canónica equivalente),
 construir `fecha_notif_desde` y hacer el retrofit de todas juntas.
 
-## 7. Normalizar `clave` explícita en los ~870 campos restantes del manifiesto
+## 7. Normalizar `clave` explícita en los ~870 campos restantes del manifiesto — ✅ cerrado
+
+Cerrado 2026-08-01 en 21 commits (`0c06edc`..`862ceb8`), uno por ficha
+(las 21 que faltaban de las 24: O95, B05 y P35.0 ya estaban 100%
+explícitas). Cada commit escribió el valor que `claveCampo()` produce
+hoy para los campos sin `clave`, verificado antes de escribir contra
+`campo_def` real (no solo corriendo el verificador) — cambio cero de
+comportamiento confirmado campo por campo, no ficha por ficha. Las
+claves ya explícitas (A33/A80/Y07/Z21, desambiguadas a mano el
+2026-07-30) quedaron intactas.
+
+`--check-all` sobre el manifiesto completo, antes de tocar nada, no
+encontró ninguna clave duplicada nueva más allá de las 4 ya conocidas
+y ya resueltas — así que no hubo nada que reportar y frenar. Cierre
+verificado con `cargar_fichas.php` (dry-run, 24/24 fichas) y
+`verificar_claves.php` (194/194, 0 faltantes) tras el último commit.
+
+<details>
+<summary>Redacción original del pendiente (contexto histórico)</summary>
 
 `cargar_fichas.php` ahora trata `"clave"` del manifiesto como
 autoritativa cuando está presente (antes era decorativa: `claveCampo()`
@@ -180,6 +198,8 @@ pendientes desde hace semanas ya se desambiguaron a mano el
 etiquetas); si algo similar vuelve a aparecer en las ~870 restantes,
 esta normalización lo va a mostrar solo, sin tener que buscarlo caso
 por caso.
+
+</details>
 
 ## 8. Ubigeo de O95 (fallecimiento y referencia) sin integridad referencial real — falta un tipo UBIGEO en el motor (hallazgo A.7)
 
