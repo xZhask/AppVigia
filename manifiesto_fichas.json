@@ -942,36 +942,43 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "b26_codigo_de_registro_n",
                             "etiqueta": "Código de registro N.°",
                             "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
+                            "clave": "b26_fecha_de_consulta",
                             "etiqueta": "Fecha de consulta",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "b26_fecha_de_conocimiento_local_del_caso",
                             "etiqueta": "Fecha de conocimiento local del caso",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "b26_fecha_de_investigacion_visita_domiciliaria",
                             "etiqueta": "Fecha de investigación (visita domiciliaria)",
                             "tipo": "FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "b26_fecha_de_notificacion_ee_ss_a_red_microred",
                             "etiqueta": "Fecha de notificación EE.SS. a Red\/Microred",
                             "tipo": "FECHA",
                             "orden": 5
                         },
                         {
+                            "clave": "b26_fecha_de_notificacion_red_microred_a_direccion_de_s",
                             "etiqueta": "Fecha de notificación Red\/Microred a Dirección de Salud",
                             "tipo": "FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "b26_fecha_de_notificacion_direccion_de_salud_a_cdc",
                             "etiqueta": "Fecha de notificación Dirección de Salud a CDC",
                             "tipo": "FECHA",
                             "orden": 7
@@ -983,26 +990,31 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "b26_fecha_de_inicio_de_sintomas",
                             "etiqueta": "Fecha de inicio de síntomas",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "b26_presento_inflamacion_de_glandulas_parotidas",
                             "etiqueta": "¿Presentó inflamación de glándulas parótidas?",
                             "tipo": "BOOLEANO",
                             "orden": 2
                         },
                         {
+                            "clave": "b26_fecha_de_inicio_de_parotiditis",
                             "etiqueta": "Fecha de inicio de parotiditis",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "b26_n_de_dias_de_duracion",
                             "etiqueta": "N.° de días de duración",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "b26_localizacion",
                             "etiqueta": "Localización",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -1012,11 +1024,13 @@
                             ]
                         },
                         {
+                            "clave": "b26_inflamacion_de_glandulas_submandibulares",
                             "etiqueta": "Inflamación de glándulas submandibulares",
                             "tipo": "BOOLEANO",
                             "orden": 6
                         },
                         {
+                            "clave": "b26_inflamacion_de_glandulas_sublinguales",
                             "etiqueta": "Inflamación de glándulas sublinguales",
                             "tipo": "BOOLEANO",
                             "orden": 7
@@ -1028,31 +1042,37 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "b26_orquitis",
                             "etiqueta": "Orquitis",
                             "tipo": "SI_NO_FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "b26_ooforitis",
                             "etiqueta": "Ooforitis",
                             "tipo": "SI_NO_FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "b26_perdida_de_audicion",
                             "etiqueta": "Pérdida de audición",
                             "tipo": "SI_NO_FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "b26_encefalitis",
                             "etiqueta": "Encefalitis",
                             "tipo": "SI_NO_FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "b26_meningitis",
                             "etiqueta": "Meningitis",
                             "tipo": "SI_NO_FECHA",
                             "orden": 5
                         },
                         {
+                            "clave": "b26_otras",
                             "etiqueta": "Otras",
                             "tipo": "SI_NO_FECHA",
                             "orden": 6
@@ -1064,26 +1084,31 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "b26_hospitalizacion",
                             "etiqueta": "Hospitalización",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "b26_establecimiento",
                             "etiqueta": "Establecimiento",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "b26_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "b26_n_de_dias",
                             "etiqueta": "N.° de días",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "b26_condicion_de_egreso",
                             "etiqueta": "Condición de egreso",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -1095,16 +1120,19 @@
                             ]
                         },
                         {
+                            "clave": "b26_fecha_de_egreso",
                             "etiqueta": "Fecha de egreso",
                             "tipo": "FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "b26_referido_a",
                             "etiqueta": "Referido a",
                             "tipo": "TEXTO",
                             "orden": 7
                         },
                         {
+                            "clave": "b26_causa_de_muerte",
                             "etiqueta": "Causa de muerte",
                             "tipo": "TEXTO",
                             "orden": 8
@@ -1116,6 +1144,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con",
                             "etiqueta": "¿En las últimas 2 a 4 semanas estuvo en contacto con otro caso de parotiditis?",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -1126,6 +1155,7 @@
                             ]
                         },
                         {
+                            "clave": "b26_contactos_por_lugar",
                             "etiqueta": "Contactos por lugar",
                             "tipo": "MATRIZ",
                             "orden": 2,
@@ -1148,11 +1178,13 @@
                             "_corregido": "igual que Varicela: columnas reales son solo nombre\/dirección\/sanos\/enfermos, no el detalle de vacunación de Tos ferina"
                         },
                         {
+                            "clave": "b26_tuvo_contacto_con_gestante",
                             "etiqueta": "¿Tuvo contacto con gestante?",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "b26_trimestre_de_gestacion_contacto",
                             "etiqueta": "Trimestre de gestación (contacto)",
                             "tipo": "SELECT",
                             "orden": 4,
