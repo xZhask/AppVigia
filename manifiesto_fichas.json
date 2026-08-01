@@ -2084,16 +2084,19 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "b57_fecha_probable_de_contagio",
                             "etiqueta": "Fecha probable de contagio",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "b57_tiempo_de_permanencia_en_el_lugar_probable_de_conta",
                             "etiqueta": "Tiempo de permanencia en el lugar probable de contagio",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "b57_existe_chirimacha_o_chinche_en_su_casa",
                             "etiqueta": "¿Existe \"chirimacha\" o chinche en su casa?",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -2104,6 +2107,7 @@
                             ]
                         },
                         {
+                            "clave": "b57_ha_sido_picado_por_una_chirimacha_o_chinche",
                             "etiqueta": "¿Ha sido picado por una \"chirimacha\" o chinche?",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -2114,11 +2118,13 @@
                             ]
                         },
                         {
+                            "clave": "b57_fecha_de_la_picadura",
                             "etiqueta": "Fecha de la picadura",
                             "tipo": "FECHA",
                             "orden": 5
                         },
                         {
+                            "clave": "b57_ha_recibido_transfusion_sin_control_para_chagas",
                             "etiqueta": "¿Ha recibido transfusión sin control para Chagas?",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -2129,16 +2135,19 @@
                             ]
                         },
                         {
+                            "clave": "b57_cuantas_veces_transfusion",
                             "etiqueta": "Cuántas veces (transfusión)",
                             "tipo": "NUMERO",
                             "orden": 7
                         },
                         {
+                            "clave": "b57_fecha_de_la_ultima_transfusion",
                             "etiqueta": "Fecha de la última transfusión",
                             "tipo": "FECHA",
                             "orden": 8
                         },
                         {
+                            "clave": "b57_antecedente_de_madre_seropositiva",
                             "etiqueta": "¿Antecedente de madre seropositiva?",
                             "tipo": "SELECT",
                             "orden": 9,
@@ -2149,6 +2158,7 @@
                             ]
                         },
                         {
+                            "clave": "b57_otra_persona_con_cuadro_similar_en_la_casa_o_lugar_",
                             "etiqueta": "¿Otra persona con cuadro similar en la casa o lugar de contagio?",
                             "tipo": "SELECT",
                             "orden": 10,
@@ -2159,6 +2169,7 @@
                             ]
                         },
                         {
+                            "clave": "b57_posible_forma_de_transmision",
                             "etiqueta": "Posible forma de transmisión",
                             "tipo": "SELECT",
                             "orden": 11,
@@ -2175,6 +2186,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "b57_condicion",
                             "etiqueta": "Condición",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -2184,11 +2196,13 @@
                             ]
                         },
                         {
+                            "clave": "b57_fecha_de_inicio_de_sintomas",
                             "etiqueta": "Fecha de inicio de síntomas",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "b57_etapa_aguda",
                             "etiqueta": "Etapa aguda",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 3,
@@ -2205,6 +2219,7 @@
                             ]
                         },
                         {
+                            "clave": "b57_etapa_cronica",
                             "etiqueta": "Etapa crónica",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 4,
@@ -2230,36 +2245,43 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "b57_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "b57_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "b57_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "b57_n_h_c",
                             "etiqueta": "N.° H.C.",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "b57_dx_de_ingreso_1",
                             "etiqueta": "Dx de ingreso 1",
                             "tipo": "TEXTO",
                             "orden": 5
                         },
                         {
+                            "clave": "b57_dx_de_ingreso_2",
                             "etiqueta": "Dx de ingreso 2",
                             "tipo": "TEXTO",
                             "orden": 6
                         },
                         {
+                            "clave": "b57_condicion_de_egreso",
                             "etiqueta": "Condición de egreso",
                             "tipo": "SELECT",
                             "orden": 7,
@@ -2269,6 +2291,7 @@
                             ]
                         },
                         {
+                            "clave": "b57_necropsia",
                             "etiqueta": "Necropsia",
                             "tipo": "BOOLEANO",
                             "orden": 8
@@ -2280,6 +2303,7 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "b57_recibio_tratamiento",
                             "etiqueta": "Recibió tratamiento",
                             "tipo": "BOOLEANO",
                             "orden": 1
@@ -2291,6 +2315,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "b57_clasificacion_final",
                             "etiqueta": "Clasificación final",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -2305,11 +2330,13 @@
                             "_nota": "el PDF modela esto como una tabla forma x (confirmado\/descartado), cada una con su propia fecha; se simplifica a una sola SELECT combinada"
                         },
                         {
+                            "clave": "b57_fecha_de_clasificacion",
                             "etiqueta": "Fecha de clasificación",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "b57_criterio_de_descarte",
                             "etiqueta": "Criterio de descarte",
                             "tipo": "TEXTO",
                             "orden": 3,
