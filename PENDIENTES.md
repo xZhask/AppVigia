@@ -303,15 +303,53 @@ avisos) OK. Sin warnings de PHP atribuibles a estos cambios.
 
 **Fase 2 de la petición: cerrada por completo.** Sigue la Fase 3.
 
-### Fases 3 a 6 — no empezadas
+### Fases 3 a 6
 
-- **Fase 3** (cuadro clínico `GRUPO_SI_NO` → `MATRIZ`, 4 campos con
-  columnas `Sí/No/Desconocido/Fecha de manifestación`): sin
-  investigar todavía si el renderizador de `MATRIZ` sabe pintar una
-  celda de tipo fecha o un trío de radios — es la condición de parada
-  explícita de la petición para esta fase. Revisar cómo lo resuelven
-  Y59.0 y Z21 (mencionados como precedente) antes de decidir si se
-  puede hacer o si el cuadro clínico se queda como está.
+**A. BUG, prioridad alta — `campos/matriz.php` detecta tipo de celda por
+fila, no por columna; Z21 y Y59.0 ya pierden sus columnas de fecha**
+
+`app/Views/partials/campos/matriz.php` decide un solo modo de render
+para la matriz COMPLETA (radios exclusivos vs. texto/fecha libre), y
+cuando cae al modo libre, decide `type="date"` vs `type="text"` mirando
+el nombre de la **fila** (`str_contains($fila, 'FECHA')`), no el de la
+columna. Encontrado al investigar la Fase 3 de P35.0, pero **no es un
+hueco de P35.0 — son dos fichas ya cargadas y en uso, con pérdida de
+calidad de dato real, silenciosa, que nadie había notado**:
+
+- **Z21** ("Pruebas diagnósticas"): columnas `["Fecha de toma de
+  muestra", "Resultado"]`, filas `1.er PCR / 2.° PCR / Prueba de ELISA /
+  Prueba confirmatoria`. Como una columna dice "Fecha", toda la matriz
+  cae a modo texto; como ninguna fila dice "Fecha", la columna "Fecha de
+  toma de muestra" se pinta como `<input type="text">` en vez de
+  `type="date"`.
+- **Y59.0** ("Signos y síntomas", 18 ítems): columnas `["Tiempo...",
+  "Fecha de inicio", "Fecha de término"]`. Mismo problema — ambas
+  columnas de fecha se pintan como texto libre.
+
+**Arreglo:** detección de tipo por columna (no por fila) + modo híbrido
+que permita radios exclusivos en unas columnas y texto/fecha libre en
+otras dentro de la misma fila. Es el único partial `MATRIZ` de todo el
+sistema — superficie de prueba: toda ficha que lo use (A80, B26, B05,
+Chagas, Mpox, A37.0, B01, B55, A44, B04X, A50, B24, además de Z21 y
+Y59.0). No intentado en esta sesión — verificar con cada ficha antes de
+tocar el partial compartido.
+
+**B. Cotejo incompleto de P35.0, prioridad media — 17 fechas de
+manifestación sin capturar. BLOQUEADA POR A, no retomar antes**
+
+El ítem 34 del PDF pide, por cada una de las 17 manifestaciones
+clínicas, marcar Sí/No/Desconocido **y** la fecha en que apareció. El
+manifiesto de P35.0 tiene esas 17 manifestaciones como 4 campos
+`GRUPO_SI_NO` (sin columna de fecha — `GRUPO_SI_NO` no tiene columnas).
+Convertirlos a `MATRIZ` con columnas `Sí/No/Desconocido/Fecha de
+manifestación` HOY sería estrictamente peor que dejarlos como están: al
+tener una columna de fecha, la matriz completa cae a modo texto libre
+(bug A) y se pierde también la exclusividad Sí/No/Desconocido que ya
+funciona bien en `GRUPO_SI_NO`. **Decisión (2026-08-01): se queda como
+`GRUPO_SI_NO`, sin las 17 fechas, hasta que A esté resuelto.** Cuando A
+se arregle, B se resuelve solo convirtiendo los 4 campos a `MATRIZ` —
+no es trabajo nuevo, es la misma conversión que hoy degradaría.
+
 - **Fase 4** (10 `depende_de` nuevos): no empezada. Depende de que la
   Fase 0 ya congeló las claves (hecho), así que no hay riesgo de que un
   renombre las rompa — se puede hacer en cualquier momento.
