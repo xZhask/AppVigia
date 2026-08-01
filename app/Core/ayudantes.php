@@ -67,6 +67,28 @@ function tieneSujeto(?string $columnasSujetoJson, string $rol): bool
 }
 
 /**
+ * Todos los roles que columnas_sujeto declara para esta ficha (hoy casi
+ * siempre uno solo, MADRE, pero el mecanismo no asume eso).
+ */
+function rolesSujetoDeclarados(?string $columnasSujetoJson): array
+{
+    $decodificado = $columnasSujetoJson ? json_decode($columnasSujetoJson, true) : null;
+    return is_array($decodificado) ? array_keys($decodificado) : [];
+}
+
+/**
+ * De los roles declarados, cuáles NO tienen sección propia en el
+ * manifiesto -- esos son los que secciones-clinicas.php no puede anclar
+ * (no tiene antes de qué sección pintarlos) y siguen renderizando en la
+ * tarjeta de siempre ("Antecedentes epidemiológicos"). $rolesConSeccionPropia
+ * viene de CampoDef::rolesConSeccionPropia($enfermedadId).
+ */
+function rolesSujetoSinAnclaje(?string $columnasSujetoJson, array $rolesConSeccionPropia): array
+{
+    return array_values(array_diff(rolesSujetoDeclarados($columnasSujetoJson), $rolesConSeccionPropia));
+}
+
+/**
  * Metadatos columna → control para el bloque de identidad/residencia de un
  * sujeto secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2). El orden de
  * las claves es el orden canónico de render -- ver

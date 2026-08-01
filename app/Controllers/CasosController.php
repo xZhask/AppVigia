@@ -110,7 +110,7 @@ class CasosController extends Controller
             'erroresVacunas' => [],
             'erroresMuestras' => [],
             'erroresLugarInfeccion' => [],
-            'sujetoMadre' => [],
+            'valoresSujetoPorRol' => [],
         ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
     }
 
@@ -273,7 +273,7 @@ class CasosController extends Controller
                 'erroresVacunas' => $erroresVacunas,
                 'erroresMuestras' => $erroresMuestras,
                 'erroresLugarInfeccion' => $erroresLugarInfeccion,
-                'sujetoMadre' => ($enfermedad['cie10'] ?? null) === 'P96' ? $this->datosResidenciaMadre() : [],
+                'valoresSujetoPorRol' => $this->valoresSujetoPorRolDesdePost($enfermedad),
             ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
         }
@@ -332,10 +332,10 @@ class CasosController extends Controller
             CasoLugarInfeccion::reemplazarTodos($casoId, $filasLugarInfeccion);
 
             $rolPrincipal = $enfermedad['multi_sujeto'] ? explode(',', $enfermedad['roles_sujeto'])[0] : 'CASO_INDICE';
-            $sujetos = [$rolPrincipal => ['persona_id' => $personaId]];
-            if (($enfermedad['cie10'] ?? null) === 'P96') {
-                $sujetos['MADRE'] = $this->datosResidenciaMadre();
-            }
+            $sujetos = array_merge(
+                [$rolPrincipal => ['persona_id' => $personaId]],
+                $this->valoresSujetoPorRolDesdePost($enfermedad)
+            );
             CasoSujeto::guardarSujetos($casoId, $sujetos);
 
             CasoBitacora::registrar($casoId, (int) $usuario['id'], 'CREACION', 'Ficha registrada.');
@@ -412,7 +412,8 @@ class CasosController extends Controller
         $isPfa = ($enfermedad['cie10'] ?? '') === 'A80';
         $isB05 = ($enfermedad['cie10'] ?? '') === 'B05';
         $sinCaptacion = in_array($enfermedad['cie10'] ?? '', ['A80', 'B05', 'O95', 'P35.0'], true);
-        $tieneAntecedentesEpi = !$isPfa && !$isB05 && ((int) ($enfermedad['usa_contactos'] ?? 0) === 1 || (int) ($enfermedad['usa_viajes'] ?? 0) === 1 || (int) ($enfermedad['usa_vacunas'] ?? 0) === 1 || (int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1 || ($enfermedad['cie10'] ?? null) === 'P96');
+        $tieneSujetoSinAnclaje = !empty(rolesSujetoSinAnclaje($enfermedad['columnas_sujeto'] ?? null, CampoDef::rolesConSeccionPropia((int) $enfermedad['id'])));
+        $tieneAntecedentesEpi = !$isPfa && !$isB05 && ((int) ($enfermedad['usa_contactos'] ?? 0) === 1 || (int) ($enfermedad['usa_viajes'] ?? 0) === 1 || (int) ($enfermedad['usa_vacunas'] ?? 0) === 1 || (int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1 || $tieneSujetoSinAnclaje);
 
         // nucleo_omitidos: cambiar de enfermedad en "Nueva ficha" solo
         // reemplaza la sección clínica vía AJAX -- la tarjeta de "Datos del
@@ -550,7 +551,7 @@ class CasosController extends Controller
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),
             'muestras'    => CasoMuestra::porCaso((int) $caso['id']),
             'lugaresInfeccion' => CasoLugarInfeccion::porCaso((int) $caso['id']),
-            'sujetoMadre' => $this->sujetoMadreConDistrito($caso),
+            'valoresSujetoPorRol' => $this->sujetosConDistritoPorRol($caso),
             'bitacora'    => CasoBitacora::porCaso((int) $caso['id']),
             'puedeEditar' => $this->puedeEditarCaso($caso),
             'puedeCerrar' => Auth::tieneRol(...self::ROLES_CIERRE),
@@ -636,7 +637,7 @@ class CasosController extends Controller
             'erroresVacunas' => [],
             'erroresLugarInfeccion' => [],
             'erroresMuestras' => [],
-            'sujetoMadre' => CasoSujeto::porCaso((int) $caso['id'])['MADRE'] ?? [],
+            'valoresSujetoPorRol' => CasoSujeto::porCaso((int) $caso['id']),
         ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($caso['distrito_id'])));
     }
 
@@ -778,7 +779,7 @@ class CasosController extends Controller
                 'erroresVacunas' => $erroresVacunas,
                 'erroresMuestras' => $erroresMuestras,
                 'erroresLugarInfeccion' => $erroresLugarInfeccion,
-                'sujetoMadre' => ($enfermedad['cie10'] ?? null) === 'P96' ? $this->datosResidenciaMadre() : [],
+                'valoresSujetoPorRol' => $this->valoresSujetoPorRolDesdePost($enfermedad),
             ], $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
         }
@@ -833,10 +834,10 @@ class CasosController extends Controller
                 ? explode(',', $caso['enfermedad_roles_sujeto'] ?? 'CASO_INDICE')[0]
                 : 'CASO_INDICE';
 
-            $sujetos = [$rolPrincipal => ['persona_id' => $personaId]];
-            if (($enfermedad['cie10'] ?? null) === 'P96') {
-                $sujetos['MADRE'] = $this->datosResidenciaMadre();
-            }
+            $sujetos = array_merge(
+                [$rolPrincipal => ['persona_id' => $personaId]],
+                $this->valoresSujetoPorRolDesdePost($enfermedad)
+            );
             CasoSujeto::guardarSujetos((int) $caso['id'], $sujetos);
 
             if ($clasificacion !== $caso['clasificacion']) {
@@ -1565,31 +1566,64 @@ class CasosController extends Controller
     }
 
     /**
-     * Sujeto MADRE de un caso, con el nombre del distrito resuelto (para la
-     * vista de solo lectura -- el formulario de edición usa el selector de
-     * UBIGEO, que no necesita el nombre, solo el id).
+     * Sujetos secundarios de un caso (por rol), con el nombre del distrito
+     * resuelto donde aplique -- para la vista de solo lectura (`ver.php`;
+     * el formulario de edición usa el selector de UBIGEO, que no necesita
+     * el nombre, solo el id).
      */
-    private function sujetoMadreConDistrito(array $caso): array
+    private function sujetosConDistritoPorRol(array $caso): array
     {
-        $sujeto = CasoSujeto::porCaso((int) $caso['id'])['MADRE'] ?? [];
-        if (!empty($sujeto['distrito_id'])) {
-            $distrito = Distrito::buscarPorId($sujeto['distrito_id']);
-            $sujeto['distrito_nombre'] = $distrito['nombre'] ?? $sujeto['distrito_id'];
+        $sujetos = CasoSujeto::porCaso((int) $caso['id']);
+        foreach ($sujetos as &$sujeto) {
+            if (!empty($sujeto['distrito_id'])) {
+                $distrito = Distrito::buscarPorId($sujeto['distrito_id']);
+                $sujeto['distrito_nombre'] = $distrito['nombre'] ?? $sujeto['distrito_id'];
+            }
         }
-        return $sujeto;
+        unset($sujeto);
+        return $sujetos;
     }
 
     /**
-     * "Residencia habitual de la madre" para muerte fetal y neonatal (P96) --
-     * PENDIENTES_POST_FASE5.md punto 4: se captura en caso_sujeto (rol
-     * MADRE), con selector de UBIGEO, en vez de un campo_def de texto libre.
+     * Lee $_POST["{rol_minuscula}_{columna}"] para cada columna que la
+     * ficha declaró para ese rol (columnasSujeto(), PETICION_P35_RUBEOLA_CONGENITA.md
+     * Fase 2) -- generaliza lo que antes era datosResidenciaMadre() (fijo a
+     * distrito_id/direccion, solo P96) a cualquier rol/columnas. Caso
+     * especial: fecha_nacimiento usa fechaIsoValida(), no trim() plano,
+     * mismo criterio que fecha_nac del paciente -- una fecha inválida se
+     * guarda NULL, no como texto suelto que rompería la columna DATE.
      */
-    private function datosResidenciaMadre(): array
+    private function datosSujetoDesdePost(string $rol, array $columnas): array
     {
-        return [
-            'distrito_id' => trim((string) ($_POST['madre_distrito_id'] ?? '')) ?: null,
-            'direccion'   => trim((string) ($_POST['madre_direccion'] ?? '')) ?: null,
-        ];
+        $prefijo = mb_strtolower($rol) . '_';
+        $meta = metaColumnasSujeto();
+        $datos = [];
+        foreach ($columnas as $col) {
+            $valor = trim((string) ($_POST[$prefijo . $col] ?? ''));
+            if ($valor === '') {
+                $datos[$col] = null;
+                continue;
+            }
+            $datos[$col] = ($meta[$col]['kind'] ?? null) === 'fecha' ? fechaIsoValida($valor) : $valor;
+        }
+        return $datos;
+    }
+
+    /**
+     * [rol => [columna => valor]] para TODOS los roles que la ficha declara
+     * en columnas_sujeto, leído de $_POST -- usado para repoblar el
+     * formulario tras un error de validación (no se pierde lo ya tecleado).
+     * Deliberadamente no filtra por rolesConSeccionPropia(): eso solo decide
+     * DÓNDE se pinta el bloque, no si sus datos hay que conservarlos.
+     */
+    private function valoresSujetoPorRolDesdePost(array $enfermedad): array
+    {
+        $columnasSujetoJson = $enfermedad['columnas_sujeto'] ?? null;
+        $valores = [];
+        foreach (rolesSujetoDeclarados($columnasSujetoJson) as $rol) {
+            $valores[$rol] = $this->datosSujetoDesdePost($rol, columnasSujeto($columnasSujetoJson, $rol));
+        }
+        return $valores;
     }
 
     private function filasContactos(): array

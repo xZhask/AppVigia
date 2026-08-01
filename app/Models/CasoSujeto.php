@@ -12,6 +12,15 @@ class CasoSujeto
      * 'distrito_id'/'direccion' (PENDIENTES_POST_FASE5.md punto 4: residencia
      * habitual de la madre en muerte fetal y neonatal).
      */
+    /**
+     * Columnas de datos de caso_sujeto (sin id/caso_id/rol, que se manejan
+     * aparte). Debe incluir toda columna que columnasSujeto() pueda declarar
+     * (ver COLUMNAS_SUJETO_VALIDAS en cargar_fichas.php, misma lista) más
+     * persona_id, que no pasa por el manifiesto -- lo arma el controlador
+     * directamente para el rol principal.
+     */
+    private const COLUMNAS_DATOS = ['persona_id', 'apellidos', 'nombres', 'doc', 'tipo_doc', 'sexo', 'edad', 'fecha_nacimiento', 'nacionalidad', 'ocupacion', 'distrito_id', 'direccion'];
+
     public static function guardarSujetos(int $casoId, array $sujetos): void
     {
         $db = Database::conexion();
@@ -19,24 +28,18 @@ class CasoSujeto
         $stmtLimpiar = $db->prepare('DELETE FROM caso_sujeto WHERE caso_id = :caso');
         $stmtLimpiar->execute(['caso' => $casoId]);
 
+        $marcadores = implode(', ', array_map(fn($c) => ":{$c}", self::COLUMNAS_DATOS));
         $stmtInsert = $db->prepare(
-            'INSERT INTO caso_sujeto (caso_id, persona_id, rol, apellidos, nombres, doc, sexo, edad, distrito_id, direccion)
-             VALUES (:caso, :persona, :rol, :apellidos, :nombres, :doc, :sexo, :edad, :distrito_id, :direccion)'
+            'INSERT INTO caso_sujeto (caso_id, rol, ' . implode(', ', self::COLUMNAS_DATOS) . ')
+             VALUES (:caso, :rol, ' . $marcadores . ')'
         );
 
         foreach ($sujetos as $rol => $datos) {
-            $stmtInsert->execute([
-                'caso'        => $casoId,
-                'rol'         => $rol,
-                'persona'     => $datos['persona_id'] ?? null,
-                'apellidos'   => $datos['apellidos'] ?? null,
-                'nombres'     => $datos['nombres'] ?? null,
-                'doc'         => $datos['doc'] ?? null,
-                'sexo'        => $datos['sexo'] ?? null,
-                'edad'        => $datos['edad'] ?? null,
-                'distrito_id' => $datos['distrito_id'] ?? null,
-                'direccion'   => $datos['direccion'] ?? null,
-            ]);
+            $parametros = ['caso' => $casoId, 'rol' => $rol];
+            foreach (self::COLUMNAS_DATOS as $columna) {
+                $parametros[$columna] = $datos[$columna] ?? null;
+            }
+            $stmtInsert->execute($parametros);
         }
     }
 

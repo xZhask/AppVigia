@@ -260,96 +260,48 @@ tiene sentido.
 
 ## 10. Estado de PETICION_P35_RUBEOLA_CONGENITA.md al 2026-08-01 — retomar desde acá
 
-Fases 0, 1 y 2a/2b/2c cerradas y commiteadas. Fase 2d **no empezó**:
-ninguno de los "8 puntos" (los `if (cie10 === 'P96')` hardcodeados)
-se tocó todavía. Detalle exacto de qué hace cada uno hoy, para no
-tener que redescubrirlo:
+Fases 0, 1 y 2 completas (2a/2b/2c/2d, todas commiteadas). Los "8
+puntos" (`if (cie10 === 'P96')` hardcodeados) ya se reemplazaron por
+el gate declarativo `tieneSujeto(...) && !in_array($rol,
+CampoDef::rolesConSeccionPropia($enfermedadId))`, generalizado a
+recorrer TODOS los roles de `columnas_sujeto` (no un solo "MADRE" fijo
+en código) vía `rolesSujetoDeclarados()`/`rolesSujetoSinAnclaje()`
+(`app/Core/ayudantes.php`). `datosResidenciaMadre()` se reemplazó por
+`CasosController::datosSujetoDesdePost(string $rol, array $columnas)`
++ `valoresSujetoPorRolDesdePost(array $enfermedad)` (todos los roles a
+la vez, con `fechaIsoValida()` para las columnas tipo fecha).
 
-### Lo que 2c sí cableó (y lo que NO)
+Los dos bloqueos adicionales que se habían encontrado también se
+resolvieron:
+- `CasoSujeto::guardarSujetos()` ya no tiene el INSERT hardcodeado a 7
+  columnas -- ahora recorre `COLUMNAS_DATOS` (11, incluidas las 4
+  nuevas).
+- `ver.php` (que no usa `secciones-clinicas.php`) se generalizó por
+  separado: recorre todos los roles declarados y sus columnas vía
+  `metaColumnasSujeto()`, en modo texto. **Decisión tomada** (no
+  quedó abierta): se mantuvo la posición fija de siempre (cerca de
+  "Lugar probable de infección"), sin replicar el anclaje por rol de
+  2c ahí -- es de solo lectura, menos sensible al orden que un
+  formulario, y evita tocar el loop compartido por las 24 fichas en
+  esa vista. Si en el futuro se quiere que `ver.php` también ancle el
+  bloque junto a la sección clínica del rol, es trabajo aparte.
 
-2c construyó el mecanismo de render declarativo (`tieneSujeto()`,
-`columnasSujeto()`, `tituloSujeto()`, `metaColumnasSujeto()` en
-`app/Core/ayudantes.php`; `CampoDef::rolesConSeccionPropia()`; el
-partial genérico `tablas-hijas/residencia-madre.php`; el anclaje
-dentro de `secciones-clinicas.php` vía `$mostrarSeparadorSujeto()`) y
-lo verificó de punta a punta **para P96**, porque el guardado/lectura
-de P96 nunca cambiaron — siguen usando el mismo `datosResidenciaMadre()`
-y los mismos 8 hardcodes de siempre. Por eso "P96 pasa crear/editar/ver"
-no significa que 2d esté hecho: significa que 2c no rompió lo que ya
-funcionaba.
+**Verificado de punta a punta con casos de prueba reales** (crear →
+editar → ver, vía `CasosController` real, no simulado; casos borrados
+al terminar, 0 filas residuales):
+- **P96**: dirección/distrito se guardan, prefilan y muestran igual
+  que siempre; las 4 columnas nuevas de `caso_sujeto` quedan `NULL`
+  (P96 no las declara) -- comportamiento preservado exacto.
+- **P35.0**: las 8 columnas de identidad (tipo_doc, doc, apellidos,
+  nombres, edad, fecha_nacimiento, nacionalidad, ocupacion) ahora se
+  guardan de verdad, se prefilan en `editar()` y se muestran en
+  `ver()` bajo el título "Datos de la madre". Antes de esta fase se
+  perdían en silencio.
 
-**Para P35.0, el formulario ya muestra los 8 campos de identidad**
-(se verificó render con datos reales vía el controlador), pero:
-- Si se llena y se guarda hoy, esos 8 valores **se pierden en silencio**:
-  `CasosController::crear()`/`actualizar()` solo llaman a
-  `datosResidenciaMadre()` (que solo lee `madre_distrito_id`/
-  `madre_direccion`) y solo cuando `cie10 === 'P96'` — para P35.0 ese
-  `if` nunca entra, así que `$sujetos['MADRE']` nunca se arma.
-- No hay error visible: el formulario deja guardar igual (los 8 campos
-  no son `obligatorio`), y el usuario no se entera de que no se guardó
-  nada de la madre.
+`verificar_claves.php` (194/194) y `verificar_fichas.php` (24/24, sin
+avisos) OK. Sin warnings de PHP atribuibles a estos cambios.
 
-### Los 8 puntos, tal cual están hoy (ninguno tocado)
-
-Gate a reemplazar en los 6 primeros:
-`tieneSujeto($enfermedad['columnas_sujeto'] ?? null, $rol) &&
-!in_array($rol, CampoDef::rolesConSeccionPropia($enfermedadId))`
-(el `!in_array(...)` es necesario porque si el rol SÍ tiene sección
-propia, el bloque ya se pinta solo, anclado, desde `secciones-clinicas.php`
-— repetirlo acá sería doble render).
-
-1. `app/Views/nueva/index.php:223` — `$mostrarResidenciaMadre`, gate del
-   formulario "Nueva ficha".
-2. `app/Views/fichas/editar.php:177` — mismo gate, edición.
-3. `app/Views/fichas/ver.php:203` — gate de la vista de solo lectura.
-   **Usa `$caso`, no `$enfermedad`** — ya expone `enfermedad_columnas_sujeto`/
-   `enfermedad_titulo_sujeto` desde 2b (`Caso::conDetalle()`), así que el
-   dato está, falta consumirlo.
-4. `CasosController.php:276` (`nuevo()` GET, repoblar `sujetoMadre` tras
-   error de validación).
-5. `CasosController.php:336` (`crear()` POST, arma `$sujetos['MADRE']`
-   antes de `CasoSujeto::guardarSujetos()`).
-6. `CasosController.php:415` (`seccionesClinicas()` AJAX, booleano
-   `tieneAntecedentesEpi` para la respuesta JSON).
-7. `CasosController.php:781` (`actualizar()` GET, repoblar tras error).
-8. `CasosController.php:837` (`actualizar()` POST, arma `$sujetos['MADRE']`).
-
-`datosResidenciaMadre()` (privado en `CasosController.php`) hay que
-generalizarlo a algo como `datosSujetoDesdePost(string $rol, array
-$columnas): array` que lea `{rol_minuscula}_{columna}` por cada columna
-declarada, con el caso especial ya identificado en la charla de diseño:
-`fecha_nacimiento` necesita `fechaIsoValida()`, no `trim() ?: null`
-plano (mismo criterio que ya usa `fecha_nac` del paciente).
-
-### Dos bloqueos adicionales, encontrados recién, que no son de los "8 puntos"
-
-**A. `CasoSujeto::guardarSujetos()` tiene el INSERT hardcodeado a las
-7 columnas viejas** (`apellidos, nombres, doc, sexo, edad, distrito_id,
-direccion` — `app/Models/CasoSujeto.php:22-24`). No incluye `tipo_doc`,
-`fecha_nacimiento`, `nacionalidad`, `ocupacion`. Aunque se resuelvan
-los 8 puntos, si no se amplía este INSERT los 4 campos nuevos se siguen
-perdiendo en silencio (probado: un `caso_sujeto` de prueba con esas
-columnas quedó en `NULL` porque ni siquiera se intentó insertarlas).
-Hay que generalizar el INSERT para que recorra las columnas presentes
-en `$datos` en vez de una lista fija, o al menos sumar las 4 nuevas.
-
-**B. `fichas/ver.php` no usa `secciones-clinicas.php`** — tiene su
-propio `foreach ($secciones as $seccion)` plano (línea 117), sin el
-mecanismo de "Sujeto: X" ni el anclaje que se construyó en 2c. El punto
-3 de arriba resuelve el *gate* (mostrar/ocultar), pero no la
-*posición*: si no se hace nada más, el bloque de identidad de P35.0 en
-`ver.php` va a seguir apareciendo tarde (cerca de "Lugar probable de
-infección", como hoy hace el de P96), no pegado a la sección clínica
-"Antecedentes de la madre" como sí queda en `editar.php`/`nueva/index.php`
-desde 2c. Es una inconsistencia entre la vista de edición y la de solo
-lectura. **No decidido:** replicar el anclaje por rol dentro del loop
-de `ver.php`, o aceptar la posición fija ahí (es de solo lectura, menos
-sensible al orden que un formulario) — decidir antes de tocar el punto 3.
-
-Además, `ver.php` hoy solo imprime `direccion`/`distrito_nombre`
-(`sujetoMadreConDistrito()`); para P35.0 hay que generalizarlo a las
-demás columnas con la misma tabla `metaColumnasSujeto()`, en modo
-texto (sin `<input>`), no repetir el mapeo a mano.
+**Fase 2 de la petición: cerrada por completo.** Sigue la Fase 3.
 
 ### Fases 3 a 6 — no empezadas
 

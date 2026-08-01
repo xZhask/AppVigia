@@ -174,8 +174,13 @@ $es = $estados[$caso['estado']];
       $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
       $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
-      $mostrarResidenciaMadre = (($enfermedad['cie10'] ?? null) === 'P96');
-      $tieneAntecedentesEpidemiologicos = ($mostrarContactos || $mostrarViajes || $mostrarVacunas || $mostrarLugarInf || $mostrarResidenciaMadre) && !$isB26;
+      // Roles con columnas_sujeto que NO tienen sección propia en el
+      // manifiesto (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2): los que sí
+      // tienen sección ya se anclan solos dentro de secciones-clinicas.php
+      // (2c) -- repetirlos acá sería doble render. P96 no declara ninguna
+      // sección con rol_sujeto propio, así que cae acá igual que siempre.
+      $rolesSujetoAqui = rolesSujetoSinAnclaje($enfermedad['columnas_sujeto'] ?? null, \App\Models\CampoDef::rolesConSeccionPropia((int) $enfermedad['id']));
+      $tieneAntecedentesEpidemiologicos = ($mostrarContactos || $mostrarViajes || $mostrarVacunas || $mostrarLugarInf || !empty($rolesSujetoAqui)) && !$isB26;
       ?>
 
       <!-- Antecedentes epidemiológicos -->
@@ -202,15 +207,14 @@ $es = $estados[$caso['estado']];
             <?php require __DIR__ . '/../partials/tablas-hijas/lugar-infeccion.php'; ?>
           <?php endif; ?>
 
-          <?php if ($mostrarResidenciaMadre): ?>
+          <?php foreach ($rolesSujetoAqui as $rolActual): ?>
             <?php
-            $rolActual = 'MADRE';
             $columnasDeclaradas = columnasSujeto($enfermedad['columnas_sujeto'] ?? null, $rolActual);
             $tituloBloque = tituloSujeto($enfermedad['titulo_sujeto'] ?? null, $rolActual);
-            $valoresSujetoActual = $sujetoMadre ?? [];
+            $valoresSujetoActual = $valoresSujetoPorRol[$rolActual] ?? [];
             require __DIR__ . '/../partials/tablas-hijas/residencia-madre.php';
             ?>
-          <?php endif; ?>
+          <?php endforeach; ?>
         </div>
       </div>
       <?php if ($tieneAntecedentesEpidemiologicos) $numeroSeccion++; ?>

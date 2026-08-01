@@ -200,13 +200,22 @@ $accionEtiquetas = [
           <?php endforeach; ?>
         <?php endif; ?>
 
-        <?php if (($caso['cie10'] ?? null) === 'P96' && !empty($sujetoMadre)): ?>
-          <div class="eyebrow" style="margin:18px 0 10px">Residencia habitual de la madre</div>
+        <?php foreach (rolesSujetoDeclarados($caso['enfermedad_columnas_sujeto'] ?? null) as $rolVer):
+            $datosVer = $valoresSujetoPorRol[$rolVer] ?? [];
+            if (empty($datosVer)) continue; // ningún caso_sujeto guardado para este rol todavía
+            $columnasVerOrdenadas = array_intersect_key(metaColumnasSujeto(), array_flip(columnasSujeto($caso['enfermedad_columnas_sujeto'] ?? null, $rolVer)));
+        ?>
+          <div class="eyebrow" style="margin:18px 0 10px"><?= e(tituloSujeto($caso['enfermedad_titulo_sujeto'] ?? null, $rolVer)) ?></div>
           <div class="subrow"><div class="fields thirds" style="flex:1">
-            <div class="field wide"><label class="fl">Dirección</label><div class="control" style="background:var(--paper)"><?= e($sujetoMadre['direccion'] ?? '—') ?></div></div>
-            <div class="field"><label class="fl">Distrito</label><div class="control" style="background:var(--paper)"><?= e($sujetoMadre['distrito_nombre'] ?? '—') ?></div></div>
+            <?php foreach ($columnasVerOrdenadas as $colVer => $infoVer):
+                $esUbigeo = $infoVer['kind'] === 'ubigeo';
+                $valorVer = $esUbigeo ? ($datosVer['distrito_nombre'] ?? '—') : ($datosVer[$colVer] ?? '—');
+                $claseVer = $infoVer['kind'] === 'texto_wide' ? 'field wide' : 'field';
+            ?>
+              <div class="<?= $claseVer ?>"><label class="fl"><?= e($esUbigeo ? 'Distrito' : $infoVer['label']) ?></label><div class="control" style="background:var(--paper)"><?= e($valorVer !== null && $valorVer !== '' ? $valorVer : '—') ?></div></div>
+            <?php endforeach; ?>
           </div></div>
-        <?php endif; ?>
+        <?php endforeach; ?>
       </div>
     </div>
     <?php $numeroSeccion++; ?>
