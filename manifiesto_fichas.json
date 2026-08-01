@@ -329,51 +329,61 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a37_0_fecha_de_inicio_de_sintomas",
                             "etiqueta": "Fecha de inicio de síntomas",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a37_0_duracion_en_dias_tos_paroxistica",
                             "etiqueta": "Duración en días: tos paroxística",
                             "tipo": "NUMERO",
                             "orden": 2
                         },
                         {
+                            "clave": "a37_0_duracion_en_dias_tos_persistente_en_1_ano",
                             "etiqueta": "Duración en días: tos persistente en ≥1 año",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "a37_0_tos_paroxistica_10_golpes_de_tos",
                             "etiqueta": "Tos paroxística (>10 golpes de tos)",
                             "tipo": "SI_NO_FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "a37_0_tos_persistente_2_semanas",
                             "etiqueta": "Tos persistente (>2 semanas)",
                             "tipo": "SI_NO_FECHA",
                             "orden": 5
                         },
                         {
+                            "clave": "a37_0_estridor",
                             "etiqueta": "Estridor",
                             "tipo": "SI_NO_FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "a37_0_vomitos_despues_de_la_tos",
                             "etiqueta": "Vómitos después de la tos",
                             "tipo": "SI_NO_FECHA",
                             "orden": 7
                         },
                         {
+                            "clave": "a37_0_apnea",
                             "etiqueta": "Apnea",
                             "tipo": "SI_NO_FECHA",
                             "orden": 8
                         },
                         {
+                            "clave": "a37_0_cianosis",
                             "etiqueta": "Cianosis",
                             "tipo": "SI_NO_FECHA",
                             "orden": 9
                         },
                         {
+                            "clave": "a37_0_otros_sintomas",
                             "etiqueta": "Otros síntomas",
                             "tipo": "SI_NO_FECHA",
                             "orden": 10
@@ -385,11 +395,13 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a37_0_paciente_recibio_antibiotico",
                             "etiqueta": "¿Paciente recibió antibiótico?",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "a37_0_antibioticos_recibidos",
                             "etiqueta": "Antibióticos recibidos",
                             "tipo": "MATRIZ",
                             "orden": 2,
@@ -412,86 +424,103 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a37_0_neumonia",
                             "etiqueta": "Neumonía",
                             "tipo": "SI_NO_FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a37_0_convulsiones",
                             "etiqueta": "Convulsiones",
                             "tipo": "SI_NO_FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a37_0_encefalopatia",
                             "etiqueta": "Encefalopatía",
                             "tipo": "SI_NO_FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "a37_0_anorexia",
                             "etiqueta": "Anorexia",
                             "tipo": "SI_NO_FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "a37_0_desnutricion",
                             "etiqueta": "Desnutrición",
                             "tipo": "SI_NO_FECHA",
                             "orden": 5
                         },
                         {
+                            "clave": "a37_0_deshidratacion",
                             "etiqueta": "Deshidratación",
                             "tipo": "SI_NO_FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "a37_0_otitis_media",
                             "etiqueta": "Otitis media",
                             "tipo": "SI_NO_FECHA",
                             "orden": 7
                         },
                         {
+                            "clave": "a37_0_otros",
                             "etiqueta": "Otros",
                             "tipo": "SI_NO_FECHA",
                             "orden": 8
                         },
                         {
+                            "clave": "a37_0_hospitalizacion",
                             "etiqueta": "Hospitalización",
                             "tipo": "BOOLEANO",
                             "orden": 9
                         },
                         {
+                            "clave": "a37_0_n_historia_clinica",
                             "etiqueta": "N.° historia clínica",
                             "tipo": "TEXTO",
                             "orden": 10
                         },
                         {
+                            "clave": "a37_0_nombre_de_establecimiento_de_salud",
                             "etiqueta": "Nombre de establecimiento de salud",
                             "tipo": "TEXTO",
                             "orden": 11
                         },
                         {
+                            "clave": "a37_0_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 12
                         },
                         {
+                            "clave": "a37_0_n_de_dias_de_hospitalizacion",
                             "etiqueta": "N.° de días de hospitalización",
                             "tipo": "NUMERO",
                             "orden": 13
                         },
                         {
+                            "clave": "a37_0_dx_de_ingreso",
                             "etiqueta": "Dx de ingreso",
                             "tipo": "TEXTO",
                             "orden": 14
                         },
                         {
+                            "clave": "a37_0_fecha_de_alta",
                             "etiqueta": "Fecha de alta",
                             "tipo": "FECHA",
                             "orden": 15
                         },
                         {
+                            "clave": "a37_0_dx_de_egreso",
                             "etiqueta": "Dx de egreso",
                             "tipo": "TEXTO",
                             "orden": 16
                         },
                         {
+                            "clave": "a37_0_presenta_alguna_comorbilidad",
                             "etiqueta": "¿Presenta alguna comorbilidad?",
                             "tipo": "SELECT",
                             "orden": 17,
@@ -502,6 +531,7 @@
                             ]
                         },
                         {
+                            "clave": "a37_0_comorbilidad_especificar",
                             "etiqueta": "Comorbilidad (especificar)",
                             "tipo": "TEXTO",
                             "orden": 18,
@@ -510,6 +540,7 @@
                             "_corregido": "restaurado campo_def.depende_de\/valor_activador, perdidos en la recarga (CIERRE_RECARGA_Y_FASE5.md Parte 0); valor_activador usa el codigo de catalogo (mismo formato que catalogo_item.valor), no la etiqueta"
                         },
                         {
+                            "clave": "a37_0_se_diagnosticaron_otras_infecciones_por_laborator",
                             "etiqueta": "¿Se diagnosticaron otras infecciones por laboratorio?",
                             "tipo": "SELECT",
                             "orden": 19,
@@ -521,26 +552,31 @@
                             "_corregido": "v1.0 tenía BOOLEANO; el PDF muestra Sí(especificar)\/No\/Desconocido"
                         },
                         {
+                            "clave": "a37_0_otras_infecciones_especificar",
                             "etiqueta": "Otras infecciones (especificar)",
                             "tipo": "TEXTO",
                             "orden": 20
                         },
                         {
+                            "clave": "a37_0_fecha_de_diagnostico_de_otras_infecciones",
                             "etiqueta": "Fecha de diagnóstico de otras infecciones",
                             "tipo": "FECHA",
                             "orden": 21
                         },
                         {
+                            "clave": "a37_0_defuncion",
                             "etiqueta": "Defunción",
                             "tipo": "BOOLEANO",
                             "orden": 22
                         },
                         {
+                            "clave": "a37_0_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
                             "orden": 23
                         },
                         {
+                            "clave": "a37_0_causa_basica_de_defuncion",
                             "etiqueta": "Causa básica de defunción",
                             "tipo": "TEXTO",
                             "orden": 24
@@ -553,26 +589,31 @@
                     "_nota": "El listado de dosis recibidas (Pentavalente 1a\/2a\/3a, DPT refuerzos) es una lista de vacunas aplicadas: va en caso_vacuna, no aquí. Estas 5 preguntas sí son campo_def porque son condicionales de un solo valor, no una lista.",
                     "campos": [
                         {
+                            "clave": "a37_0_la_madre_fue_vacunada_con_tdap_durante_la_gestaci",
                             "etiqueta": "¿La madre fue vacunada con Tdap durante la gestación? (si el caso es <1 año)",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "a37_0_fecha_de_vacunacion_tdap_de_la_madre",
                             "etiqueta": "Fecha de vacunación Tdap de la madre",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a37_0_la_gestante_recibio_tdap_si_el_caso_es_gestante",
                             "etiqueta": "¿La gestante recibió Tdap? (si el caso es gestante)",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "a37_0_semana_de_gestacion_durante_la_vacunacion_tdap",
                             "etiqueta": "Semana de gestación durante la vacunación Tdap",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "a37_0_fecha_de_vacunacion_tdap_gestante",
                             "etiqueta": "Fecha de vacunación Tdap (gestante)",
                             "tipo": "FECHA",
                             "orden": 5
@@ -584,6 +625,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "a37_0_contacto_con_casos_probables_o_confirmados_de_tos",
                             "etiqueta": "¿Contacto con casos probables o confirmados de tos ferina?",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -594,21 +636,25 @@
                             ]
                         },
                         {
+                            "clave": "a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_",
                             "etiqueta": "¿Algún miembro de la familia o persona cercana ha tenido tos por más de 2 semanas?",
                             "tipo": "BOOLEANO",
                             "orden": 2
                         },
                         {
+                            "clave": "a37_0_contactos_directos_domiciliarios",
                             "etiqueta": "Contactos directos domiciliarios",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "a37_0_contactos_directos_extradomiciliarios",
                             "etiqueta": "Contactos directos extradomiciliarios",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "a37_0_contactos_por_lugar",
                             "etiqueta": "Contactos por lugar",
                             "tipo": "MATRIZ",
                             "orden": 5,
@@ -637,6 +683,7 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "a37_0_clasificacion_final",
                             "etiqueta": "Clasificación final",
                             "tipo": "SELECT",
                             "orden": 1,
