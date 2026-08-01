@@ -7211,6 +7211,7 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "y59_0_tipo",
                             "etiqueta": "Tipo",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -7220,16 +7221,19 @@
                             ]
                         },
                         {
+                            "clave": "y59_0_fecha_de_identificacion_local_del_caso_o_consulta",
                             "etiqueta": "Fecha de identificación local del caso (o consulta)",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "y59_0_fecha_de_notificacion_de_diresa_geresa_diris_a_cd",
                             "etiqueta": "Fecha de notificación de DIRESA\/GERESA\/DIRIS a CDC\/MINSA",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "y59_0_fecha_de_inicio_de_investigacion",
                             "etiqueta": "Fecha de inicio de investigación",
                             "tipo": "FECHA",
                             "orden": 4
@@ -7241,16 +7245,19 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "y59_0_gestante",
                             "etiqueta": "Gestante",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "y59_0_n_de_semanas_de_gestacion",
                             "etiqueta": "N.° de semanas de gestación",
                             "tipo": "NUMERO",
                             "orden": 2
                         },
                         {
+                            "clave": "y59_0_tipo_de_localidad",
                             "etiqueta": "Tipo de localidad",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -7261,11 +7268,13 @@
                             ]
                         },
                         {
+                            "clave": "y59_0_esta_asegurado",
                             "etiqueta": "¿Está asegurado?",
                             "tipo": "BOOLEANO",
                             "orden": 4
                         },
                         {
+                            "clave": "y59_0_tipo_de_seguro",
                             "etiqueta": "Tipo de seguro",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -7276,6 +7285,7 @@
                             ]
                         },
                         {
+                            "clave": "y59_0_ocupacion",
                             "etiqueta": "Ocupación",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -7295,11 +7305,13 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "y59_0_esavi_previo",
                             "etiqueta": "¿ESAVI previo?",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "y59_0_cual_esavi_previo",
                             "etiqueta": "Cuál (ESAVI previo)",
                             "tipo": "MULTISELECT",
                             "orden": 2,
@@ -7311,6 +7323,7 @@
                             ]
                         },
                         {
+                            "clave": "y59_0_condiciones_de_comorbilidad",
                             "etiqueta": "Condiciones de comorbilidad",
                             "tipo": "MULTISELECT",
                             "orden": 3,
@@ -7333,6 +7346,7 @@
                             ]
                         },
                         {
+                            "clave": "y59_0_cuadros_patologicos_familiares",
                             "etiqueta": "Cuadros patológicos familiares",
                             "tipo": "MULTISELECT",
                             "orden": 4,
@@ -7357,6 +7371,7 @@
                             ]
                         },
                         {
+                            "clave": "y59_0_enfermedades_prevalentes_en_la_region",
                             "etiqueta": "Enfermedades prevalentes en la región",
                             "tipo": "MULTISELECT",
                             "orden": 5,
@@ -7377,6 +7392,7 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "y59_0_signos_y_sintomas_18_items_con_tiempo_de_inicio_y",
                             "etiqueta": "Signos y síntomas (18 ítems con tiempo de inicio y término)",
                             "tipo": "MATRIZ",
                             "orden": 1,
@@ -7406,6 +7422,7 @@
                             ]
                         },
                         {
+                            "clave": "y59_0_otros_eventos_severos_e_inusuales_especificar",
                             "etiqueta": "Otros eventos severos e inusuales (especificar)",
                             "tipo": "TEXTO",
                             "orden": 2
@@ -7417,31 +7434,37 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "y59_0_fecha_de_inicio",
                             "etiqueta": "Fecha de inicio",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "y59_0_gravedad_del_caso",
                             "etiqueta": "Gravedad del caso",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "y59_0_secuencia_cronologica_de_instalacion_de_signos_y_",
                             "etiqueta": "Secuencia cronológica de instalación de signos y síntomas",
                             "tipo": "TEXTAREA",
                             "orden": 3
                         },
                         {
+                            "clave": "y59_0_examenes_auxiliares",
                             "etiqueta": "Exámenes auxiliares",
                             "tipo": "TEXTAREA",
                             "orden": 4
                         },
                         {
+                            "clave": "y59_0_tratamiento_recibido",
                             "etiqueta": "Tratamiento recibido",
                             "tipo": "TEXTAREA",
                             "orden": 5
                         },
                         {
+                            "clave": "y59_0_evolucion",
                             "etiqueta": "Evolución",
                             "tipo": "TEXTAREA",
                             "orden": 6
@@ -7453,31 +7476,37 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "y59_0_n_de_historia_clinica",
                             "etiqueta": "N.° de historia clínica",
                             "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
+                            "clave": "y59_0_fecha_de_ingreso",
                             "etiqueta": "Fecha de ingreso",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "y59_0_fecha_de_alta",
                             "etiqueta": "Fecha de alta",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "y59_0_dx_de_ingreso",
                             "etiqueta": "Dx de ingreso",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "y59_0_dx_de_egreso",
                             "etiqueta": "Dx de egreso",
                             "tipo": "TEXTO",
                             "orden": 5
                         },
                         {
+                            "clave": "y59_0_estado_de_alta",
                             "etiqueta": "Estado de alta",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -7488,11 +7517,13 @@
                             ]
                         },
                         {
+                            "clave": "y59_0_transferido",
                             "etiqueta": "¿Transferido?",
                             "tipo": "BOOLEANO",
                             "orden": 7
                         },
                         {
+                            "clave": "y59_0_a_donde_transferencia",
                             "etiqueta": "A dónde (transferencia)",
                             "tipo": "TEXTO",
                             "orden": 8
@@ -7504,6 +7535,7 @@
                     "orden": 7,
                     "campos": [
                         {
+                            "clave": "y59_0_seguimiento_del_paciente",
                             "etiqueta": "Seguimiento del paciente",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -7525,6 +7557,7 @@
                     "orden": 8,
                     "campos": [
                         {
+                            "clave": "y59_0_clasificacion_final",
                             "etiqueta": "Clasificación final",
                             "tipo": "SELECT",
                             "orden": 1,
