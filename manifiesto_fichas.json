@@ -6394,7 +6394,9 @@
                             "clave": "p35_0_fecha_de_vacunacion_contra_rubeola",
                             "etiqueta": "Fecha de vacunación contra rubéola",
                             "tipo": "FECHA",
-                            "orden": 2
+                            "orden": 2,
+                            "depende_de": "¿Vacunada contra la rubéola?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "p35_0_presento_fiebre_y_exantema_maculopapular_durante_",
@@ -6411,13 +6413,17 @@
                             "clave": "p35_0_semana_de_gestacion_fiebre_exantema",
                             "etiqueta": "Semana de gestación (fiebre\/exantema)",
                             "tipo": "NUMERO",
-                            "orden": 4
+                            "orden": 4,
+                            "depende_de": "¿Presentó fiebre y exantema maculopapular durante el embarazo?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "p35_0_fue_confirmada_por_laboratorio_la_rubeola_de_la_m",
                             "etiqueta": "¿Fue confirmada por laboratorio la rubéola de la madre?",
                             "tipo": "BOOLEANO",
-                            "orden": 5
+                            "orden": 5,
+                            "depende_de": "¿Presentó fiebre y exantema maculopapular durante el embarazo?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "p35_0_durante_el_embarazo_se_expuso_a_persona_con_fiebr",
@@ -6434,13 +6440,17 @@
                             "clave": "p35_0_con_quien_exposicion",
                             "etiqueta": "¿Con quién? (exposición)",
                             "tipo": "TEXTO",
-                            "orden": 7
+                            "orden": 7,
+                            "depende_de": "¿Durante el embarazo se expuso a persona con fiebre y exantema?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "p35_0_semana_de_gestacion_exposicion",
                             "etiqueta": "Semana de gestación (exposición)",
                             "tipo": "NUMERO",
-                            "orden": 8
+                            "orden": 8,
+                            "depende_de": "¿Durante el embarazo se expuso a persona con fiebre y exantema?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "p35_0_durante_el_embarazo_viajo_fuera_del_pais",
@@ -6525,19 +6535,25 @@
                             "clave": "p35_0_ee_ss_de_hospitalizacion",
                             "etiqueta": "EE.SS. de hospitalización",
                             "tipo": "TEXTO",
-                            "orden": 2
+                            "orden": 2,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "p35_0_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
-                            "orden": 3
+                            "orden": 3,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "p35_0_dx_de_ingreso",
                             "etiqueta": "Dx de ingreso",
                             "tipo": "TEXTO",
-                            "orden": 4
+                            "orden": 4,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "p35_0_defuncion",
@@ -6549,13 +6565,17 @@
                             "clave": "p35_0_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
-                            "orden": 6
+                            "orden": 6,
+                            "depende_de": "Defunción",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "p35_0_causa_basica_de_defuncion",
                             "etiqueta": "Causa básica de defunción",
                             "tipo": "TEXTO",
-                            "orden": 7
+                            "orden": 7,
+                            "depende_de": "Defunción",
+                            "valor_activador": "1"
                         }
                     ]
                 },
