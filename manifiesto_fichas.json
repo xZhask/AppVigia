@@ -6194,12 +6194,14 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "b24_codigo_del_paciente",
                             "etiqueta": "Código del paciente",
                             "tipo": "TEXTO",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_dni_ce_pasaporte",
                             "etiqueta": "DNI \/ CE \/ Pasaporte",
                             "tipo": "TEXTO",
                             "orden": 2,
@@ -6212,6 +6214,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "b24_motivo_de_notificacion",
                             "etiqueta": "Motivo de notificación",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -6224,6 +6227,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b24_subtipo_infeccion_por_vih",
                             "etiqueta": "Subtipo (infección por VIH)",
                             "tipo": "MULTISELECT",
                             "orden": 2,
@@ -6243,6 +6247,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "b24_estadio_de_infeccion_vih_al_momento_del_diagnostico",
                             "etiqueta": "Estadio de infección VIH al momento del diagnóstico",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -6261,6 +6266,7 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "b24_grado_de_instruccion",
                             "etiqueta": "Grado de instrucción",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -6274,6 +6280,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b24_condicion_especial",
                             "etiqueta": "Condición especial",
                             "tipo": "MULTISELECT",
                             "orden": 2,
@@ -6286,6 +6293,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b24_sexo_al_nacer",
                             "etiqueta": "Sexo al nacer",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -6296,6 +6304,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b24_identidad_de_genero",
                             "etiqueta": "Identidad de género",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -6310,6 +6319,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b24_antecedentes_de_rs",
                             "etiqueta": "Antecedentes de RS",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -6329,6 +6339,7 @@
                     "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 1.6: v2.1 aplanaba esto en un solo SELECT de 11 valores, lo que rompe reportes (\"casos por vía sexual\" exigía sumar 4 opciones en vez de filtrar una). Se revierte a vía + subtipo encadenados. El motor depende_de solo admite UN valor activador por campo, así que en vez de un único campo 'Subtipo' se modelan DOS subtipos, cada uno depende_de 'Vía de transmisión' con su propio valor_activador -- funcionalmente igual a lo que pedía el documento (el subtipo correcto se muestra según la vía elegida), pero expresable con el mecanismo que ya existe.",
                     "campos": [
                         {
+                            "clave": "b24_via_de_transmision",
                             "etiqueta": "Vía de transmisión",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -6341,6 +6352,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b24_subtipo_via_sexual",
                             "etiqueta": "Subtipo (vía sexual)",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -6355,6 +6367,7 @@
                             "valor_activador": "SEXUAL"
                         },
                         {
+                            "clave": "b24_subtipo_via_parenteral",
                             "etiqueta": "Subtipo (vía parenteral)",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -6376,18 +6389,21 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "b24_fecha_de_inicio_de_tratamiento",
                             "etiqueta": "Fecha de inicio de tratamiento",
                             "tipo": "FECHA",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_estadio_sida_fecha_de_diagnostico",
                             "etiqueta": "Estadio SIDA: fecha de diagnóstico",
                             "tipo": "FECHA",
                             "orden": 2,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_criterio_diagnostico_de_sida",
                             "etiqueta": "Criterio diagnóstico de SIDA",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -6398,6 +6414,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "b24_enfermedades_indicadoras_de_sida",
                             "etiqueta": "Enfermedades indicadoras de SIDA",
                             "tipo": "MATRIZ",
                             "orden": 4,
@@ -6418,36 +6435,42 @@
                     "orden": 7,
                     "campos": [
                         {
+                            "clave": "b24_tuberculosis",
                             "etiqueta": "Tuberculosis",
                             "tipo": "BOOLEANO",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_fecha_de_diagnostico_de_tuberculosis",
                             "etiqueta": "Fecha de diagnóstico de tuberculosis",
                             "tipo": "FECHA",
                             "orden": 2,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_hepatitis_b",
                             "etiqueta": "Hepatitis B",
                             "tipo": "BOOLEANO",
                             "orden": 3,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_fecha_de_diagnostico_de_hepatitis_b",
                             "etiqueta": "Fecha de diagnóstico de hepatitis B",
                             "tipo": "FECHA",
                             "orden": 4,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_hepatitis_c",
                             "etiqueta": "Hepatitis C",
                             "tipo": "BOOLEANO",
                             "orden": 5,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_fecha_de_diagnostico_de_hepatitis_c",
                             "etiqueta": "Fecha de diagnóstico de hepatitis C",
                             "tipo": "FECHA",
                             "orden": 6,
@@ -6460,18 +6483,21 @@
                     "orden": 8,
                     "campos": [
                         {
+                            "clave": "b24_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_defuncion_relacionada_a_sida",
                             "etiqueta": "¿Defunción relacionada a SIDA?",
                             "tipo": "BOOLEANO",
                             "orden": 2,
                             "sensible": true
                         },
                         {
+                            "clave": "b24_causa_de_muerte",
                             "etiqueta": "Causa de muerte",
                             "tipo": "TEXTO",
                             "orden": 3,
