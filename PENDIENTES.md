@@ -216,3 +216,44 @@ pérdida.
 **No resuelto ahora:** crear el tipo `UBIGEO` es un cambio de motor
 (schema de `campo_def`, `cargar_fichas.php`, `campo-dinamico.php`,
 `verificar_fichas.php`), no algo que quepa en una corrección de claves.
+
+## 9. Núcleo no tiene rol y "ocupación" no es un campo núcleo — hallazgo de PETICION_P35_RUBEOLA_CONGENITA.md Fase 1
+
+Al cotejar P35.0 contra el PDF (bloque IV, ítem 29 "Ocupación" de la
+madre) se evaluó si `nucleo_omitidos` podía generalizarse a
+`{"CASO_INDICE": [...], "MADRE": [...]}` para que cada rol de un
+`multi_sujeto` omita distinto del núcleo compartido. Se encontraron dos
+problemas de fondo, no solo de alcance:
+
+1. **`datos-paciente-nucleo.php` se incluye una sola vez por página**
+   (`fichas/editar.php:147`, `nueva/index.php:191`), sin ningún
+   parámetro de rol, y sus `<input>` tienen `name` fijo (`celular`,
+   `nacionalidad`, `direccion`, etc.) que mapea 1:1 a columnas de
+   `persona`/`caso` del paciente. No existe hoy ningún segundo render de
+   este partial para MADRE ni ningún otro rol — construirlo es UI nueva
+   (parametrizar nombres para evitar colisión con los del paciente,
+   decidir a qué tabla guarda cada campo), no una lectura distinta de un
+   dato que ya existe.
+2. **"Ocupación" no es un campo núcleo.** No está en `NUCLEO_OMITIBLES`
+   (`cargar_fichas.php:125` — celular, nacionalidad, localidad,
+   direccion, etnia, nombre_tutor, celular_tutor, gestante: 8 campos,
+   sin ocupación), no tiene `data-nucleo-campo` en el partial, y
+   `persona` no tiene columna `ocupacion`. Las únicas "ocupación" que
+   existen en el código son campos `campo_def` ad-hoc de B05 y O95
+   (Anexo 2) — cada ficha la modela por su cuenta, no hay un campo
+   compartido que omitir.
+
+**Decisión del usuario (2026-08-01):** no construir el render del
+núcleo por rol todavía — sin un segundo render para MADRE, la
+generalización de `nucleo_omitidos` a objeto-por-rol no tiene
+consumidor. `nucleo_omitidos` de P35.0 quedó como lista plana,
+aplicada solo al paciente (`CASO_INDICE`): `["gestante", "celular",
+"nombre_tutor"]`. La identidad de la madre (incluyendo ocupación, ítem
+29) se resuelve en la Fase 2 de la petición vía columnas propias de
+`caso_sujeto`, no reutilizando el núcleo.
+
+**Pendiente real:** si una futura ficha necesita mostrar/ocultar campos
+del núcleo de forma distinta por rol de sujeto, hace falta construir
+antes el segundo render (partial parametrizado por rol + prefijo de
+nombre) — recién ahí generalizar `nucleo_omitidos` a objeto-por-rol
+tiene sentido.
