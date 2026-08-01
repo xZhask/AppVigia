@@ -6323,26 +6323,31 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "p35_0_nacio_prematuro",
                             "etiqueta": "¿Nació prematuro?",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "p35_0_edad_gestacional_al_parto_semanas",
                             "etiqueta": "Edad gestacional al parto (semanas)",
                             "tipo": "NUMERO",
                             "orden": 2
                         },
                         {
+                            "clave": "p35_0_peso_al_nacer_gramos",
                             "etiqueta": "Peso al nacer (gramos)",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "p35_0_apgar_1",
                             "etiqueta": "APGAR 1'",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "p35_0_apgar_5",
                             "etiqueta": "APGAR 5'",
                             "tipo": "NUMERO",
                             "orden": 5
@@ -6355,6 +6360,7 @@
                     "rol_sujeto": "MADRE",
                     "campos": [
                         {
+                            "clave": "p35_0_vacunada_contra_la_rubeola",
                             "etiqueta": "¿Vacunada contra la rubéola?",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -6365,11 +6371,13 @@
                             ]
                         },
                         {
+                            "clave": "p35_0_fecha_de_vacunacion_contra_rubeola",
                             "etiqueta": "Fecha de vacunación contra rubéola",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "p35_0_presento_fiebre_y_exantema_maculopapular_durante_",
                             "etiqueta": "¿Presentó fiebre y exantema maculopapular durante el embarazo?",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -6380,16 +6388,19 @@
                             ]
                         },
                         {
+                            "clave": "p35_0_semana_de_gestacion_fiebre_exantema",
                             "etiqueta": "Semana de gestación (fiebre\/exantema)",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "p35_0_fue_confirmada_por_laboratorio_la_rubeola_de_la_m",
                             "etiqueta": "¿Fue confirmada por laboratorio la rubéola de la madre?",
                             "tipo": "BOOLEANO",
                             "orden": 5
                         },
                         {
+                            "clave": "p35_0_durante_el_embarazo_se_expuso_a_persona_con_fiebr",
                             "etiqueta": "¿Durante el embarazo se expuso a persona con fiebre y exantema?",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -6400,16 +6411,19 @@
                             ]
                         },
                         {
+                            "clave": "p35_0_con_quien_exposicion",
                             "etiqueta": "¿Con quién? (exposición)",
                             "tipo": "TEXTO",
                             "orden": 7
                         },
                         {
+                            "clave": "p35_0_semana_de_gestacion_exposicion",
                             "etiqueta": "Semana de gestación (exposición)",
                             "tipo": "NUMERO",
                             "orden": 8
                         },
                         {
+                            "clave": "p35_0_durante_el_embarazo_viajo_fuera_del_pais",
                             "etiqueta": "¿Durante el embarazo viajó fuera del país?",
                             "tipo": "BOOLEANO",
                             "orden": 9
@@ -6421,6 +6435,7 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "p35_0_manifestaciones_oftalmicas",
                             "etiqueta": "Manifestaciones oftálmicas",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 1,
@@ -6432,6 +6447,7 @@
                             ]
                         },
                         {
+                            "clave": "p35_0_manifestacion_auditiva",
                             "etiqueta": "Manifestación auditiva",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 2,
@@ -6440,6 +6456,7 @@
                             ]
                         },
                         {
+                            "clave": "p35_0_cardiopatia_congenita",
                             "etiqueta": "Cardiopatía congénita",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 3,
@@ -6450,11 +6467,13 @@
                             ]
                         },
                         {
+                            "clave": "p35_0_otra_cardiopatia_congenita_especificar",
                             "etiqueta": "Otra cardiopatía congénita (especificar)",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "p35_0_otras_manifestaciones",
                             "etiqueta": "Otras manifestaciones",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 5,
@@ -6477,36 +6496,43 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "p35_0_hospitalizacion",
                             "etiqueta": "Hospitalización",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "p35_0_ee_ss_de_hospitalizacion",
                             "etiqueta": "EE.SS. de hospitalización",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "p35_0_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "p35_0_dx_de_ingreso",
                             "etiqueta": "Dx de ingreso",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "p35_0_defuncion",
                             "etiqueta": "Defunción",
                             "tipo": "BOOLEANO",
                             "orden": 5
                         },
                         {
+                            "clave": "p35_0_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "p35_0_causa_basica_de_defuncion",
                             "etiqueta": "Causa básica de defunción",
                             "tipo": "TEXTO",
                             "orden": 7
@@ -6518,6 +6544,7 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "p35_0_clasificacion_del_caso",
                             "etiqueta": "Clasificación del caso",
                             "tipo": "SELECT",
                             "orden": 1,
