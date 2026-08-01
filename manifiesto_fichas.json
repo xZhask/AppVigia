@@ -6260,6 +6260,21 @@
                 "celular",
                 "nombre_tutor"
             ],
+            "columnas_sujeto": {
+                "MADRE": [
+                    "tipo_doc",
+                    "doc",
+                    "apellidos",
+                    "nombres",
+                    "edad",
+                    "fecha_nacimiento",
+                    "nacionalidad",
+                    "ocupacion"
+                ]
+            },
+            "titulo_sujeto": {
+                "MADRE": "Datos de la madre"
+            },
             "secciones": [
                 {
                     "nombre": "Datos de notificación e investigación del caso",
@@ -9238,6 +9253,15 @@
                 "MADRE"
             ],
             "_nota_general": "Modelar un caso por fallecimiento (no una hoja con varias filas).",
+            "columnas_sujeto": {
+                "MADRE": [
+                    "direccion",
+                    "distrito_id"
+                ]
+            },
+            "titulo_sujeto": {
+                "MADRE": "Residencia habitual de la madre"
+            },
             "tablas_hijas": {
                 "caso_contacto": false,
                 "caso_muestra": false,
