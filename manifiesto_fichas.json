@@ -2362,11 +2362,13 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a44_fecha_de_inicio_de_enfermedad",
                             "etiqueta": "Fecha de inicio de enfermedad",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a44_fecha_de_ingreso_al_estudio_o_diagnostico",
                             "etiqueta": "Fecha de ingreso al estudio o diagnóstico",
                             "tipo": "FECHA",
                             "orden": 2
@@ -2378,6 +2380,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a44_sintomas",
                             "etiqueta": "Síntomas",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -2431,26 +2434,31 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a44_temperatura_c",
                             "etiqueta": "Temperatura (°C)",
                             "tipo": "NUMERO",
                             "orden": 1
                         },
                         {
+                            "clave": "a44_presion_arterial",
                             "etiqueta": "Presión arterial",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "a44_frecuencia_respiratoria",
                             "etiqueta": "Frecuencia respiratoria",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "a44_pulso",
                             "etiqueta": "Pulso",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "a44_peso_kg",
                             "etiqueta": "Peso (kg)",
                             "tipo": "NUMERO",
                             "orden": 5
@@ -2462,6 +2470,7 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "a44_orientacion_lucido_tiempo_espacio_persona",
                             "etiqueta": "Orientación (lúcido, tiempo, espacio, persona)",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 1,
@@ -2473,6 +2482,7 @@
                             ]
                         },
                         {
+                            "clave": "a44_estado_general",
                             "etiqueta": "Estado general",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -2483,6 +2493,7 @@
                             ]
                         },
                         {
+                            "clave": "a44_estado_de_nutricion",
                             "etiqueta": "Estado de nutrición",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -2493,6 +2504,7 @@
                             ]
                         },
                         {
+                            "clave": "a44_estado_de_hidratacion",
                             "etiqueta": "Estado de hidratación",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -2509,6 +2521,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "a44_palidez",
                             "etiqueta": "Palidez",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -2519,26 +2532,31 @@
                             ]
                         },
                         {
+                            "clave": "a44_petequias",
                             "etiqueta": "Petequias",
                             "tipo": "BOOLEANO",
                             "orden": 2
                         },
                         {
+                            "clave": "a44_localizacion_de_petequias",
                             "etiqueta": "Localización de petequias",
                             "tipo": "TEXTO",
                             "orden": 3
                         },
                         {
+                            "clave": "a44_equimosis",
                             "etiqueta": "Equimosis",
                             "tipo": "BOOLEANO",
                             "orden": 4
                         },
                         {
+                            "clave": "a44_localizacion_de_equimosis",
                             "etiqueta": "Localización de equimosis",
                             "tipo": "TEXTO",
                             "orden": 5
                         },
                         {
+                            "clave": "a44_lesiones_eruptivas",
                             "etiqueta": "Lesiones eruptivas",
                             "tipo": "MATRIZ",
                             "orden": 6,
@@ -2564,6 +2582,7 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "a44_edema_localizacion",
                             "etiqueta": "Edema, localización",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -2582,6 +2601,7 @@
                     "orden": 7,
                     "campos": [
                         {
+                            "clave": "a44_ganglios_linfaticos",
                             "etiqueta": "Ganglios linfáticos",
                             "tipo": "MATRIZ",
                             "orden": 1,
@@ -2605,21 +2625,25 @@
                     "orden": 8,
                     "campos": [
                         {
+                            "clave": "a44_hemoglobina",
                             "etiqueta": "Hemoglobina",
                             "tipo": "NUMERO",
                             "orden": 1
                         },
                         {
+                            "clave": "a44_hematocrito",
                             "etiqueta": "Hematocrito",
                             "tipo": "NUMERO",
                             "orden": 2
                         },
                         {
+                            "clave": "a44_transfusiones_u",
                             "etiqueta": "Transfusiones (U)",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "a44_antibioticos_usados",
                             "etiqueta": "Antibióticos usados",
                             "tipo": "MULTISELECT",
                             "orden": 4,
@@ -2641,21 +2665,25 @@
                     "orden": 9,
                     "campos": [
                         {
+                            "clave": "a44_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "a44_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a44_dias_de_hospitalizacion",
                             "etiqueta": "Días de hospitalización",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "a44_condicion_de_alta",
                             "etiqueta": "Condición de alta",
                             "tipo": "SELECT",
                             "orden": 4,
