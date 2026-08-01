@@ -3712,21 +3712,25 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a33_fecha_de_inicio_de_sintomas",
                             "etiqueta": "Fecha de inicio de síntomas",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a33_succion_normal_durante_los_2_primeros_dias_de_vida",
                             "etiqueta": "¿Succión normal durante los 2 primeros días de vida?",
                             "tipo": "BOOLEANO",
                             "orden": 2
                         },
                         {
+                            "clave": "a33_llanto_normal_durante_los_2_primeros_dias_de_vida",
                             "etiqueta": "¿Llanto normal durante los 2 primeros días de vida?",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "a33_signos_y_sintomas",
                             "etiqueta": "Signos y síntomas",
                             "tipo": "GRUPO_SI_NO",
                             "orden": 4,
@@ -3741,11 +3745,13 @@
                             ]
                         },
                         {
+                            "clave": "a33_complicaciones",
                             "etiqueta": "Complicaciones",
                             "tipo": "TEXTAREA",
                             "orden": 5
                         },
                         {
+                            "clave": "a33_atendido_por",
                             "etiqueta": "Atendido por",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -3757,41 +3763,49 @@
                             ]
                         },
                         {
+                            "clave": "a33_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "BOOLEANO",
                             "orden": 7
                         },
                         {
+                            "clave": "a33_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 8
                         },
                         {
+                            "clave": "a33_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
                             "orden": 9
                         },
                         {
+                            "clave": "a33_n_h_c",
                             "etiqueta": "N.° H.C.",
                             "tipo": "TEXTO",
                             "orden": 10
                         },
                         {
+                            "clave": "a33_condiciones_de_alta",
                             "etiqueta": "Condiciones de alta",
                             "tipo": "TEXTO",
                             "orden": 11
                         },
                         {
+                            "clave": "a33_fecha_de_alta",
                             "etiqueta": "Fecha de alta",
                             "tipo": "FECHA",
                             "orden": 12
                         },
                         {
+                            "clave": "a33_fallecido",
                             "etiqueta": "Fallecido",
                             "tipo": "BOOLEANO",
                             "orden": 13
                         },
                         {
+                            "clave": "a33_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
                             "orden": 14
@@ -3803,36 +3817,43 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a33_nombres_y_apellidos_de_la_madre",
                             "etiqueta": "Nombres y apellidos de la madre",
                             "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
+                            "clave": "a33_edad_de_la_madre",
                             "etiqueta": "Edad de la madre",
                             "tipo": "NUMERO",
                             "orden": 2
                         },
                         {
+                            "clave": "a33_n_de_embarazos",
                             "etiqueta": "N.° de embarazos",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "a33_n_de_partos",
                             "etiqueta": "N.° de partos",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "a33_n_de_hijos_fallecidos_antes_de_cumplir_28_dias",
                             "etiqueta": "N.° de hijos fallecidos antes de cumplir 28 días",
                             "tipo": "NUMERO",
                             "orden": 5
                         },
                         {
+                            "clave": "a33_fecha_de_ultimo_parto",
                             "etiqueta": "Fecha de último parto",
                             "tipo": "FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "a33_grado_de_instruccion",
                             "etiqueta": "Grado de instrucción",
                             "tipo": "SELECT",
                             "orden": 7,
@@ -3844,6 +3865,7 @@
                             ]
                         },
                         {
+                            "clave": "a33_n_de_consultas_prenatales",
                             "etiqueta": "N.° de consultas prenatales",
                             "tipo": "NUMERO",
                             "orden": 8
@@ -3869,16 +3891,19 @@
                             ]
                         },
                         {
+                            "clave": "a33_instrumento_utilizado_para_cortar_el_cordon_umbilic",
                             "etiqueta": "Instrumento utilizado para cortar el cordón umbilical",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "a33_tratamiento_aplicado_al_munon_umbilical_en_el_domic",
                             "etiqueta": "Tratamiento aplicado al muñón umbilical en el domicilio",
                             "tipo": "TEXTAREA",
                             "orden": 3
                         },
                         {
+                            "clave": "a33_lugar_del_parto_establecimiento_de_salud",
                             "etiqueta": "Lugar del parto: establecimiento de salud",
                             "tipo": "TEXTO",
                             "orden": 4
@@ -3890,6 +3915,7 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "a33_diagnostico_definitivo",
                             "etiqueta": "Diagnóstico definitivo",
                             "tipo": "SELECT",
                             "orden": 1,
