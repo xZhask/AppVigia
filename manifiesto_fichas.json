@@ -5828,18 +5828,21 @@
                     "rol_sujeto": "MADRE",
                     "campos": [
                         {
+                            "clave": "z21_codigo",
                             "etiqueta": "Código",
                             "tipo": "TEXTO",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide",
                             "etiqueta": "Fecha de reporte de la ficha de investigación epidemiológica",
                             "tipo": "FECHA",
                             "orden": 2,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_momento_de_diagnostico_de_infeccion_por_vih",
                             "etiqueta": "Momento de diagnóstico de infección por VIH",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -5850,12 +5853,14 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_ano_de_diagnostico",
                             "etiqueta": "Año de diagnóstico",
                             "tipo": "NUMERO",
                             "orden": 4,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_momento_durante_la_gestacion",
                             "etiqueta": "Momento durante la gestación",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -5869,90 +5874,105 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_prueba_de_tamizaje_n_1",
                             "etiqueta": "Prueba de tamizaje N.° 1",
                             "tipo": "FECHA",
                             "orden": 6,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_prueba_de_tamizaje_n_2",
                             "etiqueta": "Prueba de tamizaje N.° 2",
                             "tipo": "FECHA",
                             "orden": 7,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_prueba_confirmatoria",
                             "etiqueta": "Prueba confirmatoria",
                             "tipo": "FECHA",
                             "orden": 8,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_fur",
                             "etiqueta": "FUR",
                             "tipo": "FECHA",
                             "orden": 9,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_recibio_apn",
                             "etiqueta": "¿Recibió APN?",
                             "tipo": "BOOLEANO",
                             "orden": 10,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_embarazo_multiple",
                             "etiqueta": "¿Embarazo múltiple?",
                             "tipo": "BOOLEANO",
                             "orden": 11,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_recibio_arv",
                             "etiqueta": "¿Recibió ARV?",
                             "tipo": "BOOLEANO",
                             "orden": 12,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_fecha_de_inicio_de_arv",
                             "etiqueta": "Fecha de inicio de ARV",
                             "tipo": "FECHA",
                             "orden": 13,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_abandono_terapia_arv",
                             "etiqueta": "¿Abandonó terapia ARV?",
                             "tipo": "BOOLEANO",
                             "orden": 14,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_recibe_terapia_triple_targa",
                             "etiqueta": "¿Recibe terapia triple \/ TARGA?",
                             "tipo": "BOOLEANO",
                             "orden": 15,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_n_de_nacidos_vivos",
                             "etiqueta": "N.° de nacidos vivos",
                             "tipo": "NUMERO",
                             "orden": 16,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_n_de_obitos_fetales",
                             "etiqueta": "N.° de óbitos fetales",
                             "tipo": "NUMERO",
                             "orden": 17,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_aborto",
                             "etiqueta": "Aborto",
                             "tipo": "BOOLEANO",
                             "orden": 18,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_parto_por_cesarea",
                             "etiqueta": "¿Parto por cesárea?",
                             "tipo": "BOOLEANO",
                             "orden": 19,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_institucion_del_ee_ss_del_parto",
                             "etiqueta": "Institución del EE.SS. del parto",
                             "tipo": "SELECT",
                             "orden": 20,
@@ -5967,30 +5987,35 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_nombre_del_ee_ss_del_parto",
                             "etiqueta": "Nombre del EE.SS. del parto",
                             "tipo": "TEXTO",
                             "orden": 21,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_fecha_del_parto",
                             "etiqueta": "Fecha del parto",
                             "tipo": "FECHA",
                             "orden": 22,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_carga_viral_indetectable",
                             "etiqueta": "¿Carga viral indetectable?",
                             "tipo": "BOOLEANO",
                             "orden": 23,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_abandona_seguimiento",
                             "etiqueta": "¿Abandona seguimiento?",
                             "tipo": "BOOLEANO",
                             "orden": 24,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_la_gestante_fallece",
                             "etiqueta": "¿La gestante fallece?",
                             "tipo": "BOOLEANO",
                             "orden": 25,
@@ -6004,24 +6029,28 @@
                     "rol_sujeto": "NINO_EXPUESTO",
                     "campos": [
                         {
+                            "clave": "z21_codigo_del_nino",
                             "etiqueta": "Código del niño",
                             "tipo": "TEXTO",
                             "orden": 1,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_dni_del_nino",
                             "etiqueta": "DNI del niño",
                             "tipo": "TEXTO",
                             "orden": 2,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_codigo_de_la_madre",
                             "etiqueta": "Código de la madre",
                             "tipo": "TEXTO",
                             "orden": 3,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_dni_de_la_madre",
                             "etiqueta": "DNI de la madre",
                             "tipo": "TEXTO",
                             "orden": 4,
@@ -6049,6 +6078,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_arv_recibido",
                             "etiqueta": "ARV recibido",
                             "tipo": "SELECT",
                             "orden": 8,
@@ -6060,36 +6090,42 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_n_de_dias_que_tomo_arv",
                             "etiqueta": "N.° de días que tomó ARV",
                             "tipo": "NUMERO",
                             "orden": 9,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_profilaxis_arv_de_acuerdo_a_nt_vigente",
                             "etiqueta": "¿Profilaxis ARV de acuerdo a NT vigente?",
                             "tipo": "BOOLEANO",
                             "orden": 10,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_sucedaneos_de_leche_materna",
                             "etiqueta": "¿Sucedáneos de leche materna?",
                             "tipo": "BOOLEANO",
                             "orden": 11,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_n_de_meses_que_recibio_sucedaneos",
                             "etiqueta": "N.° de meses que recibió sucedáneos",
                             "tipo": "NUMERO",
                             "orden": 12,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_tomo_leche_materna",
                             "etiqueta": "¿Tomó leche materna?",
                             "tipo": "BOOLEANO",
                             "orden": 13,
                             "sensible": true
                         },
                         {
+                            "clave": "z21_estado_serologico_final",
                             "etiqueta": "Estado serológico final",
                             "tipo": "SELECT",
                             "orden": 14,
@@ -6101,6 +6137,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_motivo_de_estado_indeterminado",
                             "etiqueta": "Motivo de estado indeterminado",
                             "tipo": "SELECT",
                             "orden": 15,
@@ -6113,6 +6150,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_pruebas_diagnosticas",
                             "etiqueta": "Pruebas diagnósticas",
                             "tipo": "MATRIZ",
                             "orden": 16,
@@ -6129,6 +6167,7 @@
                             "sensible": true
                         },
                         {
+                            "clave": "z21_observaciones",
                             "etiqueta": "Observaciones",
                             "tipo": "TEXTAREA",
                             "orden": 17,
