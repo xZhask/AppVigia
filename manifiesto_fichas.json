@@ -3164,6 +3164,7 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a00_de_donde_obtuvo_el_agua_en_los_ultimos_3_dias",
                             "etiqueta": "¿De dónde obtuvo el agua en los últimos 3 días?",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -3179,11 +3180,13 @@
                             ]
                         },
                         {
+                            "clave": "a00_almacena_agua_de_consumo_domestico",
                             "etiqueta": "¿Almacena agua de consumo doméstico?",
                             "tipo": "BOOLEANO",
                             "orden": 2
                         },
                         {
+                            "clave": "a00_en_que_tipo_de_recipiente",
                             "etiqueta": "¿En qué tipo de recipiente?",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -3195,16 +3198,19 @@
                             ]
                         },
                         {
+                            "clave": "a00_nivel_de_cloro_verificado_con_comparador",
                             "etiqueta": "Nivel de cloro verificado con comparador",
                             "tipo": "TEXTO",
                             "orden": 4
                         },
                         {
+                            "clave": "a00_los_recipientes_tienen_tapa",
                             "etiqueta": "¿Los recipientes tienen tapa?",
                             "tipo": "BOOLEANO",
                             "orden": 5
                         },
                         {
+                            "clave": "a00_donde_consumio_alimentos_los_ultimos_3_dias",
                             "etiqueta": "¿Dónde consumió alimentos los últimos 3 días?",
                             "tipo": "MULTISELECT",
                             "orden": 6,
@@ -3218,6 +3224,7 @@
                             ]
                         },
                         {
+                            "clave": "a00_para_menores_de_2_anos",
                             "etiqueta": "Para menores de 2 años",
                             "tipo": "MULTISELECT",
                             "orden": 7,
@@ -3228,6 +3235,7 @@
                             ]
                         },
                         {
+                            "clave": "a00_eliminacion_de_excretas",
                             "etiqueta": "Eliminación de excretas",
                             "tipo": "SELECT",
                             "orden": 8,
@@ -3240,6 +3248,7 @@
                             ]
                         },
                         {
+                            "clave": "a00_algun_miembro_de_la_familia_con_diarrea_en_los_ulti",
                             "etiqueta": "¿Algún miembro de la familia con diarrea en los últimos 3 días?",
                             "tipo": "BOOLEANO",
                             "orden": 9
@@ -3251,6 +3260,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a00_sintomas",
                             "etiqueta": "Síntomas",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -3267,16 +3277,19 @@
                             ]
                         },
                         {
+                            "clave": "a00_fecha_de_inicio_de_la_diarrea",
                             "etiqueta": "Fecha de inicio de la diarrea",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a00_n_de_dias_de_duracion",
                             "etiqueta": "N.° de días de duración",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "a00_consistencia_de_la_deposicion",
                             "etiqueta": "Consistencia de la deposición",
                             "tipo": "SELECT",
                             "orden": 4,
@@ -3287,6 +3300,7 @@
                             ]
                         },
                         {
+                            "clave": "a00_tipo_de_diarrea",
                             "etiqueta": "Tipo de diarrea",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -3297,6 +3311,7 @@
                             ]
                         },
                         {
+                            "clave": "a00_presencia_de",
                             "etiqueta": "Presencia de",
                             "tipo": "SELECT",
                             "orden": 6,
@@ -3307,11 +3322,13 @@
                             ]
                         },
                         {
+                            "clave": "a00_n_de_deposiciones_por_dia",
                             "etiqueta": "N.° de deposiciones por día",
                             "tipo": "NUMERO",
                             "orden": 7
                         },
                         {
+                            "clave": "a00_clasificacion_de_la_diarrea",
                             "etiqueta": "Clasificación de la diarrea",
                             "tipo": "SELECT",
                             "orden": 8,
@@ -3330,6 +3347,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a00_plan_de_tratamiento",
                             "etiqueta": "Plan de tratamiento",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -3340,11 +3358,13 @@
                             ]
                         },
                         {
+                            "clave": "a00_tratamiento_antibiotico",
                             "etiqueta": "Tratamiento antibiótico",
                             "tipo": "BOOLEANO",
                             "orden": 2
                         },
                         {
+                            "clave": "a00_antibiotico_usado",
                             "etiqueta": "Antibiótico usado",
                             "tipo": "SELECT",
                             "orden": 3,
@@ -3364,26 +3384,31 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "a00_alta",
                             "etiqueta": "Alta",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "a00_fecha_de_alta",
                             "etiqueta": "Fecha de alta",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a00_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "a00_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "a00_complicaciones",
                             "etiqueta": "Complicaciones",
                             "tipo": "MULTISELECT",
                             "orden": 5,
@@ -3395,21 +3420,25 @@
                             ]
                         },
                         {
+                            "clave": "a00_fallecido",
                             "etiqueta": "Fallecido",
                             "tipo": "BOOLEANO",
                             "orden": 6
                         },
                         {
+                            "clave": "a00_fecha_de_fallecimiento",
                             "etiqueta": "Fecha de fallecimiento",
                             "tipo": "FECHA",
                             "orden": 7
                         },
                         {
+                            "clave": "a00_hora_de_fallecimiento",
                             "etiqueta": "Hora de fallecimiento",
                             "tipo": "TEXTO",
                             "orden": 8
                         },
                         {
+                            "clave": "a00_lugar_de_fallecimiento",
                             "etiqueta": "Lugar de fallecimiento",
                             "tipo": "SELECT",
                             "orden": 9,
@@ -3419,6 +3448,7 @@
                             ]
                         },
                         {
+                            "clave": "a00_transferencia",
                             "etiqueta": "Transferencia",
                             "tipo": "MULTISELECT",
                             "orden": 10,
@@ -3434,6 +3464,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "a00_serogrupo",
                             "etiqueta": "Serogrupo",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -3443,6 +3474,7 @@
                             ]
                         },
                         {
+                            "clave": "a00_serotipo",
                             "etiqueta": "Serotipo",
                             "tipo": "SELECT",
                             "orden": 2,
@@ -3453,6 +3485,7 @@
                             ]
                         },
                         {
+                            "clave": "a00_otro_microorganismo_aislado",
                             "etiqueta": "Otro microorganismo aislado",
                             "tipo": "TEXTO",
                             "orden": 3
@@ -3464,6 +3497,7 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "a00_clasificacion_final",
                             "etiqueta": "Clasificación final",
                             "tipo": "SELECT",
                             "orden": 1,
