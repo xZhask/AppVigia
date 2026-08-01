@@ -715,11 +715,13 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "b01_fecha_de_inicio_de_erupcion_dermica",
                             "etiqueta": "Fecha de inicio de erupción dérmica",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "b01_tipo_de_lesion_dermica",
                             "etiqueta": "Tipo de lesión dérmica",
                             "tipo": "MULTISELECT",
                             "orden": 2,
@@ -731,16 +733,19 @@
                             ]
                         },
                         {
+                            "clave": "b01_fecha_de_inicio_de_fiebre",
                             "etiqueta": "Fecha de inicio de fiebre",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "b01_temperatura_c",
                             "etiqueta": "Temperatura (°C)",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "b01_n_de_dias_de_duracion",
                             "etiqueta": "N.° de días de duración",
                             "tipo": "NUMERO",
                             "orden": 5
@@ -752,6 +757,7 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "b01_complicaciones",
                             "etiqueta": "Complicaciones",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -764,6 +770,7 @@
                             ]
                         },
                         {
+                            "clave": "b01_otras_complicaciones_especificar",
                             "etiqueta": "Otras complicaciones (especificar)",
                             "tipo": "TEXTO",
                             "orden": 2
@@ -775,6 +782,7 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "b01_factores_de_riesgo",
                             "etiqueta": "Factores de riesgo",
                             "tipo": "MULTISELECT",
                             "orden": 1,
@@ -791,6 +799,7 @@
                             ]
                         },
                         {
+                            "clave": "b01_otros_factores_de_riesgo_especificar",
                             "etiqueta": "Otros factores de riesgo (especificar)",
                             "tipo": "TEXTO",
                             "orden": 2
@@ -802,26 +811,31 @@
                     "orden": 4,
                     "campos": [
                         {
+                            "clave": "b01_hospitalizacion",
                             "etiqueta": "Hospitalización",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "b01_establecimiento",
                             "etiqueta": "Establecimiento",
                             "tipo": "TEXTO",
                             "orden": 2
                         },
                         {
+                            "clave": "b01_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 3
                         },
                         {
+                            "clave": "b01_n_de_dias",
                             "etiqueta": "N.° de días",
                             "tipo": "NUMERO",
                             "orden": 4
                         },
                         {
+                            "clave": "b01_condicion_de_egreso",
                             "etiqueta": "Condición de egreso",
                             "tipo": "SELECT",
                             "orden": 5,
@@ -833,16 +847,19 @@
                             ]
                         },
                         {
+                            "clave": "b01_fecha_de_egreso",
                             "etiqueta": "Fecha de egreso",
                             "tipo": "FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "b01_referido_a",
                             "etiqueta": "Referido a",
                             "tipo": "TEXTO",
                             "orden": 7
                         },
                         {
+                            "clave": "b01_causa_de_muerte",
                             "etiqueta": "Causa de muerte",
                             "tipo": "TEXTO",
                             "orden": 8
@@ -854,6 +871,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "b01_en_las_ultimas_2_a_3_semanas_estuvo_en_contacto_con",
                             "etiqueta": "¿En las últimas 2 a 3 semanas estuvo en contacto con otro caso de varicela?",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -864,6 +882,7 @@
                             ]
                         },
                         {
+                            "clave": "b01_contactos_por_lugar",
                             "etiqueta": "Contactos por lugar",
                             "tipo": "MATRIZ",
                             "orden": 2,
@@ -885,16 +904,19 @@
                             "_corregido": "v1.0 traía por error las columnas de Tos ferina (esquema de vacunación, antibióticos); el PDF (pág. 3) solo pide nombre\/dirección\/sanos\/enfermos"
                         },
                         {
+                            "clave": "b01_tuvo_contacto_con_gestante",
                             "etiqueta": "¿Tuvo contacto con gestante?",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "b01_fecha_de_contacto_con_gestante",
                             "etiqueta": "Fecha de contacto con gestante",
                             "tipo": "FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "b01_semanas_de_gestacion_contacto",
                             "etiqueta": "Semanas de gestación (contacto)",
                             "tipo": "NUMERO",
                             "orden": 5
