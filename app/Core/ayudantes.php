@@ -39,6 +39,33 @@ function contextoUbigeo(?string $distritoId): array
     ];
 }
 
+/**
+ * Resolver de "columnas_sujeto" (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2):
+ * qué columnas de caso_sujeto declara el manifiesto para un rol secundario
+ * (hoy MADRE en P35.0 y P96). Recibe el JSON crudo de
+ * enfermedad.columnas_sujeto (o caso.enfermedad_columnas_sujeto), no el
+ * array de $enfermedad completo, para no acoplarse a si el llamador tiene
+ * una fila de enfermedad o una fila de caso con el join ya hecho.
+ */
+function columnasSujeto(?string $columnasSujetoJson, string $rol): array
+{
+    if (!$columnasSujetoJson) {
+        return [];
+    }
+    $decodificado = json_decode($columnasSujetoJson, true);
+    return is_array($decodificado[$rol] ?? null) ? $decodificado[$rol] : [];
+}
+
+/**
+ * true si la ficha tiene bloque propio (identidad/residencia) para ese rol
+ * -- la sola presencia del rol como clave de columnas_sujeto es lo que lo
+ * activa, no hay un booleano aparte (mismo idioma que nucleo_omitidos).
+ */
+function tieneSujeto(?string $columnasSujetoJson, string $rol): bool
+{
+    return columnasSujeto($columnasSujetoJson, $rol) !== [];
+}
+
 function e(mixed $valor): string
 {
     return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');

@@ -124,6 +124,14 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // ninguna ficha hasta que una declare una omisión explícita.
 const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'etnia', 'nombre_tutor', 'celular_tutor', 'gestante'];
 
+// Columnas reales de caso_sujeto que una ficha multi_sujeto puede declarar
+// para un rol secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2):
+// "columnas_sujeto": {"MADRE": [...]}. Excluye id/caso_id/persona_id/rol
+// (no son datos que un formulario capture). La presencia del rol como
+// clave es lo que activa el bloque -- no hay un booleano aparte, mismo
+// idioma que nucleo_omitidos.
+const COLUMNAS_SUJETO_VALIDAS = ['tipo_doc', 'doc', 'apellidos', 'nombres', 'sexo', 'edad', 'fecha_nacimiento', 'nacionalidad', 'ocupacion', 'distrito_id', 'direccion'];
+
 // Listas de opciones tan genéricas que se comparten entre fichas en vez de
 // crear un catálogo por ficha (se detectan por contenido exacto, no por
 // nombre — cualquier campo con exactamente esta lista de opciones cae acá).
@@ -284,6 +292,30 @@ function validarManifiesto(array $manifiesto): void
             foreach ($ficha['nucleo_omitidos'] as $campoNucleo) {
                 if (!in_array($campoNucleo, NUCLEO_OMITIBLES, true)) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_omitidos incluye \"{$campoNucleo}\", que no es un campo omitible del núcleo. Válidos: " . implode(', ', NUCLEO_OMITIBLES) . ".");
+                }
+            }
+        }
+
+        if (!empty($ficha['columnas_sujeto'])) {
+            foreach ($ficha['columnas_sujeto'] as $rol => $columnas) {
+                if (!is_array($columnas) || empty($columnas)) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_sujeto.{$rol} debe ser una lista no vacía de columnas.");
+                }
+                foreach ($columnas as $col) {
+                    if (!in_array($col, COLUMNAS_SUJETO_VALIDAS, true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_sujeto.{$rol} incluye \"{$col}\", que no es una columna configurable de caso_sujeto. Válidas: " . implode(', ', COLUMNAS_SUJETO_VALIDAS) . ".");
+                    }
+                }
+            }
+        }
+
+        if (!empty($ficha['titulo_sujeto'])) {
+            foreach ($ficha['titulo_sujeto'] as $rol => $titulo) {
+                if (!is_string($titulo) || trim($titulo) === '') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / titulo_sujeto.{$rol} debe ser un texto no vacío.");
+                }
+                if (empty($ficha['columnas_sujeto'][$rol])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / titulo_sujeto declara el rol \"{$rol}\", que no tiene columnas_sujeto -- un título sin bloque no tiene dónde mostrarse.");
                 }
             }
         }
@@ -479,7 +511,12 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // manifiesto no la declara se deja NULL explícito (no se conserva un
     // valor de una corrida anterior).
     $nucleoOmitidosDeclarados = $fichaManifiesto['nucleo_omitidos'] ?? null;
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ? WHERE id = ?')->execute([
+    // columnas_sujeto/titulo_sujeto (PETICION_P35_RUBEOLA_CONGENITA.md Fase
+    // 2b): mismo criterio exacto que nucleo_omitidos -- objeto por rol, se
+    // aplica siempre, NULL explícito si la ficha no declara nada.
+    $columnasSujetoDeclaradas = $fichaManifiesto['columnas_sujeto'] ?? null;
+    $tituloSujetoDeclarado = $fichaManifiesto['titulo_sujeto'] ?? null;
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, columnas_sujeto = ?, titulo_sujeto = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -489,6 +526,8 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($tablasHijas['caso_viaje']) ? 1 : 0,
         !empty($tablasHijas['caso_vacuna']) ? 1 : 0,
         !empty($nucleoOmitidosDeclarados) ? json_encode($nucleoOmitidosDeclarados, JSON_UNESCAPED_UNICODE) : null,
+        !empty($columnasSujetoDeclaradas) ? json_encode($columnasSujetoDeclaradas, JSON_UNESCAPED_UNICODE) : null,
+        !empty($tituloSujetoDeclarado) ? json_encode($tituloSujetoDeclarado, JSON_UNESCAPED_UNICODE) : null,
         $enfermedadId,
     ]);
 

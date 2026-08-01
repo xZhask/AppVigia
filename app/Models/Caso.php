@@ -142,6 +142,7 @@ class Caso extends Model
                        p.celular, p.nacionalidad, p.direccion, p.localidad, p.etnia, p.etnia_otra, p.nombre_tutor, p.celular_tutor, p.gestante, p.semanas_gestacion, p.trimestre_gestacion,
                        e.nombre AS enfermedad_nombre, e.cie10, e.tipo_notif,
                        e.multi_sujeto AS enfermedad_multi_sujeto, e.roles_sujeto AS enfermedad_roles_sujeto,
+                       e.columnas_sujeto AS enfermedad_columnas_sujeto, e.titulo_sujeto AS enfermedad_titulo_sujeto,
                        est.nombre AS establecimiento_nombre, est.id AS establecimiento_id,
                        r.nombre AS red_nombre,
                        u.nombre AS usuario_nombre,

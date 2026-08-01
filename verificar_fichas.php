@@ -436,10 +436,25 @@ foreach ($enfermedades as $e) {
     }
 }
 
+// Avisos no bloqueantes (no afectan el estado OK/CON_DIFERENCIAS de
+// ninguna ficha, ni el código de salida): columnas_sujeto.ROL declarado
+// sin titulo_sujeto.ROL correspondiente -- cargar_fichas.php lo acepta
+// (cae al default "Datos de {rol}"), pero es una ficha con un rótulo que
+// no dice nada en vez de uno elegido a propósito.
+$avisos = [];
+foreach ($manifiesto['fichas'] as $cie10Aviso => $fichaAviso) {
+    foreach (array_keys($fichaAviso['columnas_sujeto'] ?? []) as $rolAviso) {
+        if (empty($fichaAviso['titulo_sujeto'][$rolAviso])) {
+            $avisos[] = "{$cie10Aviso}: columnas_sujeto.{$rolAviso} sin titulo_sujeto.{$rolAviso} -- usará el default \"Datos de " . strtolower($rolAviso) . "\".";
+        }
+    }
+}
+
 if ($modoJson) {
     echo json_encode([
         'fichas' => $resultado,
         'enfermedades_sin_manifiesto' => $sinManifiesto,
+        'avisos' => $avisos,
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     echo "\n";
     exit(0);
@@ -482,6 +497,14 @@ if ($sinManifiesto) {
     echo "**Enfermedades en la BD sin entrada en el manifiesto** (no auditadas por esta corrida):\n\n";
     foreach ($sinManifiesto as $e) {
         echo "- `{$e['cie10']}` — {$e['nombre']} (id={$e['id']})\n";
+    }
+    echo "\n";
+}
+
+if ($avisos) {
+    echo "**Avisos (no bloqueantes, no cambian el estado de ninguna ficha):**\n\n";
+    foreach ($avisos as $aviso) {
+        echo "- {$aviso}\n";
     }
     echo "\n";
 }

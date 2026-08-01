@@ -40,4 +40,26 @@ class CampoDef extends Model
 
         return $campos;
     }
+
+    /**
+     * Roles de sujeto (distintos de CASO_INDICE) que ya tienen al menos una
+     * sección propia en el manifiesto de esta ficha -- usado para decidir si
+     * el bloque de identidad/residencia de un rol se ancla dentro de
+     * secciones-clinicas.php (justo antes de esa sección, ver
+     * PETICION_P35_RUBEOLA_CONGENITA.md Fase 2) o si cae al lugar de
+     * siempre (tarjeta "Antecedentes epidemiológicos") porque ninguna
+     * sección declara ese rol.
+     */
+    public static function rolesConSeccionPropia(int $enfermedadId): array
+    {
+        $sql = 'SELECT DISTINCT cd.rol_sujeto
+                  FROM campo_def cd
+                  JOIN seccion_def sd ON sd.id = cd.seccion_id
+                 WHERE sd.enfermedad_id = :enf AND cd.rol_sujeto <> \'CASO_INDICE\'';
+
+        $consulta = Database::conexion()->prepare($sql);
+        $consulta->execute(['enf' => $enfermedadId]);
+
+        return array_column($consulta->fetchAll(), 'rol_sujeto');
+    }
 }
