@@ -39,6 +39,7 @@
                     "orden": 1,
                     "campos": [
                         {
+                            "clave": "a97_subsistema_de_vigilancia",
                             "etiqueta": "Subsistema de vigilancia",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -55,36 +56,43 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "a97_caso_autoctono",
                             "etiqueta": "Caso autóctono",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "a97_caso_importado_nacional",
                             "etiqueta": "Caso importado nacional",
                             "tipo": "BOOLEANO",
                             "orden": 2
                         },
                         {
+                            "clave": "a97_caso_importado_internacional",
                             "etiqueta": "Caso importado internacional",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "a97_tuvo_dengue_anteriormente",
                             "etiqueta": "¿Tuvo dengue anteriormente?",
                             "tipo": "BOOLEANO",
                             "orden": 4
                         },
                         {
+                            "clave": "a97_ano_dengue_anterior",
                             "etiqueta": "Año (dengue anterior)",
                             "tipo": "NUMERO",
                             "orden": 5
                         },
                         {
+                            "clave": "a97_tiene_comorbilidad",
                             "etiqueta": "¿Tiene comorbilidad?",
                             "tipo": "BOOLEANO",
                             "orden": 6
                         },
                         {
+                            "clave": "a97_comorbilidad_cual",
                             "etiqueta": "Comorbilidad (cuál)",
                             "tipo": "TEXTO",
                             "orden": 7
@@ -96,11 +104,13 @@
                     "orden": 3,
                     "campos": [
                         {
+                            "clave": "a97_fecha_de_inicio_de_sintomas",
                             "etiqueta": "Fecha de inicio de síntomas",
                             "tipo": "FECHA",
                             "orden": 1
                         },
                         {
+                            "clave": "a97_signos_y_sintomas_frecuentes",
                             "etiqueta": "Signos y síntomas frecuentes",
                             "tipo": "MULTISELECT",
                             "orden": 2,
@@ -118,11 +128,13 @@
                             ]
                         },
                         {
+                            "clave": "a97_temperatura_c",
                             "etiqueta": "Temperatura (°C)",
                             "tipo": "NUMERO",
                             "orden": 3
                         },
                         {
+                            "clave": "a97_signos_de_alarma",
                             "etiqueta": "Signos de alarma",
                             "tipo": "MULTISELECT",
                             "orden": 4,
@@ -140,6 +152,7 @@
                             ]
                         },
                         {
+                            "clave": "a97_signos_de_gravedad",
                             "etiqueta": "Signos de gravedad",
                             "tipo": "MULTISELECT",
                             "orden": 5,
@@ -152,26 +165,31 @@
                             ]
                         },
                         {
+                            "clave": "a97_compromiso_grave_de_organos_especificar",
                             "etiqueta": "Compromiso grave de órganos (especificar)",
                             "tipo": "TEXTO",
                             "orden": 6
                         },
                         {
+                            "clave": "a97_sangrado_grave_especificar",
                             "etiqueta": "Sangrado grave (especificar)",
                             "tipo": "TEXTO",
                             "orden": 7
                         },
                         {
+                            "clave": "a97_escala_de_glasgow_apertura_ocular",
                             "etiqueta": "Escala de Glasgow: apertura ocular",
                             "tipo": "NUMERO",
                             "orden": 8
                         },
                         {
+                            "clave": "a97_escala_de_glasgow_respuesta_motora",
                             "etiqueta": "Escala de Glasgow: respuesta motora",
                             "tipo": "NUMERO",
                             "orden": 9
                         },
                         {
+                            "clave": "a97_escala_de_glasgow_respuesta_verbal",
                             "etiqueta": "Escala de Glasgow: respuesta verbal",
                             "tipo": "NUMERO",
                             "orden": 10
@@ -184,36 +202,43 @@
                     "_nota": "Solo para casos hospitalizados.",
                     "campos": [
                         {
+                            "clave": "a97_hospitalizado",
                             "etiqueta": "Hospitalizado",
                             "tipo": "BOOLEANO",
                             "orden": 1
                         },
                         {
+                            "clave": "a97_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
                             "orden": 2
                         },
                         {
+                            "clave": "a97_fallecio",
                             "etiqueta": "Falleció",
                             "tipo": "BOOLEANO",
                             "orden": 3
                         },
                         {
+                            "clave": "a97_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
                             "orden": 4
                         },
                         {
+                            "clave": "a97_fue_referido",
                             "etiqueta": "Fue referido",
                             "tipo": "BOOLEANO",
                             "orden": 5
                         },
                         {
+                            "clave": "a97_fecha_de_referencia",
                             "etiqueta": "Fecha de referencia",
                             "tipo": "FECHA",
                             "orden": 6
                         },
                         {
+                            "clave": "a97_hospital_c_s",
                             "etiqueta": "Hospital \/ C.S.",
                             "tipo": "TEXTO",
                             "orden": 7
@@ -225,6 +250,7 @@
                     "orden": 5,
                     "campos": [
                         {
+                            "clave": "a97_clasificacion",
                             "etiqueta": "Clasificación",
                             "tipo": "SELECT",
                             "orden": 1,
@@ -257,6 +283,7 @@
                             "_nota": "El PDF modela esto como 8 clasificaciones paralelas (una por enfermedad del panel); se simplifica a una sola SELECT combinada, igual que se hizo con Chagas."
                         },
                         {
+                            "clave": "a97_otras_arbovirosis_especificar",
                             "etiqueta": "Otras arbovirosis (especificar)",
                             "tipo": "TEXTO",
                             "orden": 2
@@ -268,6 +295,7 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "a97_observaciones",
                             "etiqueta": "Observaciones",
                             "tipo": "TEXTAREA",
                             "orden": 1
