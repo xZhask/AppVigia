@@ -444,29 +444,51 @@ tocar el partial compartido.
 
 **B. Cotejo incompleto de P35.0, prioridad media — 17 fechas de
 manifestación sin capturar. Ya NO bloqueada por A (A cerrado
-2026-08-01) — sigue sin implementar, es trabajo aparte**
+2026-08-01) — ✅ cerrado**
 
-El ítem 34 del PDF pide, por cada una de las 17 manifestaciones
-clínicas, marcar Sí/No/Desconocido **y** la fecha en que apareció. El
-manifiesto de P35.0 tiene esas 17 manifestaciones como 4 campos
-`GRUPO_SI_NO` (sin columna de fecha — `GRUPO_SI_NO` no tiene columnas).
-Convertirlos a `MATRIZ` con columnas `Sí/No/Desconocido/Fecha de
-manifestación` HOY sería estrictamente peor que dejarlos como están: al
-tener una columna de fecha, la matriz completa cae a modo texto libre
-(bug A) y se pierde también la exclusividad Sí/No/Desconocido que ya
-funciona bien en `GRUPO_SI_NO`. **Decisión (2026-08-01): se queda como
-`GRUPO_SI_NO`, sin las 17 fechas, hasta que A esté resuelto.** Cuando A
-se arregle, B se resuelve solo convirtiendo los 4 campos a `MATRIZ` —
-no es trabajo nuevo, es la misma conversión que hoy degradaría.
+Cerrado 2026-08-01. Los 4 campos `GRUPO_SI_NO` de "Cuadro clínico —
+manifestaciones" pasaron a `MATRIZ`: `"opciones"` se renombró a
+`"filas"` (mismos 17 ítems, sin tocar texto) y se agregó `"columnas":
+["SI", "NO", "DESCONOCIDO", "Fecha de manifestación"]` a los 4. Con el
+fix de A ya aplicado, esto cae directo en modo **híbrido**: las 3
+primeras columnas (mayúsculas, sin palabra libre) son radio exclusivo,
+"Fecha de manifestación" (contiene "FECHA", no está en mayúsculas) es
+`type="date"` libre — primer consumidor real del modo híbrido que A
+dejó preparado pero sin ejemplos en las 24 fichas. `caso_valor` tenía 0
+filas para los 4 campos antes de tocar nada (verificado) — no había
+respuestas capturadas que migrar ni perder.
 
-**Nota (2026-08-01, mismo día que se cerró A):** con A resuelto, la
-conversión ya no degradaría — una `MATRIZ` con columnas `Sí/No/
-Desconocido/Fecha de manifestación` tendría 3 columnas radio (mayúsculas,
-sin palabra libre) + 1 columna fecha en modo híbrido, exactamente el
-caso que A dejó preparado. No se implementó acá: no era parte de lo
-pedido (solo el fix del partial), y toca manifiesto + posible migración
-de las 17 respuestas ya capturadas en los 4 `GRUPO_SI_NO` actuales, que
-merece su propia revisión.
+No se tocó ningún `.php`: `campos/matriz.php` (fix de A) y
+`CasosController.php` (guarda/lee `GRUPO_SI_NO` y `MATRIZ` de forma
+idéntica, ambos arrays JSON) ya soportaban esto sin cambios — todo el
+cierre es manifiesto. `php cargar_fichas.php --apply --cie10=P35.0`
+aplicado; `verificar_fichas.php` (P35.0: 35/35, sin diferencias) y
+`verificar_claves.php` (194/194) OK.
+
+**Verificado con render y caso real vía `CasosController`**
+(`scratch/test_p350_manifestaciones_matriz_item_b.php`, gitignored;
+caso borrado al terminar, 0 filas residuales): render de "Nueva ficha"
+confirma las 4 tablas con columnas `SI | NO | DESCONOCIDO | Fecha de
+manifestación`, filas correctas (4+1+3+9 = 17) y modo híbrido
+(`_radio` presente, 0 columnas en texto libre). Un caso de prueba con
+valores en ambos tipos de columna (radio SI/NO/DESCONOCIDO + fecha en
+algunas filas, sin fecha en otras) se creó, verificó en BD
+(`caso_valor` con el JSON híbrido esperado por campo), se confirmó su
+prefill en `editar()` (checked/value coinciden con lo guardado) y se
+actualizó cambiando un valor (`actualizar()` lo reflejó correctamente
+sin tocar los otros 3 campos). `ver()` no truena (sigue mostrando JSON
+crudo para `MATRIZ` — ítem 2 de este documento, preexistente, no es
+parte de este cierre). 0 excepciones, 0 warnings/notices con `E_ALL`.
+
+**Cambio de aspecto esperado, no es un bug:** al convertir de
+`GRUPO_SI_NO` a `MATRIZ`, se pierde el agrupamiento visual "subgrupo"
+que unía "Manifestaciones oftálmicas" + "Manifestación auditiva" +
+"Cardiopatía congénita" en un solo bloque con un encabezado compartido
+(`secciones-clinicas.php:130`, `$esSubgrupo` — ese mecanismo solo
+aplica entre `GRUPO_SI_NO` consecutivos). Cada uno pasa a ser su propia
+tabla independiente con su propia etiqueta, igual que cualquier otro
+campo `MATRIZ` de las 24 fichas — es la consecuencia normal de cambiar
+de tipo de campo, no algo a corregir.
 
 **C. BUG, prioridad alta — `muestras.php` tiene las columnas de
 serología hardcodeadas a B05 con `if ($esB05)`, no declarativas —
