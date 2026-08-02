@@ -2,7 +2,6 @@
 /**
  * Campos núcleo de "Datos del paciente" con integración perfecta de B05 y O95.
  */
-$puedeVerEtnia = \App\Core\Auth::tieneRol('ADMIN');
 $esB05 = (($enfermedad['cie10'] ?? null) === 'B05');
 
 // nucleo_omitidos (Petición 2, sesión "núcleo declarativo"): reemplaza las
@@ -65,7 +64,6 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
 
 <!-- 3. Etnia / raza + Pueblo étnico o etnia + Ocupación (¡AL LADO DE ETNIA / RAZA EN LA MISMA FILA!) -->
 <div class="fields thirds" style="margin-top:14px">
-  <?php if ($puedeVerEtnia): ?>
   <?php
   $cie10Actual = strtoupper(trim($enfermedad['cie10'] ?? ''));
   $esO95 = ($cie10Actual === 'O95');
@@ -219,7 +217,6 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
       <input type="text" id="etniaOtraInput" name="etnia_otra" value="<?= e($valoresFijos['etnia_otra'] ?? '') ?>" placeholder="Especificar etnia / raza…" <?= (($valoresFijos['etnia'] ?? '') === 'OTRO') ? '' : 'disabled' ?>>
     </div>
   </div>
-  <?php endif; ?>
 
   <?php if ($b05['puebloEtnico']['name']): ?>
   <div class="field b05-elem" <?= $esB05 ? '' : 'hidden' ?>>

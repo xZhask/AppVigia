@@ -740,8 +740,7 @@ class CasosController extends Controller
         }
 
         $datosPnp = $this->leerDatosPnp();
-        $valoresExistentesCrudo = CasoValor::porCaso((int) $caso['id']);
-        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $valoresExistentesCrudo);
+        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId);
 
         $opcionesClasificacion = opcionesClasificacionPara($enfermedad);
         $clasificacion = $_POST['clasificacion'] ?? $caso['clasificacion'];
@@ -948,13 +947,12 @@ class CasosController extends Controller
     /**
      * @return array{0: array, 1: array, 2: array} [valoresCampos, erroresCampos, paraGuardar]
      */
-    private function validarCamposDinamicos(int $enfermedadId, array $valoresExistentesCrudo = []): array
+    private function validarCamposDinamicos(int $enfermedadId): array
     {
         $campos = CampoDef::porEnfermedad($enfermedadId);
         $valoresCampos = [];
         $erroresCampos = [];
         $paraGuardar = [];
-        $puedeVerSensibles = Auth::tieneRol('ADMIN');
 
         foreach ($campos as $campoId => $campo) {
             // Peticion 2, Fase 5: estos 4 son casos especiales que escapan el
@@ -1000,15 +998,7 @@ class CasosController extends Controller
             }
             $tipo = $campo['tipo'];
             $obligatorio = (int) $campo['obligatorio'] === 1;
-            $sensible = !empty($campo['sensible']);
             $nombreCampo = 'campo_' . $campoId;
-
-            if ($sensible && !$puedeVerSensibles) {
-                if (isset($valoresExistentesCrudo[$campoId])) {
-                    $paraGuardar[$campoId] = $valoresExistentesCrudo[$campoId];
-                }
-                continue;
-            }
 
             // Campo condicional oculto: no se valida su obligatoriedad y se
             // guarda vacío aunque el cliente haya enviado algo (el valor se

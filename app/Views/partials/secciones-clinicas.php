@@ -104,8 +104,6 @@ $campoFechaUltSeg = (($enfermedad['cie10'] ?? '') === 'B05')
 
 $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg): void {
     $campos = CampoDef::porSeccion($seccionId);
-    $puedeVerSensibles = \App\Core\Auth::tieneRol('ADMIN');
-    $campos = array_filter($campos, fn($c) => empty($c['sensible']) || $puedeVerSensibles);
 
     $idsPadre = array_filter(array_column($campos, 'depende_de'));
     $camposBooleanos = array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !in_array($c['id'], $idsPadre));
