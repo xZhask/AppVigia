@@ -804,6 +804,75 @@ heredar el candado por estar cerca en el layout.
 
 No implementado — solo reportado, a pedido explícito.
 
+**K. Prioridad alta — campos sensibles con gate de rol ADMIN en el
+formulario de captura: protege la entrada, no confirmadamente la
+salida**
+
+`campo_def.sensible = 1` bloquea la escritura de un campo a cualquiera
+que no sea ADMIN: `secciones-clinicas.php:107-108` lo oculta del
+formulario, y `CasosController.php` (~línea 1006, gateado por
+`$puedeVerSensibles` en las líneas 539/583/957) descarta en el
+servidor cualquier valor que llegue por POST para ese campo desde un
+rol distinto — preserva el valor existente en vez de sobrescribirlo,
+así que ni siquiera un POST armado a mano lo cambia. Hoy son **127
+campos** en 5 fichas: A50 (23/25), B04X (11/41), B24 (26/26, la ficha
+entera), Y07 (25/25, entera), Z21 (42/42, entera). Si el ADMIN no
+registra fichas directamente, esos campos no se llenan nunca — la
+preocupación del pedido original.
+
+**La exclusión de exportaciones no es la protección que parece.**
+`ReportesController::exportarExcel()` es el único export del sistema y
+solo saca conteos agregados (Sospechoso/Probable/Confirmado/Descartado
+por agrupación) — no exporta ningún campo individual, sensible o no.
+El aviso "Dato sensible: no aparece en exportaciones" que trae "Etnia /
+raza" (`datos-paciente-nucleo.php:213`) es cierto, pero trivialmente:
+ningún campo aparece ahí, así que no es una exclusión deliberada de
+este dato en particular.
+
+**La salida real, `ver.php`, no filtra por `sensible` en absoluto —
+verificado con un caso real.** Se creó un caso A50 (no es "privada",
+ver abajo) con "Lugar del parto" (`sensible = 1`) como ADMIN, y se
+renderizó `ver()` con sesión REGISTRADOR: la etiqueta y el valor
+resuelto ("Establecimiento de salud") aparecen completos. `ver.php` no
+importa `Auth` para nada relacionado a `sensible` — cualquier usuario
+autenticado que pueda ver el caso ve el 100% de sus campos, incluidos
+los 34 de A50/B04X que el formulario de captura le ocultó. Mismo hueco
+para los 9 campos del Anexo 2 de O95 (Grupo étnico, Idioma, Ocupación,
+etc.): no están marcados `sensible` (confirmado, los 9 en `0`) — los
+oculta al capturar un gate aparte (`$puedeVerEtnia`, ver abajo), pero
+`ver.php` tampoco sabe de ese gate.
+
+**Existe una cuarta capa, independiente de `sensible`, que si
+funciona para B24/Z21/Y07:** `Caso::esPrivada()` (`CIE10_PRIVADOS =
+['B24', 'Z21']` + coincidencia por nombre "Violencia" para Y07) hace
+que un REGISTRADOR solo pueda ver/editar **el caso completo** —no
+campo por campo— si él mismo lo registró; cualquier otro REGISTRADOR
+recibe 403 (`puedeVerCaso()`, `CasosController.php:1983-1995`,
+confirmado con el mismo caso de prueba). Esto sí protege esas 3 fichas
+de la fuga de `ver.php` frente a un REGISTRADOR ajeno — pero no protege
+A50 ni B04X, que no están en `CIE10_PRIVADOS` a pesar de tener 34
+campos `sensible` entre las dos. Y el propio mecanismo está duplicado a
+mano: `Caso::listarPaginado()` (línea 92) repite la misma lista de
+CIE-10 y el mismo `LIKE "%Violencia%"` como literal SQL aparte, con
+un comentario que ya lo advierte ("Debe coincidir con el literal SQL
+usado en listarPaginado()") — dos lugares que hay que sincronizar a
+mano si se agrega una ficha privada más.
+
+**Desde cuándo:** el gate en sí (columna `sensible`, `$puedeVerSensibles`,
+`$puedeVerEtnia`, `CIE10_PRIVADOS`/`esPrivada()`) existe desde
+~2026-07-20 (commits `da67f18`/`357c188`), antes de que existiera el
+manifiesto unificado — no es un patrón que haya crecido suelto en
+muchas sesiones, está concentrado en el arranque del proyecto. B24,
+Z21, Y07 y B04X ya traían sus campos sensibles marcados desde entonces
+(con una pérdida y restauración de Z21 durante la recarga del
+2026-07-23, ver `hallazgo_perdida_silenciosa_recarga.md`); A50 se
+sumó el 2026-07-23 como decisión de producto nueva y documentada
+(commit `982e666`, `PENDIENTES_POST_FASE5.md`) — la única incorporación
+posterior al arranque.
+
+**Decisión de protección de datos pendiente de DIRSAPOL.** No
+implementado — solo reportado, a pedido explícito.
+
 - **Fase 4**: ✅ cerrada (commit `a3c35db`). Los 10 pares
   `depende_de`/`valor_activador` declarados y verificados con render
   real (oculto sin disparador, visible con el disparador forzado).
