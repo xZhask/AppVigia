@@ -729,6 +729,81 @@ pero si alguien alguna vez declara `"obligatorio": true` esperando que
 llega a la base. No se tocó (no es parte de lo pedido en G/H, y
 arreglarlo cambiaría comportamiento de las 24 fichas a la vez).
 
+**I. BUG, prioridad alta — "Fecha de inicio de síntomas" es un campo
+fijo del núcleo de `caso`, condicionado por ficha en código compartido
+— cuarta instancia de la misma familia que A, C y E**
+
+`secciones-clinicas.php:316-326` inyecta un `<input name="fecha_inicio_sintomas"
+required>` (columna `caso.fecha_inicio_sintomas`) al principio de la
+tarjeta de `$secciones[0]` para toda ficha que no esté en
+`!in_array($cie10, ['A80', 'B05', 'O95'])` — el mismo patrón de
+`if ($cie10 === ...)` hardcodeado en un partial compartido que ya
+aparecía en `campos/matriz.php` (ítem A), `muestras.php` (ítem C) y
+`datos-paciente-nucleo.php` (ítem E), salvo que acá la "lista de
+excepción" no vive en el manifiesto — vive en un array literal de PHP
+que alguien tiene que editar a mano cada vez que se descubre una ficha
+más que no lo pide.
+
+Alcance mayor que los tres anteriores: es obligatorio en **21 de las
+24 fichas** (todas menos A80/B05/O95, que en vez de mostrarlo lo
+derivan solas vía `CasosController::extraerFechaInicioSintomas()`,
+tomando el primer campo `FECHA` que la ficha declare). También
+participa `ImportacionController.php` (columna fija obligatoria en la
+carga masiva) y `fichas/ver.php:126` (se muestra de solo lectura).
+
+**Caso conocido hoy:** el PDF de P35.0 no tiene ningún ítem de "fecha
+de inicio de síntomas" global (el ítem 34 lleva fecha *por
+manifestación*, ya resuelto en el ítem B) — y aun así el campo se
+exige igual, porque P35.0 nunca estuvo en la lista de exclusión.
+
+**Sospecha sin verificar:** A97 declara además su propio `campo_def`
+(`a97_fecha_de_inicio_de_sintomas`, tipo FECHA) con etiqueta casi
+idéntica al campo fijo del núcleo — podría ser una captura duplicada
+del mismo dato. No confirmado contra el PDF de A97; solo se detectó
+por coincidencia de nombre al investigar P35.0.
+
+**Efecto colateral del andamiaje, ya observado:** como el campo se
+inyecta siempre en `$secciones[0]` en vez de en una sección fija, cambia
+de tarjeta según qué sección del manifiesto quede primero. Al agregar
+"Datos del paciente (adicionales)" en el cierre de G/H, el campo se
+corrió de "Antecedentes del paciente" a la sección nueva — nadie lo
+movió a propósito, es consecuencia de cuál sección gana el índice 0.
+
+No implementado ni corregido — solo reportado, a pedido explícito.
+
+**J. Prioridad media — el núcleo no es extensible desde el
+manifiesto; "Pueblo étnico" y "Tiempo de residencia" de P35.0 quedan
+como `campo_def`, separados de Etnia/raza y del domicilio**
+
+`nucleo_omitidos` (ítem E) es un interruptor de **ocultar** HTML fijo
+que ya existe en `datos-paciente-nucleo.php` — no un mecanismo para
+**declarar** un campo nuevo del núcleo desde el manifiesto. Agregar un
+campo real al núcleo sigue costando ~8 archivos a mano: migración,
+`NUCLEO_OMITIBLES`, el HTML del partial, `Caso::conDetalle()`, 5 puntos
+de `CasosController.php` (crear/editar/actualizar/valoresFijosPorDefecto/
+sanearCamposNucleo) y `ver.php` — el mismo trabajo que la entrada E
+hizo para "Referencia para localizar", sin atajo.
+
+Consecuencia inmediata (ítems G/H, cerrados hoy): "Pueblo étnico" y
+"Tiempo de residencia" quedaron como `campo_def` propios de P35.0 en
+vez de vivir junto a "Etnia / raza" y el bloque de domicilio del
+núcleo, como los tiene el PDF. No es un error de esos cierres — es el
+límite real del mecanismo hoy. Se resuelve con un motor declarativo de
+verdad (Petición 3), no repitiendo el patrón de la entrada E
+campo por campo.
+
+**Decisión abierta para cuando se retome:** el bloque de "Etnia / raza"
+en `datos-paciente-nucleo.php` (líneas 66-222) está completo detrás de
+`if ($puedeVerEtnia)` (`Auth::tieneRol('ADMIN')`), porque la etnia es
+dato sensible. Si "Pueblo étnico" se sube ahí tal cual, hereda ese
+mismo candado — un REGISTRADOR, que es quien normalmente llena la
+ficha, ya no podría escribirlo. Hoy, como `campo_def` de P35.0, sí
+puede. Habría que decidir si "Pueblo étnico" merece el mismo nivel de
+sensibilidad que "Etnia / raza" o necesita su propio bloque, no
+heredar el candado por estar cerca en el layout.
+
+No implementado — solo reportado, a pedido explícito.
+
 - **Fase 4**: ✅ cerrada (commit `a3c35db`). Los 10 pares
   `depende_de`/`valor_activador` declarados y verificados con render
   real (oculto sin disparador, visible con el disparador forzado).
