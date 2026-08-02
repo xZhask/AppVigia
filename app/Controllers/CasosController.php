@@ -153,6 +153,7 @@ class CasosController extends Controller
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
+            'pueblo_etnico'      => $_POST['pueblo_etnico'] ?? '',
             'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
             'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
@@ -605,6 +606,7 @@ class CasosController extends Controller
             'localidad'          => (string) ($caso['localidad'] ?? ''),
             'etnia'              => (string) ($caso['etnia'] ?? ''),
             'etnia_otra'         => (string) ($caso['etnia_otra'] ?? ''),
+            'pueblo_etnico'      => (string) ($caso['pueblo_etnico'] ?? ''),
             'nombre_tutor'       => (string) ($caso['nombre_tutor'] ?? ''),
             'celular_tutor'      => (string) ($caso['celular_tutor'] ?? ''),
             'gestante'           => $caso['gestante'] !== null ? (string) $caso['gestante'] : '',
@@ -682,6 +684,7 @@ class CasosController extends Controller
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
+            'pueblo_etnico'      => $_POST['pueblo_etnico'] ?? '',
             'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
             'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
@@ -1149,6 +1152,7 @@ class CasosController extends Controller
             'localidad'          => '',
             'etnia'              => '',
             'etnia_otra'         => '',
+            'pueblo_etnico'      => '',
             'nombre_tutor'       => '',
             'celular_tutor'      => '',
             'gestante'           => '',
@@ -1198,6 +1202,12 @@ class CasosController extends Controller
         $etnia = in_array($valoresFijos['etnia'], $etnias, true) ? $valoresFijos['etnia'] : null;
         $etniaOtra = ($etnia === 'OTRO' && $valoresFijos['etnia_otra'] !== '') ? $valoresFijos['etnia_otra'] : null;
 
+        // Mismas 19 opciones que catalogo_id=537 (b05_pueblo_etnico_o_etnia,
+        // ya retirado) y que MAPA_GRUPO_ETNICO en ficha.js -- cascada desde
+        // 'etnia', no depende de a qué grupo pertenezcan acá.
+        $pueblosEtnicos = ['Quechua', 'Aymara', 'Jaqaru', 'Uro', 'Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Afroperuano', 'No aplica', 'Chino-peruano', 'Japonés-peruano', 'Otro'];
+        $puebloEtnico = in_array($valoresFijos['pueblo_etnico'], $pueblosEtnicos, true) ? $valoresFijos['pueblo_etnico'] : null;
+
         $gestante = null;
         $semanasGestacion = null;
         $trimestreGestacion = null;
@@ -1226,6 +1236,7 @@ class CasosController extends Controller
                 'localidad'          => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
                 'etnia'              => $etnia,
                 'etnia_otra'         => $etniaOtra,
+                'pueblo_etnico'      => $puebloEtnico,
                 'nombre_tutor'       => $valoresFijos['nombre_tutor'] !== '' ? $valoresFijos['nombre_tutor'] : null,
                 'celular_tutor'      => $valoresFijos['celular_tutor'] !== '' ? $valoresFijos['celular_tutor'] : null,
                 'gestante'           => $gestante,

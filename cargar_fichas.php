@@ -132,7 +132,7 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // es núcleo real (persona.referencia_localizar). Para no cambiar nada
 // visualmente en las 23 fichas que no lo pedían, todas declaran esta
 // omisión salvo B05.
-const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'nombre_tutor', 'celular_tutor', 'gestante'];
+const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'nombre_tutor', 'celular_tutor', 'gestante'];
 
 // Columnas reales de caso_sujeto que una ficha multi_sujeto puede declarar
 // para un rol secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2):

@@ -98,6 +98,9 @@ $accionEtiquetas = [
           <?php endif; ?>
           <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
             <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e(($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') . (($caso['etnia'] ?? '') === 'OTRO' && !empty($caso['etnia_otra']) ? ' (' . $caso['etnia_otra'] . ')' : '')) ?></div></div>
+            <?php if (!empty($caso['pueblo_etnico'])): ?>
+              <div class="field"><label class="fl">Pueblo étnico o etnia</label><div class="control" style="background:var(--paper)"><?= e($caso['pueblo_etnico']) ?></div></div>
+            <?php endif; ?>
           <?php endif; ?>
           <?php if (!empty($caso['nombre_tutor']) || !empty($caso['celular_tutor'])): ?>
             <div class="field wide"><label class="fl">Madre / Tutor / Responsable</label><div class="control" style="background:var(--paper)"><?= e($caso['nombre_tutor'] ?: '—') ?><?= !empty($caso['celular_tutor']) ? ' · N.° Celular: ' . e($caso['celular_tutor']) : '' ?></div></div>

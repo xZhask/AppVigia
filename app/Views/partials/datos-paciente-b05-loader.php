@@ -8,7 +8,6 @@ use App\Models\Enfermedad;
 use App\Models\SeccionDef;
 
 $b05 = [
-    'puebloEtnico'  => ['name' => ''],
     'ocupacion'     => ['name' => ''],
     'lugarParto'    => ['name' => ''],
     'tipoLocalidad' => ['name' => ''],
@@ -52,7 +51,6 @@ if ($enfB05Obj) {
             ];
         };
 
-        $b05['puebloEtnico']  = $getCampoFilInput('Pueblo étnico o etnia');
         $b05['ocupacion']     = $getCampoFilInput('Ocupación');
         $b05['lugarParto']    = $getCampoFilInput('Lugar probable de parto');
         $b05['tipoLocalidad'] = $getCampoFilInput('Tipo de localidad');

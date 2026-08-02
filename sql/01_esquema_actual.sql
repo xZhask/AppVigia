@@ -576,6 +576,7 @@ CREATE TABLE `persona` (
   `localidad` varchar(120) DEFAULT NULL,
   `etnia` enum('MESTIZO','ANDINO','ASIATICO_DESCENDIENTE','AFRODESCENDIENTE','INDIGENA_AMAZONICO','OTRO') DEFAULT NULL,
   `etnia_otra` varchar(100) DEFAULT NULL,
+  `pueblo_etnico` enum('Quechua','Aymara','Jaqaru','Uro','Asháninka','Awajún','Shipibo-Konibo','Yánesha','Kukama Kukamiria','Achuar','Bora','Matsés','Ese Eja','Harakbut','Afroperuano','No aplica','Chino-peruano','Japonés-peruano','Otro') DEFAULT NULL,
   `gestante` tinyint(1) DEFAULT NULL,
   `semanas_gestacion` smallint(6) DEFAULT NULL,
   `trimestre_gestacion` varchar(10) DEFAULT NULL,

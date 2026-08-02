@@ -218,19 +218,17 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
     </div>
   </div>
 
-  <?php if ($b05['puebloEtnico']['name']): ?>
-  <div class="field b05-elem" <?= $esB05 ? '' : 'hidden' ?>>
+  <div class="field" data-nucleo-campo="pueblo_etnico" <?= $nucleoOmite('pueblo_etnico') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Pueblo étnico o etnia</label>
     <div class="control">
       <!-- Cascada de Etnia / raza (núcleo, #etniaSel) -> Pueblo étnico, mismo
            mecanismo y mismo mapa que O95 (ver MAPA_GRUPO_ETNICO en ficha.js).
            Arranca vacío a propósito: se repuebla en JS según #etniaSel. -->
-      <select id="b05PuebloEtnicoSel" name="<?= $b05['puebloEtnico']['name'] ?>" data-nosearch="true" data-valor-actual="<?= e($b05['puebloEtnico']['val']) ?>">
+      <select id="b05PuebloEtnicoSel" name="pueblo_etnico" data-nosearch="true" data-valor-actual="<?= e($valoresFijos['pueblo_etnico'] ?? '') ?>">
         <option value="">Seleccionar…</option>
       </select>
     </div>
   </div>
-  <?php endif; ?>
 
   <?php if ($b05['ocupacion']['name']): ?>
   <div class="field b05-elem" <?= $esB05 ? '' : 'hidden' ?>>
