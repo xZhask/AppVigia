@@ -113,7 +113,11 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
     'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h'],
     'caso_vacuna'   => ['dosis', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
     'caso_viaje'    => ['pais', 'fecha_salida', 'fecha_retorno', 'semana_gestacion'],
-    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones'],
+    // Las últimas 7 (resultado_pcr..fecha_result_igg) eran de serología de
+    // B05, pintadas a mano en muestras.php dentro de un if ($esB05) --
+    // PENDIENTES.md ítem C: se vuelven declarativas igual que el resto,
+    // B05 las pasa a declarar acá en vez de estar hardcodeadas.
+    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones', 'resultado_pcr', 'fecha_result_pcr', 'genotipo', 'resultado_igm', 'fecha_result_igm', 'resultado_igg', 'fecha_result_igg'],
 ];
 
 // Campos del núcleo compartido de "Datos del paciente" (columnas fijas de

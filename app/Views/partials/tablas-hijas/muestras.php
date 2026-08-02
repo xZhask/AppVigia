@@ -62,71 +62,6 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
           <div class="control mono"><input type="date" name="muestra_fecha_recepcion_ins[]" value="<?= e($fila['fecha_recepcion_ins'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
         </div>
 
-        <!-- 2. Grupo PCR & Genotipo (HNF_FAR / ORINA) -->
-        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
-          <label class="fl">Resultado PCR</label>
-          <div class="control">
-            <select name="muestra_resultado_pcr[]">
-              <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
-                <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_pcr'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-        </div>
-
-        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
-          <label class="fl">Fecha resultado PCR</label>
-          <div class="control mono"><input type="date" name="muestra_fecha_result_pcr[]" value="<?= e($fila['fecha_result_pcr'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
-        </div>
-
-        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
-          <label class="fl">Genotipo</label>
-          <div class="control">
-            <select name="muestra_genotipo[]">
-              <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesGenotipo as $g): ?>
-                <option value="<?= $g ?>" <?= seleccionado($fila['genotipo'] ?? '', $g) ?>><?= $g ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-        </div>
-
-        <!-- 3. Grupo IgM & IgG (SUERO) -->
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
-          <label class="fl">Resultado IgM</label>
-          <div class="control">
-            <select name="muestra_resultado_igm[]">
-              <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
-                <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_igm'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-        </div>
-
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
-          <label class="fl">Fecha resultado IgM</label>
-          <div class="control mono"><input type="date" name="muestra_fecha_result_igm[]" value="<?= e($fila['fecha_result_igm'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
-        </div>
-
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
-          <label class="fl">Resultado IgG</label>
-          <div class="control">
-            <select name="muestra_resultado_igg[]">
-              <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
-                <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_igg'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-        </div>
-
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
-          <label class="fl">Fecha resultado IgG</label>
-          <div class="control mono"><input type="date" name="muestra_fecha_result_igg[]" value="<?= e($fila['fecha_result_igg'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
-        </div>
-
       <?php else: ?>
         <!-- Formulario estándar para otras enfermedades -->
         <?php if ($muestra('tipo_muestra')): ?>
@@ -213,6 +148,83 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
           </div>
         </div>
         <?php endif; ?>
+      <?php endif; ?>
+
+      <!-- Serología (PENDIENTES.md ítem C): declarativas por
+      columnas_tablas_hija.caso_muestra, ya no hardcodeadas a B05. Los
+      grupos b05-pcr-group/b05-serologia-group siguen atados al
+      selector .b05-select-tipo-muestra de más arriba (public/js/ficha.js)
+      -- hoy solo B05 declara estas columnas, así que no hay otra ficha
+      donde ese acoplamiento importe. -->
+      <?php if ($muestra('resultado_pcr')): ?>
+        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
+          <label class="fl">Resultado PCR</label>
+          <div class="control">
+            <select name="muestra_resultado_pcr[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
+                <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_pcr'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      <?php endif; ?>
+      <?php if ($muestra('fecha_result_pcr')): ?>
+        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
+          <label class="fl">Fecha resultado PCR</label>
+          <div class="control mono"><input type="date" name="muestra_fecha_result_pcr[]" value="<?= e($fila['fecha_result_pcr'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
+        </div>
+      <?php endif; ?>
+      <?php if ($muestra('genotipo')): ?>
+        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
+          <label class="fl">Genotipo</label>
+          <div class="control">
+            <select name="muestra_genotipo[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesGenotipo as $g): ?>
+                <option value="<?= $g ?>" <?= seleccionado($fila['genotipo'] ?? '', $g) ?>><?= $g ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      <?php endif; ?>
+      <?php if ($muestra('resultado_igm')): ?>
+        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+          <label class="fl">Resultado IgM</label>
+          <div class="control">
+            <select name="muestra_resultado_igm[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
+                <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_igm'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      <?php endif; ?>
+      <?php if ($muestra('fecha_result_igm')): ?>
+        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+          <label class="fl">Fecha resultado IgM</label>
+          <div class="control mono"><input type="date" name="muestra_fecha_result_igm[]" value="<?= e($fila['fecha_result_igm'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
+        </div>
+      <?php endif; ?>
+      <?php if ($muestra('resultado_igg')): ?>
+        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+          <label class="fl">Resultado IgG</label>
+          <div class="control">
+            <select name="muestra_resultado_igg[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
+                <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_igg'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      <?php endif; ?>
+      <?php if ($muestra('fecha_result_igg')): ?>
+        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+          <label class="fl">Fecha resultado IgG</label>
+          <div class="control mono"><input type="date" name="muestra_fecha_result_igg[]" value="<?= e($fila['fecha_result_igg'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
+        </div>
       <?php endif; ?>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar muestra" style="margin-top:22px">

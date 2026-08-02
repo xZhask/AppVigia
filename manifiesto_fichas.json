@@ -4873,9 +4873,18 @@
                     "fecha_inicio_erupcion",
                     "fecha_vacunacion",
                     "vacunado_72h"
+                ],
+                "caso_muestra": [
+                    "resultado_pcr",
+                    "fecha_result_pcr",
+                    "genotipo",
+                    "resultado_igm",
+                    "fecha_result_igm",
+                    "resultado_igg",
+                    "fecha_result_igg"
                 ]
             },
-            "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'direccion', pero caso_contacto no tiene esa columna -- se deja fuera en vez de inventar una columna nueva para esto.",
+            "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'direccion' para caso_contacto, pero esa tabla no tiene esa columna -- se deja fuera en vez de inventar una columna nueva para esto. caso_muestra (PENDIENTES.md ítem C, 2026-08-01): las 7 columnas de serología que antes pintaba a mano muestras.php dentro de un if ($esB05) -- tipo_muestra\/fecha_toma\/fecha_envio_ins\/fecha_recepcion_ins siguen fuera de esta lista porque siguen renderizándose sin pasar por \"columnas_tablas_hija\" (etiquetas propias de B05, no las genéricas; fecha_recepcion_ins ni siquiera está en COLUMNAS_TABLA_HIJA_VALIDAS) -- esta declaración solo cubre lo que se volvió declarativo.",
             "secciones": [
                 {
                     "nombre": "Datos de notificación e identificación del caso",

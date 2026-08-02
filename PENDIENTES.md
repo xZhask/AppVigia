@@ -469,22 +469,49 @@ de las 17 respuestas ya capturadas en los 4 `GRUPO_SI_NO` actuales, que
 merece su propia revisión.
 
 **C. BUG, prioridad alta — `muestras.php` tiene las columnas de
-serología hardcodeadas a B05 con `if ($esB05)`, no declarativas**
+serología hardcodeadas a B05 con `if ($esB05)`, no declarativas —
+✅ cerrado**
 
-`caso_muestra` ya tiene columnas `resultado_igm`, `fecha_result_igm`,
-`resultado_igg`, `fecha_result_igg`, `genotipo`, `resultado_pcr`,
-`fecha_result_pcr`, pero `app/Views/partials/tablas-hijas/muestras.php`
-solo las pinta dentro de una rama `if ($esB05)` — no pasan por
-`columnas_tablas_hija.caso_muestra` (el mecanismo que sí usan A80 y el
-resto de las 13 fichas con `usa_muestras=1`), ni están en
-`COLUMNAS_TABLA_HIJA_VALIDAS` de `cargar_fichas.php`. Es el mismo
-antipatrón `if (cie10 === 'X')` en código compartido que la Fase 2 de
-esta petición acabó de eliminar para P96 — preexistente, encontrado al
-investigar la Fase 5.2, no introducido por esta sesión. No arreglado
-(no era parte del alcance pedido).
+Cerrado 2026-08-01. Las 7 columnas de serología (`resultado_pcr`,
+`fecha_result_pcr`, `genotipo`, `resultado_igm`, `fecha_result_igm`,
+`resultado_igg`, `fecha_result_igg`) salieron de dentro del
+`if ($esB05)` de `muestras.php` y pasaron al mismo mecanismo
+declarativo que ya usan A80 y el resto de las 13 fichas con
+`usa_muestras=1`:
+- `cargar_fichas.php`: las 7 se agregaron a
+  `COLUMNAS_TABLA_HIJA_VALIDAS['caso_muestra']` (antes solo tenía las 9
+  genéricas).
+- `manifiesto_fichas.json`: B05 declara
+  `columnas_tablas_hija.caso_muestra` con exactamente esas 7 — ni una
+  más, ni una menos que las que el `if` pintaba antes.
+- `muestras.php`: los 7 bloques se movieron tal cual (mismas opciones,
+  mismas clases `b05-pcr-group`/`b05-serologia-group` para el toggle
+  de `public/js/ficha.js` que no se tocó) a `<?php if
+  ($muestra('...')): ?>` fuera del `if/else` de siempre. `tipo_muestra`,
+  `fecha_toma`, `fecha_envio_ins` y `fecha_recepcion_ins` **no** se
+  tocaron: siguen hardcodeados dentro de `if ($esB05)` con sus
+  etiquetas propias (`fecha_recepcion_ins` ni siquiera está en
+  `COLUMNAS_TABLA_HIJA_VALIDAS` — eso es otro alcance, no pedido acá).
+
+**Verificado con render real** (`scratch/test_render_muestras_item_c.php`,
+gitignored): render aislado de B05 (vacío + una fila SUERO + una fila
+HNF_FAR, para ejercitar ambos grupos condicionales) antes/después vía
+`git stash` + re-`--apply` de la BD en cada estado — la sección
+"Laboratorio" de una página completa (`nueva/index.php`, sesión ADMIN)
+queda **byte-idéntica** salvo comentarios y espacios (diff 0 tras
+normalizar). Las otras 12 fichas con `usa_muestras=1` (A00, A36, A37.0,
+A44, A80, A95, A97, B01, B24, B55, B57, P35.0) confirman
+`serologia_presente=no`: ninguna ve aparecer los 7 campos nuevos, cero
+regresión. `cargar_fichas.php` (dry-run 24/24), `verificar_fichas.php`
+(B05: 85/85, sin diferencias) y `verificar_claves.php` (194/194) OK.
+`caso_muestra` tenía 0 filas antes de tocar nada — no había datos que
+migrar.
 
 **D. Cotejo incompleto de P35.0, prioridad media — laboratorio (ítems
-42-43) sin capturar. BLOQUEADA POR C, no retomar antes**
+42-43) sin capturar. Ya NO bloqueada por C (C cerrado 2026-08-01) —
+sigue sin implementar, es trabajo aparte (ver notas propias de D:
+tipos de muestra, IgM/IgG, Titulación y catálogo de genotipos siguen
+sin resolver, ninguno se tocó en el cierre de C)**
 
 El bloque VI del PDF (ítems 42-43) pide, por muestra: tipo de muestra,
 fecha de obtención, fecha de resultado, IgM (-/+), IgG (-/+ con
