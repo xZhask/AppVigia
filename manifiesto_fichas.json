@@ -8836,14 +8836,6 @@
                             "sensible": false
                         },
                         {
-                            "clave": "o95_periodo_intergenesico",
-                            "etiqueta": "Período intergenésico",
-                            "tipo": "TEXTO",
-                            "orden": 9,
-                            "requerido": false,
-                            "sensible": false
-                        },
-                        {
                             "clave": "o95_uso_de_metodo_anticonceptivo_previo",
                             "etiqueta": "Uso de método anticonceptivo previo",
                             "tipo": "MULTISELECT",
@@ -9637,14 +9629,6 @@
                             ]
                         },
                         {
-                            "clave": "o95_tiempo_que_demoro_en_buscar_ayuda",
-                            "etiqueta": "Tiempo que demoró en buscar ayuda",
-                            "tipo": "TEXTO",
-                            "orden": 5,
-                            "requerido": false,
-                            "sensible": false
-                        },
-                        {
                             "clave": "o95_hubo_dificultad_con_el_acceso_a_servicios_de_salud",
                             "etiqueta": "¿Hubo dificultad con el acceso a servicios de salud?",
                             "tipo": "BOOLEANO",
@@ -9666,14 +9650,6 @@
                                 "Creencias\/Costumbres",
                                 "Otro"
                             ]
-                        },
-                        {
-                            "clave": "o95_tiempo_desde_inicio_de_molestias_hasta_llegar_al_ee",
-                            "etiqueta": "Tiempo desde inicio de molestias hasta llegar al EE.SS.",
-                            "tipo": "TEXTO",
-                            "orden": 8,
-                            "requerido": false,
-                            "sensible": false
                         },
                         {
                             "clave": "o95_tuvo_dificultades_para_ser_atendida_en_el_ee_ss",
@@ -9698,14 +9674,6 @@
                                 "Mala atención",
                                 "Otro"
                             ]
-                        },
-                        {
-                            "clave": "o95_tiempo_desde_que_llego_al_ee_ss_hasta_que_fue_atend",
-                            "etiqueta": "Tiempo desde que llegó al EE.SS. hasta que fue atendida",
-                            "tipo": "TEXTO",
-                            "orden": 11,
-                            "requerido": false,
-                            "sensible": false
                         },
                         {
                             "clave": "o95_persona_que_brindo_la_informacion",
@@ -9890,14 +9858,6 @@
                                 "Masajes",
                                 "Otro"
                             ]
-                        },
-                        {
-                            "clave": "o95_tiempo_estimado_del_domicilio_al_ee_ss_mas_cercano",
-                            "etiqueta": "Tiempo estimado del domicilio al EE.SS. más cercano",
-                            "tipo": "TEXTO",
-                            "orden": 4,
-                            "requerido": false,
-                            "sensible": false
                         },
                         {
                             "clave": "o95_tipo_de_establecimiento_mas_cercano",
