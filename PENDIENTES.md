@@ -1011,6 +1011,58 @@ microorganismo quedaron como `campo_def` sueltos — decisión de diseño
 abierta (todo a `caso_muestra` vs. mantener el split actual), no
 resuelta acá.
 
+**N. BUG, prioridad alta — un `campo_def` declarado, cargado y
+verificado puede ser inalcanzable por un partial compartido que lo
+excluye por nombre de sección — quinta instancia de la familia A, C, E
+e I, la más grave**
+
+Las cuatro anteriores condicionan **qué se pinta dentro de un bloque
+que sí se muestra**. Esta vuelve **inalcanzable un campo que existe,
+está en el manifiesto, está en `campo_def` y que las dos herramientas
+de verificación del proyecto (`verificar_fichas.php`,
+`verificar_claves.php`) reportan como correcto** — porque ninguna de
+las dos renderiza la página, solo comparan manifiesto↔BD.
+
+**Mecanismo:** B05, B26, O95 y P35.0 tienen una sección compartida de
+"notificación" (campo_def, generada por el cargador) que se
+**duplica** a mano en un partial a medida (`notificacion-fechas-b05.php`,
+`-b26.php`, `-o95.php`, `-p350.php`) para darle un layout propio dentro
+de la tarjeta "1. Notificación". Para no pintar esos mismos campos dos
+veces, `secciones-clinicas.php:22-47` excluye la sección **entera**
+por nombre (`array_filter` contra `$s['nombre']`) antes de que el
+render genérico la vea. El partial a medida resuelve una lista fija de
+claves escritas a mano; si alguien agrega un `campo_def` nuevo a esa
+misma sección del manifiesto más tarde, cae dentro de la exclusión
+mecánica pero **fuera** de la lista a mano del partial — no se pinta
+en ningún lado, sin error, sin aviso.
+
+**Confirmado con dos instancias reales, no solo P35.0:**
+- `p35_0_n_de_historia_clinica` (campo_def id 50449, agregado en
+  `ff892e0`, orden 8 de 8 en su sección) — `notificacion-fechas-p350.php`
+  solo resuelve los 7 campos originales.
+- `o95_n_de_historia_clinica` — la sección "Datos de notificación" de
+  O95 tiene 4 campos en el manifiesto; `notificacion-fechas-o95.php`
+  solo resuelve 3 (`o95_hora_de_la_notificacion`, `o95_identificado_por`,
+  `o95_tipo_de_ficha`). Mismo bug, misma familia de campo, ficha ya
+  revisada (✅ cotejada) sin que nadie lo notara.
+
+**B05 y B26 usan el mismo mecanismo pero hoy no tienen huérfanos** —
+se verificó campo por campo: los 6+7 campos de las dos secciones
+excluidas de B05 están cubiertos (el segundo bloque, "Datos de
+filiación y tutor", lo resuelve `datos-paciente-b05-loader.php` por
+etiqueta, no por clave) y los 7 campos de la sección excluida de B26
+coinciden 1 a 1 con `notificacion-fechas-b26.php`. No es que B05/B26
+sean inmunes al patrón: es que nadie les agregó un campo nuevo a esa
+sección después de escribir el partial. B26 **si** está en la lista de
+exclusión de `secciones-clinicas.php` (junto con otras 4 secciones que
+tiene partials a medida propios) — no es cierto que se comporte
+distinto de P35.0 por estar fuera de esa lista.
+
+**Diagnóstico completo, arreglo pendiente de aprobación** — ver
+mensaje de la sesión 2026-08-02 (contraste de 3 rutas: reubicar el
+campo, excluir por campo en vez de por sección, o declarar la
+cobertura en el manifiesto). No implementado.
+
 **No implementado — a la espera de que el usuario decida el alcance.** Los 10 pares
   `depende_de`/`valor_activador` declarados y verificados con render
   real (oculto sin disparador, visible con el disparador forzado).
