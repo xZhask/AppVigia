@@ -1011,16 +1011,16 @@ microorganismo quedaron como `campo_def` sueltos — decisión de diseño
 abierta (todo a `caso_muestra` vs. mantener el split actual), no
 resuelta acá.
 
-**N. BUG, prioridad alta — un `campo_def` declarado, cargado y
-verificado puede ser inalcanzable por un partial compartido que lo
-excluye por nombre de sección — quinta instancia de la familia A, C, E
-e I, la más grave**
+**N. BUG, prioridad alta — ✅ cerrado — un `campo_def` declarado,
+cargado y verificado puede ser inalcanzable por un partial compartido
+que lo excluye por nombre de sección entera — quinta instancia de la
+familia A, C, E e I, la más grave**
 
 Las cuatro anteriores condicionan **qué se pinta dentro de un bloque
-que sí se muestra**. Esta vuelve **inalcanzable un campo que existe,
+que sí se muestra**. Esta volvía **inalcanzable un campo que existe,
 está en el manifiesto, está en `campo_def` y que las dos herramientas
-de verificación del proyecto (`verificar_fichas.php`,
-`verificar_claves.php`) reportan como correcto** — porque ninguna de
+de verificación previas del proyecto (`verificar_fichas.php`,
+`verificar_claves.php`) reportaban como correcto** — porque ninguna de
 las dos renderiza la página, solo comparan manifiesto↔BD.
 
 **Mecanismo:** B05, B26, O95 y P35.0 tienen una sección compartida de
@@ -1028,40 +1028,145 @@ las dos renderiza la página, solo comparan manifiesto↔BD.
 **duplica** a mano en un partial a medida (`notificacion-fechas-b05.php`,
 `-b26.php`, `-o95.php`, `-p350.php`) para darle un layout propio dentro
 de la tarjeta "1. Notificación". Para no pintar esos mismos campos dos
-veces, `secciones-clinicas.php:22-47` excluye la sección **entera**
-por nombre (`array_filter` contra `$s['nombre']`) antes de que el
-render genérico la vea. El partial a medida resuelve una lista fija de
+veces, `secciones-clinicas.php` excluía la sección **entera** por
+nombre (`array_filter` contra `$s['nombre']`) antes de que el render
+genérico la viera. El partial a medida resuelve una lista fija de
 claves escritas a mano; si alguien agrega un `campo_def` nuevo a esa
-misma sección del manifiesto más tarde, cae dentro de la exclusión
-mecánica pero **fuera** de la lista a mano del partial — no se pinta
+misma sección del manifiesto más tarde, caía dentro de la exclusión
+mecánica pero **fuera** de la lista a mano del partial — no se pintaba
 en ningún lado, sin error, sin aviso.
 
-**Confirmado con dos instancias reales, no solo P35.0:**
-- `p35_0_n_de_historia_clinica` (campo_def id 50449, agregado en
-  `ff892e0`, orden 8 de 8 en su sección) — `notificacion-fechas-p350.php`
-  solo resuelve los 7 campos originales.
-- `o95_n_de_historia_clinica` — la sección "Datos de notificación" de
-  O95 tiene 4 campos en el manifiesto; `notificacion-fechas-o95.php`
-  solo resuelve 3 (`o95_hora_de_la_notificacion`, `o95_identificado_por`,
-  `o95_tipo_de_ficha`). Mismo bug, misma familia de campo, ficha ya
-  revisada (✅ cotejada) sin que nadie lo notara.
+**Confirmado con una sola instancia real, no dos** — corrección a un
+diagnóstico propio equivocado de la misma sesión: se dijo que
+`o95_n_de_historia_clinica` tenía el mismo bug que
+`p35_0_n_de_historia_clinica`, por inferencia de leer un partial, sin
+verificarlo contra el render real. Al implementar el arreglo se
+encontró que ese campo de O95 **sí se pintaba**, por un cuarto
+mecanismo no visto antes (`nueva/index.php:127-133`, en el shell,
+junto al N.° de documento — `name="campo_<id>"` estándar, solo que en
+un archivo inesperado). El único caso real era P35.0
+(`p35_0_n_de_historia_clinica`, campo_def id 50449, agregado en
+`ff892e0`, orden 8 de 8 en su sección — `notificacion-fechas-p350.php`
+solo resolvía los 7 originales).
 
-**B05 y B26 usan el mismo mecanismo pero hoy no tienen huérfanos** —
-se verificó campo por campo: los 6+7 campos de las dos secciones
+**Arreglo implementado (Ruta 2, commit `f4a0a17`):** exclusión por
+CLAVE en vez de por sección entera. Una sección de este grupo solo
+desaparece si TODOS sus campos están cubiertos por su partial a medida
+(lista explícita en `secciones-clinicas.php`, incluye tanto los campos
+con `name="campo_<id>"` estándar como los del sexto mecanismo — ver
+N.2); si queda uno sin cubrir, la sección sobrevive con su propia
+tarjeta y render genérico. Verificado: P35.0 gana "N.° de historia
+clínica" como campo nuevo genuinamente capturable; B05/B26/A36/A80/O95
+quedan con el HTML renderizado **byte-idéntico** al de antes (diff
+completo, no solo conteo de campos) salvo el token CSRF, que es
+aleatorio en cada carga. `verificar_render.php`: 13 → 12 huérfanos
+(baja exactamente 1, el de P35.0).
+
+**B05 y B26 usan el mismo mecanismo pero no tenían huérfanos** — se
+verificó campo por campo: los 6+7 campos de las dos secciones
 excluidas de B05 están cubiertos (el segundo bloque, "Datos de
 filiación y tutor", lo resuelve `datos-paciente-b05-loader.php` por
-etiqueta, no por clave) y los 7 campos de la sección excluida de B26
-coinciden 1 a 1 con `notificacion-fechas-b26.php`. No es que B05/B26
-sean inmunes al patrón: es que nadie les agregó un campo nuevo a esa
-sección después de escribir el partial. B26 **si** está en la lista de
+etiqueta, no por clave) y los 7 campos de "Datos de notificación e
+investigación del caso" de B26 coinciden 1 a 1 con
+`notificacion-fechas-b26.php`. B26 **sí** estaba en la lista de
 exclusión de `secciones-clinicas.php` (junto con otras 4 secciones que
-tiene partials a medida propios) — no es cierto que se comporte
-distinto de P35.0 por estar fuera de esa lista.
+tienen partials a medida propios) — no es cierto que se comportara
+distinto de P35.0 por estar fuera de esa lista; los 2 "huérfanos" que
+`verificar_render.php` reportaba para B26 no eran instancias de este
+bug (ver N.2 y N.3 abajo). B05/B26 quedan autoprotegidas: cualquier
+campo nuevo que se agregue a una de sus secciones cubiertas sin
+actualizar el partial a medida ya no desaparecerá.
 
-**Diagnóstico completo, arreglo pendiente de aprobación** — ver
-mensaje de la sesión 2026-08-02 (contraste de 3 rutas: reubicar el
-campo, excluir por campo en vez de por sección, o declarar la
-cobertura en el manifiesto). No implementado.
+**N.2. No es un bug — sexto mecanismo de captura: `name=` literal
+remapeado a mano, ajeno a `name="campo_<id>"`**
+
+4 claves no se capturan por el mecanismo estándar y por eso
+`verificar_render.php` las reportaba como huérfanas antes de
+enseñarle este mecanismo (commit `c5a09b8`): el partial a medida las
+pinta con un `name=` literal (`hora_notificacion`, `identificado_por`,
+`o95_tipo_ficha`, `b26_lugar_tipo[]`...) y
+`CasosController::validarCamposDinamicos()` (líneas ~986-1017) las
+remapea a mano por clave, no por `campo_<id>`:
+- `o95_hora_de_la_notificacion`, `o95_identificado_por`,
+  `o95_tipo_de_ficha` — `notificacion-fechas-o95.php`.
+- `b26_contactos_por_lugar` — `lugar-probable-infeccion-b26.php`
+  (filas dinámicas "+ Agregar lugar", el mismo tipo de UI que
+  necesitaría el ítem P de abajo).
+
+Las 4 funcionan correctamente hoy. `verificar_render.php` ahora las
+lista aparte ("capturados por mecanismo no estándar"), no como
+huérfanas. Sin acción pendiente — documentado para que la próxima vez
+que alguien lea un reporte de huérfanos no las confunda con el bug de
+la entrada N.
+
+**N.3. No es un bug de render — campos huérfanos del manifiesto por
+diseño superado (basura, no código roto)**
+
+Campos que nunca fueron alcanzables **por diseño**, no por accidente:
+reemplazados por otros campos antes de que nadie los borrara.
+
+- **✅ Cerrado (commit `3e64390`):** 5 `campo_def` TEXTO de O95
+  (`o95_periodo_intergenesico` y 4 `o95_tiempo_...`) tenían un par de
+  reemplazo NUMERO (`_anios`/`_meses` o `_horas`/`_minutos`) que sí se
+  renderiza. Confirmado 0 filas en `caso_valor` para los 5 (y 0 casos
+  reales de O95 en este entorno) antes de retirarlos del manifiesto —
+  limpieza directa, sin dato que migrar. O95: 147 → 142 campos.
+- **Abierto, reportado, no implementado:**
+  `b26_fecha_de_inicio_de_sintomas` (campo_def id 47738, sección
+  "Cuadro clínico") — duplicado conceptual de `caso.fecha_inicio_sintomas`
+  (el campo fijo del núcleo, ítem I). El propio código ya lo documenta
+  (`cuadro-clinico-b26.php`, comentario junto a `$valFechaInicioSintomas`):
+  "el campo_def existe pero ningún input postea a él, nunca fue
+  alcanzable". 0 filas en `caso_valor`. Mismo tipo de decisión que los
+  5 de O95 (borrar vs. conectar), no incluida en esta sesión porque no
+  fue parte de lo pedido — queda para cuando se decida.
+
+**O. BUG, prioridad media — la sección "Cadena de transmisión" nunca
+llama al render genérico de `campo_def`, para ninguna ficha que la
+use**
+
+Mecanismo distinto al de la entrada N (esa era exclusión por
+`array_filter` **antes** del bucle de secciones; esta es un
+despacho **dentro** del bucle que nunca delega a `$renderizarCampos`):
+`secciones-clinicas.php`, rama `elseif (trim($seccion['nombre']) ===
+'Cadena de transmisión')`, solo pinta un texto instructivo fijo y la
+tabla hija `caso_contacto` (`tablas-hijas/contactos.php`) — nunca
+llama a `$renderizarCampos((int) $seccion['id'])`. Cualquier
+`campo_def` real que viva bajo ese nombre de sección es inalcanzable,
+para cualquier ficha que lo use.
+
+**Confirmado con A80 (PFA, ficha ya revisada):**
+`a80_notas_de_investigacion_de_la_cadena_de_transmision` (TEXTAREA, id
+48079) es el único campo de esa sección en A80 — huérfano, detectado
+por `verificar_render.php`. No verificado si otra ficha además de A80
+usa una sección con este nombre exacto.
+
+No implementado — solo reportado (alcance de diagnóstico, no de
+arreglo, en esta sesión).
+
+**P. BUG, prioridad media — `matriz.php` no soporta filas dinámicas
+aunque `cargar_fichas.php` ya las anticipa**
+
+Cuando el manifiesto declara `"filas"` como una nota de texto en vez
+de un array (p.ej. `"dinámico (una fila por lesión reportada)"`),
+`cargar_fichas.php` lo detecta y lo guarda aparte
+(`config.filas_nota`, con `config.filas = null`) — no es un bug del
+cargador, ya está pensado para esto. Pero `matriz.php:4` solo lee
+`$config['filas'] ?? []`, nunca `filas_nota`: con `filas = null` el
+`foreach` sobre las filas itera cero veces y la tabla se pinta sin
+ninguna fila — cero `<input>`, campo permanentemente vacío, sin forma
+de cargar datos aunque el usuario quiera.
+
+**Confirmado con B55 (Leishmaniasis):** `b55_lesiones` (MATRIZ, id
+47838, sección "Lesiones cutáneas") es el único caso en las 24 fichas
+(verificado contra las 24: es el único `campo_def` MATRIZ con
+`filas_nota` no vacío). Necesitaría el mismo tipo de UI dinámica
+"+ Agregar fila" que ya tiene `b26_contactos_por_lugar` (ítem N.2) —
+no existe hoy un mecanismo MATRIZ genérico para filas repetibles, cada
+caso que lo necesitó se resolvió a mano con `name=` literal.
+
+No implementado — solo reportado (alcance de diagnóstico, no de
+arreglo, en esta sesión).
 
 **No implementado — a la espera de que el usuario decida el alcance.** Los 10 pares
   `depende_de`/`valor_activador` declarados y verificados con render
