@@ -6971,8 +6971,28 @@
                     ]
                 },
                 {
-                    "nombre": "Antecedentes del paciente",
+                    "nombre": "Datos del paciente (adicionales)",
                     "orden": 2,
+                    "campos": [
+                        {
+                            "clave": "p35_0_pueblo_etnico",
+                            "etiqueta": "Pueblo étnico",
+                            "tipo": "TEXTO",
+                            "orden": 1,
+                            "obligatorio": false
+                        },
+                        {
+                            "clave": "p35_0_tiempo_de_residencia",
+                            "etiqueta": "Tiempo de residencia",
+                            "tipo": "TEXTO",
+                            "orden": 2,
+                            "obligatorio": false
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Antecedentes del paciente",
+                    "orden": 3,
                     "campos": [
                         {
                             "clave": "p35_0_nacio_prematuro",
@@ -7008,7 +7028,7 @@
                 },
                 {
                     "nombre": "Antecedentes de la madre",
-                    "orden": 3,
+                    "orden": 4,
                     "rol_sujeto": "MADRE",
                     "campos": [
                         {
@@ -7094,7 +7114,7 @@
                 },
                 {
                     "nombre": "Cuadro clínico — manifestaciones",
-                    "orden": 4,
+                    "orden": 5,
                     "campos": [
                         {
                             "clave": "p35_0_manifestaciones_oftalmicas",
@@ -7179,7 +7199,7 @@
                 },
                 {
                     "nombre": "Hospitalización y defunción",
-                    "orden": 5,
+                    "orden": 6,
                     "campos": [
                         {
                             "clave": "p35_0_hospitalizacion",
@@ -7237,7 +7257,7 @@
                 },
                 {
                     "nombre": "Clasificación del caso",
-                    "orden": 6,
+                    "orden": 7,
                     "campos": [
                         {
                             "clave": "p35_0_clasificacion_del_caso",

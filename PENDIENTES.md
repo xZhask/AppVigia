@@ -675,28 +675,59 @@ como "0 años"). **Decisión del usuario, no implementar** hasta que se
 decida el alcance real (¿cambio de unidad solo para P35.0 vía un
 campo `campo_def` propio, o cambio de unidad del núcleo para las 24?).
 
-**G. Pendiente de decisión, prioridad media — "Tiempo de residencia"
-(ítem 18 del PDF de P35.0)**
+**G. "Tiempo de residencia" (ítem 18 del PDF de P35.0) — ✅ cerrado**
 
-No existe en ningún lado del sistema: ni en el núcleo (`persona`/`caso`)
-ni como `campo_def` de ninguna de las 24 fichas. Candidato directo a
-agregarse como `campo_def` propio de P35.0 (mismo patrón que "N.° de
-historia clínica", resuelto en esta sesión) cuando se decida hacerlo
-— no bloqueado por nada, a diferencia de B/D/lo de arriba.
+**H. "Pueblo étnico" (ítem 15 del PDF de P35.0, texto libre) — ✅
+cerrado**
 
-**H. Pendiente de decisión, prioridad media — "Pueblo étnico" (ítem
-15 del PDF de P35.0, texto libre)**
+Cerrados juntos 2026-08-01 (mismo commit): dos `campo_def` `TEXTO`
+propios de P35.0, con clave explícita (`p35_0_tiempo_de_residencia`,
+`p35_0_pueblo_etnico`), en una sección nueva **"Datos del paciente
+(adicionales)"** — mismo nombre y propósito que ya usa Y59.0 para lo
+mismo (datos de paciente que no viven en el núcleo compartido). Se
+insertó como sección orden 2, justo después de "Datos de notificación
+e investigación del caso" y antes de "Antecedentes del paciente" — es
+la posición más cercana posible al núcleo (domicilio, Etnia/raza) que
+permite el mecanismo de `campo_def`, ya que ambos temas son del núcleo
+compartido, no de ninguna de las 6 secciones propias de P35.0. Las 5
+secciones siguientes se renumeraron (+1 cada una) para no chocar
+`"orden"`.
 
-Sin equivalente reusable. El núcleo tiene "Etnia/raza" (`persona.etnia`,
-ENUM cerrado: Mestizo/Andino/Asiático descendiente/Afrodescendiente/
-Indígena amazónico/Otro) — corresponde al ítem 16, no al 15. B05 y O95
-tienen algo con nombre parecido ("Pueblo étnico o etnia" / "Etnia /
-Pueblo étnico") pero ambos son `SELECT` de catálogo cerrado, que
-fusiona pueblo+etnia en un solo campo — no el texto libre separado que
-pide el ítem 15 de P35.0. Reusar el campo de B05/O95 tal cual
-degradaría el dato (de texto libre a lista cerrada) o exigiría
-inventar un catálogo de "pueblos" que hoy no existe. Candidato más
-simple: `campo_def` TEXTO propio de P35.0, sin reusar nada de B05/O95.
+Ninguno reusa B05/O95: sus campos de etnia/pueblo (`b05_pueblo_etnico_o_etnia`,
+`o95_etnia_pueblo_etnico`) son `SELECT` de catálogo cerrado que
+fusiona pueblo+etnia — reusarlos habría degradado el texto libre que
+pide el ítem 15. Al renderizar se confirmó, de hecho, que el bloque
+oculto del Anexo 2 de O95 ("Etnia / raza + Pueblo étnico o etnia +
+Ocupación", presente en el DOM de las 24 fichas, ya reportado en el
+cierre del ítem E) vive literalmente pegado al `<select>` de Etnia/raza
+del núcleo — confirma que ese hueco ya estaba ocupado por un mecanismo
+de otra ficha, y valida no haberlo reutilizado.
+
+**Verificado con render y caso real vía `CasosController`**
+(`scratch/test_p350_pueblo_etnico_tiempo_residencia_item_gh.php`,
+gitignored; caso borrado al terminar, 0 filas residuales): render de
+"Nueva ficha" confirma el orden real en el HTML (núcleo → encabezado
+"Datos del paciente (adicionales)" → Pueblo étnico → Tiempo de
+residencia → Antecedentes del paciente) y que ambos son
+`<input type="text">` simples. Un caso de prueba se creó con valores en
+ambos campos, se verificó en `caso_valor`, se confirmó su prefill en
+`editar()` y se actualizó con valores nuevos vía `actualizar()`;
+`ver()` no truena. `cargar_fichas.php` (dry-run 24/24),
+`verificar_fichas.php` (P35.0: 37/37, sin diferencias; 24/24 general) y
+`verificar_claves.php` (194/194) OK. 0 excepciones, 0 warnings/notices
+con `E_ALL`.
+
+**Hallazgo colateral, no corregido — fuera de alcance:**
+`cargar_fichas.php:474` inserta `campo_def.obligatorio` con el literal
+`0` fijo en el SQL, sin leer `$campo['obligatorio']` del manifiesto en
+ningún punto del archivo. Confirmado contra la BD: los 936 `campo_def`
+existentes tienen `obligatorio = 0`, sin excepción, y el manifiesto no
+declara `"obligatorio": true` en ningún campo de las 24 fichas
+(0 ocurrencias) — así que hoy no hay ninguna discrepancia observable,
+pero si alguien alguna vez declara `"obligatorio": true` esperando que
+`validarCamposDinamicos()` la exija, no va a pasar nada: el valor nunca
+llega a la base. No se tocó (no es parte de lo pedido en G/H, y
+arreglarlo cambiaría comportamiento de las 24 fichas a la vez).
 
 - **Fase 4**: ✅ cerrada (commit `a3c35db`). Los 10 pares
   `depende_de`/`valor_activador` declarados y verificados con render
