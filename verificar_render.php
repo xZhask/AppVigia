@@ -20,6 +20,13 @@
  * No modifica nada: nuevo() es una acción GET de solo lectura, no escribe en
  * la base de datos ni en el manifiesto.
  *
+ * Sexto mecanismo (PENDIENTES.md ítem N.2): 4 claves no usan name="campo_<id>"
+ * a propósito -- CasosController::validarCamposDinamicos() (líneas ~986-1017)
+ * las remapea a mano desde un name= literal ("hora_notificacion",
+ * "identificado_por", "o95_tipo_ficha", "b26_lugar_tipo[]"...). Sin esta
+ * lista, esta corrida las reportaba como huérfanas aunque funcionan --
+ * ruido que en dos semanas nadie mira. Se listan aparte, no como huérfanos.
+ *
  * Uso:
  *   php verificar_render.php                # imprime el reporte en Markdown
  *   php verificar_render.php > REPORTE_VERIFICACION_RENDER.md
@@ -32,6 +39,13 @@ require __DIR__ . '/app/Core/ayudantes.php';
 use App\Controllers\CasosController;
 use App\Core\Database;
 use App\Core\Session;
+
+const CLAVES_MECANISMO_NO_ESTANDAR = [
+    'b26_contactos_por_lugar'      => 'lugar-probable-infeccion-b26.php: filas dinámicas con name="b26_lugar_tipo[]" etc., remapeadas en CasosController.php:986.',
+    'o95_hora_de_la_notificacion'  => 'notificacion-fechas-o95.php: name="hora_notificacion" literal, remapeado en CasosController.php:1001.',
+    'o95_identificado_por'         => 'notificacion-fechas-o95.php: name="identificado_por" literal, remapeado en CasosController.php:1007.',
+    'o95_tipo_de_ficha'            => 'notificacion-fechas-o95.php: name="o95_tipo_ficha" literal, remapeado en CasosController.php:1013.',
+];
 
 $modoJson = in_array('--json', $argv, true);
 
@@ -78,6 +92,7 @@ foreach ($enfermedades as $enf) {
 
     $camposFicha = $camposPorEnfermedad[$enfermedadId] ?? [];
     $faltantes = [];
+    $noEstandar = [];
     $presentes = 0;
 
     if ($errorRender === null) {
@@ -85,16 +100,31 @@ foreach ($enfermedades as $enf) {
             $aguja = 'name="campo_' . $campo['id'];
             if (str_contains($html, $aguja)) {
                 $presentes++;
+                continue;
+            }
+            $datosCampo = [
+                'id'             => (int) $campo['id'],
+                'clave'          => $campo['clave'],
+                'etiqueta'       => $campo['etiqueta'],
+                'tipo'           => $campo['tipo'],
+                'seccion_nombre' => $campo['seccion_nombre'],
+            ];
+            if (isset(CLAVES_MECANISMO_NO_ESTANDAR[$campo['clave']])) {
+                $datosCampo['mecanismo'] = CLAVES_MECANISMO_NO_ESTANDAR[$campo['clave']];
+                $noEstandar[] = $datosCampo;
             } else {
-                $faltantes[] = [
-                    'id'             => (int) $campo['id'],
-                    'clave'          => $campo['clave'],
-                    'etiqueta'       => $campo['etiqueta'],
-                    'tipo'           => $campo['tipo'],
-                    'seccion_nombre' => $campo['seccion_nombre'],
-                ];
+                $faltantes[] = $datosCampo;
             }
         }
+    }
+
+    $estado = 'OK';
+    if ($errorRender !== null) {
+        $estado = 'ERROR_RENDER';
+    } elseif (!empty($faltantes)) {
+        $estado = 'CAMPOS_HUERFANOS';
+    } elseif (!empty($noEstandar)) {
+        $estado = 'SOLO_MECANISMO_NO_ESTANDAR';
     }
 
     $resultado[] = [
@@ -105,7 +135,8 @@ foreach ($enfermedades as $enf) {
         'declarados'    => count($camposFicha),
         'presentes'     => $presentes,
         'faltantes'     => $faltantes,
-        'estado'        => $errorRender !== null ? 'ERROR_RENDER' : (empty($faltantes) ? 'OK' : 'CAMPOS_HUERFANOS'),
+        'no_estandar'   => $noEstandar,
+        'estado'        => $estado,
     ];
 }
 
@@ -123,37 +154,43 @@ echo "# REPORTE_VERIFICACION_RENDER.md\n\n";
 echo "Generado por `verificar_render.php` el {$fechaHoy}: renderiza \"Nueva ficha\" con el controlador real para cada enfermedad y confirma que todo `campo_def` declarado aparece en el HTML (`name=\"campo_<id>\"`).\n\n";
 echo "No se modificó nada: `nuevo()` es una acción GET de solo lectura.\n\n";
 echo "**Qué NO cubre esta corrida:** solo confirma presencia del `name=\"campo_<id>\"` en el HTML de \"Nueva ficha\" (formulario vacío, primera carga). No verifica `editar()`/`ver()`, no verifica que el campo sea visible sin JavaScript adicional (p.ej. un `depende_de` oculto por disparador es 'presente' aunque hoy esté con `hidden`), y no verifica el endpoint AJAX de cambio de ficha (`secciones-clinicas.php` vía fetch). Un campo 'presente' aquí puede seguir teniendo otros bugs; un campo 'huérfano' aquí es inalcanzable sin excepción.\n\n";
+echo "**Mecanismo no estándar (ítem N.2):** " . count(CLAVES_MECANISMO_NO_ESTANDAR) . " claves conocidas se capturan por un `name=` literal remapeado a mano en `CasosController::validarCamposDinamicos()`, no por `name=\"campo_<id>\"`. Esta corrida las reconoce y las lista aparte, no como huérfanas -- si el día de mañana esa lista queda desactualizada (se agrega un quinto mecanismo así), sí aparecerán como huérfanas hasta que se las enseñe acá.\n\n";
 echo "---\n\n";
 
 echo "## Resumen\n\n";
-echo "| Ficha (CIE-10) | Enfermedad | Declarados | Presentes | Huérfanos | Estado |\n";
-echo "|---|---|---|---|---|---|\n";
+echo "| Ficha (CIE-10) | Enfermedad | Declarados | Presentes | Huérfanos | No estándar | Estado |\n";
+echo "|---|---|---|---|---|---|---|\n";
 $totalHuerfanos = 0;
+$totalNoEstandar = 0;
 $fichasConHuerfanos = 0;
 foreach ($resultado as $item) {
     $estadoTexto = match ($item['estado']) {
         'OK' => '✅ OK',
         'CAMPOS_HUERFANOS' => '❌ Huérfanos',
+        'SOLO_MECANISMO_NO_ESTANDAR' => '⚙️ No estándar (OK)',
         'ERROR_RENDER' => '💥 Error al renderizar',
         default => $item['estado'],
     };
     $numFaltantes = count($item['faltantes']);
+    $numNoEstandar = count($item['no_estandar']);
     if ($numFaltantes > 0) {
         $totalHuerfanos += $numFaltantes;
         $fichasConHuerfanos++;
     }
+    $totalNoEstandar += $numNoEstandar;
     printf(
-        "| %s | %s | %s | %s | %s | %s |\n",
+        "| %s | %s | %s | %s | %s | %s | %s |\n",
         $item['cie10'],
         $item['enfermedad'],
         $item['error_render'] !== null ? '—' : $item['declarados'],
         $item['error_render'] !== null ? '—' : $item['presentes'],
         $item['error_render'] !== null ? '—' : $numFaltantes,
+        $item['error_render'] !== null ? '—' : $numNoEstandar,
         $estadoTexto
     );
 }
 echo "\n";
-echo "**Total: {$totalHuerfanos} campo(s) huérfano(s) en {$fichasConHuerfanos} de " . count($resultado) . " ficha(s).**\n\n";
+echo "**Total: {$totalHuerfanos} campo(s) huérfano(s) en {$fichasConHuerfanos} de " . count($resultado) . " ficha(s). {$totalNoEstandar} campo(s) más capturados por mecanismo no estándar (no huérfanos).**\n\n";
 echo "---\n\n";
 
 echo "## Detalle por ficha\n\n";
@@ -168,11 +205,21 @@ foreach ($resultado as $item) {
         continue;
     }
 
-    echo "**Campos huérfanos** (en `campo_def`, no encontrados en el HTML de \"Nueva ficha\"):\n\n";
-    foreach ($item['faltantes'] as $f) {
-        echo "- `{$f['clave']}` — \"{$f['etiqueta']}\" ({$f['tipo']}, id={$f['id']}) — sección «{$f['seccion_nombre']}»\n";
+    if ($item['faltantes']) {
+        echo "**Campos huérfanos** (en `campo_def`, no encontrados en el HTML de \"Nueva ficha\"):\n\n";
+        foreach ($item['faltantes'] as $f) {
+            echo "- `{$f['clave']}` — \"{$f['etiqueta']}\" ({$f['tipo']}, id={$f['id']}) — sección «{$f['seccion_nombre']}»\n";
+        }
+        echo "\n";
     }
-    echo "\n";
+
+    if ($item['no_estandar']) {
+        echo "**Capturados por mecanismo no estándar** (no son huérfanos -- funcionan, pero no vía `name=\"campo_<id>\"`):\n\n";
+        foreach ($item['no_estandar'] as $f) {
+            echo "- `{$f['clave']}` — \"{$f['etiqueta']}\" ({$f['tipo']}, id={$f['id']}) — sección «{$f['seccion_nombre']}» — {$f['mecanismo']}\n";
+        }
+        echo "\n";
+    }
 }
 
 if ($totalHuerfanos === 0) {
