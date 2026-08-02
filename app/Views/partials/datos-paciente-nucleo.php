@@ -17,8 +17,39 @@ if (!empty($enfermedad['nucleo_omitidos'])) {
 }
 $nucleoOmite = fn(string $campoNucleo): bool => in_array($campoNucleo, $nucleoOmitidos, true);
 
+// unidades_edad (entrada F, PETICION_MAPEO_Y_EDAD.md Parte 2): al revés que
+// nucleo_omitidos, es opt-in -- el bloque de "Edad" con unidad solo aparece
+// si la ficha lo declara. No sustituye a Fecha de nacimiento (fuera de este
+// partial, en el shell): el PDF pide los dos como ítems separados.
+$unidadesEdad = [];
+if (!empty($enfermedad['unidades_edad'])) {
+    $decodificadoUnidadesEdad = json_decode($enfermedad['unidades_edad'], true);
+    $unidadesEdad = is_array($decodificadoUnidadesEdad) ? $decodificadoUnidadesEdad : [];
+}
+$etiquetasUnidadEdad = ['ANIOS' => 'Años', 'MESES' => 'Meses', 'DIAS' => 'Días', 'HORAS' => 'Horas', 'MINUTOS' => 'Minutos'];
+
 require __DIR__ . '/datos-paciente-b05-loader.php';
 ?>
+<?php if (!empty($unidadesEdad)): ?>
+<!-- 0. Edad con unidad (solo fichas que lo declaran vía unidades_edad) -->
+<div class="fields thirds" data-edad-unidad-bloque style="margin-top:14px">
+  <div class="field">
+    <label class="fl">Edad</label>
+    <div class="control mono"><input type="number" name="edad_valor" min="0" step="1" value="<?= e($valoresFijos['edad_valor'] ?? '') ?>"></div>
+  </div>
+  <div class="field">
+    <label class="fl">Unidad</label>
+    <div class="control">
+      <select name="edad_unidad" data-nosearch="true">
+        <option value="">Seleccionar…</option>
+        <?php foreach ($unidadesEdad as $unidad): ?>
+          <option value="<?= e($unidad) ?>" <?= seleccionado($valoresFijos['edad_unidad'] ?? '', $unidad) ?>><?= e($etiquetasUnidadEdad[$unidad] ?? $unidad) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 <!-- 1. Celular, Nacionalidad, Localidad -->
 <div class="fields thirds" style="margin-top:14px">
   <div class="field" data-nucleo-campo="celular" <?= $nucleoOmite('celular') ? 'hidden style="display:none;"' : '' ?>>

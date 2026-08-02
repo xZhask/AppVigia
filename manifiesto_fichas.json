@@ -6874,6 +6874,10 @@
                 "nombre_tutor",
                 "referencia_localizar"
             ],
+            "unidades_edad": [
+                "MESES",
+                "DIAS"
+            ],
             "columnas_sujeto": {
                 "MADRE": [
                     "tipo_doc",

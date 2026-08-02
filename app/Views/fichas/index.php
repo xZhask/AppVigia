@@ -12,6 +12,11 @@ $estados = [
     'VALIDACION' => ['dot' => 'st-val',    'etiqueta' => 'Validación'],
     'CERRADA'    => ['dot' => 'st-closed', 'etiqueta' => 'Cerrada'],
 ];
+// Entrada F: mismo criterio que ver.php -- si la ficha declaró
+// unidades_edad, la edad capturada con su unidad manda sobre la derivada de
+// fecha_nac. Abreviaturas de una letra para el formato compacto ("35a") que
+// ya usaba esta lista; "min" para minutos evita chocar con "m" de meses.
+$abreviaturasUnidadEdad = ['ANIOS' => 'a', 'MESES' => 'm', 'DIAS' => 'd', 'HORAS' => 'h', 'MINUTOS' => 'min'];
 ?>
 <div class="page-head">
   <div>
@@ -94,15 +99,27 @@ $estados = [
           <tr><td colspan="9" style="color:var(--muted);text-align:center;padding:32px 16px">No se encontraron fichas con estos filtros.</td></tr>
         <?php endif; ?>
         <?php foreach ($fichas as $ficha):
-          $edad = edadDesdeFecha($ficha['fecha_nac']);
           $c = $clasificaciones[$ficha['clasificacion']];
           $es = $estados[$ficha['estado']];
+          $unidadesEdadDeclaradasFicha = [];
+          if (!empty($ficha['enfermedad_unidades_edad'])) {
+              $decodificadoUnidadesEdadFicha = json_decode($ficha['enfermedad_unidades_edad'], true);
+              $unidadesEdadDeclaradasFicha = is_array($decodificadoUnidadesEdadFicha) ? $decodificadoUnidadesEdadFicha : [];
+          }
+          if (!empty($unidadesEdadDeclaradasFicha)) {
+              $edadCompacta = ($ficha['edad_valor'] !== null && !empty($ficha['edad_unidad']))
+                  ? $ficha['edad_valor'] . ($abreviaturasUnidadEdad[$ficha['edad_unidad']] ?? '')
+                  : null;
+          } else {
+              $edad = edadDesdeFecha($ficha['fecha_nac']);
+              $edadCompacta = $edad !== null ? $edad . 'a' : null;
+          }
         ?>
           <tr<?= $ficha['anulado'] ? ' style="opacity:.55"' : '' ?>>
             <td class="mono"><?= e($ficha['codigo']) ?></td>
             <td>
               <div class="pt-name"><?= e(Persona::nombreCompletoPnp($ficha)) ?></div>
-              <div class="pt-doc"><?= e($ficha['tipo_doc']) ?> <?= e(enmascararDocumento($ficha['num_doc'])) ?> · <?= e($ficha['sexo'] ?? '—') ?><?= $edad !== null ? ' · ' . $edad . 'a' : '' ?></div>
+              <div class="pt-doc"><?= e($ficha['tipo_doc']) ?> <?= e(enmascararDocumento($ficha['num_doc'])) ?> · <?= e($ficha['sexo'] ?? '—') ?><?= $edadCompacta !== null ? ' · ' . $edadCompacta : '' ?></div>
             </td>
             <td><?= e($ficha['enfermedad_nombre']) ?><div class="cell-sub"><?= e($ficha['cie10'] ?? '—') ?></div></td>
             <td><?= e($ficha['establecimiento_nombre']) ?><div class="cell-sub"><?= e($ficha['red_nombre'] ?? '—') ?></div></td>

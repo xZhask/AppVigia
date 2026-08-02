@@ -134,6 +134,12 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // omisión salvo B05.
 const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'nombre_tutor', 'celular_tutor', 'gestante'];
 
+// Entrada F (PETICION_MAPEO_Y_EDAD.md, Parte 2): unidades válidas para
+// "unidades_edad" -- opt-in, al revés que NUCLEO_OMITIBLES. Ausente = solo
+// años (comportamiento actual, derivado de persona.fecha_nac). Debe
+// coincidir con el ENUM de caso.edad_unidad (add_edad_valor_unidad_caso.php).
+const UNIDADES_EDAD_VALIDAS = ['ANIOS', 'MESES', 'DIAS', 'HORAS', 'MINUTOS'];
+
 // Columnas reales de caso_sujeto que una ficha multi_sujeto puede declarar
 // para un rol secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2):
 // "columnas_sujeto": {"MADRE": [...]}. Excluye id/caso_id/persona_id/rol
@@ -303,6 +309,17 @@ function validarManifiesto(array $manifiesto): void
                 if (!in_array($campoNucleo, NUCLEO_OMITIBLES, true)) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_omitidos incluye \"{$campoNucleo}\", que no es un campo omitible del núcleo. Válidos: " . implode(', ', NUCLEO_OMITIBLES) . ".");
                 }
+            }
+        }
+
+        if (!empty($ficha['unidades_edad'])) {
+            foreach ($ficha['unidades_edad'] as $unidad) {
+                if (!in_array($unidad, UNIDADES_EDAD_VALIDAS, true)) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / unidades_edad incluye \"{$unidad}\", que no es una unidad válida. Válidas: " . implode(', ', UNIDADES_EDAD_VALIDAS) . ".");
+                }
+            }
+            if (count($ficha['unidades_edad']) !== count(array_unique($ficha['unidades_edad']))) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / unidades_edad tiene unidades repetidas.");
             }
         }
 
@@ -526,7 +543,11 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // aplica siempre, NULL explícito si la ficha no declara nada.
     $columnasSujetoDeclaradas = $fichaManifiesto['columnas_sujeto'] ?? null;
     $tituloSujetoDeclarado = $fichaManifiesto['titulo_sujeto'] ?? null;
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, columnas_sujeto = ?, titulo_sujeto = ? WHERE id = ?')->execute([
+    // unidades_edad (entrada F, PETICION_MAPEO_Y_EDAD.md Parte 2): mismo
+    // criterio que nucleo_omitidos -- se aplica siempre, NULL explícito si
+    // la ficha no lo declara (opt-in: NULL equivale al comportamiento actual).
+    $unidadesEdadDeclaradas = $fichaManifiesto['unidades_edad'] ?? null;
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -538,6 +559,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($nucleoOmitidosDeclarados) ? json_encode($nucleoOmitidosDeclarados, JSON_UNESCAPED_UNICODE) : null,
         !empty($columnasSujetoDeclaradas) ? json_encode($columnasSujetoDeclaradas, JSON_UNESCAPED_UNICODE) : null,
         !empty($tituloSujetoDeclarado) ? json_encode($tituloSujetoDeclarado, JSON_UNESCAPED_UNICODE) : null,
+        !empty($unidadesEdadDeclaradas) ? json_encode($unidadesEdadDeclaradas, JSON_UNESCAPED_UNICODE) : null,
         $enfermedadId,
     ]);
 

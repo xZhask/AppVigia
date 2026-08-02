@@ -661,19 +661,82 @@ aparece `hidden` en las 23 no-B05 y visible solo en B05.
 (194/194) OK. `caso_valor` tenía 0 filas para la clave eliminada antes
 de tocar nada — no había datos que migrar.
 
-**F. Pendiente de decisión, prioridad media — Edad en meses/días
-(ítem 11 del PDF de P35.0)**
+**F. Edad en meses/días (ítem 11 del PDF de P35.0) — ✅ cerrado (Fase
+F2, `PETICION_MAPEO_Y_EDAD.md` Parte 2)**
 
-El núcleo solo calcula edad en **años**: `edadDesdeFecha()`
-(`app/Core/ayudantes.php:371`) hace `$nacimiento->diff(new
-DateTime())->y` sobre `persona.fecha_nac` — el `->y` descarta meses y
-días. Ninguna de las 24 fichas captura edad en una unidad más fina,
-ni siquiera A33 (Tétanos neonatal) o A80 (PFA), que también notifican
-pacientes muy jóvenes. Cambiarlo afectaría a las 24 fichas, no solo a
-P35.0 (para quien es más relevante: un paciente de 3 meses se ve hoy
-como "0 años"). **Decisión del usuario, no implementar** hasta que se
-decida el alcance real (¿cambio de unidad solo para P35.0 vía un
-campo `campo_def` propio, o cambio de unidad del núcleo para las 24?).
+Dejó de ser una decisión solo de P35.0: el inventario contra el PDF
+real (`pdftotext`, ficha por ficha, no contra
+`CAMPOS_FICHAS_EPIDEMIOLOGICAS.md`) confirmó que al menos 9 fichas
+piden "Edad" con una unidad distinta de años — A37.0 y A33/A35
+(Años/Meses), B01/B26/B04X/A00 (Años/Meses/Días), Y59.0 (las 5:
+Años/Meses/Días/Hora/Minutos) y P35.0 (Meses/Días, **sin** años).
+Mecanismo del núcleo, no un `campo_def` por ficha repetido 9 veces.
+
+**Diseño aprobado por el usuario** (contrastado contra el inventario
+de consumidores de `edadDesdeFecha()`/`persona.fecha_nac`: solo 3
+sitios de solo lectura — `fichas/index.php`, `fichas/ver.php` y el
+autocompletar de "Nueva ficha", que calcula `edad` pero nadie lo
+consume en `ficha.js` — ninguno rompe):
+- `caso.edad_valor` (SMALLINT UNSIGNED) + `caso.edad_unidad` (ENUM de
+  5 valores) — en **`caso`, no `persona`**: es una foto al momento de
+  esta notificación (mismo criterio que `fecha_inicio_sintomas`), no
+  un atributo permanente del paciente. `persona` es única por
+  documento — guardarlo ahí habría hecho que un segundo caso del
+  mismo paciente sobrescribiera la edad del primero, corrompiendo
+  fichas ya cerradas (relevante justo para P35.0/A33, que notifican
+  menores de 1 año con reingresos posibles en el mismo año).
+- `persona.fecha_nac` no cambia de semántica; `edadDesdeFecha()` sigue
+  siendo la fuente para los 3 sitios de solo lectura cuando la ficha
+  activa no declaró `unidades_edad`.
+- `enfermedad.unidades_edad` (JSON, mismo patrón que
+  `nucleo_omitidos`/`columnas_sujeto`/`titulo_sujeto`) declarado por
+  ficha en el manifiesto — pero **opt-in**, al revés que
+  `nucleo_omitidos`: ausente equivale al comportamiento actual (solo
+  años, derivado), así que las fichas que no lo necesitan no se
+  tocan (no hace falta declarar nada en las otras 23).
+- Edad capturada y Fecha de nacimiento son **campos independientes**,
+  sin derivación entre ellos: el PDF los pide como dos ítems
+  separados (P35.0: ítem 11 y 13). A00 ni siquiera tiene "Fecha de
+  nacimiento" en su propia página — derivar la edad desde una fecha
+  que esa ficha nunca pidió habría mostrado un dato inventado por la
+  app, no por el formulario real.
+- `fichas/index.php`/`fichas/ver.php` muestran la edad capturada con
+  su unidad cuando la ficha activa declaró `unidades_edad`, la
+  derivada de `fecha_nac` cuando no. El autocompletar se deja como
+  estaba, sin ampliar (dato muerto confirmado, no vale la pena).
+
+**Declarado en el manifiesto: solo P35.0**, `["MESES","DIAS"]` — ya
+cotejada contra su página del PDF en sesiones anteriores. Las otras 8
+fichas del inventario (A37.0, B01, B26, B04X, Y59.0, A33, A35, A00)
+quedan para una **Fase F3** posterior, una por una, cada una
+verificada contra su propia página antes de declararla.
+
+**Verificado con render y caso real vía `CasosController`**
+(`scratch/test_edad_unidad_f2.php`, gitignored; casos borrados al
+terminar, 1 fila residual preexistente sin cambios): render de "Nueva
+ficha" para las 24 fichas confirma que el bloque de Edad/Unidad solo
+aparece en P35.0 (23/23 sin bloque + 1/1 con bloque, OK). Un caso
+P35.0 se creó con `edad_valor=3`/`edad_unidad=MESES`, se verificó en
+`caso` (no en `caso_valor`: no es un campo dinámico), se confirmó su
+prefill en `editar()` ("3" + "MESES" seleccionado), se mostró
+correctamente en `ver()` ("3 meses") y en `fichas/index.php` ("3m"),
+y se actualizó a `10`/`DIAS` vía `actualizar()` — reflejado en los
+tres lugares ("10 días" / "10d"). Un caso A36 se creó **enviando**
+`edad_valor=99`/`edad_unidad=DIAS` en el POST a propósito: como A36
+no declara `unidades_edad`, `sanearCamposNucleo()` los descartó (NULL
+en la BD) — confirma que el opt-in no se puede forzar desde el
+formulario. `editar()` de A36 no renderiza el input (bloque ausente
+del HTML), y `ver()`/`fichas/index.php` siguen mostrando la edad
+derivada de `fecha_nac` sin cambio ("25 años" / "25a") — A36 quedó
+idéntica. `cargar_fichas.php` (dry-run 24/24, aplicado con
+`--cie10=P35.0`), `verificar_fichas.php` (24/24 OK) y
+`verificar_claves.php` (194/194) OK.
+
+**Fuera de alcance explícito (decisión del usuario): `ImportacionController.php`.**
+No toca edad hoy — solo lee `fecha_nac` crudo del Excel. Agregarle
+columnas de `edad_valor`/`edad_unidad` al formato de importación
+masiva no era necesario para cerrar F y queda como pendiente menor,
+sin fecha ni prioridad asignada.
 
 **G. "Tiempo de residencia" (ítem 18 del PDF de P35.0) — ✅ cerrado**
 

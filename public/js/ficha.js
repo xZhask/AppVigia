@@ -2,6 +2,11 @@ document.addEventListener('DOMContentLoaded', function () {
   var selectorEnfermedad = document.getElementById('diseaseSel');
   var contenedorClinico = document.getElementById('secciones-clinicas');
 
+  // Entrada F: mismas etiquetas que $etiquetasUnidadEdad en
+  // datos-paciente-nucleo.php -- repuebla el <select> de unidad al cambiar
+  // de ficha en "Nueva ficha" (ver datos.unidadesEdad más abajo).
+  var ETIQUETAS_UNIDAD_EDAD = { ANIOS: 'Años', MESES: 'Meses', DIAS: 'Días', HORAS: 'Horas', MINUTOS: 'Minutos' };
+
   // ---------- Peticion 2, Fase 4: resolucion de campos por clave ----------
   // cargar_fichas.php regenera campo_def.id en cada recarga; ficha.js no
   // puede seguir teniendo el numero pegado en el codigo. El servidor emite
@@ -605,6 +610,34 @@ document.addEventListener('DOMContentLoaded', function () {
             el.hidden = omitido;
             el.style.display = omitido ? 'none' : '';
           });
+
+          // unidades_edad: al revés que nucleo_omitidos, es opt-in -- el
+          // bloque solo se muestra si la ficha nueva declara unidades, y
+          // hay que repoblar las <option> del select (no hay una cascada
+          // genérica existente para reusar, a diferencia de Pueblo étnico).
+          var unidadesEdad = datos.unidadesEdad || [];
+          var bloqueEdadUnidad = document.querySelector('[data-edad-unidad-bloque]');
+          if (bloqueEdadUnidad) {
+            var mostrarEdadUnidad = unidadesEdad.length > 0;
+            bloqueEdadUnidad.hidden = !mostrarEdadUnidad;
+            bloqueEdadUnidad.style.display = mostrarEdadUnidad ? '' : 'none';
+            var selectEdadUnidad = bloqueEdadUnidad.querySelector('select[name="edad_unidad"]');
+            if (selectEdadUnidad) {
+              var valorUnidadActual = selectEdadUnidad.value;
+              selectEdadUnidad.innerHTML = '<option value="">Seleccionar…</option>';
+              unidadesEdad.forEach(function (unidad) {
+                var opt = document.createElement('option');
+                opt.value = unidad;
+                opt.textContent = ETIQUETAS_UNIDAD_EDAD[unidad] || unidad;
+                if (unidad === valorUnidadActual) opt.selected = true;
+                selectEdadUnidad.appendChild(opt);
+              });
+            }
+            if (!mostrarEdadUnidad) {
+              var inputEdadValor = bloqueEdadUnidad.querySelector('input[name="edad_valor"]');
+              if (inputEdadValor) inputEdadValor.value = '';
+            }
+          }
           var captGrid = document.querySelector('.b26-capt-grid');
           if (captGrid) {
             if (esB26) {

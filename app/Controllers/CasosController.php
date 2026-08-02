@@ -146,6 +146,8 @@ class CasosController extends Controller
             'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
+            'edad_valor'         => trim($_POST['edad_valor'] ?? ''),
+            'edad_unidad'        => $_POST['edad_unidad'] ?? '',
             'celular'            => trim($_POST['celular'] ?? ''),
             'nacionalidad'       => trim($_POST['nacionalidad'] ?? '') ?: 'Peruana',
             'direccion'          => trim($_POST['direccion'] ?? ''),
@@ -286,7 +288,7 @@ class CasosController extends Controller
         try {
             $pdo->beginTransaction();
 
-            $nucleo = $this->sanearCamposNucleo($valoresFijos);
+            $nucleo = $this->sanearCamposNucleo($valoresFijos, $enfermedad);
 
             $datosPaciente = array_merge([
                 'tipo_doc'          => $valoresFijos['tipo_doc'],
@@ -428,6 +430,16 @@ class CasosController extends Controller
             $nucleoOmitidosDecoded = is_array($decoded) ? $decoded : [];
         }
 
+        // unidades_edad (entrada F): mismo criterio que nucleo_omitidos --
+        // la tarjeta "Datos del paciente" no se vuelve a renderizar en este
+        // fetch, así que el JS necesita la lista decodificada para
+        // mostrar/ocultar y repoblar el select de unidad de la ficha nueva.
+        $unidadesEdadDecoded = [];
+        if (!empty($enfermedad['unidades_edad'])) {
+            $decodedUnidadesEdad = json_decode($enfermedad['unidades_edad'], true);
+            $unidadesEdadDecoded = is_array($decodedUnidadesEdad) ? $decodedUnidadesEdad : [];
+        }
+
         echo json_encode([
             'html'                 => $html,
             'htmlMuestras'         => $htmlMuestras,
@@ -440,6 +452,7 @@ class CasosController extends Controller
             // eran invisibles incluso con app.debug encendido.
             'avisoClavesFaltantes' => $avisoClavesFaltantesCampos(),
             'nucleoOmitidos'       => $nucleoOmitidosDecoded,
+            'unidadesEdad'         => $unidadesEdadDecoded,
             'cie10'                => $enfermedad['cie10'] ?: '—',
             'usaCaptacion'         => !$sinCaptacion,
             'usaMuestras'          => (int) ($enfermedad['usa_muestras'] ?? 0) === 1,
@@ -599,6 +612,8 @@ class CasosController extends Controller
             'nombres'            => $caso['nombres'],
             'sexo'               => $caso['sexo'] ?? '',
             'fecha_nac'          => (string) ($caso['fecha_nac'] ?? ''),
+            'edad_valor'         => (string) ($caso['edad_valor'] ?? ''),
+            'edad_unidad'        => (string) ($caso['edad_unidad'] ?? ''),
             'celular'            => (string) ($caso['celular'] ?? ''),
             'nacionalidad'       => (string) ($caso['nacionalidad'] ?? ''),
             'direccion'          => (string) ($caso['direccion'] ?? ''),
@@ -677,6 +692,8 @@ class CasosController extends Controller
             'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
+            'edad_valor'         => trim($_POST['edad_valor'] ?? ''),
+            'edad_unidad'        => $_POST['edad_unidad'] ?? '',
             'celular'            => trim($_POST['celular'] ?? ''),
             'nacionalidad'       => trim($_POST['nacionalidad'] ?? '') ?: 'Peruana',
             'direccion'          => trim($_POST['direccion'] ?? ''),
@@ -797,7 +814,7 @@ class CasosController extends Controller
         try {
             $pdo->beginTransaction();
 
-            $nucleo = $this->sanearCamposNucleo($valoresFijos);
+            $nucleo = $this->sanearCamposNucleo($valoresFijos, $enfermedad);
 
             $datosPaciente = array_merge([
                 'apellido_paterno'  => $valoresFijos['apellido_paterno'],
@@ -1145,6 +1162,8 @@ class CasosController extends Controller
             'nombres'            => '',
             'sexo'               => '',
             'fecha_nac'          => '',
+            'edad_valor'         => '',
+            'edad_unidad'        => '',
             'celular'            => '',
             'nacionalidad'       => 'Peruana',
             'direccion'          => '',
@@ -1196,8 +1215,25 @@ class CasosController extends Controller
      *
      * @return array{persona: array, caso: array}
      */
-    private function sanearCamposNucleo(array $valoresFijos): array
+    private function sanearCamposNucleo(array $valoresFijos, array $enfermedad): array
     {
+        // unidades_edad (entrada F): a diferencia de etnia/pueblo_etnico, la
+        // whitelist no es fija -- depende de qué unidades declaró la ficha
+        // activa (enfermedad.unidades_edad). Si la ficha no declaró nada,
+        // edad_valor/edad_unidad se descartan aunque vengan en el POST.
+        $unidadesEdadPermitidas = [];
+        if (!empty($enfermedad['unidades_edad'])) {
+            $decodificadoUnidadesEdad = json_decode($enfermedad['unidades_edad'], true);
+            $unidadesEdadPermitidas = is_array($decodificadoUnidadesEdad) ? $decodificadoUnidadesEdad : [];
+        }
+        $edadUnidad = in_array($valoresFijos['edad_unidad'] ?? '', $unidadesEdadPermitidas, true) ? $valoresFijos['edad_unidad'] : null;
+        $edadValor = ($edadUnidad !== null && is_numeric($valoresFijos['edad_valor'] ?? '') && (int) $valoresFijos['edad_valor'] >= 0)
+            ? (int) $valoresFijos['edad_valor']
+            : null;
+        if ($edadValor === null) {
+            $edadUnidad = null;
+        }
+
         $etnias = ['MESTIZO', 'ANDINO', 'ASIATICO_DESCENDIENTE', 'AFRODESCENDIENTE', 'INDIGENA_AMAZONICO', 'OTRO'];
         $etnia = in_array($valoresFijos['etnia'], $etnias, true) ? $valoresFijos['etnia'] : null;
         $etniaOtra = ($etnia === 'OTRO' && $valoresFijos['etnia_otra'] !== '') ? $valoresFijos['etnia_otra'] : null;
@@ -1244,6 +1280,8 @@ class CasosController extends Controller
                 'trimestre_gestacion'=> $trimestreGestacion,
             ],
             'caso' => [
+                'edad_valor'              => $edadValor,
+                'edad_unidad'             => $edadUnidad,
                 'tipo_captacion'          => $tipoCaptacion,
                 'lugar_captacion'         => $lugarCaptacion,
                 'clasificacion_captacion' => $clasificacionCaptacion,

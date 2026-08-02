@@ -87,6 +87,8 @@ CREATE TABLE `caso` (
   `anio_epi` smallint(6) DEFAULT NULL,
   `semana_epi` smallint(6) DEFAULT NULL,
   `fecha_inicio_sintomas` date DEFAULT NULL,
+  `edad_valor` smallint(5) unsigned DEFAULT NULL,
+  `edad_unidad` enum('ANIOS','MESES','DIAS','HORAS','MINUTOS') DEFAULT NULL,
   `investigador_nombre` varchar(160) DEFAULT NULL,
   `investigador_cargo` varchar(100) DEFAULT NULL,
   `investigador_profesion` varchar(100) DEFAULT NULL,
@@ -438,6 +440,7 @@ CREATE TABLE `enfermedad` (
   `nucleo_omitidos` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`nucleo_omitidos`)),
   `columnas_sujeto` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`columnas_sujeto`)),
   `titulo_sujeto` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`titulo_sujeto`)),
+  `unidades_edad` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`unidades_edad`)),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

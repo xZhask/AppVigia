@@ -17,6 +17,24 @@ $c = $clasificaciones[$caso['clasificacion']];
 $es = $estados[$caso['estado']];
 $edad = edadDesdeFecha($caso['fecha_nac']);
 
+// Entrada F: si la ficha declaró unidades_edad, la edad capturada con su
+// unidad manda sobre la derivada de fecha_nac -- son campos independientes
+// que el PDF pide por separado, no uno derivado del otro (ver
+// PETICION_MAPEO_Y_EDAD.md, Parte 2).
+$etiquetasUnidadEdad = ['ANIOS' => 'años', 'MESES' => 'meses', 'DIAS' => 'días', 'HORAS' => 'horas', 'MINUTOS' => 'minutos'];
+$unidadesEdadDeclaradas = [];
+if (!empty($caso['enfermedad_unidades_edad'])) {
+    $decodificadoUnidadesEdad = json_decode($caso['enfermedad_unidades_edad'], true);
+    $unidadesEdadDeclaradas = is_array($decodificadoUnidadesEdad) ? $decodificadoUnidadesEdad : [];
+}
+if (!empty($unidadesEdadDeclaradas)) {
+    $edadTexto = ($caso['edad_valor'] !== null && !empty($caso['edad_unidad']))
+        ? $caso['edad_valor'] . ' ' . ($etiquetasUnidadEdad[$caso['edad_unidad']] ?? mb_strtolower($caso['edad_unidad']))
+        : '—';
+} else {
+    $edadTexto = $edad !== null ? $edad . ' años' : '—';
+}
+
 $situacionEtiquetas = ['ACTIVIDAD' => 'Actividad', 'RETIRO' => 'Retiro', 'DISPONIBILIDAD' => 'Disponibilidad'];
 $etniaEtiquetas = [
     'MESTIZO' => 'Mestizo', 'ANDINO' => 'Andino', 'ASIATICO_DESCENDIENTE' => 'Asiático descendiente',
@@ -87,7 +105,7 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Nombres</label><div class="control" style="background:var(--paper)"><?= e($caso['nombres'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Documento</label><div class="control mono" style="background:var(--paper)"><?= e($caso['tipo_doc']) ?> <?= e($caso['num_doc']) ?></div></div>
           <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
-          <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= $edad !== null ? $edad . ' años' : '—' ?></div></div>
+          <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= e($edadTexto) ?></div></div>
           <div class="field"><label class="fl">Distrito de domicilio</label><div class="control" style="background:var(--paper)"><?= e($caso['distrito_nombre'] ?? '—') ?></div></div>
           <div class="field"><label class="fl">N.° de celular</label><div class="control mono" style="background:var(--paper)"><?= e($caso['celular'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Nacionalidad</label><div class="control" style="background:var(--paper)"><?= e($caso['nacionalidad'] ?: '—') ?></div></div>
