@@ -611,6 +611,17 @@ document.addEventListener('DOMContentLoaded', function () {
             el.style.display = omitido ? 'none' : '';
           });
 
+          // nucleo_incluidos: al revés que nucleo_omitidos -- opt-in, el
+          // campo se muestra solo si está en la lista. "N.° de historia
+          // clínica" vive en el shell (nueva/index.php), no en esta
+          // tarjeta, pero tampoco se re-renderiza al cambiar de ficha.
+          var nucleoIncluidos = datos.nucleoIncluidos || [];
+          document.querySelectorAll('[data-nucleo-incluido]').forEach(function (el) {
+            var incluido = nucleoIncluidos.indexOf(el.getAttribute('data-nucleo-incluido')) !== -1;
+            el.hidden = !incluido;
+            el.style.display = incluido ? '' : 'none';
+          });
+
           // unidades_edad: al revés que nucleo_omitidos, es opt-in -- el
           // bloque solo se muestra si la ficha nueva declara unidades, y
           // hay que repoblar las <option> del select (no hay una cascada
@@ -1751,13 +1762,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     actualizarEtniaOtra(false);
 
-    // Mostrar elementos exclusivos de O95 (como N.° de historia clínica) solo cuando es O95
-    document.querySelectorAll('.o95-elem').forEach(function(el) {
-      if (el.id !== 'notificacionFechasO95Wrap') {
-        el.hidden = !esO95;
-        el.style.display = esO95 ? '' : 'none';
-      }
-    });
+    // "N.° de historia clínica" ya no es .o95-elem: se muestra/oculta con
+    // nucleo_incluidos (ver más arriba), no con un toggle hardcodeado a O95.
 
     if (!esO95) {
       // Para enfermedades generales: mostrar etnia general, ocultar grupo/pueblo O95

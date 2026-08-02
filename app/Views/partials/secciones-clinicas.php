@@ -72,11 +72,9 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
     'O95' => [
         // notificacion-fechas-o95.php (mecanismo de name literal remapeado, ítem N.2)
         'o95_hora_de_la_notificacion', 'o95_identificado_por', 'o95_tipo_de_ficha',
-        // nueva/index.php:127-133 -- no vive en secciones-clinicas.php en absoluto:
-        // se pinta en el shell, junto al N.° de documento, con name="campo_<id>"
-        // estándar. Sin esta entrada, Ruta 2 lo duplicaba (confirmado con
-        // substr_count() antes de commitear -- ver aviso en el mensaje de la sesión).
-        'o95_n_de_historia_clinica',
+        // o95_n_de_historia_clinica ya no es campo_def -- se retiró del
+        // manifiesto al promoverlo al núcleo declarativo (persona.n_historia_clinica
+        // + nucleo_incluidos), PETICION_HC_Y_LABORATORIO.md Parte 1.
     ],
     'P35.0' => [
         // notificacion-fechas-p350.php

@@ -1258,3 +1258,103 @@ none;"` — cero cambio visible. Los tres verificadores en verde
 `verificar_render.php` sin huérfanos nuevos: P35.0 en `OK`, mismos 3
 huérfanos/4 no-estándar preexistentes de los ítems O/N.2/N.3/P, sin
 relación con este cambio).
+
+**R. PETICION_HC_Y_LABORATORIO.md, Parte 1 — "N.° de historia clínica" al
+núcleo — ✅ cerrado (P35.0, O95, A44)**
+
+Cerrado 2026-08-02. `persona.n_historia_clinica` + `enfermedad.nucleo_incluidos`
+(nuevo mecanismo, simétrico de `nucleo_omitidos` con la polaridad
+invertida: lista de campos del núcleo OCULTOS por defecto que una ficha
+declara para mostrar, en vez de mostrados por defecto y declarados para
+ocultar — pensado para reutilizarse en cualquier futuro campo núcleo
+opt-in, no solo este). Vive junto al documento de identidad en
+`nueva/index.php`/`fichas/editar.php` (no en `datos-paciente-nucleo.php`):
+es la ubicación exacta que ya tenía validada el hardcodeo de O95 que
+reemplaza.
+
+**El conteo real no dio ~6/24 como se sospechaba — dio 8/24, y no es un
+solo concepto.** Verificado contra la página real de las 24: P35.0
+(ítem 9), O95 (Anexo 1 y 2) y A44 (encabezado, "N.° HIST.CLÍNICA")
+lo piden en el bloque de **identidad**, junto al documento — estas 3 son
+las que se promovieron. A37.0 ("H.Cl", ítem 39), B05 ("N.° H.C",
+Complicaciones), Y59.0 (Sección VIII Hospitalización), A80 (ítem 5,
+"Servicio/N.° Historia clínica/N.° Cama/Ciudad" — **hallazgo nuevo, ficha
+ya cotejada, nunca capturado**) y A00 (encabezado de "Características de
+la diarrea", cerca de "Evolución del paciente: Hospitalizado" — ya
+apuntado por el ítem M) lo piden dentro de su bloque de
+**hospitalización** — pregunta distinta del PDF con la misma etiqueta.
+**Decisión del usuario:** quedan fuera de este alcance a propósito, sin
+fusionar con el campo núcleo de identidad. A37.0/B05/Y59.0 conservan su
+`campo_def` propio sin tocar; A80/A00 quedan sin capturar, pendientes de
+cuando se coteje cada una.
+
+**Hallazgo adicional durante la implementación:** la petición solo
+mencionaba `nueva/index.php:127` como el hardcodeo a eliminar, pero
+`fichas/editar.php:90` tenía el mismo hardcodeo idéntico (mismo
+`$resolvedorPara('O95')('o95_n_de_historia_clinica')`), sin mencionar —
+si solo se corregía `nueva/index.php`, `editar()` habría quedado
+inconsistente (mostrando el campo solo para O95, con el mecanismo viejo,
+mientras `nuevo()` ya usaba el declarativo). Se corrigieron los dos.
+
+**Nota sobre "un arreglo de partial compartido por sesión":** además de
+`nueva/index.php`/`editar.php`, se tocó `secciones-clinicas.php` — pero
+solo para borrar una entrada ya muerta de `$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA['O95']`
+(`o95_n_de_historia_clinica`, cuyo `campo_def` este mismo cambio retira
+del manifiesto). No es una segunda corrección de lógica compartida, es
+limpieza de una referencia que el propio cambio de arriba volvió inerte.
+Se anota igual, por transparencia.
+
+Verificado con render de las 24 (visible solo en A44/O95/P35.0, presente
+mas oculto en las 21 restantes para que el fetch de cambio de ficha
+funcione), caso real crear→editar→actualizar→ver en P35.0, y prueba
+negativa en A36 (POST forzado descartado por `sanearCamposNucleo()`).
+Diff de bytes completo del render de O95 (antes con el `campo_def` viejo,
+después con el mecanismo nuevo): la única diferencia funcional es
+`name="campo_<id>"` → `name="n_historia_clinica"` y la clase
+`o95-elem` → `data-nucleo-incluido="n_historia_clinica"` — misma
+posición, mismo rótulo, mismo placeholder, cero cambio visual. Los tres
+verificadores en verde, mismos 3 huérfanos/4 no-estándar preexistentes.
+
+O95 **no se pudo verificar de punta a punta vía `crear()` real** —
+bloqueado por el ítem S de abajo, un bug preexistente no relacionado.
+Se verificó insertando el caso de prueba directamente (`Persona::crear()`
++ `Caso::crearConCodigo()`) y probando `editar()`/`actualizar()`/`ver()`
+reales sobre ese caso, que sí pasan por el código de este cambio.
+
+**S. BUG CRÍTICO, no relacionado — la creación de casos O95 está rota por
+un ENUM incompatible entre `caso.clasificacion` y las opciones propias
+de O95**
+
+Encontrado 2026-08-02 verificando el ítem R de arriba, sin relación con
+"N.° de historia clínica". `opcionesClasificacionPara()`
+(`app/Core/ayudantes.php:153-157`) devuelve para O95
+`['DIRECTA','INDIRECTA','INCIDENTAL','POR_DETERMINAR']` — y
+`clasificacion-chips.php` efectivamente pinta esos 4 valores como el
+`value=` real de los chips que ve y envía el usuario. Pero
+`caso.clasificacion` es `ENUM('SOSPECHOSO','PROBABLE','CONFIRMADO','DESCARTADO')`
+— ninguno de los 4 valores de O95 es miembro de ese ENUM.
+
+**Consecuencia: guardar un caso O95 con cualquier clasificación
+seleccionada en la UI real falla siempre**, con
+`SQLSTATE[01000]: Warning: 1265 Data truncated for column 'clasificacion'`
+capturado por el `catch (Throwable $e)` genérico de `crear()`
+(línea ~361), que lo convierte en un flash inofensivo ("No se pudo
+registrar la ficha por un error interno. Intenta nuevamente.") sin
+pista de la causa real. `actualizar()` tiene el mismo `in_array()` contra
+`opcionesClasificacionPara()` (línea ~809), así que un intento de cambiar
+la clasificación de un O95 ya creado (si alguno existiera) fallaría
+igual. Confirmado forzando `clasificacion=DIRECTA` por POST directo al
+controlador: mismo error, reproducible al 100%.
+
+**Introducido en `3b98182` (29 jul, "Parotiditis 100%")**, cuando se le
+dieron a O95 sus 4 valores propios de clasificación sin ampliar (ni
+separar) la columna que los guarda. 0 casos O95 existen hoy en esta base
+(no hay pérdida de datos), pero cualquier intento real de registrar una
+muerte materna en producción está bloqueado desde esa fecha.
+
+No implementado — es una decisión de diseño, no un cambio mecánico: ¿se
+amplía `caso.clasificacion` a un ENUM superconjunto (mismo patrón que
+`caso.edad_unidad`), o `O95` necesita su propia columna de clasificación
+separada (mismo criterio que llevó a poner `edad_valor`/`edad_unidad` en
+`caso` y no en `persona`)? Prioridad alta — bloquea el uso real de una
+ficha que se dio por cotejada al 100%.

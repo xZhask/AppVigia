@@ -2390,6 +2390,9 @@
                 "referencia_localizar",
                 "pueblo_etnico"
             ],
+            "nucleo_incluidos": [
+                "n_historia_clinica"
+            ],
             "secciones": [
                 {
                     "nombre": "Antecedente epidemiológico",
@@ -6873,6 +6876,9 @@
                 "celular",
                 "nombre_tutor"
             ],
+            "nucleo_incluidos": [
+                "n_historia_clinica"
+            ],
             "unidades_edad": [
                 "MESES",
                 "DIAS"
@@ -6960,13 +6966,6 @@
                                 "Consultorio externo",
                                 "Búsqueda institucional"
                             ]
-                        },
-                        {
-                            "clave": "p35_0_n_de_historia_clinica",
-                            "etiqueta": "N.° de historia clínica",
-                            "tipo": "TEXTO",
-                            "orden": 8,
-                            "obligatorio": false
                         }
                     ]
                 },
@@ -8347,6 +8346,9 @@
                 "referencia_localizar",
                 "pueblo_etnico"
             ],
+            "nucleo_incluidos": [
+                "n_historia_clinica"
+            ],
             "secciones": [
                 {
                     "nombre": "Datos de notificación",
@@ -8374,14 +8376,6 @@
                             "etiqueta": "Tipo de ficha",
                             "tipo": "TEXTO",
                             "orden": 3,
-                            "requerido": false,
-                            "sensible": false
-                        },
-                        {
-                            "clave": "o95_n_de_historia_clinica",
-                            "etiqueta": "N. de historia clinica",
-                            "tipo": "TEXTO",
-                            "orden": 4,
                             "requerido": false,
                             "sensible": false
                         }

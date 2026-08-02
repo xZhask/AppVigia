@@ -3,6 +3,14 @@ use App\Core\Csrf;
 
 require __DIR__ . '/../partials/campos-por-clave.php';
 
+// nucleo_incluidos: ver nueva/index.php, mismo mecanismo.
+$nucleoIncluidos = [];
+if (!empty($enfermedad['nucleo_incluidos'])) {
+    $decodificadoNucleoIncluidos = json_decode($enfermedad['nucleo_incluidos'], true);
+    $nucleoIncluidos = is_array($decodificadoNucleoIncluidos) ? $decodificadoNucleoIncluidos : [];
+}
+$nucleoIncluye = fn(string $campo): bool => in_array($campo, $nucleoIncluidos, true);
+
 $estados = [
     'ABIERTA'    => ['dot' => 'st-open',   'etiqueta' => 'Abierta'],
     'VALIDACION' => ['dot' => 'st-val',    'etiqueta' => 'Validación'],
@@ -87,11 +95,11 @@ $es = $estados[$caso['estado']];
               <div class="control mono" style="color:var(--muted)"><?= e($valoresFijos['tipo_doc']) ?> <?= e($valoresFijos['num_doc']) ?></div>
               <span class="hint">No editable: es la identidad del persona</span>
             </div>
-            <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); $campoNHCEdit = $resolvedorPara('O95')('o95_n_de_historia_clinica'); ?>
-            <div class="field o95-elem" <?= $esO95Edit ? '' : 'hidden style="display:none;"' ?>>
+            <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
+            <div class="field" data-nucleo-incluido="n_historia_clinica" <?= $nucleoIncluye('n_historia_clinica') ? '' : 'hidden style="display:none;"' ?>>
               <label class="fl">N.° de historia clínica</label>
               <div class="control mono">
-                <input type="text" name="<?= $campoNHCEdit['name'] ?>" value="<?= e($campoNHCEdit['val']) ?>" placeholder="N.° H.C.…">
+                <input type="text" name="n_historia_clinica" value="<?= e($valoresFijos['n_historia_clinica'] ?? '') ?>" placeholder="N.° H.C.…">
               </div>
             </div>
           </div>

@@ -158,6 +158,7 @@ class CasosController extends Controller
             'numero'             => trim($_POST['numero'] ?? ''),
             'mz_lote'            => trim($_POST['mz_lote'] ?? ''),
             'tiempo_residencia'  => trim($_POST['tiempo_residencia'] ?? ''),
+            'n_historia_clinica' => trim($_POST['n_historia_clinica'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
@@ -456,6 +457,16 @@ class CasosController extends Controller
             $detalleDomicilioDecoded = is_array($decodedDetalleDomicilio) ? $decodedDetalleDomicilio : [];
         }
 
+        // nucleo_incluidos (PETICION_HC_Y_LABORATORIO.md, Parte 1): mismo
+        // criterio -- el JS necesita la lista decodificada para
+        // mostrar/ocultar "N.° de historia clínica" (vive en el shell,
+        // junto al documento de identidad, no en esta tarjeta re-renderizada).
+        $nucleoIncluidosDecoded = [];
+        if (!empty($enfermedad['nucleo_incluidos'])) {
+            $decodedNucleoIncluidos = json_decode($enfermedad['nucleo_incluidos'], true);
+            $nucleoIncluidosDecoded = is_array($decodedNucleoIncluidos) ? $decodedNucleoIncluidos : [];
+        }
+
         echo json_encode([
             'html'                 => $html,
             'htmlMuestras'         => $htmlMuestras,
@@ -468,6 +479,7 @@ class CasosController extends Controller
             // eran invisibles incluso con app.debug encendido.
             'avisoClavesFaltantes' => $avisoClavesFaltantesCampos(),
             'nucleoOmitidos'       => $nucleoOmitidosDecoded,
+            'nucleoIncluidos'      => $nucleoIncluidosDecoded,
             'unidadesEdad'         => $unidadesEdadDecoded,
             'detalleDomicilio'     => $detalleDomicilioDecoded,
             'cie10'                => $enfermedad['cie10'] ?: '—',
@@ -641,6 +653,7 @@ class CasosController extends Controller
             'numero'             => (string) ($caso['numero'] ?? ''),
             'mz_lote'            => (string) ($caso['mz_lote'] ?? ''),
             'tiempo_residencia'  => (string) ($caso['tiempo_residencia'] ?? ''),
+            'n_historia_clinica' => (string) ($caso['n_historia_clinica'] ?? ''),
             'localidad'          => (string) ($caso['localidad'] ?? ''),
             'etnia'              => (string) ($caso['etnia'] ?? ''),
             'etnia_otra'         => (string) ($caso['etnia_otra'] ?? ''),
@@ -727,6 +740,7 @@ class CasosController extends Controller
             'numero'             => trim($_POST['numero'] ?? ''),
             'mz_lote'            => trim($_POST['mz_lote'] ?? ''),
             'tiempo_residencia'  => trim($_POST['tiempo_residencia'] ?? ''),
+            'n_historia_clinica' => trim($_POST['n_historia_clinica'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
@@ -1203,6 +1217,7 @@ class CasosController extends Controller
             'numero'             => '',
             'mz_lote'            => '',
             'tiempo_residencia'  => '',
+            'n_historia_clinica' => '',
             'localidad'          => '',
             'etnia'              => '',
             'etnia_otra'         => '',
@@ -1303,6 +1318,17 @@ class CasosController extends Controller
         $tiempoResidencia = (in_array('TIEMPO_RESIDENCIA', $detalleDomicilioPermitido, true) && ($valoresFijos['tiempo_residencia'] ?? '') !== '')
             ? $valoresFijos['tiempo_residencia'] : null;
 
+        // nucleo_incluidos (PETICION_HC_Y_LABORATORIO.md, Parte 1): mismo
+        // criterio de opt-in que detalle_domicilio -- se descarta si la
+        // ficha activa no lo declaró, aunque venga en el POST.
+        $nucleoIncluidosPermitido = [];
+        if (!empty($enfermedad['nucleo_incluidos'])) {
+            $decodificadoNucleoIncluidos = json_decode($enfermedad['nucleo_incluidos'], true);
+            $nucleoIncluidosPermitido = is_array($decodificadoNucleoIncluidos) ? $decodificadoNucleoIncluidos : [];
+        }
+        $nHistoriaClinica = (in_array('n_historia_clinica', $nucleoIncluidosPermitido, true) && ($valoresFijos['n_historia_clinica'] ?? '') !== '')
+            ? $valoresFijos['n_historia_clinica'] : null;
+
         $gestante = null;
         $semanasGestacion = null;
         $trimestreGestacion = null;
@@ -1334,6 +1360,7 @@ class CasosController extends Controller
                 'numero'             => $numeroDomicilio,
                 'mz_lote'            => $mzLote,
                 'tiempo_residencia'  => $tiempoResidencia,
+                'n_historia_clinica' => $nHistoriaClinica,
                 'localidad'          => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
                 'etnia'              => $etnia,
                 'etnia_otra'         => $etniaOtra,

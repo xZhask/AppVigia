@@ -3,6 +3,19 @@ use App\Core\Csrf;
 
 require __DIR__ . '/../partials/campos-por-clave.php';
 
+// nucleo_incluidos (PETICION_HC_Y_LABORATORIO.md, Parte 1): mismo mecanismo
+// que nucleo_omitidos, polaridad invertida -- campos del núcleo ocultos por
+// defecto que una ficha declara para mostrar. "N.° de historia clínica"
+// vive acá (junto al documento de identidad, card "Datos del persona") y
+// no en datos-paciente-nucleo.php porque esa es la ubicación exacta que ya
+// tenía validada visualmente el hardcodeo de O95 que reemplaza.
+$nucleoIncluidos = [];
+if (!empty($enfermedad['nucleo_incluidos'])) {
+    $decodificadoNucleoIncluidos = json_decode($enfermedad['nucleo_incluidos'], true);
+    $nucleoIncluidos = is_array($decodificadoNucleoIncluidos) ? $decodificadoNucleoIncluidos : [];
+}
+$nucleoIncluye = fn(string $campo): bool => in_array($campo, $nucleoIncluidos, true);
+
 $enfermedadesPorGrupo = [];
 foreach ($enfermedades as $enf) {
     $enfermedadesPorGrupo[$enf['familia'] ?? 'Otros eventos bajo vigilancia'][] = $enf;
@@ -124,11 +137,11 @@ if ($puedeElegirEstablecimiento) {
               </div>
               <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span><?php endif; ?>
             </div>
-            <?php $esO95Index = (($enfermedad['cie10'] ?? null) === 'O95'); $campoNHCNueva = $resolvedorPara('O95')('o95_n_de_historia_clinica'); ?>
-            <div class="field o95-elem" <?= $esO95Index ? '' : 'hidden style="display:none;"' ?>>
+            <?php $esO95Index = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
+            <div class="field" data-nucleo-incluido="n_historia_clinica" <?= $nucleoIncluye('n_historia_clinica') ? '' : 'hidden style="display:none;"' ?>>
               <label class="fl">N.° de historia clínica</label>
               <div class="control mono">
-                <input type="text" name="<?= $campoNHCNueva['name'] ?>" value="<?= e($campoNHCNueva['val']) ?>" placeholder="N.° H.C.…">
+                <input type="text" name="n_historia_clinica" value="<?= e($valoresFijos['n_historia_clinica'] ?? '') ?>" placeholder="N.° H.C.…">
               </div>
             </div>
             <div class="field o95-hide" <?= $esO95Index ? 'hidden style="display:none;"' : '' ?>>

@@ -105,6 +105,9 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Apellido materno</label><div class="control" style="background:var(--paper)"><?= e($caso['apellido_materno'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Nombres</label><div class="control" style="background:var(--paper)"><?= e($caso['nombres'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Documento</label><div class="control mono" style="background:var(--paper)"><?= e($caso['tipo_doc']) ?> <?= e($caso['num_doc']) ?></div></div>
+          <?php if (!empty($caso['n_historia_clinica'])): ?>
+            <div class="field"><label class="fl">N.° de historia clínica</label><div class="control mono" style="background:var(--paper)"><?= e($caso['n_historia_clinica']) ?></div></div>
+          <?php endif; ?>
           <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
           <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= e($edadTexto) ?></div></div>
           <div class="field"><label class="fl">Distrito de domicilio</label><div class="control" style="background:var(--paper)"><?= e($caso['distrito_nombre'] ?? '—') ?></div></div>

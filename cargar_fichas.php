@@ -134,6 +134,14 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // omisión salvo B05.
 const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'nombre_tutor', 'celular_tutor', 'gestante'];
 
+// Simétrico de NUCLEO_OMITIBLES: campos del núcleo ocultos por defecto que
+// una ficha declara para MOSTRAR (opt-in), en vez de mostrados por defecto
+// y declarados para ocultar. PETICION_HC_Y_LABORATORIO.md, Parte 1:
+// "N.° de historia clínica" solo lo pide el PDF en el bloque de identidad
+// de 3 de las 24 fichas (P35.0, O95, A44) -- opt-out habría pintado el
+// campo sin base documental en las 21 restantes.
+const NUCLEO_INCLUIBLES = ['n_historia_clinica'];
+
 // Entrada F (PETICION_MAPEO_Y_EDAD.md, Parte 2): unidades válidas para
 // "unidades_edad" -- opt-in, al revés que NUCLEO_OMITIBLES. Ausente = solo
 // años (comportamiento actual, derivado de persona.fecha_nac). Debe
@@ -316,6 +324,14 @@ function validarManifiesto(array $manifiesto): void
             foreach ($ficha['nucleo_omitidos'] as $campoNucleo) {
                 if (!in_array($campoNucleo, NUCLEO_OMITIBLES, true)) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_omitidos incluye \"{$campoNucleo}\", que no es un campo omitible del núcleo. Válidos: " . implode(', ', NUCLEO_OMITIBLES) . ".");
+                }
+            }
+        }
+
+        if (!empty($ficha['nucleo_incluidos'])) {
+            foreach ($ficha['nucleo_incluidos'] as $campoNucleo) {
+                if (!in_array($campoNucleo, NUCLEO_INCLUIBLES, true)) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_incluidos incluye \"{$campoNucleo}\", que no es un campo incluible del núcleo. Válidos: " . implode(', ', NUCLEO_INCLUIBLES) . ".");
                 }
             }
         }
@@ -557,6 +573,9 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // manifiesto no la declara se deja NULL explícito (no se conserva un
     // valor de una corrida anterior).
     $nucleoOmitidosDeclarados = $fichaManifiesto['nucleo_omitidos'] ?? null;
+    // nucleo_incluidos: mismo criterio que nucleo_omitidos, polaridad
+    // invertida (ver PETICION_HC_Y_LABORATORIO.md, Parte 1).
+    $nucleoIncluidosDeclarados = $fichaManifiesto['nucleo_incluidos'] ?? null;
     // columnas_sujeto/titulo_sujeto (PETICION_P35_RUBEOLA_CONGENITA.md Fase
     // 2b): mismo criterio exacto que nucleo_omitidos -- objeto por rol, se
     // aplica siempre, NULL explícito si la ficha no declara nada.
@@ -570,7 +589,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // criterio que unidades_edad -- se aplica siempre, NULL explícito si la
     // ficha no lo declara (opt-in: NULL equivale al comportamiento actual).
     $detalleDomicilioDeclarado = $fichaManifiesto['detalle_domicilio'] ?? null;
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ? WHERE id = ?')->execute([
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -580,6 +599,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($tablasHijas['caso_viaje']) ? 1 : 0,
         !empty($tablasHijas['caso_vacuna']) ? 1 : 0,
         !empty($nucleoOmitidosDeclarados) ? json_encode($nucleoOmitidosDeclarados, JSON_UNESCAPED_UNICODE) : null,
+        !empty($nucleoIncluidosDeclarados) ? json_encode($nucleoIncluidosDeclarados, JSON_UNESCAPED_UNICODE) : null,
         !empty($columnasSujetoDeclaradas) ? json_encode($columnasSujetoDeclaradas, JSON_UNESCAPED_UNICODE) : null,
         !empty($tituloSujetoDeclarado) ? json_encode($tituloSujetoDeclarado, JSON_UNESCAPED_UNICODE) : null,
         !empty($unidadesEdadDeclaradas) ? json_encode($unidadesEdadDeclaradas, JSON_UNESCAPED_UNICODE) : null,
