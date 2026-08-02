@@ -20,30 +20,96 @@ use App\Models\CatalogoItem;
 use App\Models\SeccionDef;
 
 $secciones = SeccionDef::porEnfermedad((int) $enfermedad['id']);
-if (($enfermedad['cie10'] ?? '') === 'B05') {
-    $secciones = array_values(array_filter($secciones, fn($s) => !in_array(trim($s['nombre']), [
-        'Datos de notificación e identificación del caso',
-        'Datos de filiación y tutor'
-    ], true)));
-}
-if (($enfermedad['cie10'] ?? '') === 'O95') {
-    $secciones = array_values(array_filter($secciones, fn($s) => !in_array(trim($s['nombre']), [
-        'Datos de notificación'
-    ], true)));
-}
-if (($enfermedad['cie10'] ?? '') === 'B26') {
-    $secciones = array_values(array_filter($secciones, fn($s) => !in_array(trim($s['nombre']), [
-        'Datos de notificación e investigación del caso',
-        'Lugar probable de infección',
-        'Cuadro clínico',
-        'Complicaciones',
-        'Hospitalización y egreso'
-    ], true)));
-}
-if (($enfermedad['cie10'] ?? '') === 'P35.0') {
-    $secciones = array_values(array_filter($secciones, fn($s) => !in_array(trim($s['nombre']), [
-        'Datos de notificación e investigación del caso'
-    ], true)));
+
+// Ruta 2 (PENDIENTES.md ítems N/N.2, sesión 2026-08-02): esto excluía la
+// SECCIÓN entera por nombre para B05/B26/O95/P35.0 -- si un campo nuevo se
+// agregaba a una de estas secciones sin actualizar también el partial a
+// medida que la duplica en la tarjeta "1. Notificación" (o en su propia
+// tarjeta, para B26), quedaba inalcanzable sin ningún aviso (bug real y
+// confirmado: p35_0_n_de_historia_clinica, o95_n_de_historia_clinica).
+// Ahora se excluye por CLAVE: solo se omiten los campos que el partial a
+// medida realmente resuelve -- por su name="campo_<id>" estándar, o por el
+// mecanismo de name literal remapeado a mano en validarCamposDinamicos()
+// (ítem N.2: b26_contactos_por_lugar, o95_hora_de_la_notificacion,
+// o95_identificado_por, o95_tipo_de_ficha). Una sección de este grupo solo
+// desaparece si TODOS sus campos están cubiertos; si queda uno sin cubrir,
+// la sección se deja en $secciones y recibe su propia tarjeta con el
+// render genérico, mostrando solo lo que nadie más pinta.
+//
+// $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA es variable, no const: este
+// partial se incluye con require (no require_once) y verificar_render.php
+// invoca CasosController::nuevo() en bucle dentro de un mismo proceso PHP
+// -- una constante de nivel de archivo aquí rompería esa segunda pasada.
+$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
+    'B05' => [
+        // notificacion-fechas-b05.php
+        'b05_enfermedad_notificada', 'b05_codigo_de_registro', 'b05_fecha_de_identificacion_local_del_caso_o_consulta',
+        'b05_fecha_de_investigacion_visita_domiciliaria', 'b05_nombre_de_personal_de_salud_que_atiende_el_caso', 'b05_telefono_del_personal_de_salud',
+        // datos-paciente-b05-loader.php (resuelve por etiqueta, no por clave, pero cubre estas 7)
+        'b05_ocupacion', 'b05_lugar_probable_de_parto', 'b05_tipo_de_localidad', 'b05_es_menor_de_edad',
+        'b05_nombre_de_madre_o_tutor', 'b05_telefono_de_madre_o_tutor', 'b05_n_doc_identidad_de_madre_o_tutor',
+    ],
+    'B26' => [
+        // notificacion-fechas-b26.php
+        'b26_codigo_de_registro_n', 'b26_fecha_de_consulta', 'b26_fecha_de_conocimiento_local_del_caso',
+        'b26_fecha_de_investigacion_visita_domiciliaria', 'b26_fecha_de_notificacion_ee_ss_a_red_microred',
+        'b26_fecha_de_notificacion_red_microred_a_direccion_de_s', 'b26_fecha_de_notificacion_direccion_de_salud_a_cdc',
+        // cuadro-clinico-b26.php (cubre Cuadro clínico + Complicaciones + Hospitalización y egreso, una sola tarjeta)
+        'b26_presento_inflamacion_de_glandulas_parotidas', 'b26_fecha_de_inicio_de_parotiditis', 'b26_n_de_dias_de_duracion',
+        'b26_localizacion', 'b26_inflamacion_de_glandulas_submandibulares', 'b26_inflamacion_de_glandulas_sublinguales',
+        'b26_orquitis', 'b26_ooforitis', 'b26_perdida_de_audicion', 'b26_encefalitis', 'b26_meningitis', 'b26_otras',
+        'b26_hospitalizacion', 'b26_establecimiento', 'b26_fecha_de_hospitalizacion', 'b26_n_de_dias',
+        'b26_condicion_de_egreso', 'b26_fecha_de_egreso', 'b26_referido_a', 'b26_causa_de_muerte',
+        // lugar-probable-infeccion-b26.php
+        'b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con', 'b26_contactos_por_lugar',
+        'b26_tuvo_contacto_con_gestante', 'b26_trimestre_de_gestacion_contacto',
+        // PENDIENTES.md ítem N.3: duplicado conceptual muerto de caso.fecha_inicio_sintomas
+        // (ver el comentario original en cuadro-clinico-b26.php) -- nunca fue alcanzable,
+        // no es un campo nuevo sin cobertura. Se mantiene suprimido a propósito: decidir
+        // si se borra o se conecta es aparte, no algo que esta ruta deba resolver sola.
+        'b26_fecha_de_inicio_de_sintomas',
+    ],
+    'O95' => [
+        // notificacion-fechas-o95.php (mecanismo de name literal remapeado, ítem N.2)
+        'o95_hora_de_la_notificacion', 'o95_identificado_por', 'o95_tipo_de_ficha',
+        // nueva/index.php:127-133 -- no vive en secciones-clinicas.php en absoluto:
+        // se pinta en el shell, junto al N.° de documento, con name="campo_<id>"
+        // estándar. Sin esta entrada, Ruta 2 lo duplicaba (confirmado con
+        // substr_count() antes de commitear -- ver aviso en el mensaje de la sesión).
+        'o95_n_de_historia_clinica',
+    ],
+    'P35.0' => [
+        // notificacion-fechas-p350.php
+        'p35_0_codigo_de_registro_n', 'p35_0_fecha_de_conocimiento_local_del_caso', 'p35_0_fecha_de_notificacion_eess_a_red_microred',
+        'p35_0_fecha_notif_red_microred_a_direccion_salud', 'p35_0_fecha_notif_direccion_salud_a_cdc',
+        'p35_0_fecha_de_investigacion_visita_domiciliaria', 'p35_0_caso_captado_en',
+    ],
+];
+$claveCubiertaPorPartial = fn(string $clave): bool => in_array(
+    $clave,
+    $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA[$enfermedad['cie10'] ?? ''] ?? [],
+    true
+);
+
+$SECCIONES_CON_PARTIAL_A_MEDIDA = [
+    'B05' => ['Datos de notificación e identificación del caso', 'Datos de filiación y tutor'],
+    'B26' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Cuadro clínico', 'Complicaciones', 'Hospitalización y egreso'],
+    'O95' => ['Datos de notificación'],
+    'P35.0' => ['Datos de notificación e investigación del caso'],
+][$enfermedad['cie10'] ?? ''] ?? [];
+
+if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
+    $secciones = array_values(array_filter($secciones, function ($s) use ($SECCIONES_CON_PARTIAL_A_MEDIDA, $claveCubiertaPorPartial) {
+        if (!in_array(trim($s['nombre']), $SECCIONES_CON_PARTIAL_A_MEDIDA, true)) {
+            return true;
+        }
+        foreach (CampoDef::porSeccion((int) $s['id']) as $campo) {
+            if (!$claveCubiertaPorPartial($campo['clave'])) {
+                return true; // al menos un campo sin cubrir -> la sección no desaparece
+            }
+        }
+        return false; // todos cubiertos -> mismo comportamiento que antes
+    }));
 }
 
 // Peticion 2, correccion post-Fase-7: guarda aditiva. Los nombres de
@@ -102,8 +168,12 @@ $campoFechaUltSeg = (($enfermedad['cie10'] ?? '') === 'B05')
     ? $campo('b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg): void {
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $claveCubiertaPorPartial): void {
     $campos = CampoDef::porSeccion($seccionId);
+    // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
+    // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
+    // partial a medida no se repiten acá.
+    $campos = array_values(array_filter($campos, fn($c) => !$claveCubiertaPorPartial($c['clave'])));
 
     $idsPadre = array_filter(array_column($campos, 'depende_de'));
     $camposBooleanos = array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !in_array($c['id'], $idsPadre));
