@@ -873,7 +873,82 @@ posterior al arranque.
 **Decisión de protección de datos pendiente de DIRSAPOL.** No
 implementado — solo reportado, a pedido explícito.
 
-- **Fase 4**: ✅ cerrada (commit `a3c35db`). Los 10 pares
+**L. Discrepancia del mapeo — página 15 del PDF ("Registro de Búsqueda
+Activa de Gestantes VIH") no tiene ficha propia en el manifiesto**
+
+Verificado contra el PDF (`pdftotext`, ya que el renderizado de
+páginas no está disponible en este entorno): la página 15 es un
+formulario titulado **"FORMULARIO DE REGISTRO DE CASOS DE GESTANTES
+CON VIH Y NIÑOS NACIDOS EXPUESTOS AL VIH IDENTIFICADOS POR BÚSQUEDA
+ACTIVA INSTITUCIONAL"**, versión 2015.02.25 (misma versión que la
+ficha de difteria de las páginas 13-14). Por su forma es una
+**planilla de línea a nivel de establecimiento**, no una ficha de caso
+individual:
+- Cabecera institucional (DISA/DIRESA/GERESA, Red, Microrred, EESS,
+  Provincia/Departamento/Distrito, Institución MINSA/EsSalud/FFAA-FFPP/
+  Privado/Otro).
+- Resumen de totales por servicio de captación (Consultorio externo /
+  Emergencia / Hospitalización) y por estado de notificación
+  (Notificados / No notificados), con un rango de fechas "Desde—Hasta".
+- Una matriz de registro repetible: N.°, Código del paciente, N.° de
+  Historia Clínica, Edad + tipo de edad (días/meses/años), Sexo,
+  Servicio, Clasificación de caso (Gestante con VIH / Aborto /
+  Mortinato / Niño nacido expuesto), Fecha de defunción, Notificado
+  (Sí/No), Observaciones.
+
+Está posicionada **inmediatamente antes** de la ficha de Z21 (que
+empieza en la página 16 con "SECCIÓN I: GESTANTE CON VIH") — mismo
+tema (gestante con VIH / niño expuesto), pero el texto extraído no
+trae ninguna etiqueta explícita de "Anexo" que la vincule formalmente
+a Z21; es un documento con su propio título, no subordinado
+visualmente al de la página 16.
+
+**No implementado ni agregado al manifiesto — a la espera de que el
+usuario decida** si el compendio la trae como anexo de Z21 o como
+documento suelto fuera de alcance.
+
+**M. Discrepancia del mapeo — A00 (EDA grave / cólera) es una ficha
+real de 2 páginas (50-51), el manifiesto solo registra la 50**
+
+Verificado contra el PDF: `manifiesto_fichas.json` declara
+`"pdf_paginas": 50` para A00, pero la ficha completa ("FICHA CLÍNICO -
+EPIDEMIOLÓGICA", CIE 10: A00-A09) ocupa la página 50 **y** la 51 — no
+es un error de conteo, la página 51 trae contenido real que hoy no
+está en el manifiesto:
+
+- **N.° de Historia Clínica** (aparece al inicio de "Características
+  de la diarrea", página 51) — sin equivalente en el manifiesto.
+- **V. LABORATORIO** (página 51, sección completa): Fecha de toma de
+  muestra, Fecha de envío al laboratorio, Fecha de recepción en
+  laboratorio, y una tabla Establecimiento de Salud / Muestra
+  (Heces/Suero/Vómitos) / Examen realizado (Cultivo/Otro) / Resultado
+  (Positivo/Negativo), además de "El caso de cólera fue confirmado por
+  laboratorio" / "Nexo epidemiológico de un caso confirmado". El
+  manifiesto de A00 (sección "Laboratorio") solo tiene **Serogrupo**,
+  **Serotipo** y **Otro microorganismo aislado** — los 3 campos que en
+  el PDF son el *detalle* del resultado, sin los campos que dan el
+  contexto de la muestra (fechas, tipo de muestra, examen, resultado
+  positivo/negativo).
+- **VI. CLASIFICACIÓN**: el manifiesto ya tiene "Clasificación final"
+  con las 5 opciones correctas del PDF (Sospechoso/Probable/
+  Confirmado/Compatible/Descartado) — eso SÍ está completo — pero le
+  falta la **Fecha** de esa clasificación y el texto libre "[Anotar la
+  causa]" para el caso descartado.
+- **VII. OBSERVACIONES**: sin campo equivalente en el manifiesto.
+
+**Dato relevante para cuando se decida qué hacer:** A00 ya tiene
+`usa_muestras: true` (`tablas_hijas.caso_muestra`) pero **no declara
+`columnas_tablas_hija.caso_muestra`** — hoy usa lo que sea que
+`muestras.php` pinte por defecto sin configurar. Las fechas y el tipo
+de muestra/examen/resultado de la página 51 encajan conceptualmente en
+ese mecanismo (`caso_muestra` ya tiene columnas `fecha_toma`,
+`fecha_envio_ins`, `tipo_muestra`, `tipo_prueba`, `resultado` en
+`COLUMNAS_TABLA_HIJA_VALIDAS`), mientras que Serogrupo/Serotipo/Otro
+microorganismo quedaron como `campo_def` sueltos — decisión de diseño
+abierta (todo a `caso_muestra` vs. mantener el split actual), no
+resuelta acá.
+
+**No implementado — a la espera de que el usuario decida el alcance.** Los 10 pares
   `depende_de`/`valor_activador` declarados y verificados con render
   real (oculto sin disparador, visible con el disparador forzado).
 - **Fase 5.1**: ✅ cerrada (commit `607882b`). `caso_viaje.semana_gestacion`
