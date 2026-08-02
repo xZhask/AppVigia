@@ -441,6 +441,7 @@ CREATE TABLE `enfermedad` (
   `columnas_sujeto` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`columnas_sujeto`)),
   `titulo_sujeto` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`titulo_sujeto`)),
   `unidades_edad` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`unidades_edad`)),
+  `detalle_domicilio` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`detalle_domicilio`)),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -576,6 +577,12 @@ CREATE TABLE `persona` (
   `nacionalidad` varchar(60) DEFAULT 'Peruana',
   `direccion` varchar(160) DEFAULT NULL,
   `referencia_localizar` varchar(160) DEFAULT NULL,
+  `tipo_zona` enum('URBANO','PERIURBANO','RURAL') DEFAULT NULL,
+  `tipo_via` varchar(60) DEFAULT NULL,
+  `nombre_via` varchar(160) DEFAULT NULL,
+  `numero` varchar(20) DEFAULT NULL,
+  `mz_lote` varchar(40) DEFAULT NULL,
+  `tiempo_residencia` varchar(60) DEFAULT NULL,
   `localidad` varchar(120) DEFAULT NULL,
   `etnia` enum('MESTIZO','ANDINO','ASIATICO_DESCENDIENTE','AFRODESCENDIENTE','INDIGENA_AMAZONICO','OTRO') DEFAULT NULL,
   `etnia_otra` varchar(100) DEFAULT NULL,

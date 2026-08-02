@@ -40,6 +40,7 @@ $etniaEtiquetas = [
     'MESTIZO' => 'Mestizo', 'ANDINO' => 'Andino', 'ASIATICO_DESCENDIENTE' => 'Asiático descendiente',
     'AFRODESCENDIENTE' => 'Afrodescendiente', 'INDIGENA_AMAZONICO' => 'Indígena amazónico', 'OTRO' => 'Otro',
 ];
+$tipoZonaEtiquetas = ['URBANO' => 'Urbano', 'PERIURBANO' => 'Periurbano', 'RURAL' => 'Rural'];
 $accionEtiquetas = [
     'CREACION'      => 'Creación',
     'EDICION'       => 'Edición',
@@ -113,6 +114,24 @@ $accionEtiquetas = [
           <div class="field wide"><label class="fl">Domicilio actual</label><div class="control" style="background:var(--paper)"><?= e($caso['direccion'] ?: '—') ?></div></div>
           <?php if (!empty($caso['referencia_localizar'])): ?>
             <div class="field wide"><label class="fl">Referencia para localizar</label><div class="control" style="background:var(--paper)"><?= e($caso['referencia_localizar']) ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['tipo_zona'])): ?>
+            <div class="field"><label class="fl">Tipo de zona</label><div class="control" style="background:var(--paper)"><?= e($tipoZonaEtiquetas[$caso['tipo_zona']] ?? $caso['tipo_zona']) ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['tipo_via'])): ?>
+            <div class="field"><label class="fl">Tipo de vía</label><div class="control" style="background:var(--paper)"><?= e($caso['tipo_via']) ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['nombre_via'])): ?>
+            <div class="field"><label class="fl">Nombre de vía</label><div class="control" style="background:var(--paper)"><?= e($caso['nombre_via']) ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['numero'])): ?>
+            <div class="field"><label class="fl">Nro.</label><div class="control" style="background:var(--paper)"><?= e($caso['numero']) ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['mz_lote'])): ?>
+            <div class="field"><label class="fl">Mz./Lote</label><div class="control" style="background:var(--paper)"><?= e($caso['mz_lote']) ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['tiempo_residencia'])): ?>
+            <div class="field"><label class="fl">Tiempo de residencia</label><div class="control" style="background:var(--paper)"><?= e($caso['tiempo_residencia']) ?></div></div>
           <?php endif; ?>
           <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
             <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e(($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') . (($caso['etnia'] ?? '') === 'OTRO' && !empty($caso['etnia_otra']) ? ' (' . $caso['etnia_otra'] . ')' : '')) ?></div></div>

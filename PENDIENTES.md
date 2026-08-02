@@ -1180,3 +1180,81 @@ arreglo, en esta sesión).
   aparte el único ítem que sí se implementó: N.° de historia clínica,
   campo 35 de P35.0, copiando el patrón de B05/Y59.0). El resto queda
   en E/F/G/H arriba.
+
+**Q. Entrada J acotada al bloque de domicilio — ✅ cerrado (P35.0)**
+
+Cerrado 2026-08-02. `persona.tipo_zona/tipo_via/nombre_via/numero/
+mz_lote/tiempo_residencia` (6 columnas) + `enfermedad.detalle_domicilio`
+(opt-in por ficha, mismo mecanismo declarativo que `unidades_edad`:
+JSON array de códigos, ausente = comportamiento actual). P35.0 es la
+única ficha que lo declara por ahora: `["TIPO_ZONA","TIPO_VIA",
+"NOMBRE_VIA","NUMERO","MZ_LOTE","TIEMPO_RESIDENCIA"]`.
+`p35_0_tiempo_de_residencia` (campo_def, 0 filas en `caso_valor`) se
+retiró del manifiesto — la sección "Datos del paciente (adicionales)"
+que solo lo contenía se eliminó entera y las siguientes se renumeraron.
+
+**Corrección previa a esta entrada:** `referencia_localizar` estaba
+incorrectamente en `nucleo_omitidos` de P35.0 (colada en la pasada en
+bloque de la entrada E, cuando P35.0 aún no estaba cotejada) — su PDF
+(pág. 20, ítem 18) sí la pide, texto idéntico al de A37.0. Se sacó de
+la lista. Auditoría del mismo error en las otras 5 fichas ya cotejadas,
+contra su página real (sin corregir nada, porque no hizo falta):
+A36 (pág. 13-14), B26 (pág. 4) y A80 (pág. 34-36) no tienen "Referencia
+para localizar" en su PDF — la omiten correctamente. O95 (pág. 30-33)
+tiene varias menciones de "REFERENCIA", pero son de referencia
+institucional entre EE.SS. (traslado de la paciente), no de ubicación
+del domicilio — también la omite correctamente, coincidencia de
+palabra, no de concepto. B05 (pág. 37-39) sí la pide y no la omite —
+correcto desde que se creó. **Ninguna de las 5 tenía el error de P35.0.**
+
+**Por qué opt-in, no opt-out (asimetría deliberada con `referencia_localizar`):**
+contra la página real de las 24 fichas, el bloque completo (Tipo de
+zona + Tipo de vía + Nombre de vía + Nro. + Mz./Lote + Tiempo de
+residencia, en ese orden y con ese texto) solo aparece **idéntico** en
+A37.0 y P35.0. Otras 5 fichas tienen una variante parcial que no
+calza sin decisión de mapeo propia — A95 y B57 (formato antiguo:
+"NOMBRE DE ZONA"/"INT/DEP/LOTE", tiempo de residencia como años+meses
+separado bajo "MIGRACIÓN", un segundo bloque completo para "dónde
+vivía antes"), A00 (checkboxes `Zona:[ ]`/`Vía:[ ]`, un "Urbana/Rural"
+de 2 valores en otra sección, no 3), O95 (su propio "N°/Interior/
+Manzana/Lote" + "Jr./Calle/Avenida/Comité/Sector", sin zona ni tiempo
+de residencia) y B04X ("Tiempo de residencia" pero solo para
+extranjeros, sin zona/vía/nro). Las 17 restantes no tienen nada de
+esto. Con 2/24 confirmadas, opt-out habría pintado los 6 campos sin
+base en el PDF en hasta 22 fichas — mismo antipatrón que la entrada N,
+aplicado al núcleo en vez de a un partial. `referencia_localizar` sigue
+opt-out porque su frecuencia real sí lo justifica: aparece en A37.0,
+P35.0, B05, B04X, Mpox (B04X, mismo caso), Tétanos neonatal (A33,
+"DOMICILIO CON REFERENCIAS") y Chagas (B57) — la mayoría de las fichas
+revisadas la piden, la minoría la omite. Dos campos del mismo bloque
+del PDF con dos polaridades opuestas es intencional, no una
+inconsistencia a "corregir" después.
+
+`tipo_zona` es ENUM (`URBANO`/`PERIURBANO`/`RURAL`): las 2 fichas que
+coinciden exacto dan un código cerrado de 3 valores
+(`1=Urbano;2=Periurbano;3=Rural`). El "Urbana/Rural" de A00 es un campo
+distinto (2 valores, en "Zona de residencia", otra sección del PDF) —
+no es evidencia para forzar ese mapeo. `tipo_via`/`nombre_via`/`numero`/
+`mz_lote`/`tiempo_residencia` son texto libre: el PDF mismo insinúa
+`tipo_via` como lista abierta ("Avenida, Calle, Jirón, etc.").
+
+A95, B57, A00, O95 y B04X quedan **fuera de este alcance** — cada una
+decide su propio mapeo (si acaso) cuando le toque su cotejo, no
+reutilizan `detalle_domicilio` tal cual.
+
+**Verificado end-to-end** (`scratch/test_detalle_domicilio_entrada_j.php`,
+gitignored; casos borrados al terminar, 0 filas residuales): render de
+las 24 confirma los 6 campos presentes en el DOM (para que el fetch de
+cambio de ficha pueda mostrarlos sin recargar) pero visibles solo en
+P35.0. Caso real crear→editar→actualizar→ver en P35.0: los 6 valores
+se guardan, prefilan (`select` de `tipo_zona` incluido) y se muestran
+correctamente, y el valor cambia limpio al actualizar. Prueba negativa
+en A36 (que no declara `detalle_domicilio`): forzar los 6 campos por
+POST resulta en los 6 en `NULL` — `sanearCamposNucleo()` los descarta.
+Diff de bytes completo del render de A36 antes/después: única
+diferencia son los 6 `<div>` nuevos, los 6 con `hidden style="display:
+none;"` — cero cambio visible. Los tres verificadores en verde
+(`verificar_fichas.php` 24/24, `verificar_claves.php` 194/194,
+`verificar_render.php` sin huérfanos nuevos: P35.0 en `OK`, mismos 3
+huérfanos/4 no-estándar preexistentes de los ítems O/N.2/N.3/P, sin
+relación con este cambio).

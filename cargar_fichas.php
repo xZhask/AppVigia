@@ -140,6 +140,14 @@ const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', '
 // coincidir con el ENUM de caso.edad_unidad (add_edad_valor_unidad_caso.php).
 const UNIDADES_EDAD_VALIDAS = ['ANIOS', 'MESES', 'DIAS', 'HORAS', 'MINUTOS'];
 
+// Entrada J acotada al bloque de domicilio (PETICION_MAPEO_Y_EDAD.md):
+// detalle de dirección dentro del distrito -- opt-in, igual que
+// unidades_edad, no NUCLEO_OMITIBLES. Con solo 2/24 fichas confirmadas
+// contra el PDF (A37.0, P35.0), opt-out pintaría estos campos sin base
+// documental en el resto. Debe coincidir con el ENUM de persona.tipo_zona
+// (add_detalle_domicilio_persona.php).
+const DETALLE_DOMICILIO_VALIDO = ['TIPO_ZONA', 'TIPO_VIA', 'NOMBRE_VIA', 'NUMERO', 'MZ_LOTE', 'TIEMPO_RESIDENCIA'];
+
 // Columnas reales de caso_sujeto que una ficha multi_sujeto puede declarar
 // para un rol secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2):
 // "columnas_sujeto": {"MADRE": [...]}. Excluye id/caso_id/persona_id/rol
@@ -320,6 +328,17 @@ function validarManifiesto(array $manifiesto): void
             }
             if (count($ficha['unidades_edad']) !== count(array_unique($ficha['unidades_edad']))) {
                 throw new RuntimeException("Manifiesto inválido: {$cie10} / unidades_edad tiene unidades repetidas.");
+            }
+        }
+
+        if (!empty($ficha['detalle_domicilio'])) {
+            foreach ($ficha['detalle_domicilio'] as $campoDomicilio) {
+                if (!in_array($campoDomicilio, DETALLE_DOMICILIO_VALIDO, true)) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / detalle_domicilio incluye \"{$campoDomicilio}\", que no es un campo válido. Válidos: " . implode(', ', DETALLE_DOMICILIO_VALIDO) . ".");
+                }
+            }
+            if (count($ficha['detalle_domicilio']) !== count(array_unique($ficha['detalle_domicilio']))) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / detalle_domicilio tiene campos repetidos.");
             }
         }
 
@@ -547,7 +566,11 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // criterio que nucleo_omitidos -- se aplica siempre, NULL explícito si
     // la ficha no lo declara (opt-in: NULL equivale al comportamiento actual).
     $unidadesEdadDeclaradas = $fichaManifiesto['unidades_edad'] ?? null;
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ? WHERE id = ?')->execute([
+    // detalle_domicilio (Entrada J acotada al bloque de domicilio): mismo
+    // criterio que unidades_edad -- se aplica siempre, NULL explícito si la
+    // ficha no lo declara (opt-in: NULL equivale al comportamiento actual).
+    $detalleDomicilioDeclarado = $fichaManifiesto['detalle_domicilio'] ?? null;
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -560,6 +583,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($columnasSujetoDeclaradas) ? json_encode($columnasSujetoDeclaradas, JSON_UNESCAPED_UNICODE) : null,
         !empty($tituloSujetoDeclarado) ? json_encode($tituloSujetoDeclarado, JSON_UNESCAPED_UNICODE) : null,
         !empty($unidadesEdadDeclaradas) ? json_encode($unidadesEdadDeclaradas, JSON_UNESCAPED_UNICODE) : null,
+        !empty($detalleDomicilioDeclarado) ? json_encode($detalleDomicilioDeclarado, JSON_UNESCAPED_UNICODE) : null,
         $enfermedadId,
     ]);
 

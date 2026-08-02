@@ -152,6 +152,12 @@ class CasosController extends Controller
             'nacionalidad'       => trim($_POST['nacionalidad'] ?? '') ?: 'Peruana',
             'direccion'          => trim($_POST['direccion'] ?? ''),
             'referencia_localizar' => trim($_POST['referencia_localizar'] ?? ''),
+            'tipo_zona'          => $_POST['tipo_zona'] ?? '',
+            'tipo_via'           => trim($_POST['tipo_via'] ?? ''),
+            'nombre_via'         => trim($_POST['nombre_via'] ?? ''),
+            'numero'             => trim($_POST['numero'] ?? ''),
+            'mz_lote'            => trim($_POST['mz_lote'] ?? ''),
+            'tiempo_residencia'  => trim($_POST['tiempo_residencia'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
@@ -440,6 +446,16 @@ class CasosController extends Controller
             $unidadesEdadDecoded = is_array($decodedUnidadesEdad) ? $decodedUnidadesEdad : [];
         }
 
+        // detalle_domicilio (Entrada J acotada al bloque de domicilio):
+        // mismo criterio que nucleo_omitidos/unidades_edad -- el JS necesita
+        // la lista decodificada para mostrar/ocultar los 6 campos del
+        // bloque de domicilio de la ficha nueva.
+        $detalleDomicilioDecoded = [];
+        if (!empty($enfermedad['detalle_domicilio'])) {
+            $decodedDetalleDomicilio = json_decode($enfermedad['detalle_domicilio'], true);
+            $detalleDomicilioDecoded = is_array($decodedDetalleDomicilio) ? $decodedDetalleDomicilio : [];
+        }
+
         echo json_encode([
             'html'                 => $html,
             'htmlMuestras'         => $htmlMuestras,
@@ -453,6 +469,7 @@ class CasosController extends Controller
             'avisoClavesFaltantes' => $avisoClavesFaltantesCampos(),
             'nucleoOmitidos'       => $nucleoOmitidosDecoded,
             'unidadesEdad'         => $unidadesEdadDecoded,
+            'detalleDomicilio'     => $detalleDomicilioDecoded,
             'cie10'                => $enfermedad['cie10'] ?: '—',
             'usaCaptacion'         => !$sinCaptacion,
             'usaMuestras'          => (int) ($enfermedad['usa_muestras'] ?? 0) === 1,
@@ -618,6 +635,12 @@ class CasosController extends Controller
             'nacionalidad'       => (string) ($caso['nacionalidad'] ?? ''),
             'direccion'          => (string) ($caso['direccion'] ?? ''),
             'referencia_localizar' => (string) ($caso['referencia_localizar'] ?? ''),
+            'tipo_zona'          => (string) ($caso['tipo_zona'] ?? ''),
+            'tipo_via'           => (string) ($caso['tipo_via'] ?? ''),
+            'nombre_via'         => (string) ($caso['nombre_via'] ?? ''),
+            'numero'             => (string) ($caso['numero'] ?? ''),
+            'mz_lote'            => (string) ($caso['mz_lote'] ?? ''),
+            'tiempo_residencia'  => (string) ($caso['tiempo_residencia'] ?? ''),
             'localidad'          => (string) ($caso['localidad'] ?? ''),
             'etnia'              => (string) ($caso['etnia'] ?? ''),
             'etnia_otra'         => (string) ($caso['etnia_otra'] ?? ''),
@@ -698,6 +721,12 @@ class CasosController extends Controller
             'nacionalidad'       => trim($_POST['nacionalidad'] ?? '') ?: 'Peruana',
             'direccion'          => trim($_POST['direccion'] ?? ''),
             'referencia_localizar' => trim($_POST['referencia_localizar'] ?? ''),
+            'tipo_zona'          => $_POST['tipo_zona'] ?? '',
+            'tipo_via'           => trim($_POST['tipo_via'] ?? ''),
+            'nombre_via'         => trim($_POST['nombre_via'] ?? ''),
+            'numero'             => trim($_POST['numero'] ?? ''),
+            'mz_lote'            => trim($_POST['mz_lote'] ?? ''),
+            'tiempo_residencia'  => trim($_POST['tiempo_residencia'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
@@ -1168,6 +1197,12 @@ class CasosController extends Controller
             'nacionalidad'       => 'Peruana',
             'direccion'          => '',
             'referencia_localizar' => '',
+            'tipo_zona'          => '',
+            'tipo_via'           => '',
+            'nombre_via'         => '',
+            'numero'             => '',
+            'mz_lote'            => '',
+            'tiempo_residencia'  => '',
             'localidad'          => '',
             'etnia'              => '',
             'etnia_otra'         => '',
@@ -1244,6 +1279,30 @@ class CasosController extends Controller
         $pueblosEtnicos = ['Quechua', 'Aymara', 'Jaqaru', 'Uro', 'Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Afroperuano', 'No aplica', 'Chino-peruano', 'Japonés-peruano', 'Otro'];
         $puebloEtnico = in_array($valoresFijos['pueblo_etnico'], $pueblosEtnicos, true) ? $valoresFijos['pueblo_etnico'] : null;
 
+        // detalle_domicilio (Entrada J acotada al bloque de domicilio):
+        // mismo criterio que unidades_edad -- opt-in por ficha, no whitelist
+        // fija. Un campo se descarta si la ficha activa no lo declaró, aunque
+        // venga en el POST (prueba negativa: forzar estos 6 por POST en una
+        // ficha que no los declara no debe persistir nada).
+        $detalleDomicilioPermitido = [];
+        if (!empty($enfermedad['detalle_domicilio'])) {
+            $decodificadoDetalleDomicilio = json_decode($enfermedad['detalle_domicilio'], true);
+            $detalleDomicilioPermitido = is_array($decodificadoDetalleDomicilio) ? $decodificadoDetalleDomicilio : [];
+        }
+        $tiposZona = ['URBANO', 'PERIURBANO', 'RURAL'];
+        $tipoZona = (in_array('TIPO_ZONA', $detalleDomicilioPermitido, true) && in_array($valoresFijos['tipo_zona'] ?? '', $tiposZona, true))
+            ? $valoresFijos['tipo_zona'] : null;
+        $tipoVia = (in_array('TIPO_VIA', $detalleDomicilioPermitido, true) && ($valoresFijos['tipo_via'] ?? '') !== '')
+            ? $valoresFijos['tipo_via'] : null;
+        $nombreVia = (in_array('NOMBRE_VIA', $detalleDomicilioPermitido, true) && ($valoresFijos['nombre_via'] ?? '') !== '')
+            ? $valoresFijos['nombre_via'] : null;
+        $numeroDomicilio = (in_array('NUMERO', $detalleDomicilioPermitido, true) && ($valoresFijos['numero'] ?? '') !== '')
+            ? $valoresFijos['numero'] : null;
+        $mzLote = (in_array('MZ_LOTE', $detalleDomicilioPermitido, true) && ($valoresFijos['mz_lote'] ?? '') !== '')
+            ? $valoresFijos['mz_lote'] : null;
+        $tiempoResidencia = (in_array('TIEMPO_RESIDENCIA', $detalleDomicilioPermitido, true) && ($valoresFijos['tiempo_residencia'] ?? '') !== '')
+            ? $valoresFijos['tiempo_residencia'] : null;
+
         $gestante = null;
         $semanasGestacion = null;
         $trimestreGestacion = null;
@@ -1269,6 +1328,12 @@ class CasosController extends Controller
                 'nacionalidad'       => $valoresFijos['nacionalidad'] !== '' ? $valoresFijos['nacionalidad'] : null,
                 'direccion'          => $valoresFijos['direccion'] !== '' ? $valoresFijos['direccion'] : null,
                 'referencia_localizar' => $valoresFijos['referencia_localizar'] !== '' ? $valoresFijos['referencia_localizar'] : null,
+                'tipo_zona'          => $tipoZona,
+                'tipo_via'           => $tipoVia,
+                'nombre_via'         => $nombreVia,
+                'numero'             => $numeroDomicilio,
+                'mz_lote'            => $mzLote,
+                'tiempo_residencia'  => $tiempoResidencia,
                 'localidad'          => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
                 'etnia'              => $etnia,
                 'etnia_otra'         => $etniaOtra,

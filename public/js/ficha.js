@@ -638,6 +638,17 @@ document.addEventListener('DOMContentLoaded', function () {
               if (inputEdadValor) inputEdadValor.value = '';
             }
           }
+
+          // detalle_domicilio (Entrada J acotada al bloque de domicilio):
+          // opt-in campo por campo, igual mecánica que nucleo_omitidos pero
+          // con la polaridad invertida (se muestra si ESTÁ en la lista, no
+          // si falta).
+          var detalleDomicilio = datos.detalleDomicilio || [];
+          document.querySelectorAll('[data-detalle-domicilio-campo]').forEach(function (el) {
+            var visible = detalleDomicilio.indexOf(el.getAttribute('data-detalle-domicilio-campo')) !== -1;
+            el.hidden = !visible;
+            el.style.display = visible ? '' : 'none';
+          });
           var captGrid = document.querySelector('.b26-capt-grid');
           if (captGrid) {
             if (esB26) {

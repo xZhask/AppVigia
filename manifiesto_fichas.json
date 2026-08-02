@@ -6871,12 +6871,19 @@
             "nucleo_omitidos": [
                 "gestante",
                 "celular",
-                "nombre_tutor",
-                "referencia_localizar"
+                "nombre_tutor"
             ],
             "unidades_edad": [
                 "MESES",
                 "DIAS"
+            ],
+            "detalle_domicilio": [
+                "TIPO_ZONA",
+                "TIPO_VIA",
+                "NOMBRE_VIA",
+                "NUMERO",
+                "MZ_LOTE",
+                "TIEMPO_RESIDENCIA"
             ],
             "columnas_sujeto": {
                 "MADRE": [
@@ -6964,21 +6971,8 @@
                     ]
                 },
                 {
-                    "nombre": "Datos del paciente (adicionales)",
-                    "orden": 2,
-                    "campos": [
-                        {
-                            "clave": "p35_0_tiempo_de_residencia",
-                            "etiqueta": "Tiempo de residencia",
-                            "tipo": "TEXTO",
-                            "orden": 1,
-                            "obligatorio": false
-                        }
-                    ]
-                },
-                {
                     "nombre": "Antecedentes del paciente",
-                    "orden": 3,
+                    "orden": 2,
                     "campos": [
                         {
                             "clave": "p35_0_nacio_prematuro",
@@ -7014,7 +7008,7 @@
                 },
                 {
                     "nombre": "Antecedentes de la madre",
-                    "orden": 4,
+                    "orden": 3,
                     "rol_sujeto": "MADRE",
                     "campos": [
                         {
@@ -7100,7 +7094,7 @@
                 },
                 {
                     "nombre": "Cuadro clínico — manifestaciones",
-                    "orden": 5,
+                    "orden": 4,
                     "campos": [
                         {
                             "clave": "p35_0_manifestaciones_oftalmicas",
@@ -7185,7 +7179,7 @@
                 },
                 {
                     "nombre": "Hospitalización y defunción",
-                    "orden": 6,
+                    "orden": 5,
                     "campos": [
                         {
                             "clave": "p35_0_hospitalizacion",
@@ -7243,7 +7237,7 @@
                 },
                 {
                     "nombre": "Clasificación del caso",
-                    "orden": 7,
+                    "orden": 6,
                     "campos": [
                         {
                             "clave": "p35_0_clasificacion_del_caso",

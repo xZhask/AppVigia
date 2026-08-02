@@ -28,6 +28,19 @@ if (!empty($enfermedad['unidades_edad'])) {
 }
 $etiquetasUnidadEdad = ['ANIOS' => 'Años', 'MESES' => 'Meses', 'DIAS' => 'Días', 'HORAS' => 'Horas', 'MINUTOS' => 'Minutos'];
 
+// detalle_domicilio (Entrada J acotada al bloque de domicilio,
+// PETICION_MAPEO_Y_EDAD.md): mismo criterio que unidades_edad -- opt-in,
+// cada campo aparece solo si la ficha lo declara. Detalle de dirección
+// dentro del distrito ya resuelto por distrito_id (selector-ubigeo.php);
+// no reemplaza a "Domicilio actual" (direccion), que sigue existiendo para
+// las fichas que piden una dirección única sin desglose (Y59.0, B05).
+$detalleDomicilio = [];
+if (!empty($enfermedad['detalle_domicilio'])) {
+    $decodificadoDetalleDomicilio = json_decode($enfermedad['detalle_domicilio'], true);
+    $detalleDomicilio = is_array($decodificadoDetalleDomicilio) ? $decodificadoDetalleDomicilio : [];
+}
+$tieneDetalleDomicilio = fn(string $campo): bool => in_array($campo, $detalleDomicilio, true);
+
 require __DIR__ . '/datos-paciente-b05-loader.php';
 ?>
 <?php if (!empty($unidadesEdad)): ?>
@@ -71,6 +84,45 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   <div class="field wide" data-nucleo-campo="referencia_localizar" <?= $nucleoOmite('referencia_localizar') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Referencia para localizar <span class="hint">(a la altura de o cerca de: Iglesia, fundo, comercio, etc.)</span></label>
     <div class="control"><input type="text" name="referencia_localizar" value="<?= e($valoresFijos['referencia_localizar'] ?? '') ?>" placeholder="Referencia para localizar…"></div>
+  </div>
+</div>
+
+<!-- 1b. Detalle de domicilio (Entrada J acotada, opt-in vía detalle_domicilio).
+     Igual que nucleo_omitidos, cada campo se renderiza siempre y se
+     oculta/muestra con "hidden" (no con un if de PHP que lo omita del
+     DOM) para que el fetch de cambio de ficha (más abajo, datos.detalleDomicilio)
+     pueda mostrarlo sin necesitar que ya existiera en el HTML inicial. -->
+<div class="fields thirds" style="margin-top:14px" data-detalle-domicilio-bloque>
+  <div class="field" data-detalle-domicilio-campo="TIPO_ZONA" <?= $tieneDetalleDomicilio('TIPO_ZONA') ? '' : 'hidden style="display:none;"' ?>>
+    <label class="fl">Tipo de zona</label>
+    <div class="control">
+      <select name="tipo_zona" data-nosearch="true">
+        <option value="">Seleccionar…</option>
+        <option value="URBANO" <?= seleccionado($valoresFijos['tipo_zona'] ?? '', 'URBANO') ?>>Urbano</option>
+        <option value="PERIURBANO" <?= seleccionado($valoresFijos['tipo_zona'] ?? '', 'PERIURBANO') ?>>Periurbano</option>
+        <option value="RURAL" <?= seleccionado($valoresFijos['tipo_zona'] ?? '', 'RURAL') ?>>Rural</option>
+      </select>
+    </div>
+  </div>
+  <div class="field" data-detalle-domicilio-campo="TIPO_VIA" <?= $tieneDetalleDomicilio('TIPO_VIA') ? '' : 'hidden style="display:none;"' ?>>
+    <label class="fl">Tipo de vía <span class="hint">(Avenida, Calle, Jirón, etc.)</span></label>
+    <div class="control"><input type="text" name="tipo_via" value="<?= e($valoresFijos['tipo_via'] ?? '') ?>"></div>
+  </div>
+  <div class="field" data-detalle-domicilio-campo="NOMBRE_VIA" <?= $tieneDetalleDomicilio('NOMBRE_VIA') ? '' : 'hidden style="display:none;"' ?>>
+    <label class="fl">Nombre de vía</label>
+    <div class="control"><input type="text" name="nombre_via" value="<?= e($valoresFijos['nombre_via'] ?? '') ?>"></div>
+  </div>
+  <div class="field" data-detalle-domicilio-campo="NUMERO" <?= $tieneDetalleDomicilio('NUMERO') ? '' : 'hidden style="display:none;"' ?>>
+    <label class="fl">Nro.</label>
+    <div class="control"><input type="text" name="numero" value="<?= e($valoresFijos['numero'] ?? '') ?>"></div>
+  </div>
+  <div class="field" data-detalle-domicilio-campo="MZ_LOTE" <?= $tieneDetalleDomicilio('MZ_LOTE') ? '' : 'hidden style="display:none;"' ?>>
+    <label class="fl">Mz./Lote</label>
+    <div class="control"><input type="text" name="mz_lote" value="<?= e($valoresFijos['mz_lote'] ?? '') ?>"></div>
+  </div>
+  <div class="field" data-detalle-domicilio-campo="TIEMPO_RESIDENCIA" <?= $tieneDetalleDomicilio('TIEMPO_RESIDENCIA') ? '' : 'hidden style="display:none;"' ?>>
+    <label class="fl">Tiempo de residencia</label>
+    <div class="control"><input type="text" name="tiempo_residencia" value="<?= e($valoresFijos['tiempo_residencia'] ?? '') ?>"></div>
   </div>
 </div>
 
