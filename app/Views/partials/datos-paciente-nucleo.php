@@ -38,22 +38,17 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
     <label class="fl">Domicilio actual</label>
     <div class="control"><input type="text" name="direccion" value="<?= e($valoresFijos['direccion'] ?? '') ?>"></div>
   </div>
+  <div class="field wide" data-nucleo-campo="referencia_localizar" <?= $nucleoOmite('referencia_localizar') ? 'hidden style="display:none;"' : '' ?>>
+    <label class="fl">Referencia para localizar <span class="hint">(a la altura de o cerca de: Iglesia, fundo, comercio, etc.)</span></label>
+    <div class="control"><input type="text" name="referencia_localizar" value="<?= e($valoresFijos['referencia_localizar'] ?? '') ?>" placeholder="Referencia para localizar…"></div>
+  </div>
 </div>
 
-<!-- 2. Debajo de Domicilio actual: Referencia para localizar y Tipo de localidad (B05) -->
+<!-- 2. Debajo de Domicilio actual / Referencia para localizar: Tipo de localidad (B05) -->
 <div class="b05-field-wrap" <?= $esB05 ? '' : 'hidden' ?> style="margin-top:14px">
-  <div class="fields" style="display:flex;gap:16px;align-items:flex-start">
-    <?php if ($b05['referenciaLoc']['name']): ?>
-    <div class="field" style="flex:2">
-      <label class="fl">Referencia para localizar <span class="hint">(a la altura de o cerca de: Iglesia, fundo, comercio, etc.)</span></label>
-      <div class="control">
-        <input type="text" name="<?= $b05['referenciaLoc']['name'] ?>" value="<?= e($b05['referenciaLoc']['val']) ?>" placeholder="Referencia para localizar…">
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($b05['tipoLocalidad']['name']): ?>
-    <div class="field" style="flex:1">
+  <?php if ($b05['tipoLocalidad']['name']): ?>
+  <div class="fields thirds">
+    <div class="field">
       <label class="fl">Tipo de localidad</label>
       <div class="control">
         <select name="<?= $b05['tipoLocalidad']['name'] ?>" data-nosearch="true">
@@ -64,8 +59,8 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
         </select>
       </div>
     </div>
-    <?php endif; ?>
   </div>
+  <?php endif; ?>
 </div>
 
 <!-- 3. Etnia / raza + Pueblo étnico o etnia + Ocupación (¡AL LADO DE ETNIA / RAZA EN LA MISMA FILA!) -->

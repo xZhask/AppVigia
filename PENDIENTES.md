@@ -539,22 +539,105 @@ de B05 — ninguna sirve tal cual para P35.0):
   fecha posterior — no es trabajo extra una vez resuelto lo anterior.
 
 **E. BUG, prioridad alta — "Referencia para localizar" hardcodeada a
-B05 dentro del partial que comparten las 24 fichas**
+B05 dentro del partial que comparten las 24 fichas — ✅ cerrado**
 
-Encontrado al reportar la Fase 6 (pregunta 3, ítem 18 del PDF de
-P35.0). No es un hueco de contenido de P35.0 — es la **misma familia
-de bug que A y C**: `datos-paciente-nucleo.php` (el partial de "Datos
-del paciente" que usan las 24 fichas) tiene un bloque
-`b05-field-wrap` que solo se muestra cuando `$esB05` es verdadero,
-con el campo "Referencia para localizar (a la altura de o cerca de:
-Iglesia, fundo, comercio, etc.)" adentro, como `campo_def` propio de
-B05 (`b05_referencia_para_localizar_cerca_de_iglesia_fundo_co`) — no
-como parte del núcleo declarativo (`nucleo_omitidos`/`data-nucleo-campo`)
-que ya usan `celular`/`nacionalidad`/`localidad`/`direccion`/etc. Para
-que otra ficha (P35.0 u otra) pudiera pedir este mismo dato, hoy
-tendría que declarar su propio `campo_def` con el mismo texto — el
-campo de B05 no es reutilizable ni generalizable sin tocar el bloque
-`b05-field-wrap`. No arreglado (no era parte del alcance pedido).
+Cerrado 2026-08-01. "Referencia para localizar" dejó de ser un
+`campo_def` propio de B05 (`b05_referencia_para_localizar_cerca_de_iglesia_fundo_co`,
+resuelto por etiqueta desde `datos-paciente-b05-loader.php`) y pasó a
+ser núcleo real, mismo mecanismo que `celular`/`nacionalidad`/
+`localidad`/`direccion`:
+- **Schema**: `persona.referencia_localizar VARCHAR(160)` nueva
+  (`sql/migraciones/add_referencia_localizar_persona.php`, mismo ancho
+  que `direccion`; `sql/01_esquema_actual.sql` recongelado).
+  `Caso::conDetalle()` la suma a su SELECT explícito.
+- **`cargar_fichas.php`**: `'referencia_localizar'` sumado a
+  `NUCLEO_OMITIBLES`.
+- **`datos-paciente-nucleo.php`**: nuevo campo declarativo
+  `data-nucleo-campo="referencia_localizar"` en el primer bloque
+  (junto a Domicilio actual); el `b05-field-wrap` de "Referencia +
+  Tipo de localidad" se redujo a solo "Tipo de localidad" (B05 sigue
+  siendo la única ficha con ese campo — fuera de alcance acá).
+- **`manifiesto_fichas.json`**: el `campo_def` de B05 se eliminó; las
+  23 fichas restantes declaran `nucleo_omitidos += "referencia_localizar"`
+  (4 ya tenían la lista, 19 la declaran por primera vez) para que
+  ninguna cambie de aspecto — B05 es la única que no la omite, así que
+  sigue siendo la única que la muestra por defecto, igual que antes.
+- **`CasosController`**: `crear()`, `editar()` (prefill),
+  `actualizar()` y `valoresFijosPorDefecto()` leen/escriben
+  `referencia_localizar` igual que `direccion`; `sanearCamposNucleo()`
+  la persiste en `persona`.
+- **`fichas/ver.php`**: se agregó, condicionada a que tenga valor
+  (mismo criterio que "Madre / Tutor") — sin esto, un caso B05 real
+  hubiera perdido visibilidad del dato en la vista de solo lectura.
+
+**Hallazgo colateral, no relacionado con este ítem:** verificando el
+flujo completo (crear → editar → actualizar → ver) con un caso real se
+encontró que `CasosController::actualizar()` — guardar cambios sobre
+CUALQUIER ficha ya creada, no solo B05 — estaba **completamente roto**:
+usaba `$enfermedad` sin haberla asignado nunca (`opcionesClasificacionPara($enfermedad)`
+con `null`, `TypeError` fatal garantizado en cualquier intento de editar
+cualquier ficha, para cualquier CIE-10, desde antes de esta sesión —
+confirmado contra el primer commit de hoy). Detrás de ese fatal había un
+segundo bug enmascarado: `actualizar()` nunca leía
+`investigador_profesion_sel`/`_otra` de `$_POST` (sí lo hace `crear()`),
+así que ese campo se habría guardado `NULL` en cada edición una vez
+arreglado el primero. Ambos corregidos (mismo patrón que `crear()`) en
+un commit aparte, con su propia verificación de extremo a extremo — se
+reporta acá porque aparecieron mientras se verificaba este ítem, no
+porque sean parte de su alcance.
+
+**Otros bloques condicionados por ficha en `datos-paciente-nucleo.php`**
+(pedido explícitamente al ejecutar este ítem — ninguno se tocó, quedan
+para quien decida si vale la pena):
+- **B05, mismo patrón que el bug de arriba, aún sin resolver**: 4
+  campos más siguen siendo `campo_def` propios de B05, resueltos por
+  ETIQUETA (no por clave) desde `datos-paciente-b05-loader.php`, e
+  irreproducibles por otra ficha sin declarar su propio `campo_def` —
+  "Tipo de localidad" (se quedó donde estaba, no era parte del pedido),
+  "Pueblo étnico o etnia", "Ocupación" (fuera del bloque
+  `b05-field-wrap`, con clase `.b05-elem`), "Lugar probable de parto" y
+  el grupo "¿Es menor de edad?" + datos del tutor (doc/nombre/teléfono).
+  Candidatos directos a la misma normalización que este ítem si otra
+  ficha llega a necesitar alguno.
+- **O95 (Anexo 2)**: un bloque grande (Grupo étnico, Etnia/Pueblo
+  étnico, Idioma, Nivel educativo, Estado civil, Ocupación, Tipo de
+  seguro — 9 campos) se renderiza siempre en el DOM para las 24 fichas,
+  oculto vía `hidden` salvo cuando la ficha activa es O95 y el anexo es
+  el 2. A diferencia de B05, sí usa `$resolvedorPara('O95')` (por
+  clave, no por etiqueta) y trae un comentario explícito documentando
+  por qué está desatado de `$enfermedad` — no es el mismo "nadie sabía
+  que estaba ahí" que B05, pero sigue siendo lógica condicionada por
+  ficha en un partial compartido. Nota al margen: su campo "Ocupación"
+  (`o95_ocupacion`) queda duplicado en el DOM junto al nuevo "Ocupación"
+  de B05 (dos elementos con la misma etiqueta, uno oculto) — inofensivo
+  hoy, preexistente, no introducido por este cierre.
+- **B26**: `$esB26Gest` decide si la fila "¿Gestante?" muestra "Semanas
+  de gestación" (default, `caso.semanas_gestacion`) o "Trimestre de
+  gestación" (`caso.trimestre_gestacion`, solo B26). A diferencia de
+  los dos de arriba, ambas son columnas núcleo reales (no
+  `campo_def` disfrazado) — es una variante de UI legítima entre dos
+  datos ya declarativos, no el bug de reusabilidad que pedía este
+  ítem, pero igual es lógica condicionada por CIE-10 en el partial
+  compartido.
+- **`datos-paciente-b05.php`**: archivo aparte, con su propia copia
+  casi idéntica de toda esta lógica (incluida su propia versión de
+  "Referencia para localizar", ya no tocada). **No lo requiere nada**
+  (`grep` sin resultados fuera de sí mismo) — parece un duplicado
+  huérfano de antes de que `datos-paciente-nucleo.php` +
+  `datos-paciente-b05-loader.php` centralizaran esto. No se tocó
+  (fuera de alcance, decisión de limpieza aparte), pero vale borrarlo
+  si se confirma que de verdad no lo usa nada.
+
+Verificado con caso real vía `CasosController` (`scratch/test_referencia_localizar_item_e.php`,
+gitignored; caso borrado al terminar, 0 filas residuales): crear un
+caso B05 con "Referencia para localizar" lo persiste en
+`persona.referencia_localizar`; `editar()` lo prefila; `actualizar()`
+con un valor nuevo lo actualiza; `ver()` lo muestra. Render de "Nueva
+ficha" (GET, sesión ADMIN) para las 24 fichas: 0 excepciones; el campo
+aparece `hidden` en las 23 no-B05 y visible solo en B05.
+`verificar_fichas.php` (24/24 sin diferencias) y `verificar_claves.php`
+(194/194) OK. `caso_valor` tenía 0 filas para la clave eliminada antes
+de tocar nada — no había datos que migrar.
 
 **F. Pendiente de decisión, prioridad media — Edad en meses/días
 (ítem 11 del PDF de P35.0)**

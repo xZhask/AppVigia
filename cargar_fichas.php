@@ -126,7 +126,13 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // declarativo"). Lista de OMISIONES, no de inclusiones: el default es
 // "se muestran todos", así que agregar este mecanismo no cambia nada en
 // ninguna ficha hasta que una declare una omisión explícita.
-const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'etnia', 'nombre_tutor', 'celular_tutor', 'gestante'];
+// 'referencia_localizar' (PENDIENTES.md ítem E, 2026-08-01): antes era un
+// campo_def propio de B05 (b05_referencia_para_localizar_cerca_de_iglesia_fundo_co),
+// no reutilizable por otra ficha sin declarar su propio campo_def -- ahora
+// es núcleo real (persona.referencia_localizar). Para no cambiar nada
+// visualmente en las 23 fichas que no lo pedían, todas declaran esta
+// omisión salvo B05.
+const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'nombre_tutor', 'celular_tutor', 'gestante'];
 
 // Columnas reales de caso_sujeto que una ficha multi_sujeto puede declarar
 // para un rol secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2):

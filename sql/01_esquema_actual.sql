@@ -572,6 +572,7 @@ CREATE TABLE `persona` (
   `celular` varchar(20) DEFAULT NULL,
   `nacionalidad` varchar(60) DEFAULT 'Peruana',
   `direccion` varchar(160) DEFAULT NULL,
+  `referencia_localizar` varchar(160) DEFAULT NULL,
   `localidad` varchar(120) DEFAULT NULL,
   `etnia` enum('MESTIZO','ANDINO','ASIATICO_DESCENDIENTE','AFRODESCENDIENTE','INDIGENA_AMAZONICO','OTRO') DEFAULT NULL,
   `etnia_otra` varchar(100) DEFAULT NULL,

@@ -33,6 +33,9 @@
                 "caso_vacuna": true
             },
             "_observaciones_tablas_hija": "La BD tiene hoy usa_muestras=0, usa_viajes=0, usa_vacunas=0 para esta ficha (el stub previo no las usaba). El cargador debe activarlas junto con la recarga: el PDF trae examenes de laboratorio (seccion VI), un antecedente de viaje\/lugar de estadia en las ultimas 2 semanas (seccion IV, repetible) y antecedente de vacuna antiamarilica (pregunta 33-34).",
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Subsistema de vigilancia",
@@ -323,6 +326,9 @@
                 ]
             },
             "_observaciones_tablas_hija": "CORREGIDO (PENDIENTES_POST_FASE5.md punto 1.2\/3): esta nota decía que no había campos que llenar en caso_contacto -- era un error. Verificado contra el PDF (pág. 1-2): la pregunta 61 SÍ trae una tabla nominal (N.° \/ Apellidos y Nombres \/ Parentesco \/ Celular \/ Doc. identidad \/ Lugar de exposición) para familiares con tos prolongada, además de la matriz agregada por lugar (esa sí es campo_def, 'Contactos por lugar'). usa_contactos=1 es correcto; tablas_hijas.caso_contacto pasa de false a true para que coincida.",
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Cuadro clínico",
@@ -709,6 +715,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": true
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Cuadro clínico",
@@ -936,6 +945,9 @@
                 "caso_vacuna": true
             },
             "_observaciones_tablas_hija": "La BD tiene usa_muestras=1, pero el PDF de Parotiditis (pág. 4) no trae ninguna sección de laboratorio — a diferencia de Varicela, que sí la trae. Revisar si el flag es correcto.",
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Datos de notificación e investigación del caso",
@@ -1222,7 +1234,8 @@
             },
             "nucleo_omitidos": [
                 "nombre_tutor",
-                "celular_tutor"
+                "celular_tutor",
+                "referencia_localizar"
             ],
             "secciones": [
                 {
@@ -1484,6 +1497,9 @@
                 "caso_viaje": true,
                 "caso_vacuna": true
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Cuadro clínico",
@@ -1775,6 +1791,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": false
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Antecedente epidemiológico",
@@ -2078,6 +2097,9 @@
                 "caso_vacuna": false
             },
             "_observaciones_tablas_hija": "usa_viajes=1: la sección 'Migración' del PDF (tiempo de residencia, dónde vivía antes, localidades visitadas, viajó últimos 6 meses) va en caso_viaje, no en campo_def. La BD tiene hoy una sección 'Migración' propia en campo_def (seccion_def.id=39) que la duplica — ver INFORME_CARGADOR.md C.1.",
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Antecedentes epidemiológicos",
@@ -2356,6 +2378,9 @@
                 "caso_viaje": true,
                 "caso_vacuna": false
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Antecedente epidemiológico",
@@ -2718,6 +2743,9 @@
                 ]
             },
             "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion', pero caso_contacto no tiene esa columna (no existe en el esquema) -- se deja fuera en vez de inventar una columna nueva para esto.",
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Datos del paciente (adicionales)",
@@ -3158,6 +3186,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": false
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Antecedentes epidemiológicos — fuente de infección",
@@ -3523,6 +3554,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": true
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Cuadro clínico",
@@ -3706,6 +3740,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": true
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Cuadro clínico",
@@ -3955,7 +3992,8 @@
                 "etnia",
                 "direccion",
                 "nombre_tutor",
-                "celular_tutor"
+                "celular_tutor",
+                "referencia_localizar"
             ],
             "secciones": [
                 {
@@ -4998,13 +5036,6 @@
                             ]
                         },
                         {
-                            "clave": "b05_referencia_para_localizar_cerca_de_iglesia_fundo_co",
-                            "etiqueta": "Referencia para localizar (cerca de iglesia, fundo, comercio, etc.)",
-                            "tipo": "TEXTO",
-                            "orden": 5,
-                            "obligatorio": false
-                        },
-                        {
                             "clave": "b05_es_menor_de_edad",
                             "etiqueta": "¿Es menor de edad?",
                             "tipo": "BOOLEANO",
@@ -5830,6 +5861,9 @@
                 "caso_vacuna": false
             },
             "_nota_sensible": "Antes de la recarga (RECARGA_FICHAS.md Fase 3), el 100% de los campos de esta ficha (45\/45) estaban marcados campo_def.sensible=1 en la BD -- coherente con que toda la ficha trata de estado VIH de gestante y niño. La v2.1 no había trasladado esa marca al manifiesto (hallazgo de CIERRE_RECARGA_Y_FASE5.md Parte 0); se restaura aquí en todos los campos.",
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Sección I — Gestante con VIH",
@@ -6197,6 +6231,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": false
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Identificación",
@@ -6531,6 +6568,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": false
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Encabezado",
@@ -6842,7 +6882,8 @@
             "nucleo_omitidos": [
                 "gestante",
                 "celular",
-                "nombre_tutor"
+                "nombre_tutor",
+                "referencia_localizar"
             ],
             "columnas_sujeto": {
                 "MADRE": [
@@ -7214,6 +7255,9 @@
                 ]
             },
             "_nota_columnas": "ANTES_DE_COMPARAR_FICHAS.md, prueba de humo: sin esto, el widget mostraba solo 'Dosis' (el mínimo por defecto) para ESAVI -- justo la ficha que motivó ampliar caso_vacuna con estas columnas. Se configuran todas: es la única ficha que las necesitaba todas.",
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Notificación",
@@ -7605,6 +7649,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": false
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Institución que registra",
@@ -7950,6 +7997,9 @@
                 "caso_viaje": false,
                 "caso_vacuna": false
             },
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Fuente de financiamiento",
@@ -8266,7 +8316,8 @@
                 "etnia",
                 "nombre_tutor",
                 "celular_tutor",
-                "gestante"
+                "gestante",
+                "referencia_localizar"
             ],
             "secciones": [
                 {
@@ -9961,6 +10012,9 @@
                 "caso_vacuna": false
             },
             "_nota_residencia_madre": "PENDIENTES_POST_FASE5.md punto 4: 'Residencia habitual de la madre' (PDF pág. 28) ya no vive en campo_def -- se captura en caso_sujeto (rol MADRE: distrito_id + direccion, con selector de UBIGEO), fuera del manifiesto\/cargador. Ver app\/Views\/partials\/tablas-hijas\/residencia-madre.php y CasosController::datosResidenciaMadre().",
+            "nucleo_omitidos": [
+                "referencia_localizar"
+            ],
             "secciones": [
                 {
                     "nombre": "Datos del fallecido",

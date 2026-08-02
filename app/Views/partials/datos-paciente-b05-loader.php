@@ -12,7 +12,6 @@ $b05 = [
     'ocupacion'     => ['name' => ''],
     'lugarParto'    => ['name' => ''],
     'tipoLocalidad' => ['name' => ''],
-    'referenciaLoc' => ['name' => ''],
     'esMenorEdad'   => ['name' => ''],
     'nombreTutor'   => ['name' => ''],
     'telefonoTutor' => ['name' => ''],
@@ -57,7 +56,6 @@ if ($enfB05Obj) {
         $b05['ocupacion']     = $getCampoFilInput('Ocupación');
         $b05['lugarParto']    = $getCampoFilInput('Lugar probable de parto');
         $b05['tipoLocalidad'] = $getCampoFilInput('Tipo de localidad');
-        $b05['referenciaLoc'] = $getCampoFilInput('Referencia para localizar (cerca de iglesia, fundo, comercio, etc.)');
         $b05['esMenorEdad']   = $getCampoFilInput('¿Es menor de edad?');
         $b05['nombreTutor']   = $getCampoFilInput('Nombre de madre o tutor');
         $b05['telefonoTutor'] = $getCampoFilInput('Teléfono de madre o tutor');
