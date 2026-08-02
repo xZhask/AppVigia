@@ -662,6 +662,7 @@ class CasosController extends Controller
 
         $usuario = Auth::usuario();
         $enfermedadId = (int) $caso['enfermedad_id'];
+        $enfermedad = Enfermedad::buscar($enfermedadId);
 
         $erroresFijos = [];
         $valoresFijos = [
@@ -691,6 +692,8 @@ class CasosController extends Controller
             'clasificacion_captacion' => $_POST['clasificacion_captacion'] ?? '',
             'investigador_nombre'    => trim($_POST['investigador_nombre'] ?? ''),
             'investigador_cargo'     => trim($_POST['investigador_cargo'] ?? ''),
+            'investigador_profesion' => trim($_POST['investigador_profesion_sel'] ?? '') === 'Otro' ? trim($_POST['investigador_profesion_otra'] ?? '') : trim($_POST['investigador_profesion_sel'] ?? ''),
+            'investigador_profesion_otra' => trim($_POST['investigador_profesion_otra'] ?? ''),
             'fecha_investigacion'    => trim($_POST['fecha_investigacion'] ?? ''),
         ];
 
