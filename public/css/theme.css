@@ -639,6 +639,15 @@
 .dep-wrap{display:contents}
 .dep-wrap[hidden]{display:none}
 
+/* .dep-wrap normalmente envuelve un campo/grupo suelto dentro de un
+   contenedor .fields (display:contents evita que agregue una caja propia
+   ahí). Pero muestras-condicional.php (capacidad 6, ítem 43 de P35.0) lo
+   usa en un ".card.section" completo -- display:contents también le quita
+   la caja al CARD (fondo, borde, sombra, padding), dejando el título y el
+   botón "flotando" sueltos contra el fondo de la página en vez de verse
+   como una tarjeta más. Restaurado a block solo para esta combinación. */
+.dep-wrap.card.section{display:block}
+
 /* ============================================================
    ESTILOS GLOBALES DE SCROLLBAR (LIGHT & DARK MODE)
    ============================================================ */

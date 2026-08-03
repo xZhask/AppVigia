@@ -2207,3 +2207,31 @@ correspondiente; "Infección congénita" lo mantiene oculto; volver a
 recargadas correctamente, con el bloque visible (sin `hidden`) en
 `editar()`. Sin regresión en el sync propio de A80. Tres verificadores
 en verde, byte-diff limpio en A36/B26/A80/O95/B05.
+
+**Z.7.1. El bloque revelado no tenía "diseño de sección" — ✅ cerrado**
+
+El usuario confirmó con captura que el bloque SÍ aparece, pero sin el
+aspecto de tarjeta de las demás secciones (sin fondo blanco, sin
+borde, sin sombra -- título y botón "flotando" sueltos contra el fondo
+de la página). Causa: `muestras-condicional.php` es el ÚNICO lugar del
+código que combina las clases `card section` (la tarjeta visual) con
+`dep-wrap` (el motor de dependencias condicionales) en un mismo
+elemento -- en todo el resto de la app, `dep-wrap` envuelve un campo o
+grupo suelto DENTRO de un `.fields`, nunca una tarjeta entera. La regla
+`.dep-wrap{display:contents}` (necesaria para que el wrap no rompa el
+layout de ese caso normal) le quita también la caja propia al `.card`
+cuando se combinan, dejando solo el contenido interno fluyendo sin
+fondo/borde/sombra.
+
+**Fix:** una regla CSS más específica en `theme.css`,
+`.dep-wrap.card.section{display:block}`, restaura la caja SOLO para
+esta combinación exacta (confirmado por grep: es la única en las 24
+fichas). El `hidden` que ya usa `evaluarDependencias()` para
+mostrar/ocultar sigue funcionando igual (no depende de `display:contents`
+vs `display:block`, solo del atributo `[hidden]`).
+
+**Verificación:** Playwright -- tras marcar "Confirmado", el bloque
+mide `display:block`, fondo blanco, `box-shadow` y borde iguales a los
+de "Laboratorio"/"Investigador" (capturado en pantalla). Tres
+verificadores en verde; sin otro `.dep-wrap.card.section` en las 24
+fichas, cero riesgo de efecto colateral en otra parte de la app.
