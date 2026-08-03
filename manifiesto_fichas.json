@@ -151,6 +151,7 @@
                             "clave": "a97_temperatura_c",
                             "etiqueta": "Temperatura (°C)",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 3
                         },
                         {
@@ -796,6 +797,7 @@
                             "clave": "b01_temperatura_c",
                             "etiqueta": "Temperatura (°C)",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 4
                         },
                         {
@@ -1305,6 +1307,7 @@
                             "clave": "a36_temperatura_c",
                             "etiqueta": "Temperatura °C",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 1
                         },
                         {
@@ -2590,6 +2593,7 @@
                             "clave": "a44_temperatura_c",
                             "etiqueta": "Temperatura (°C)",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 1
                         },
                         {
@@ -2614,6 +2618,7 @@
                             "clave": "a44_peso_kg",
                             "etiqueta": "Peso (kg)",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 5
                         }
                     ]
@@ -2781,12 +2786,14 @@
                             "clave": "a44_hemoglobina",
                             "etiqueta": "Hemoglobina",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 1
                         },
                         {
                             "clave": "a44_hematocrito",
                             "etiqueta": "Hematocrito",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 2
                         },
                         {
@@ -5292,6 +5299,7 @@
                             "clave": "b05_temperatura_c",
                             "etiqueta": "Temperatura (°C)",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 4,
                             "obligatorio": false,
                             "depende_de": "¿Fiebre cuantificada?",
@@ -5901,6 +5909,7 @@
                             "clave": "b05_porcentaje_de_vacunados_mrc",
                             "etiqueta": "Porcentaje de vacunados (MRC)",
                             "tipo": "NUMERO",
+                            "decimales": true,
                             "orden": 24,
                             "obligatorio": false,
                             "depende_de": "¿Se realizó monitoreo rápido de coberturas (MRC)?",

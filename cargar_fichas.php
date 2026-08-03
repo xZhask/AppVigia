@@ -250,6 +250,14 @@ function validarManifiesto(array $manifiesto): void
                 if ($tipo === 'MATRIZ' && empty($campo['columnas'])) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" es MATRIZ pero no trae \"columnas\".");
                 }
+                if (array_key_exists('decimales', $campo)) {
+                    if ($tipo !== 'NUMERO') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"decimales\" pero no es NUMERO (es {$tipo}).");
+                    }
+                    if (!is_bool($campo['decimales'])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"decimales\" no booleano.");
+                    }
+                }
                 if (!empty($campo['depende_de'])) {
                     if (empty($campo['valor_activador'])) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"depende_de\" sin \"valor_activador\".");
@@ -671,6 +679,16 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
             'filas' => is_array($filas) ? $filas : null,
             'filas_nota' => is_string($filas) ? $filas : null,
         ], JSON_UNESCAPED_UNICODE);
+    }
+
+    // NUMERO: por defecto entero (bloquea e/E/./,/+/- en el cliente, mismo
+    // mecanismo que ya usaban a mano los campos .solo-enteros de O95);
+    // "decimales": true es el opt-in explícito para los ~8 campos que sí
+    // lo necesitan (temperaturas, peso en kg, hemoglobina/hematocrito,
+    // porcentajes). No se serializa nada si no se declara -- numero.php
+    // trata "sin config" igual que "config sin decimales".
+    if ($tipo === 'NUMERO' && array_key_exists('decimales', $campo)) {
+        $config = json_encode(['decimales' => $campo['decimales']], JSON_UNESCAPED_UNICODE);
     }
 
     $stmt = $pdo->prepare(

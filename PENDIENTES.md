@@ -1945,3 +1945,70 @@ recargado correctamente, con "Localidad/ciudad" mostrando su propio
 valor separado de "País" → limpieza. Caso real B05 con un viaje
 (transporte ida/retorno, sin localidad): guardado correcto, sin la
 columna que B05 no declara.
+
+**Z.3. Campos NUMERO se veían como texto libre (sin spinner) en las 24
+fichas — ✅ cerrado**
+
+El usuario notó que los campos numéricos de "Antecedentes del paciente"
+(P35.0: APGAR, peso al nacer, edad gestacional) se veían como texto
+libre, a diferencia de "Edad" (que sí tiene spinner). Investigado:
+existen dos widgets de "campo numérico" nunca unificados -- "Edad" es
+un campo del núcleo (`datos-paciente-nucleo.php`, `type="number"` desde
+siempre) y los NUMERO de cada ficha son `campo_def` renderizados por
+`campos/numero.php`, que usaba `type="text" inputmode="decimal"` sin
+ninguna restricción de teclado, desde el primer commit del proyecto --
+no es un bug de P35.0 ni algo introducido en esta sesión, afecta a las
+125 campos NUMERO de 21 fichas por igual.
+
+`ficha.js` ya tenía (líneas ~2500-2523) un bloqueo genérico de teclas
+`e/E/./,/+/-` para inputs `type="number"`/`.solo-enteros`, con una clase
+`.permite-decimales` para exceptuar los que sí admiten decimales -- ya
+usado a mano en varios campos de O95 (`.solo-enteros`), pero
+`.permite-decimales` **nunca se había aplicado a ningún campo del
+proyecto** hasta ahora.
+
+**Investigación previa a implementar** (los 125 campos NUMERO de las 24
+fichas, clasificados por nombre/etiqueta): 108 probablemente enteros
+(conteos "N.°"/"Número"/"Cuántos", días de duración, pares años+meses
+u horas+minutos -- estos últimos con precedente idéntico ya
+hardcodeado en O95), 7-8 probablemente decimales (Temperatura °C ×5,
+Peso en kg, Hemoglobina, Hematocrito, Porcentaje de vacunados MRC), 10
+dudosos resueltos por convención (edad gestacional/semana de gestación
+→ entero, sin campo "días" compañero; frecuencia respiratoria/pulso →
+entero, conteos clínicos). Reportado al usuario con el detalle completo
+antes de tocar nada; confirmó el enfoque sin pedir ajustes.
+
+**Mecanismo:** se reutiliza `campo_def.config` (columna JSON que hoy
+solo usa MATRIZ, sin migración de esquema) -- `"decimales": true` en el
+manifiesto es el opt-in explícito para los ~9 campos que lo necesitan;
+por defecto (sin declarar nada) es entero. `cargar_fichas.php` valida
+que `"decimales"` solo aparezca en campos `tipo: NUMERO` y sea
+booleano. `campos/numero.php` decodifica `config` y renderiza
+`type="number" step="1" inputmode="numeric" pattern="[0-9]*"
+class="solo-enteros"` (entero, default) o `type="number" step="any"
+inputmode="decimal" class="permite-decimales"` (decimal, opt-in).
+
+**Hallazgo en cascada al probar de verdad en navegador:** el mecanismo
+`.permite-decimales` de `ficha.js`, al nunca haberse ejercitado antes,
+tenía un vacío real -- se saltaba el bloqueo de teclas ENTERO, sin
+reemplazarlo por nada: un campo con esa clase dejaba pasar la "e" de
+notación científica sin filtrar (confirmado escribiendo
+"38e5+.-,2" en Temperatura → quedaba "38e52"; el navegador nativo ya
+rechaza "+"/","/"-" mal puestos por su cuenta, pero no la notación
+científica). Corregido: para campos `.permite-decimales` ahora se
+bloquea específicamente `e`/`E` (dejando pasar el punto decimal), en
+vez de no bloquear nada.
+
+**Verificación:** los tres verificadores en verde (huérfanos: los 3 ya
+conocidos y preexistentes -- A80, B26, B55 -- sin nuevos). Byte-diff de
+A80/O95/B26 (`render_ficha_cli.php`, IDs de `campo_def` normalizados
+por el recorrido de `cargar_fichas.php`): 0 líneas reales de diferencia
+(O95 no usa `numero.php` para sus NUMERO -- ya los captura con
+partials a medida propios, con `.solo-enteros` hardcodeado desde antes;
+cero efecto). A36 (temperatura, decimal): único cambio real es
+`type="text"` → `type="number" ... class="permite-decimales"`.
+Playwright en navegador real: campo entero de A80 con teclas
+`e1.2,3+4-5` escritas a mano → queda "12345" (todo lo prohibido
+bloqueado); Temperatura de A36 con "38.5" → queda "38.5" (decimal
+correcto); con "12e" → queda "12" ("e" bloqueada); cero errores de
+consola en ambos casos.

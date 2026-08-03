@@ -2497,16 +2497,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Sanitización de entradas numéricas enteras: Bloqueo de 'e', 'E', '.', ',', '+', '-'
+  // Sanitización de entradas numéricas: bloqueo de 'e'/'E' (notación
+  // científica) siempre, y además '.'/','/'+'/'-' para los que son
+  // enteros. `.permite-decimales` (ítem Z.3, PENDIENTES.md) antes se
+  // saltaba el bloqueo entero -- nunca se había ejercitado porque
+  // ningún campo usaba esa clase todavía: un <input type="number"> deja
+  // pasar 'e' de por sí (el navegador ya rechaza '+'/','/'-' mal puestos
+  // solo, pero no la notación científica), así que un campo "decimal"
+  // sin este bloqueo seguía aceptando algo como "38e52" para una
+  // temperatura.
   document.addEventListener('keydown', function(e) {
     if (!e.target) return;
     var isNumInput = (e.target.type === 'number' || e.target.getAttribute('inputmode') === 'numeric' || e.target.classList.contains('solo-enteros'));
     var isDecimalAllowed = e.target.classList.contains('permite-decimales');
+    var prohibidos = isDecimalAllowed ? ['e', 'E'] : ['e', 'E', '.', ',', '+', '-'];
 
-    if (isNumInput && !isDecimalAllowed) {
-      if (['e', 'E', '.', ',', '+', '-'].includes(e.key)) {
-        e.preventDefault();
-      }
+    if (isNumInput && prohibidos.includes(e.key)) {
+      e.preventDefault();
     }
   });
 
@@ -2515,10 +2522,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var isNumInput = (e.target.type === 'number' || e.target.getAttribute('inputmode') === 'numeric' || e.target.classList.contains('solo-enteros'));
     var isDecimalAllowed = e.target.classList.contains('permite-decimales');
 
-    if (isNumInput && !isDecimalAllowed) {
-      if (/[eE\.\,\+\-]/.test(e.target.value)) {
-        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    if (!isNumInput) return;
+    if (isDecimalAllowed) {
+      if (/[eE]/.test(e.target.value)) {
+        e.target.value = e.target.value.replace(/[eE]/g, '');
       }
+    } else if (/[eE\.\,\+\-]/.test(e.target.value)) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
     }
   });
 
