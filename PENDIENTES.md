@@ -1710,3 +1710,89 @@ B05, O95, A36 y B26 (`render_ficha_cli.php`, HEAD vs. working tree):
 P35.0 `crear()` con `nacio_prematuro=1` y sin fecha de inicio de
 síntomas: guardado sin error, `fecha_inicio_sintomas` NULL en BD,
 `nacio_prematuro` guardado correctamente en `caso_valor` → limpieza.
+
+**Y. Capacidad 6 — bloques condicionales de tabla hija
+(`bloques_condicionales`) + ítem 43 de P35.0 (seguimiento de excreción
+viral) — ✅ cerrado**
+
+Diseño reportado y aprobado antes de implementar (Fase D1 de
+PETICION_HC_Y_LABORATORIO.md pedía "reporta y espera mi visto bueno"
+para esta capacidad). Investigar el motor existente cambió el diseño:
+`secciones-clinicas.php` ya tenía un mecanismo de "sección condicional"
+(`.dep-wrap`/`data-depende-de`/`data-valor-activador`, CIERRE_RECARGA_Y_FASE5.md
+Parte 1.5) reutilizado tal cual para secciones y, ahora, para bloques
+de tabla hija -- el único límite real era que `campoVisiblePorDependencia()`
+solo resolvía disparadores `campo_def` (`CampoDef::buscar($id)`), no el
+núcleo (`clasificacion`). El lado JS (`leerValorCampoPorNombre()`) ya
+era genérico y no necesitó ningún cambio.
+
+**Diseño:** `bloques_condicionales` (lista, a nivel de ficha, sibling
+de `columnas_tablas_hija`): cada bloque declara `tabla` (hoy solo
+`caso_muestra`), `contexto` (string, distinto de `"inicial"`, distingue
+sus filas de las del bloque base en la MISMA tabla), `titulo`,
+`columnas` (subconjunto de `COLUMNAS_TABLA_HIJA_VALIDAS[tabla]`),
+`depende_de` (hoy solo el literal `"clasificacion"` -- el núcleo, no un
+`campo_def` con id numérico: no se construyó un motor de reglas
+general, solo este único caso de uso) y `valores_activadores`. Columna
+nueva `caso_muestra.contexto` (migración) separa las filas de cada
+bloque dentro de la misma tabla sin mezclar su `numero_muestra`.
+
+**Piezas nuevas:**
+- `cargar_fichas.php`: valida `bloques_condicionales` (forma, columnas
+  válidas, `depende_de === "clasificacion"`), persiste en
+  `enfermedad.bloques_condicionales` (columna JSON nueva, mismo patrón
+  que `columnas_muestra`).
+- `CasosController::resolverBloquesCondicionales()` +
+  `datosColumnasTablaHija()['bloquesCondicionalesMuestra']`, enhebrado
+  en los 4 flujos completos (`nuevo`/`crear`/`editar`/`actualizar`) vía
+  `array_merge` + `extract()` de `View::render()` -- y en
+  `seccionesClinicas()` extrayendo la clave explícitamente (con la
+  lección del hallazgo de B05 fresca: cherry-picking a mano es donde se
+  cuelan estos bugs).
+- `filasMuestras()`: además del bloque inicial, parsea POST por cada
+  bloque declarado (`muestra_<contexto>_<columna>[]`), etiqueta cada
+  fila con su `contexto` y las combina en el mismo array que
+  `CasoMuestra::reemplazarTodos()` guarda de un solo golpe (una tabla,
+  un reemplazo). `separarFilasMuestrasPorContexto()` las vuelve a
+  separar para re-renderizar (`crear()`/`actualizar()` en error,
+  `editar()` desde `CasoMuestra::porCaso()`).
+- `app/Views/partials/tablas-hijas/muestras-condicional.php` (nuevo):
+  widget genérico de filas dinámicas para un bloque -- mismo patrón de
+  `<template>`/`data-lista` que `muestras.php`, columnas limitadas a
+  las 3 que declara el ítem 43 (fecha de obtención, fecha de resultado,
+  resultado). Envuelto en `.dep-wrap.bloque-condicional-muestra` con
+  `data-depende-de="clasificacion"`.
+- `nueva/index.php`/`fichas/editar.php`: recorren
+  `$bloquesCondicionalesMuestra` justo después de "Laboratorio",
+  numerando cada tarjeta igual que las demás secciones (estructural,
+  no por visibilidad en vivo).
+- `ficha.js`: al cambiar de enfermedad por AJAX, quita las tarjetas
+  `.bloque-condicional-muestra` previas e inserta las nuevas como
+  siblings planos de `labCard` (no un wrapper) -- necesario para que
+  `renumerarSeccionesSiguientes()` (ya genérico) las cuente igual que
+  cualquier otra `.section`. `evaluarDependencias()` no necesitó
+  ningún cambio: ya recorre `.dep-wrap[data-depende-de]` en todo el
+  documento.
+
+**Verificación:** los tres verificadores en verde. Byte-diff de A80,
+B05, O95, A36 y B26: 0 líneas de diferencia (dos rondas -- la primera
+encontró un comentario HTML que sí imprimía cuando el bloque no
+aplicaba, corregido a comentario PHP dentro del mismo bloque
+`<?php ?>`). Validación negativa de `cargar_fichas.php` confirmada
+(`depende_de` inválido rechazado con el mensaje esperado). Playwright
+en navegador real: bloque oculto con clasificación por defecto
+(SOSPECHOSO), visible al elegir CONFIRMADO, oculto de nuevo al volver a
+SOSPECHOSO, "Agregar muestra" funcional, cero errores de consola. Caso
+real P35.0 `crear()` con fila inicial (SEROLOGIA) + 2 filas de
+seguimiento: guardado correcto con `contexto` separado en BD
+(`NULL`/`"seguimiento"`), `editar()` reabre ambos bloques con sus
+propias filas sin mezclarlos → limpieza. `seccionesClinicas()`
+verificado para P35.0 (`htmlBloquesMuestra` con 1 bloque) y A80/B05
+(0 bloques, sin excepción).
+
+**Pendiente:** ítem 43 es el último bloque explícito del laboratorio de
+P35.0 -- con esto y la Fase D3 (ítem W), el laboratorio de P35.0 queda
+completo. Quedan las preguntas de la Fase 6 de
+PETICION_P35_RUBEOLA_CONGENITA.md (edad en meses/días, N.° de historia
+clínica, tiempo de residencia, pueblo étnico vs. etnia/raza,
+`o95_establecimiento_sanidad_pnp`) sin revisar en esta sesión.

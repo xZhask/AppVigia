@@ -105,6 +105,7 @@ class CasosController extends Controller
             'filasViajes'    => [],
             'filasVacunas'   => [],
             'filasMuestras'  => [],
+            'filasBloquesMuestra' => [],
             'filasLugarInfeccion' => [],
             'erroresViajes'  => [],
             'erroresVacunas' => [],
@@ -267,6 +268,7 @@ class CasosController extends Controller
 
         if ($hayErrores) {
             $semana = semanaEpidemiologica($fechaNotifIso ?: (new DateTime())->format('Y-m-d'));
+            [$filasMuestrasInicial, $filasBloquesMuestra] = $this->separarFilasMuestrasPorContexto($filasMuestras);
 
             $this->vista('nueva/index', array_merge([
                 'tituloVista'   => 'Nueva ficha de notificación',
@@ -285,7 +287,8 @@ class CasosController extends Controller
                 'filasContactos' => $filasContactos,
                 'filasViajes'    => $filasViajes,
                 'filasVacunas'   => $filasVacunas,
-                'filasMuestras'  => $filasMuestras,
+                'filasMuestras'  => $filasMuestrasInicial,
+                'filasBloquesMuestra' => $filasBloquesMuestra,
                 'filasLugarInfeccion' => $filasLugarInfeccion,
                 'erroresViajes'  => $erroresViajes,
                 'erroresVacunas' => $erroresVacunas,
@@ -418,11 +421,25 @@ class CasosController extends Controller
         $dependeDeColumnaMuestra = $datosMuestras['dependeDeColumnaMuestra'];
         $filasMuestras       = [];
         $erroresMuestras     = [];
-        $columnasMuestra     = $this->datosColumnasTablaHija($enfermedad)['columnasMuestra'] ?? [];
+        $datosColumnasTablaHija     = $this->datosColumnasTablaHija($enfermedad);
+        $columnasMuestra            = $datosColumnasTablaHija['columnasMuestra'] ?? [];
+        $bloquesCondicionalesMuestra = $datosColumnasTablaHija['bloquesCondicionalesMuestra'] ?? [];
 
         ob_start();
         require __DIR__ . '/../Views/partials/tablas-hijas/muestras.php';
         $htmlMuestras = ob_get_clean();
+
+        $clasificacionParaBloques = opcionesClasificacionPara($enfermedad)[0];
+        $htmlBloquesMuestra = [];
+        foreach ($bloquesCondicionalesMuestra as $bloque) {
+            $filasBloque = [];
+            $erroresBloque = [];
+            $bloqueMuestra = $bloque;
+            $clasificacionActualBloque = $clasificacionParaBloques;
+            ob_start();
+            require __DIR__ . '/../Views/partials/tablas-hijas/muestras-condicional.php';
+            $htmlBloquesMuestra[] = ob_get_clean();
+        }
 
         $clasificacionActual = opcionesClasificacionPara($enfermedad)[0];
         $valoresCampos = [];
@@ -480,6 +497,7 @@ class CasosController extends Controller
         echo json_encode([
             'html'                 => $html,
             'htmlMuestras'         => $htmlMuestras,
+            'htmlBloquesMuestra'   => $htmlBloquesMuestra,
             'htmlClasificacionChips' => $htmlClasificacionChips,
             'mapaCampos'           => $mapaClaveNombreCampos,
             // Mismo detector que el shell (nueva/index.php, fichas/editar.php),
@@ -682,6 +700,8 @@ class CasosController extends Controller
             'fecha_investigacion'    => (string) ($caso['fecha_investigacion'] ?? ''),
         ];
 
+        [$filasMuestrasInicial, $filasBloquesMuestra] = $this->separarFilasMuestrasPorContexto(CasoMuestra::porCaso((int) $caso['id']));
+
         $this->vista('fichas/editar', array_merge([
             'tituloVista' => 'Editar ficha ' . $caso['codigo'],
             'rutaActual'  => 'casos',
@@ -696,7 +716,8 @@ class CasosController extends Controller
             'filasContactos' => CasoContacto::porCaso((int) $caso['id']),
             'filasViajes'    => CasoViaje::porCaso((int) $caso['id']),
             'filasVacunas'   => CasoVacuna::porCaso((int) $caso['id']),
-            'filasMuestras'  => CasoMuestra::porCaso((int) $caso['id']),
+            'filasMuestras'  => $filasMuestrasInicial,
+            'filasBloquesMuestra' => $filasBloquesMuestra,
             'filasLugarInfeccion' => CasoLugarInfeccion::porCaso((int) $caso['id']),
             'erroresViajes'  => [],
             'erroresVacunas' => [],
@@ -839,6 +860,7 @@ class CasosController extends Controller
             $caso['clasificacion'] = $clasificacion;
             $caso['hospitalizado'] = $hospitalizado;
             $caso['fallecido'] = $fallecido;
+            [$filasMuestrasInicial, $filasBloquesMuestra] = $this->separarFilasMuestrasPorContexto($filasMuestras);
 
             $this->vista('fichas/editar', array_merge([
                 'tituloVista' => 'Editar ficha ' . $caso['codigo'],
@@ -854,7 +876,8 @@ class CasosController extends Controller
                 'filasContactos' => $filasContactos,
                 'filasViajes'    => $filasViajes,
                 'filasVacunas'   => $filasVacunas,
-                'filasMuestras'  => $filasMuestras,
+                'filasMuestras'  => $filasMuestrasInicial,
+                'filasBloquesMuestra' => $filasBloquesMuestra,
                 'filasLugarInfeccion' => $filasLugarInfeccion,
                 'erroresViajes'  => $erroresViajes,
                 'erroresVacunas' => $erroresVacunas,
@@ -1691,7 +1714,28 @@ class CasosController extends Controller
             'columnasVacuna'   => $resolver($enfermedad['columnas_vacuna'] ?? null, 'vacuna'),
             'columnasViaje'    => $resolver($enfermedad['columnas_viaje'] ?? null, 'viaje'),
             'columnasMuestra'  => $this->resolverConfigMuestra($enfermedad)['columnas'],
+            'bloquesCondicionalesMuestra' => $this->resolverBloquesCondicionales($enfermedad, 'caso_muestra'),
         ];
+    }
+
+    /**
+     * Capacidad 6 (PETICION_HC_Y_LABORATORIO.md, Parte 2, ítem 43 de
+     * P35.0): bloques adicionales de una tabla hija, visibles solo cuando
+     * la Clasificación del caso (núcleo) toma uno de sus
+     * "valores_activadores". Ausente = [] (ninguna ficha declara ninguno
+     * salvo P35.0), mismo criterio "opt-in" que columnas_tablas_hija.
+     */
+    private function resolverBloquesCondicionales(array $enfermedad, string $tabla): array
+    {
+        $json = $enfermedad['bloques_condicionales'] ?? null;
+        if ($json === null) {
+            return [];
+        }
+        $decodificado = json_decode($json, true);
+        if (!is_array($decodificado)) {
+            return [];
+        }
+        return array_values(array_filter($decodificado, fn($b) => ($b['tabla'] ?? null) === $tabla));
     }
 
     /**
@@ -2068,10 +2112,70 @@ class CasosController extends Controller
                 'fecha_result_igg'    => $resIggTxt !== '' ? fechaIsoValida($resIggTxt) : null,
                 'titulacion'          => $titulacionTxt !== '' ? $titulacionTxt : null,
                 'numero_muestra'      => $numeroMuestraCalculado,
+                'contexto'            => null,
             ];
         }
 
+        // Capacidad 6 (PETICION_HC_Y_LABORATORIO.md Parte 2, ítem 43 de
+        // P35.0): bloques adicionales de la MISMA tabla, cada uno con su
+        // propio prefijo de POST (muestra_<contexto>_<columna>[]) y su
+        // propio conjunto (más chico) de columnas -- se anexan a $filas
+        // con su "contexto" propio para que CasoMuestra::reemplazarTodos()
+        // los guarde junto con los del bloque inicial (una sola tabla, un
+        // solo reemplazo por caso) sin mezclarlos al re-renderizar
+        // (separarFilasMuestrasPorContexto() los separa de vuelta).
+        foreach ($this->resolverBloquesCondicionales($enfermedad ?? [], 'caso_muestra') as $bloque) {
+            $contexto = $bloque['contexto'];
+            $columnasBloque = $bloque['columnas'];
+            $arraysPost = [];
+            foreach ($columnasBloque as $col) {
+                $arraysPost[$col] = $_POST['muestra_' . $contexto . '_' . $col] ?? [];
+            }
+            $totalFilasBloque = $arraysPost ? max(array_map('count', $arraysPost)) : 0;
+            for ($i = 0; $i < $totalFilasBloque; $i++) {
+                $fila = ['contexto' => $contexto];
+                $vacia = true;
+                foreach ($columnasBloque as $col) {
+                    $valorTxt = trim((string) ($arraysPost[$col][$i] ?? ''));
+                    if ($valorTxt !== '') {
+                        $vacia = false;
+                    }
+                    if (in_array($col, ['fecha_toma', 'fecha_result'], true)) {
+                        $fila[$col] = $valorTxt !== '' ? (fechaIsoValida($valorTxt) ?: $valorTxt) : null;
+                    } else {
+                        $fila[$col] = $valorTxt !== '' ? $valorTxt : null;
+                    }
+                }
+                if ($vacia) {
+                    continue;
+                }
+                $filas[] = $fila;
+            }
+        }
+
         return [$filas, $errores];
+    }
+
+    /**
+     * Separa las filas ya combinadas de filasMuestras()/CasoMuestra::porCaso()
+     * por "contexto" -- el bloque inicial (contexto NULL/"inicial", que
+     * muestras.php renderiza) de cada bloque condicional (capacidad 6, que
+     * muestras-condicional.php renderiza por separado). Devuelve
+     * [$filasInicial, $filasPorContexto].
+     */
+    private function separarFilasMuestrasPorContexto(array $filas): array
+    {
+        $filasInicial = [];
+        $filasPorContexto = [];
+        foreach ($filas as $fila) {
+            $contexto = $fila['contexto'] ?? null;
+            if ($contexto === null || $contexto === '' || $contexto === 'inicial') {
+                $filasInicial[] = $fila;
+            } else {
+                $filasPorContexto[$contexto][] = $fila;
+            }
+        }
+        return [$filasInicial, $filasPorContexto];
     }
 
     /**

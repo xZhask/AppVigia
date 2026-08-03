@@ -211,6 +211,7 @@ DROP TABLE IF EXISTS `caso_muestra`;
 CREATE TABLE `caso_muestra` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `caso_id` int(11) NOT NULL,
+  `contexto` varchar(20) DEFAULT NULL,
   `tipo_muestra` varchar(80) DEFAULT NULL,
   `tipo_prueba` varchar(80) DEFAULT NULL,
   `recibio_antibiotico` tinyint(1) DEFAULT NULL,
@@ -444,6 +445,7 @@ CREATE TABLE `enfermedad` (
   `titulo_sujeto` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`titulo_sujeto`)),
   `unidades_edad` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`unidades_edad`)),
   `detalle_domicilio` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`detalle_domicilio`)),
+  `bloques_condicionales` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`bloques_condicionales`)),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

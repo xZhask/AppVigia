@@ -286,6 +286,22 @@ if ($puedeElegirEstablecimiento) {
         </div>
       </div>
       <?php if ((int)($enfermedad['usa_muestras'] ?? 0) === 1) $numeroSeccion++; ?>
+<?php
+// Bloques condicionales de tabla hija (capacidad 6): segundo(s) conjunto(s)
+// de filas de caso_muestra, visibles solo cuando la Clasificación del caso
+// toma uno de sus valores_activadores. Numerados igual que Laboratorio: la
+// ficha los declara siempre (estructural), la visibilidad la decide el
+// valor en vivo (dep-wrap). Un solo bloque PHP, sin línea en blanco ni
+// etiqueta de cierre suelta -- para no imprimir nada de más cuando
+// $bloquesCondicionalesMuestra está vacío (23/24 fichas).
+foreach (($bloquesCondicionalesMuestra ?? []) as $bloqueMuestra):
+    $filasBloque = $filasBloquesMuestra[$bloqueMuestra['contexto']] ?? [];
+    $erroresBloque = [];
+    $clasificacionActualBloque = $clasificacionActual ?? opcionesClasificacionPara($enfermedad)[0];
+    require __DIR__ . '/../partials/tablas-hijas/muestras-condicional.php';
+    $numeroSeccion++;
+endforeach;
+?>
 
       <!-- Investigador -->
       <div class="card section">

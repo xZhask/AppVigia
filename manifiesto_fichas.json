@@ -7147,6 +7147,22 @@
                     }
                 }
             },
+            "bloques_condicionales": [
+                {
+                    "tabla": "caso_muestra",
+                    "contexto": "seguimiento",
+                    "titulo": "Seguimiento de excreción viral (ítem 43, solo casos confirmados)",
+                    "columnas": [
+                        "fecha_toma",
+                        "fecha_result",
+                        "resultado"
+                    ],
+                    "depende_de": "clasificacion",
+                    "valores_activadores": [
+                        "CONFIRMADO"
+                    ]
+                }
+            ],
             "nucleo_omitidos": [
                 "gestante",
                 "celular",

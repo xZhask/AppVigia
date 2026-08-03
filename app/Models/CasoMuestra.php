@@ -22,13 +22,13 @@ class CasoMuestra extends Model
 
         $consulta = $pdo->prepare(
             'INSERT INTO caso_muestra (
-                caso_id, tipo_muestra, tipo_prueba, recibio_antibiotico, resultado, 
+                caso_id, contexto, tipo_muestra, tipo_prueba, recibio_antibiotico, resultado,
                 fecha_toma, fecha_result, fecha_envio_ins, agente_aislado, observaciones,
                 numero_muestra, fecha_recepcion_ins, resultado_pcr, fecha_result_pcr,
                 genotipo, resultado_igm, fecha_result_igm, resultado_igg, fecha_result_igg,
                 titulacion
              ) VALUES (
-                :caso, :tipo_muestra, :tipo_prueba, :recibio_antibiotico, :resultado,
+                :caso, :contexto, :tipo_muestra, :tipo_prueba, :recibio_antibiotico, :resultado,
                 :fecha_toma, :fecha_result, :fecha_envio_ins, :agente_aislado, :observaciones,
                 :numero_muestra, :fecha_recepcion_ins, :resultado_pcr, :fecha_result_pcr,
                 :genotipo, :resultado_igm, :fecha_result_igm, :resultado_igg, :fecha_result_igg,
@@ -39,6 +39,7 @@ class CasoMuestra extends Model
         foreach ($filas as $fila) {
             $consulta->execute([
                 'caso'                => $casoId,
+                'contexto'            => $fila['contexto'] ?? null,
                 'tipo_muestra'        => $fila['tipo_muestra'] ?? '',
                 'tipo_prueba'         => $fila['tipo_prueba'] ?? '',
                 'recibio_antibiotico' => $fila['recibio_antibiotico'] ?? null,

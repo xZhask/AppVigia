@@ -235,6 +235,18 @@ $es = $estados[$caso['estado']];
         </div>
       </div>
       <?php if ((int) ($enfermedad['usa_muestras'] ?? 0) === 1) $numeroSeccion++; ?>
+<?php
+// Bloques condicionales de tabla hija (capacidad 6): ver nueva/index.php
+// para la explicación completa. Un solo bloque PHP -- ver el mismo
+// comentario ahí sobre por qué no imprimir nada de más.
+foreach (($bloquesCondicionalesMuestra ?? []) as $bloqueMuestra):
+    $filasBloque = $filasBloquesMuestra[$bloqueMuestra['contexto']] ?? [];
+    $erroresBloque = [];
+    $clasificacionActualBloque = $caso['clasificacion'];
+    require __DIR__ . '/../partials/tablas-hijas/muestras-condicional.php';
+    $numeroSeccion++;
+endforeach;
+?>
 
       <!-- Investigador -->
       <div class="card section">

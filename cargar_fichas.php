@@ -417,6 +417,60 @@ function validarManifiesto(array $manifiesto): void
             }
         }
 
+        // bloques_condicionales (capacidad 6, PETICION_HC_Y_LABORATORIO.md
+        // Parte 2, ítem 43 de P35.0): un SEGUNDO conjunto de filas de una
+        // tabla hija, distinguido por "contexto", visible solo cuando la
+        // Clasificación del caso (núcleo, no campo_def) toma uno de
+        // "valores_activadores". Acotado a caso_muestra -- mismo criterio de
+        // "un disparador, un conjunto de valores" que depende_de_columna,
+        // pero el disparador es del NÚCLEO ("clasificacion" literal), no un
+        // campo_def con id numérico: no hay motor de reglas general, solo
+        // este único caso de uso resuelto declarativamente.
+        if (!empty($ficha['bloques_condicionales'])) {
+            if (!array_is_list($ficha['bloques_condicionales'])) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales debe ser una lista.");
+            }
+            foreach ($ficha['bloques_condicionales'] as $i => $bloque) {
+                $clavesDesconocidas = array_diff(array_keys($bloque), ['tabla', 'contexto', 'titulo', 'columnas', 'depende_de', 'valores_activadores']);
+                if ($clavesDesconocidas) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}] tiene claves desconocidas: " . implode(', ', $clavesDesconocidas) . ".");
+                }
+                $tabla = $bloque['tabla'] ?? null;
+                if ($tabla !== 'caso_muestra') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].tabla debe ser \"caso_muestra\" (única tabla implementada hoy).");
+                }
+                $contexto = $bloque['contexto'] ?? null;
+                if (!is_string($contexto) || $contexto === '' || $contexto === 'inicial') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].contexto debe ser texto no vacío distinto de \"inicial\" (reservado para las filas del bloque base).");
+                }
+                $titulo = $bloque['titulo'] ?? null;
+                if (!is_string($titulo) || $titulo === '') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].titulo debe ser texto no vacío.");
+                }
+                $columnasBloque = $bloque['columnas'] ?? null;
+                if (!is_array($columnasBloque) || empty($columnasBloque) || !array_is_list($columnasBloque)) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].columnas debe ser una lista no vacía.");
+                }
+                foreach ($columnasBloque as $col) {
+                    if (!in_array($col, COLUMNAS_TABLA_HIJA_VALIDAS[$tabla], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].columnas incluye \"{$col}\", que no es una columna configurable de {$tabla}.");
+                    }
+                }
+                if (($bloque['depende_de'] ?? null) !== 'clasificacion') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].depende_de debe ser \"clasificacion\" (único disparador implementado hoy: el núcleo, no un campo_def).");
+                }
+                $valoresActivadores = $bloque['valores_activadores'] ?? null;
+                if (!is_array($valoresActivadores) || empty($valoresActivadores) || !array_is_list($valoresActivadores)) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].valores_activadores debe ser una lista no vacía.");
+                }
+                foreach ($valoresActivadores as $v) {
+                    if (!is_string($v) || $v === '') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].valores_activadores tiene un valor no válido (debe ser texto no vacío).");
+                    }
+                }
+            }
+        }
+
         if (!empty($ficha['nucleo_omitidos'])) {
             foreach ($ficha['nucleo_omitidos'] as $campoNucleo) {
                 if (!in_array($campoNucleo, NUCLEO_OMITIBLES, true)) {
@@ -686,7 +740,10 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // criterio que unidades_edad -- se aplica siempre, NULL explícito si la
     // ficha no lo declara (opt-in: NULL equivale al comportamiento actual).
     $detalleDomicilioDeclarado = $fichaManifiesto['detalle_domicilio'] ?? null;
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ? WHERE id = ?')->execute([
+    // bloques_condicionales (capacidad 6): mismo criterio -- opt-in, NULL
+    // explícito si la ficha no declara ninguno.
+    $bloquesCondicionalesDeclarados = $fichaManifiesto['bloques_condicionales'] ?? null;
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ?, bloques_condicionales = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -701,6 +758,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($tituloSujetoDeclarado) ? json_encode($tituloSujetoDeclarado, JSON_UNESCAPED_UNICODE) : null,
         !empty($unidadesEdadDeclaradas) ? json_encode($unidadesEdadDeclaradas, JSON_UNESCAPED_UNICODE) : null,
         !empty($detalleDomicilioDeclarado) ? json_encode($detalleDomicilioDeclarado, JSON_UNESCAPED_UNICODE) : null,
+        !empty($bloquesCondicionalesDeclarados) ? json_encode($bloquesCondicionalesDeclarados, JSON_UNESCAPED_UNICODE) : null,
         $enfermedadId,
     ]);
 

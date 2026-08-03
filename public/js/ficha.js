@@ -704,6 +704,15 @@ document.addEventListener('DOMContentLoaded', function () {
             labCard.hidden = !datos.usaMuestras;
           }
 
+          // Bloques condicionales de tabla hija (capacidad 6): siblings
+          // planos de labCard (no un wrapper) para que
+          // renumerarSeccionesSiguientes() los cuente igual que cualquier
+          // otra tarjeta ".section" al recorrer contenedorClinico.nextElementSibling.
+          document.querySelectorAll('.bloque-condicional-muestra').forEach(function (el) { el.remove(); });
+          if (labCard && datos.htmlBloquesMuestra && datos.htmlBloquesMuestra.length) {
+            labCard.insertAdjacentHTML('afterend', datos.htmlBloquesMuestra.join(''));
+          }
+
           renumerarSeccionesSiguientes();
           if (window.SelectorBusqueda) {
             window.SelectorBusqueda.escanear(contenedorClinico);
