@@ -1555,19 +1555,50 @@ incluyó para no mezclar "migrar visibilidad" con "endurecer validación"
 en el mismo commit.
 
 **Adenda (verificación en navegador real, tras el aviso "No verificado en
-navegador real" de arriba):** el usuario probó B05 en el navegador y
-reportó que TODOS los campos (PCR, Genotipo, IgM, IgG) aparecían
-desplegados desde la carga, sin importar el tipo de muestra — el toggle
-en vivo no estaba funcionando. Investigado a fondo (dump exacto del HTML
-del `<template>` renderizado por servidor, inspección directa de
-`enfermedad.columnas_muestra` en BD, `node --check`): el render de
-servidor es correcto byte a byte (`style="display:none;"` presente en
-las 7 columnas dependientes cuando `tipo_muestra` está vacío, confirmado
-con grep directo sobre el HTML crudo) y solo hay una fila de `enfermedad`
-para B05. No se encontró la causa raíz — la hipótesis más probable es
-caché de navegador (`ficha.js` sin cache-busting en el `<script src>`),
-ya que no hay ninguna otra explicación que sobreviva a las verificaciones
-de arriba. Pendiente que el usuario confirme con recarga forzada
-(Ctrl+Shift+R) si el problema persiste; si persiste, hace falta el DOM
-real (DevTools → Elements, atributo `style` del campo) para diagnosticar
-con evidencia en vez de descartar por descarte.
+navegador real" de arriba) — bug real encontrado y corregido:** el
+usuario probó B05 en el navegador y reportó que TODOS los campos (PCR,
+Genotipo, IgM, IgG) aparecían desplegados desde la carga, sin importar
+el tipo de muestra. Una primera ronda de investigación (dump del
+`<template>` renderizado por `nuevo()` vía CLI, inspección de BD)
+verificó el HTML byte a byte correcto y no encontró la causa — se
+propuso caché de navegador como hipótesis, con `asset()` (cache-busting
+de `<script src>`) como corrección preventiva (commit `5216a10`). Esa
+hipótesis era incorrecta: con Playwright (Chromium real, instalado en
+este entorno para la verificación) confirmando primero que
+`GET /casos/nuevo?enfermedad_id=<B05>` con recarga completa SÍ renderiza
+oculto correctamente, la reproducción real solo apareció simulando el
+flujo exacto del usuario: cargar "Nueva ficha" con la enfermedad por
+defecto y CAMBIAR el selector a Sarampión/rubéola sin recargar la
+página. Eso dispara el fetch a
+`CasosController::seccionesClinicas()` (`/casos/nuevo/secciones-clinicas`),
+que reemplaza el HTML de la sección clínica — incluyendo
+`tablas-hijas/muestras.php` — vía AJAX.
+
+**Causa raíz:** `seccionesClinicas()` (línea ~405) extraía a mano solo 3
+de las 6 claves que devuelve `datosMuestrasCatalogo()`
+(`opcionesTipoMuestra`/`opcionesTipoPrueba`/`opcionesResultado`),
+dejando sin asignar `opcionesMuestraExtra`, `textoLibreMuestra` y
+`dependeDeColumnaMuestra` — que dentro de `muestras.php` caen a su
+default `?? []`. Con `$dependeDeColumnaMuestra = []`,
+`$attrsDependencia()` no emite ningún `data-depende-columna` y
+`$visiblePorDependencia()` devuelve `true` siempre: los 7 campos de
+serología se renderizan visibles y sin atributo, así que ni el HTML
+inicial ni `ficha.js` (que depende de ese atributo para reaccionar a
+cambios) pueden ocultarlos — coincide exactamente con lo reportado.
+Los otros dos flujos completos (`nuevo()`/`crear()`/`editar()`/
+`actualizar()`) no tienen este bug porque pasan
+`datosMuestrasCatalogo()` completo vía `array_merge()` +
+`View::render()`'s `extract()`; solo `seccionesClinicas()` cherry-picking
+manual a variables locales para un `require` (no `extract()`) se quedó
+corto cuando `datosMuestrasCatalogo()` creció de 3 a 6 claves en la
+Fase D1.
+
+**Corregido:** las 3 líneas que faltaban agregadas en
+`seccionesClinicas()`. Reproducido el bug con Playwright contra
+`git stash` (antes del fix): confirmado `computedDisplay: "flex"` y
+`hasDependeAttr: false` en los 7 campos tras el flujo real (cambiar
+enfermedad → agregar muestra). Con el fix aplicado, mismo script:
+`computedDisplay: "none"`, `hasDependeAttr: true` en los 7 — igual al
+flujo de recarga completa. La corrección preventiva de cache-busting
+(`asset()`) se mantiene: es una mejora real aunque no haya sido la causa
+de este bug.

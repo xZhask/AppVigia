@@ -403,9 +403,12 @@ class CasosController extends Controller
         $html = ob_get_clean();
 
         $datosMuestras = $this->datosMuestrasCatalogo($enfermedad);
-        $opcionesTipoMuestra = $datosMuestras['opcionesTipoMuestra'];
-        $opcionesTipoPrueba  = $datosMuestras['opcionesTipoPrueba'];
-        $opcionesResultado   = $datosMuestras['opcionesResultado'];
+        $opcionesTipoMuestra     = $datosMuestras['opcionesTipoMuestra'];
+        $opcionesTipoPrueba      = $datosMuestras['opcionesTipoPrueba'];
+        $opcionesResultado       = $datosMuestras['opcionesResultado'];
+        $opcionesMuestraExtra    = $datosMuestras['opcionesMuestraExtra'];
+        $textoLibreMuestra       = $datosMuestras['textoLibreMuestra'];
+        $dependeDeColumnaMuestra = $datosMuestras['dependeDeColumnaMuestra'];
         $filasMuestras       = [];
         $erroresMuestras     = [];
         $columnasMuestra     = $this->datosColumnasTablaHija($enfermedad)['columnasMuestra'] ?? [];
