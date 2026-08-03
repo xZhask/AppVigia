@@ -132,6 +132,20 @@ function e(mixed $valor): string
     return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * URL de un asset estático (public/...) con ?v=<mtime> para romper la caché
+ * del navegador en cada edición -- sin esto, un cambio en ficha.js puede
+ * quedar invisible en un navegador que ya lo tenía cacheado, indistinguible
+ * de un bug real (PENDIENTES.md ítem V, adenda). $rutaPublica empieza con
+ * "/", p. ej. "/js/ficha.js".
+ */
+function asset(string $rutaPublica): string
+{
+    $rutaDisco = __DIR__ . '/../../public' . $rutaPublica;
+    $mtime = @filemtime($rutaDisco);
+    return $rutaPublica . ($mtime ? '?v=' . $mtime : '');
+}
+
 function seleccionado(mixed $actual, mixed $opcion): string
 {
     return (string) $actual === (string) $opcion ? 'selected' : '';

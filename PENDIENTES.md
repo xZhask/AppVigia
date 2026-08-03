@@ -1457,59 +1457,46 @@ futuras declarativas). Tampoco existe `bloques_condicionales` (capacidad
 resuelto por separado — ver ítem U.
 
 **U. `numero_muestra` revivido — ordinal de sueros pareados para P35.0 —
-✅ cerrado**
+✅ cerrado (rediseñado tras prueba en navegador)**
 
 P35.0 pide "1.ª muestra serológica" / "2.ª muestra serológica" /
-"Hisopado nasal y faríngeo" (página 20). El commit anterior había
-declarado `tipo_muestra: [SEROLOGIA, HNF_FAR]` (2 valores, corrigiendo la
-const vieja), pero eso deja la distinción 1.ª/2.ª sin ningún soporte
-salvo el orden de las filas — frágil para sueros pareados, donde el
-usuario señaló que la comparación entre ambos sostiene el diagnóstico.
+"Hisopado nasal y faríngeo" (página 20). `tipo_muestra: [SEROLOGIA,
+HNF_FAR]` (2 valores) deja la distinción 1.ª/2.ª sin ningún soporte salvo
+el orden de las filas — frágil para sueros pareados, donde el usuario
+señaló que la comparación entre ambos sostiene el diagnóstico.
 
-**Decisión (entre dos rutas reportadas, ver conversación):** revivir
-`numero_muestra` en vez de agregar `SEROLOGIA_1`/`SEROLOGIA_2` al
-catálogo compartido. La columna existía desde `708821f` ("PFA y
-Sarampión Ok", `tinyint(1) DEFAULT 1`) pero nunca se conectó a ningún
-`<input>` ni a `filasMuestras()` — todo caso hasta hoy tenía
-`numero_muestra=1` por default, nunca otra cosa. Se terminó de cablear:
-`COLUMNAS_TABLA_HIJA_VALIDAS['caso_muestra']` (`cargar_fichas.php`),
-render en `muestras.php` (`<select>` "1.ª"/"2.ª", vocabulario
-override-able vía el mismo `opciones` de siempre), captura en
-`filasMuestras()`, y declarado para P35.0
-(`columnas_tablas_hija.caso_muestra.columnas` ahora explícito = default +
-`numero_muestra`; `opciones.tipo_muestra` sin cambios).
+**Primer diseño (revertido):** `numero_muestra` (columna preexistente
+desde `708821f`, nunca conectada) como `<select>` manual "1.ª"/"2.ª" por
+fila. Funcionaba, pero al probar B05 en el navegador el usuario señaló
+que un selector manual es redundante — el propio orden de captura ya
+determina cuál es la primera y cuál la segunda muestra del mismo tipo —
+y que el papel (imagen adjunta a la conversación) no pide *elegir* un
+número: el "1era muestra"/"2da muestra" son encabezados fijos de columna,
+no una pregunta.
 
-**Hallazgo durante la prueba negativa — gate de columna agregado solo
-para `numero_muestra`, no para el resto de la serología:** al forzar
-`numero_muestra` por POST en A36 (que no lo declara), el valor se
-guardaba igual — `filasMuestras()` valida VALORES (`$validos*`, contra
-catálogo/`opciones`) pero no valida PRESENCIA DE COLUMNA, a diferencia de
-`sanearCamposNucleo()` para el núcleo. Se agregó el gate específico para
-`numero_muestra` (`$columnasMuestraDeclaradas` vía
-`resolverConfigMuestra()`, mismo criterio que el núcleo) y se confirmó
-con prueba negativa que ahora sí se descarta. **Pero el mismo hueco
-sigue abierto para `resultado_igm`/`resultado_igg`/`resultado_pcr`/
-`genotipo`/`titulacion`** — confirmado que A36 acepta y guarda esos 5
-valores por POST forjado aunque no los declare (preexistente desde que
-se agregaron las columnas de serología de B05, no introducido por esta
-sesión ni por el commit anterior). Sin explotar hoy (nadie envía esos
-campos si el formulario no los pinta), pero es el mismo patrón de riesgo
-que motivó `sanearCamposNucleo()` en su momento. No corregido — requiere
-decidir si se gatea columna por columna (6 checks) o se generaliza
-`filasMuestras()` para gatear cualquier columna de `caso_muestra` contra
-lo declarado, de una vez. Buen candidato para resolver junto con la
-migración de B05 (capacidad 5), ya que esa migración va a tocar
-`filasMuestras()`/`muestras.php` de todas formas.
+**Diseño final:** `numero_muestra` se calcula automáticamente en
+`CasosController::filasMuestras()`, contando cuántas filas anteriores (en
+el mismo POST, después de saltar las vacías) comparten el mismo
+`tipo_muestra` — la primera fila de un tipo es la 1, la siguiente del
+mismo tipo la 2. Sin `<select>` ni `<input>` visible: se retiró de
+`COLUMNAS_TABLA_HIJA_VALIDAS['caso_muestra']` (ya no es una columna
+"declarable para pintar", es un valor siempre calculado) y de
+`columnas_tablas_hija.caso_muestra.columnas` de P35.0. Efecto colateral
+positivo: como ya no se lee de `$_POST`, el hallazgo de la vuelta
+anterior (columnas de serología sin gate de presencia en
+`filasMuestras()`) deja de aplicarle a `numero_muestra` — no hay nada que
+forzar por POST porque el campo no acepta entrada del usuario. **El mismo
+hueco sigue abierto para `resultado_igm`/`resultado_igg`/`resultado_pcr`/
+`genotipo`/`titulacion`**, sin cambios respecto a la vuelta anterior — no
+corregido, buen candidato para cuando se declare el laboratorio real de
+P35.0 (Fase D3) o junto con una futura capacidad 6.
 
-**Verificación de cierre:** los tres verificadores en verde. Render real
-confirma el campo presente solo en P35.0 (A36/B05/A80/B24 sin cambios).
-Prueba negativa en A36 (con el gate ya agregado). Caso real
-crear→verificar BD→editar→actualizar (invirtiendo 1.ª/2.ª a propósito,
-confirmando que seguir invertido no depende de posición sino del valor
-guardado)→ver, con limpieza posterior. Diff de bytes completo del render
-de P35.0: única diferencia funcional el bloque nuevo de "N.° de muestra"
-(más token CSRF y la hora de notificación de O95, que cambia por reloj,
-ninguno de los dos relacionado).
+**Verificación de cierre:** los tres verificadores en verde. Confirmado
+que `muestra_numero_muestra` ya no aparece en ningún HTML (ni el
+`<select>` ni el `name` del POST). Prueba directa de `filasMuestras()`
+con 3 filas (SEROLOGIA, HNF_FAR, SEROLOGIA) → `numero_muestra` = 1, 1, 2
+respectivamente. Caso real `crear()` con las mismas 3 filas → guardado
+correcto en BD → limpieza.
 
 **V. Capacidad 5 — condicionalidad por columna dentro de una fila de tabla
 hija (`depende_de_columna`) + migración de B05 — ✅ cerrado**
@@ -1566,3 +1553,21 @@ del ítem U (columnas de serología sin gate de presencia en
 siendo buen candidato para resolver junto con esta migración, pero no se
 incluyó para no mezclar "migrar visibilidad" con "endurecer validación"
 en el mismo commit.
+
+**Adenda (verificación en navegador real, tras el aviso "No verificado en
+navegador real" de arriba):** el usuario probó B05 en el navegador y
+reportó que TODOS los campos (PCR, Genotipo, IgM, IgG) aparecían
+desplegados desde la carga, sin importar el tipo de muestra — el toggle
+en vivo no estaba funcionando. Investigado a fondo (dump exacto del HTML
+del `<template>` renderizado por servidor, inspección directa de
+`enfermedad.columnas_muestra` en BD, `node --check`): el render de
+servidor es correcto byte a byte (`style="display:none;"` presente en
+las 7 columnas dependientes cuando `tipo_muestra` está vacío, confirmado
+con grep directo sobre el HTML crudo) y solo hay una fila de `enfermedad`
+para B05. No se encontró la causa raíz — la hipótesis más probable es
+caché de navegador (`ficha.js` sin cache-busting en el `<script src>`),
+ya que no hay ninguna otra explicación que sobreviva a las verificaciones
+de arriba. Pendiente que el usuario confirme con recarga forzada
+(Ctrl+Shift+R) si el problema persiste; si persiste, hace falta el DOM
+real (DevTools → Elements, atributo `style` del campo) para diagnosticar
+con evidencia en vez de descartar por descarte.

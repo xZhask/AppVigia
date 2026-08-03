@@ -169,11 +169,11 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
 
 <div class="toast" id="toast"></div>
 
-<script src="/js/shell.js"></script>
-<script src="/js/selector-busqueda.js"></script>
-<script src="/js/ubigeo.js"></script>
-<script src="/js/filtro-tabla.js"></script>
-<script src="/js/filas-dinamicas.js"></script>
-<script src="/js/ficha.js"></script>
+<script src="<?= e(asset('/js/shell.js')) ?>"></script>
+<script src="<?= e(asset('/js/selector-busqueda.js')) ?>"></script>
+<script src="<?= e(asset('/js/ubigeo.js')) ?>"></script>
+<script src="<?= e(asset('/js/filtro-tabla.js')) ?>"></script>
+<script src="<?= e(asset('/js/filas-dinamicas.js')) ?>"></script>
+<script src="<?= e(asset('/js/ficha.js')) ?>"></script>
 </body>
 </html>

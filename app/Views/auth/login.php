@@ -127,6 +127,6 @@ use App\Core\Csrf;
   </section>
 </div>
 
-<script src="/js/auth.js"></script>
+<script src="<?= e(asset('/js/auth.js')) ?>"></script>
 </body>
 </html>

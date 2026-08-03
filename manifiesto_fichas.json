@@ -7074,14 +7074,6 @@
                     "semana_gestacion"
                 ],
                 "caso_muestra": {
-                    "columnas": [
-                        "tipo_muestra",
-                        "tipo_prueba",
-                        "resultado",
-                        "fecha_toma",
-                        "fecha_result",
-                        "numero_muestra"
-                    ],
                     "opciones": {
                         "tipo_muestra": [
                             "SEROLOGIA",
