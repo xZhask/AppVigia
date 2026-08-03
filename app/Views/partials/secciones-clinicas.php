@@ -81,6 +81,11 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         'p35_0_codigo_de_registro_n', 'p35_0_fecha_de_conocimiento_local_del_caso', 'p35_0_fecha_de_notificacion_eess_a_red_microred',
         'p35_0_fecha_notif_red_microred_a_direccion_salud', 'p35_0_fecha_notif_direccion_salud_a_cdc',
         'p35_0_fecha_de_investigacion_visita_domiciliaria', 'p35_0_caso_captado_en',
+        // clasificacion-caso-p350.php (PENDIENTES.md ítem Z.8): reposicionada
+        // después de "Laboratorio" y antes de "Seguimiento de excreción
+        // viral" -- orden pedido por el usuario, no la última sección del
+        // manifiesto como caería acá por defecto (orden: 6).
+        'p35_0_clasificacion_del_caso',
     ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
@@ -93,7 +98,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'B05' => ['Datos de notificación e identificación del caso', 'Datos de filiación y tutor'],
     'B26' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Cuadro clínico', 'Complicaciones', 'Hospitalización y egreso'],
     'O95' => ['Datos de notificación'],
-    'P35.0' => ['Datos de notificación e investigación del caso'],
+    'P35.0' => ['Datos de notificación e investigación del caso', 'Clasificación del caso'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {

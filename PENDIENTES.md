@@ -2301,3 +2301,51 @@ nada: `hidden` presente, no visible. Tras elegir "Confirmado": `hidden`
 ausente, visible, con el mismo look de tarjeta de Z.7.1 intacto (fondo
 blanco, sombra, borde). Tras volver a "Sospechoso": `hidden` presente
 de nuevo, oculto. Tres verificadores en verde.
+
+**Z.8. Orden de secciones: "Clasificación del caso" pasa a ir después
+de "Laboratorio" — ✅ cerrado**
+
+El usuario pidió el orden clínico lógico: muestra → resultado →
+clasificación → seguimiento si corresponde -- "Clasificación del caso"
+(campo propio de P35.0, sección con `orden: 6` en el manifiesto, la
+última del bloque clínico) quedaba ANTES de "Laboratorio" porque las
+secciones del manifiesto siempre renderizan dentro de
+`#secciones-clinicas` (via `secciones-clinicas.php`), y "Laboratorio"/
+"Seguimiento de excreción viral" son tarjetas de posición fija que
+`nueva/index.php`/`fichas/editar.php` imprimen DESPUÉS de que ese div
+se cierra -- ningún `orden` del manifiesto puede empujar una sección
+más allá de esa frontera estructural.
+
+**Mecanismo:** se excluye `p35_0_clasificacion_del_caso` (y su sección,
+"Clasificación del caso") del loop genérico de `secciones-clinicas.php`
+para P35.0 -- mismo mecanismo ya existente de
+`$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA`/`$SECCIONES_CON_PARTIAL_A_MEDIDA`
+que usan B05/B26/O95 para sus partials a medida, no algo nuevo. Un
+partial nuevo, `clasificacion-caso-p350.php`, resuelve el campo por
+clave (`$campo()`, `campos-por-clave.php`) y reusa el despachador
+genérico (`campo-dinamico.php` → `campos/select.php`) para pintarlo
+exactamente igual que si siguiera en el loop -- envuelto en una función
+para no pisar la variable `$campo` (el resolvedor) del llamador con la
+fila de `campo_def`, mismo motivo por el que `$campoFechaUltSeg` se
+resuelve ANTES de entrar a la closure `$renderizarCampos` un poco más
+arriba en el mismo archivo. Se llama desde `nueva/index.php` y
+`fichas/editar.php`, justo después de "Laboratorio" y antes del loop de
+`bloques_condicionales` (`$isP350`), incrementando `$numeroSeccion`
+adentro del partial para no repetirlo en los dos llamadores.
+
+**Detalle de implementación:** el `require` condicional se puso DENTRO
+del bloque `<?php ... ?>` de los bloques condicionales (no como una
+etiqueta PHP aparte) para no sumar una línea de espacio en blanco al
+HTML de las otras 23 fichas -- se detectó justo así, con un byte-diff
+que mostraba +6 bytes idénticos en las 5 fichas ya revisadas por una
+línea con solo espacios.
+
+**Verificación:** orden final confirmado por Playwright (`h3` en
+orden): "...Laboratorio → Clasificación del caso → Seguimiento de
+excreción viral (ítem 43...) → Investigador → Clasificación del caso"
+(la última es la genérica compartida de siempre, sin relación). Ronda
+crear()→editar(): el valor guardado en el campo propio se recarga
+seleccionado correctamente en su nueva posición; el gate del ítem 43
+(Z.7/Z.7.3) sigue funcionando igual desde la nueva ubicación. Tres
+verificadores en verde (P35.0 sigue 34/34 sin huérfanos), byte-diff
+limpio en A36/B26/A80/O95/B05.

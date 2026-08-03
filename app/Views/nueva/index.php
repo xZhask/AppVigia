@@ -292,6 +292,12 @@ if ($puedeElegirEstablecimiento) {
       </div>
       <?php if ((int)($enfermedad['usa_muestras'] ?? 0) === 1) $numeroSeccion++; ?>
 <?php
+// clasificacion-caso-p350.php (ítem Z.8): reposiciona "Clasificación del
+// caso" de P35.0 después de Laboratorio y antes de "Seguimiento de
+// excreción viral" -- acá adentro (no como tag PHP aparte) para no sumar
+// una línea de espacio en blanco al HTML de las otras 23 fichas.
+if ($isP350) require __DIR__ . '/../partials/clasificacion-caso-p350.php';
+
 // Bloques condicionales de tabla hija (capacidad 6): segundo(s) conjunto(s)
 // de filas de caso_muestra, visibles solo cuando la Clasificación del caso
 // toma uno de sus valores_activadores. Numerados igual que Laboratorio: la

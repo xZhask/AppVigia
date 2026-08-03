@@ -241,6 +241,11 @@ $es = $estados[$caso['estado']];
       </div>
       <?php if ((int) ($enfermedad['usa_muestras'] ?? 0) === 1) $numeroSeccion++; ?>
 <?php
+// clasificacion-caso-p350.php (ítem Z.8): ver nueva/index.php para la
+// explicación completa. Adentro del bloque PHP, no como tag aparte, por el
+// mismo motivo que el comentario de abajo.
+if ($isP350) require __DIR__ . '/../partials/clasificacion-caso-p350.php';
+
 // Bloques condicionales de tabla hija (capacidad 6): ver nueva/index.php
 // para la explicación completa. Un solo bloque PHP -- ver el mismo
 // comentario ahí sobre por qué no imprimir nada de más.
