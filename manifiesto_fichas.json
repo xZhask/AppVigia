@@ -5092,6 +5092,53 @@
                             "PCR",
                             "ELISA"
                         ]
+                    },
+                    "depende_de_columna": {
+                        "resultado_pcr": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "HNF_FAR",
+                                "ORINA"
+                            ]
+                        },
+                        "fecha_result_pcr": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "HNF_FAR",
+                                "ORINA"
+                            ]
+                        },
+                        "genotipo": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "HNF_FAR",
+                                "ORINA"
+                            ]
+                        },
+                        "resultado_igm": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SUERO"
+                            ]
+                        },
+                        "fecha_result_igm": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SUERO"
+                            ]
+                        },
+                        "resultado_igg": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SUERO"
+                            ]
+                        },
+                        "fecha_result_igg": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SUERO"
+                            ]
+                        }
                     }
                 }
             },

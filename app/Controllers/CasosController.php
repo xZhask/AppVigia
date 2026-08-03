@@ -1575,7 +1575,7 @@ class CasosController extends Controller
      */
     private function resolverConfigMuestra(array $enfermedad): array
     {
-        $porDefecto = ['columnas' => self::COLUMNAS_HIJA_DEFECTO['muestra'], 'opciones' => [], 'textoLibre' => []];
+        $porDefecto = ['columnas' => self::COLUMNAS_HIJA_DEFECTO['muestra'], 'opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => []];
 
         $json = $enfermedad['columnas_muestra'] ?? null;
         if ($json === null) {
@@ -1586,12 +1586,13 @@ class CasosController extends Controller
             return $porDefecto;
         }
         if (array_is_list($decodificado)) {
-            return ['columnas' => $decodificado, 'opciones' => [], 'textoLibre' => []];
+            return ['columnas' => $decodificado, 'opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => []];
         }
         return [
-            'columnas'   => $decodificado['columnas'] ?? self::COLUMNAS_HIJA_DEFECTO['muestra'],
-            'opciones'   => $decodificado['opciones'] ?? [],
-            'textoLibre' => $decodificado['texto_libre'] ?? [],
+            'columnas'         => $decodificado['columnas'] ?? self::COLUMNAS_HIJA_DEFECTO['muestra'],
+            'opciones'         => $decodificado['opciones'] ?? [],
+            'textoLibre'       => $decodificado['texto_libre'] ?? [],
+            'dependeDeColumna' => $decodificado['depende_de_columna'] ?? [],
         ];
     }
 
@@ -1601,7 +1602,7 @@ class CasosController extends Controller
         $todosPruebas   = CatalogoItem::porCatalogo(5);
         $todosResultado = CatalogoItem::porCatalogo(3);
 
-        $config   = $enfermedad ? $this->resolverConfigMuestra($enfermedad) : ['opciones' => [], 'textoLibre' => []];
+        $config   = $enfermedad ? $this->resolverConfigMuestra($enfermedad) : ['opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => []];
         $opciones = $config['opciones'];
 
         if (!empty($opciones['tipo_muestra'])) {
@@ -1612,11 +1613,12 @@ class CasosController extends Controller
         }
 
         return [
-            'opcionesTipoMuestra'  => $todosMuestras,
-            'opcionesTipoPrueba'   => $todosPruebas,
-            'opcionesResultado'    => $todosResultado,
-            'opcionesMuestraExtra' => $opciones,
-            'textoLibreMuestra'    => $config['textoLibre'] ?? [],
+            'opcionesTipoMuestra'       => $todosMuestras,
+            'opcionesTipoPrueba'        => $todosPruebas,
+            'opcionesResultado'         => $todosResultado,
+            'opcionesMuestraExtra'      => $opciones,
+            'textoLibreMuestra'         => $config['textoLibre'] ?? [],
+            'dependeDeColumnaMuestra'   => $config['dependeDeColumna'] ?? [],
         ];
     }
 

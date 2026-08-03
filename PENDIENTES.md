@@ -1510,3 +1510,59 @@ guardado)→ver, con limpieza posterior. Diff de bytes completo del render
 de P35.0: única diferencia funcional el bloque nuevo de "N.° de muestra"
 (más token CSRF y la hora de notificación de O95, que cambia por reloj,
 ninguno de los dos relacionado).
+
+**V. Capacidad 5 — condicionalidad por columna dentro de una fila de tabla
+hija (`depende_de_columna`) + migración de B05 — ✅ cerrado**
+
+B05 mostraba/ocultaba PCR·Genotipo vs IgM·IgG según Tipo de muestra con
+`$esSuero`/`$esPcrGen` hardcodeados en `muestras.php` y las clases
+`.b05-pcr-group`/`.b05-serologia-group` atadas a `.b05-select-tipo-muestra`
+en `ficha.js` — el mecanismo nacía con un solo usuario y, si P35.0 hubiera
+necesitado lo mismo, habría sido una segunda forma de resolver el mismo
+problema (justo el patrón que esta sesión viene desarmando).
+
+**Diseño:** `columnas_tablas_hija.caso_muestra.depende_de_columna`, mismo
+idioma que `depende_de`/`valor_activador` de `campo_def` pero resuelto
+DENTRO de una fila de tabla hija en vez de contra todo el documento — un
+disparador (`columna`), un conjunto de valores (`valores_activadores`),
+por columna dependiente. Validado en `cargar_fichas.php` (columna
+dependiente y disparadora deben ser columnas reales de la tabla, no puede
+depender de sí misma, solo implementado para `caso_muestra`). Render:
+`muestras.php` computa `$visiblePorDependencia($col)` por fila (ausente =
+siempre visible, mismo comportamiento que las 12 fichas que no declaran
+nada) y emite `data-depende-columna`/`data-valores-activadores`. Vivo:
+`ficha.js`'s `evaluarDependenciasMuestra()` reemplaza a
+`actualizarCamposMuestraB05()` — genérico, lee esos data-attrs y el
+`<select>` disparador de la misma fila por `name`, sin ninguna mención a
+B05 ni a ninguna otra ficha. B05 migrado: sus 7 columnas de serología
+declaran `depende_de_columna` (2 reglas: PCR/Genotipo con
+`tipo_muestra=[HNF_FAR,ORINA]`, IgM/IgG con `tipo_muestra=[SUERO]`) — se
+retiraron `.b05-select-tipo-muestra`/`.b05-pcr-group`/`.b05-serologia-group`
+del HTML y la función vieja de `ficha.js`. El branch `if ($esB05)` de los
+4 campos base (Tipo de muestra hardcodeado, fechas) **no se tocó**, según
+lo acordado.
+
+**Verificación de cierre:** los tres verificadores en verde (mismos 3
+huérfanos preexistentes). Diff de bytes de `editar()` sobre un caso B05
+real con 2 filas (SUERO con IgM/IgG llenos, HNF_FAR con PCR/Genotipo
+llenos) comparando código viejo vs nuevo sobre el mismo caso: única
+diferencia funcional las clases `.b05-*` reemplazadas por
+`data-depende-columna`/`data-valores-activadores` — el atributo
+`style="display:none;"`/`style=""` es idéntico campo por campo entre
+ambas versiones (más token CSRF y hora de notificación O95, ruido ya
+conocido). `node --check` sin errores de sintaxis en `ficha.js`. **No
+verificado en navegador real** (sin herramienta de automatización de
+navegador disponible en este entorno) — la verificación cubre que el
+HTML inicial se computa igual y que el JS es sintácticamente válido y
+espeja un patrón ya probado (`evaluarDependencias()`), pero el toggle en
+vivo al cambiar el `<select>` no se probó clic a clic.
+
+**Pendiente, explícitamente NO implementado en este commit:** capacidad
+6 (`bloques_condicionales`, para el ítem 43 de P35.0 — seguimiento viral
+post-confirmación) ni la declaración de `resultado_igm`/`resultado_igg`/
+`genotipo`/`titulacion` para P35.0 (Fase D3 del laboratorio). El hallazgo
+del ítem U (columnas de serología sin gate de presencia en
+`filasMuestras()`, salvo `numero_muestra`) tampoco se tocó — seguía
+siendo buen candidato para resolver junto con esta migración, pero no se
+incluyó para no mezclar "migrar visibilidad" con "endurecer validación"
+en el mismo commit.

@@ -1586,39 +1586,32 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // B05 Laboratorio: alternar visibilidad de campos PCR/Genotipo vs IgM/IgG según Tipo de Muestra
-  function actualizarCamposMuestraB05(subrow) {
-    var selectTipo = subrow.querySelector('.b05-select-tipo-muestra');
-    if (!selectTipo) return;
-    var val = selectTipo.value;
-
-    var pcrGroup = subrow.querySelectorAll('.b05-pcr-group');
-    var seroGroup = subrow.querySelectorAll('.b05-serologia-group');
-
-    if (val === 'SUERO') {
-      pcrGroup.forEach(function(el) { el.style.display = 'none'; });
-      seroGroup.forEach(function(el) { el.style.display = ''; });
-    } else if (val === 'HNF_FAR' || val === 'ORINA') {
-      pcrGroup.forEach(function(el) { el.style.display = ''; });
-      seroGroup.forEach(function(el) { el.style.display = 'none'; });
-    } else {
-      pcrGroup.forEach(function(el) { el.style.display = 'none'; });
-      seroGroup.forEach(function(el) { el.style.display = 'none'; });
-    }
+  // Tabla hija muestras: alterna visibilidad de una columna según el valor
+  // de OTRA columna de la misma fila (data-depende-columna/
+  // data-valores-activadores, PETICION_HC_Y_LABORATORIO.md Parte 2,
+  // capacidad 5). Reemplaza al toggle hardcodeado de B05
+  // (actualizarCamposMuestraB05/.b05-select-tipo-muestra/.b05-pcr-group/
+  // .b05-serologia-group) por uno genérico: cualquier ficha que declare
+  // columnas_tablas_hija.caso_muestra.depende_de_columna en el manifiesto
+  // queda cubierta sin tocar este archivo. Mismo idioma que
+  // evaluarDependencias() (depende_de/valor_activador de campo_def), pero
+  // resuelto DENTRO de una fila de tabla hija en vez de contra el documento
+  // entero.
+  function evaluarDependenciasMuestra() {
+    document.querySelectorAll('[data-depende-columna]').forEach(function(campo) {
+      var subrow = campo.closest('.subrow');
+      if (!subrow) return;
+      var columna = campo.getAttribute('data-depende-columna');
+      var activadores = (campo.getAttribute('data-valores-activadores') || '').split(',').map(function(s) { return s.trim(); });
+      var disparador = subrow.querySelector('[name="muestra_' + columna + '[]"]');
+      var valorActual = disparador ? disparador.value : '';
+      campo.style.display = activadores.indexOf(valorActual) !== -1 ? '' : 'none';
+    });
   }
 
-  document.addEventListener('change', function(e) {
-    if (e.target && e.target.classList.contains('b05-select-tipo-muestra')) {
-      var subrow = e.target.closest('.subrow');
-      if (subrow) {
-        actualizarCamposMuestraB05(subrow);
-      }
-    }
-  });
-
-  document.querySelectorAll('.b05-subrow-wrapper').forEach(function(subrow) {
-    actualizarCamposMuestraB05(subrow);
-  });
+  document.addEventListener('change', evaluarDependenciasMuestra);
+  document.addEventListener('input', evaluarDependenciasMuestra);
+  evaluarDependenciasMuestra();
 
   // B05 Antecedentes vacunales: Mostrar/ocultar y desplegar vacunas según Estado vacunal
   function actualizarBloqueVacunasB05() {

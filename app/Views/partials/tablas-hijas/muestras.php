@@ -7,7 +7,10 @@
  * $opcionesMuestraExtra (overrides declarativos por columna: tipo_muestra,
  * tipo_prueba, resultado_igm, resultado_igg, resultado_pcr, genotipo,
  * numero_muestra),
- * $textoLibreMuestra (columnas que se pintan como <input> en vez de <select>).
+ * $textoLibreMuestra (columnas que se pintan como <input> en vez de <select>),
+ * $dependeDeColumnaMuestra (visibilidad de una columna condicionada al valor
+ * de otra columna de la misma fila -- capacidad 5, reemplaza al toggle
+ * hardcodeado de B05).
  */
 $erroresMuestras = $erroresMuestras ?? [];
 $columnasMuestra = $columnasMuestra ?? ['tipo_muestra', 'tipo_prueba', 'resultado', 'fecha_toma', 'fecha_result'];
@@ -23,6 +26,19 @@ $esB05 = ($cie10Actual === 'B05');
 // de esta entrada -- ninguna ficha existente declara overrides todavía.
 $opcionesMuestraExtra = $opcionesMuestraExtra ?? [];
 $textoLibreMuestra = $textoLibreMuestra ?? [];
+$dependeDeColumnaMuestra = $dependeDeColumnaMuestra ?? [];
+
+// attrsDependencia(): data-depende-columna/data-valores-activadores para que
+// el JS genérico (ficha.js) sepa qué disparador vigilar dentro de la fila.
+// Ausente = el campo siempre se ve, mismo comportamiento que antes de esta
+// entrada para las 12 fichas que no declaran ninguna regla.
+$attrsDependencia = function (string $col) use ($dependeDeColumnaMuestra): string {
+    $regla = $dependeDeColumnaMuestra[$col] ?? null;
+    if (!$regla) {
+        return '';
+    }
+    return ' data-depende-columna="' . e($regla['columna']) . '" data-valores-activadores="' . e(implode(',', $regla['valores_activadores'])) . '"';
+};
 
 $opcionesResultadoSeroDefecto = [
     'PENDIENTE' => 'Pendiente',
@@ -54,14 +70,24 @@ $opcionesNumeroMuestra = !empty($opcionesMuestraExtra['numero_muestra'])
     ? array_intersect_key($opcionesNumeroMuestraDefecto, array_flip($opcionesMuestraExtra['numero_muestra']))
     : $opcionesNumeroMuestraDefecto;
 
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esB05, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $opcionesNumeroMuestra): void {
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esB05, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $opcionesNumeroMuestra, $dependeDeColumnaMuestra, $attrsDependencia): void {
     $errorToma = $error['fecha_toma'] ?? null;
     $errorEnvio = $error['fecha_envio_ins'] ?? null;
     $errorResult = $error['fecha_result'] ?? null;
 
     $tipoActual = $fila['tipo_muestra'] ?? '';
-    $esSuero = ($tipoActual === 'SUERO');
-    $esPcrGen = ($tipoActual === 'HNF_FAR' || $tipoActual === 'ORINA');
+    // visiblePorDependencia(): evalúa depende_de_columna para la columna dada
+    // contra el valor YA GUARDADO de su disparador en esta misma fila (render
+    // inicial en servidor -- el toggle en vivo lo hace ficha.js leyendo estos
+    // mismos data-attrs una vez el usuario cambia el disparador).
+    $visiblePorDependencia = function (string $col) use ($dependeDeColumnaMuestra, $fila): bool {
+        $regla = $dependeDeColumnaMuestra[$col] ?? null;
+        if (!$regla) {
+            return true;
+        }
+        $valorDisparador = (string) ($fila[$regla['columna']] ?? '');
+        return in_array($valorDisparador, $regla['valores_activadores'], true);
+    };
     ?>
   <div class="subrow b05-subrow-wrapper" style="<?= $esB05 ? 'border-left: 3px solid var(--accent); padding-left: 12px; margin-bottom: 16px;' : '' ?>">
     <div class="fields thirds" style="flex:1">
@@ -71,7 +97,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <div class="field">
           <label class="fl">Tipo de muestra</label>
           <div class="control">
-            <select name="muestra_tipo_muestra[]" class="b05-select-tipo-muestra">
+            <select name="muestra_tipo_muestra[]">
               <option value="">Seleccionar…</option>
               <option value="SUERO" <?= seleccionado($tipoActual, 'SUERO') ?>>Suero</option>
               <option value="HNF_FAR" <?= seleccionado($tipoActual, 'HNF_FAR') ?>>Hisopado nasal y faríngeo</option>
@@ -196,13 +222,13 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
       <?php endif; ?>
 
       <!-- Serología (PENDIENTES.md ítem C): declarativas por
-      columnas_tablas_hija.caso_muestra, ya no hardcodeadas a B05. Los
-      grupos b05-pcr-group/b05-serologia-group siguen atados al
-      selector .b05-select-tipo-muestra de más arriba (public/js/ficha.js)
-      -- hoy solo B05 declara estas columnas, así que no hay otra ficha
-      donde ese acoplamiento importe. -->
+      columnas_tablas_hija.caso_muestra, ya no hardcodeadas a B05. La
+      visibilidad condicional (antes $esSuero/$esPcrGen, hardcodeado) ahora
+      sale de columnas_tablas_hija.caso_muestra.depende_de_columna (capacidad
+      5) -- data-depende-columna/data-valores-activadores, evaluado en vivo
+      por ficha.js contra el <select> de tipo_muestra de la misma fila. -->
       <?php if ($muestra('resultado_pcr')): ?>
-        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
+        <div class="field"<?= $attrsDependencia('resultado_pcr') ?> style="<?= !$visiblePorDependencia('resultado_pcr') ? 'display:none;' : '' ?>">
           <label class="fl">Resultado PCR</label>
           <div class="control">
             <select name="muestra_resultado_pcr[]">
@@ -215,13 +241,13 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         </div>
       <?php endif; ?>
       <?php if ($muestra('fecha_result_pcr')): ?>
-        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
+        <div class="field"<?= $attrsDependencia('fecha_result_pcr') ?> style="<?= !$visiblePorDependencia('fecha_result_pcr') ? 'display:none;' : '' ?>">
           <label class="fl">Fecha resultado PCR</label>
           <div class="control mono"><input type="date" name="muestra_fecha_result_pcr[]" value="<?= e($fila['fecha_result_pcr'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
         </div>
       <?php endif; ?>
       <?php if ($muestra('genotipo')): ?>
-        <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
+        <div class="field"<?= $attrsDependencia('genotipo') ?> style="<?= !$visiblePorDependencia('genotipo') ? 'display:none;' : '' ?>">
           <label class="fl">Genotipo</label>
           <div class="control">
             <?php if ($genotipoLibre): ?>
@@ -238,7 +264,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         </div>
       <?php endif; ?>
       <?php if ($muestra('resultado_igm')): ?>
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+        <div class="field"<?= $attrsDependencia('resultado_igm') ?> style="<?= !$visiblePorDependencia('resultado_igm') ? 'display:none;' : '' ?>">
           <label class="fl">Resultado IgM</label>
           <div class="control">
             <select name="muestra_resultado_igm[]">
@@ -251,13 +277,13 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         </div>
       <?php endif; ?>
       <?php if ($muestra('fecha_result_igm')): ?>
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+        <div class="field"<?= $attrsDependencia('fecha_result_igm') ?> style="<?= !$visiblePorDependencia('fecha_result_igm') ? 'display:none;' : '' ?>">
           <label class="fl">Fecha resultado IgM</label>
           <div class="control mono"><input type="date" name="muestra_fecha_result_igm[]" value="<?= e($fila['fecha_result_igm'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
         </div>
       <?php endif; ?>
       <?php if ($muestra('resultado_igg')): ?>
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+        <div class="field"<?= $attrsDependencia('resultado_igg') ?> style="<?= !$visiblePorDependencia('resultado_igg') ? 'display:none;' : '' ?>">
           <label class="fl">Resultado IgG</label>
           <div class="control">
             <select name="muestra_resultado_igg[]">
@@ -270,13 +296,13 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         </div>
       <?php endif; ?>
       <?php if ($muestra('fecha_result_igg')): ?>
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+        <div class="field"<?= $attrsDependencia('fecha_result_igg') ?> style="<?= !$visiblePorDependencia('fecha_result_igg') ? 'display:none;' : '' ?>">
           <label class="fl">Fecha resultado IgG</label>
           <div class="control mono"><input type="date" name="muestra_fecha_result_igg[]" value="<?= e($fila['fecha_result_igg'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
         </div>
       <?php endif; ?>
       <?php if ($muestra('titulacion')): ?>
-        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+        <div class="field"<?= $attrsDependencia('titulacion') ?> style="<?= !$visiblePorDependencia('titulacion') ? 'display:none;' : '' ?>">
           <label class="fl">Titulación</label>
           <div class="control"><input type="text" name="muestra_titulacion[]" value="<?= e($fila['titulacion'] ?? '') ?>" placeholder="Titulación…"></div>
         </div>

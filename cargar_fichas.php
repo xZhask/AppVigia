@@ -328,14 +328,16 @@ function validarManifiesto(array $manifiesto): void
                     $columnas = $declaracion;
                     $opciones = [];
                     $textoLibre = [];
+                    $dependeDeColumna = [];
                 } else {
-                    $clavesDesconocidas = array_diff(array_keys($declaracion), ['columnas', 'opciones', 'texto_libre']);
+                    $clavesDesconocidas = array_diff(array_keys($declaracion), ['columnas', 'opciones', 'texto_libre', 'depende_de_columna']);
                     if ($clavesDesconocidas) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} tiene claves desconocidas: " . implode(', ', $clavesDesconocidas) . ".");
                     }
                     $columnas = $declaracion['columnas'] ?? [];
                     $opciones = $declaracion['opciones'] ?? [];
                     $textoLibre = $declaracion['texto_libre'] ?? [];
+                    $dependeDeColumna = $declaracion['depende_de_columna'] ?? [];
                 }
 
                 foreach ($columnas as $col) {
@@ -344,8 +346,44 @@ function validarManifiesto(array $manifiesto): void
                     }
                 }
 
-                if (($opciones || $textoLibre) && $tabla !== 'caso_muestra') {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} declara \"opciones\"/\"texto_libre\", que hoy solo están implementados para caso_muestra.");
+                if (($opciones || $textoLibre || $dependeDeColumna) && $tabla !== 'caso_muestra') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} declara \"opciones\"/\"texto_libre\"/\"depende_de_columna\", que hoy solo están implementados para caso_muestra.");
+                }
+
+                // depende_de_columna (capacidad 5, PETICION_HC_Y_LABORATORIO.md
+                // Parte 2): visibilidad de UNA columna condicionada al valor de
+                // OTRA columna de la MISMA fila -- mismo idioma que
+                // depende_de/valor_activador de campo_def, pero resuelto por
+                // columna dentro de una tabla hija en vez de por campo suelto.
+                // Reemplaza al toggle hardcodeado de B05 ($esSuero/$esPcrGen en
+                // muestras.php). Acotado a "un disparador, un conjunto de
+                // valores" -- no es un motor de reglas general.
+                foreach ($dependeDeColumna as $colDependiente => $regla) {
+                    if (!in_array($colDependiente, COLUMNAS_TABLA_HIJA_VALIDAS[$tabla], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.depende_de_columna incluye \"{$colDependiente}\", que no es una columna configurable de esa tabla.");
+                    }
+                    if (!is_array($regla) || array_diff(array_keys($regla), ['columna', 'valores_activadores'])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.depende_de_columna.{$colDependiente} debe ser {\"columna\", \"valores_activadores\"}.");
+                    }
+                    $colDisparadora = $regla['columna'] ?? null;
+                    $valoresActivadores = $regla['valores_activadores'] ?? null;
+                    if (!is_string($colDisparadora) || $colDisparadora === '') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.depende_de_columna.{$colDependiente}.columna debe ser texto no vacío.");
+                    }
+                    if (!in_array($colDisparadora, COLUMNAS_TABLA_HIJA_VALIDAS[$tabla], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.depende_de_columna.{$colDependiente}.columna (\"{$colDisparadora}\") no es una columna configurable de esa tabla.");
+                    }
+                    if ($colDisparadora === $colDependiente) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.depende_de_columna.{$colDependiente} depende de sí misma.");
+                    }
+                    if (!is_array($valoresActivadores) || empty($valoresActivadores) || !array_is_list($valoresActivadores)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.depende_de_columna.{$colDependiente}.valores_activadores debe ser una lista no vacía de valores.");
+                    }
+                    foreach ($valoresActivadores as $v) {
+                        if (!is_string($v) || $v === '') {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.depende_de_columna.{$colDependiente}.valores_activadores tiene un valor no válido (debe ser texto no vacío).");
+                        }
+                    }
                 }
 
                 foreach ($opciones as $col => $valores) {
