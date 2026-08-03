@@ -2235,3 +2235,40 @@ mide `display:block`, fondo blanco, `box-shadow` y borde iguales a los
 de "Laboratorio"/"Investigador" (capturado en pantalla). Tres
 verificadores en verde; sin otro `.dep-wrap.card.section` en las 24
 fichas, cero riesgo de efecto colateral en otra parte de la app.
+
+**Z.7.2. Faltaba "Tipo de muestra" en el bloque de seguimiento — ✅ cerrado**
+
+El usuario notó, ya con el bloque visible y con el diseño correcto,
+que solo mostraba Fecha de obtención/Fecha de resultado/Resultado --
+sin "Tipo de muestra", pese a que el PDF marca ambas filas del ítem 43
+como "Hisopado nasal y faríngeo". Causa: el manifiesto de P35.0
+declaraba `bloques_condicionales[0].columnas` como
+`["fecha_toma","fecha_result","resultado"]`, sin `"tipo_muestra"` --
+`muestras-condicional.php` nunca pintaba ese campo porque no estaba en
+la lista, y el partial tampoco sabía renderizarlo (a diferencia de
+`muestras.php`, el widget del ítem 42, que sí lo tiene desde antes).
+
+**Decisión (confirmada con el usuario):** en vez de una etiqueta fija
+de solo lectura (más fiel al PDF pero exige código nuevo), se reusa el
+mismo `<select>` que ya usa el ítem 42 para esta ficha (opciones
+SEROLOGIA/HNF_FAR de `datosMuestrasCatalogo()`), preseleccionado en
+"Hisopado nasal y faríngeo" pero editable -- cero código de opción
+nueva, más consistente con el resto del formulario.
+
+**Cambios:** `"tipo_muestra"` agregado a `bloques_condicionales[0].columnas`
+en el manifiesto (ya era una columna válida de `caso_muestra` en
+`cargar_fichas.php`, sin tocar la constante). `muestras-condicional.php`
+gana el mismo bloque `<select>` que `muestras.php` (reusa
+`$opcionesTipoMuestra`, ya disponible en el scope de quien lo incluye
+-- `datosMuestrasCatalogo()` se mezcla en la vista igual que para el
+bloque principal), y el valor por defecto de una fila nueva pasa a
+`'tipo_muestra' => 'HNF_FAR'` en vez de vacío. `cargar_fichas.php --apply --cie10=P35.0`.
+
+**Verificación:** Playwright -- al agregar una fila nueva, "Tipo de
+muestra" queda preseleccionado en "Hisopado nasal y faríngeo"
+(capturado en pantalla, layout igual al resto del formulario). Ronda
+crear()→editar(): 2 filas guardadas con `tipo_muestra='HNF_FAR'` y
+recargadas con el `<select>` correcto marcado en las 3 filas (2 datos +
+1 plantilla vacía). Tres verificadores en verde, byte-diff limpio en
+A36/B26/A80/O95/B05 (el cambio queda acotado a la columna nueva del
+bloque de P35.0).

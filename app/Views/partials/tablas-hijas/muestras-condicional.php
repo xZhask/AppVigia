@@ -11,8 +11,8 @@
  * bloques_condicionales), $filasBloque (filas ya filtradas a este
  * contexto), $erroresBloque, $clasificacionActualBloque (valor actual de
  * "clasificacion" para computar la visibilidad inicial en servidor),
- * $opcionesResultado (catalogo_item, reutilizado de datosMuestrasCatalogo()
- * si el bloque declara la columna "resultado").
+ * $opcionesResultado, $opcionesTipoMuestra (catalogo_item, reutilizados de
+ * datosMuestrasCatalogo() si el bloque declara "resultado"/"tipo_muestra").
  */
 $contexto = $bloqueMuestra['contexto'];
 $columnasBloque = $bloqueMuestra['columnas'];
@@ -23,10 +23,23 @@ $nombreCampo = fn(string $col): string => 'muestra_' . $contexto . '_' . $col . 
 
 $visible = in_array($clasificacionActualBloque, $bloqueMuestra['valores_activadores'], true);
 
-$filaBloque = function (array $fila = ['fecha_toma' => '', 'fecha_result' => '', 'resultado' => '']) use ($tieneColumna, $nombreCampo, $opcionesResultado): void {
+$filaBloque = function (array $fila = ['tipo_muestra' => 'HNF_FAR', 'fecha_toma' => '', 'fecha_result' => '', 'resultado' => '']) use ($tieneColumna, $nombreCampo, $opcionesResultado, $opcionesTipoMuestra): void {
     ?>
   <div class="subrow">
     <div class="fields thirds" style="flex:1">
+      <?php if ($tieneColumna('tipo_muestra')): ?>
+        <div class="field">
+          <label class="fl">Tipo de muestra</label>
+          <div class="control">
+            <select name="<?= e($nombreCampo('tipo_muestra')) ?>">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesTipoMuestra as $op): ?>
+                <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['tipo_muestra'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      <?php endif; ?>
       <?php if ($tieneColumna('fecha_toma')): ?>
         <div class="field">
           <label class="fl">Fecha de obtención</label>

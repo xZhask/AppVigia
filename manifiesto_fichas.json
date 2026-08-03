@@ -7163,6 +7163,7 @@
                     "contexto": "seguimiento",
                     "titulo": "Seguimiento de excreción viral (ítem 43, solo casos confirmados)",
                     "columnas": [
+                        "tipo_muestra",
                         "fecha_toma",
                         "fecha_result",
                         "resultado"
