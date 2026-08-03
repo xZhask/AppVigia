@@ -116,10 +116,6 @@ $router->post('/casos/nuevo', function () {
     (new CasosController())->crear();
 });
 
-$router->get('/casos/nuevo/secciones-clinicas', function () {
-    (new CasosController())->seccionesClinicas();
-});
-
 $router->get('/casos/nuevo/paciente', function () {
     (new CasosController())->buscarPaciente();
 });
