@@ -461,9 +461,16 @@ class CasosController extends Controller
 
         $isPfa = ($enfermedad['cie10'] ?? '') === 'A80';
         $isB05 = ($enfermedad['cie10'] ?? '') === 'B05';
+        $isB26 = ($enfermedad['cie10'] ?? '') === 'B26';
+        $isP350 = ($enfermedad['cie10'] ?? '') === 'P35.0';
         $sinCaptacion = in_array($enfermedad['cie10'] ?? '', ['A80', 'B05', 'O95', 'P35.0'], true);
         $tieneSujetoSinAnclaje = !empty(rolesSujetoSinAnclaje($enfermedad['columnas_sujeto'] ?? null, CampoDef::rolesConSeccionPropia((int) $enfermedad['id'])));
-        $tieneAntecedentesEpi = !$isPfa && !$isB05 && ((int) ($enfermedad['usa_contactos'] ?? 0) === 1 || (int) ($enfermedad['usa_viajes'] ?? 0) === 1 || (int) ($enfermedad['usa_vacunas'] ?? 0) === 1 || (int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1 || $tieneSujetoSinAnclaje);
+        // Misma exclusión que nueva/index.php y fichas/editar.php (ver
+        // $mostrarContactos/$mostrarViajes/... ahí) -- este endpoint AJAX
+        // tiene su propia copia de la condición y hay que mantenerlas en
+        // sync a mano (PENDIENTES.md ítem Z.5, ver
+        // seccionesclinicas_extrae_claves_a_mano en memoria).
+        $tieneAntecedentesEpi = !$isPfa && !$isB05 && !$isB26 && !$isP350 && ((int) ($enfermedad['usa_contactos'] ?? 0) === 1 || (int) ($enfermedad['usa_viajes'] ?? 0) === 1 || (int) ($enfermedad['usa_vacunas'] ?? 0) === 1 || (int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1 || $tieneSujetoSinAnclaje);
 
         // nucleo_omitidos: cambiar de enfermedad en "Nueva ficha" solo
         // reemplaza la sección clínica vía AJAX -- la tarjeta de "Datos del

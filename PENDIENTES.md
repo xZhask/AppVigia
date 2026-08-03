@@ -2069,3 +2069,88 @@ deshabilitada; NO → deshabilitada; SI → habilitada, acepta
 ("Fecha programada"): las 4 celdas quedan con `max="2026-08-03"` pero
 siguen habilitadas (sin columna SI que gatear). Cero errores de consola
 en ambos casos.
+
+**Z.5. "Antecedentes epidemiológicos" (Contactos/Lugar) seguía visible
+en P35.0 al cambiar de ficha SIN recargar — ✅ cerrado**
+
+El usuario reportó, con captura, que la sección 8 "Antecedentes
+epidemiológicos" (Contactos + Lugar probable de infección) aparecía en
+P35.0 cuando el PDF no la pide (P35.0 solo necesita "Viajes", ya
+cubierto en "Antecedentes de la madre"). Al cotejar, la carga completa
+de P35.0 (`/casos/nuevo?enfermedad_id=17` de una) ya la ocultaba bien
+-- el bug real aparecía solo al **cambiar el desplegable de enfermedad
+sin recargar la página** (el flujo real de "Nueva ficha": se entra con
+una enfermedad por defecto y se elige la correcta del desplegable).
+
+Causa: `CasosController::seccionesClinicas()` (endpoint AJAX que arma
+esa sección al cambiar de ficha) calculaba `$tieneAntecedentesEpi` con
+`!$isPfa && !$isB05` nada más -- nunca se le sumó `!$isB26`/`!$isP350`
+cuando esa exclusión se agregó en `nueva/index.php`/`fichas/editar.php`
+(ítem Z.2). Mismo antipatrón ya documentado en memoria
+(`seccionesclinicas_extrae_claves_a_mano`): una condición compartida
+que vive duplicada en dos sitios y se desincroniza en silencio.
+
+Mismo bug técnico afectaba a B26 (ficha ya revisada) pero ahí quedaba
+oculto "por casualidad": `actualizarVacunacionB26()` le pone
+`style.display='none'` inline al entrar a B26, y ese inline sobrevive
+aunque el `hidden` que se recalcula después esté mal -- P35.0 no tiene
+ese seguro accidental, por eso ahí sí se veía. Confirmado con el
+usuario antes de commitear (afecta a B26) y corregido: se agregó
+`!$isB26 && !$isP350` a la fórmula de `$tieneAntecedentesEpi`, igual
+que en los otros dos archivos.
+
+**Verificación:** Playwright en navegador real, cambiando el
+desplegable sin recargar: A36→P35.0 y A36→B26 dejan la tarjeta
+`hidden` de verdad (antes: `hidden` quedaba `null`/visible para
+P35.0; para B26 el valor de fondo también estaba mal, solo tapado por
+el inline style). A36→A80 y A36→B05 sin cambios (ya estaban
+excluidos ahí). Tres verificadores en verde.
+
+**Z.6. Cambiar de ficha por AJAX parcheaba el DOM caso por caso — se
+reemplazó por una recarga real de página**
+
+Investigando Z.5, el usuario preguntó por qué el cambio de ficha no
+hace "una especie de reset completo, como una carga inicial" -- había
+notado que valores de una ficha (p.ej. "Gestante: Sí") podían quedar
+pegados visualmente al cambiar a otra que no aplica. La causa de fondo
+es estructural: `selectorEnfermedad.addEventListener('change', ...)`
+en `ficha.js` (~220 líneas) pedía por `fetch()` el HTML de "Cuadro
+clínico" y then parchaba a mano, campo por campo, wrap por wrap,
+docenas de casos especiales por ficha (b05-elem/o95-elem/b26-hide,
+nucleo_omitidos/incluidos, unidades_edad, detalle_domicilio,
+notificacion-fechas-*, antecedentes epidemiológicos, laboratorio...) --
+la misma raíz de los dos bugs de Z.5: cada caso especial nuevo exige
+tocar el render inicial del servidor Y esta lista a mano, y es fácil
+que uno se desactualice.
+
+Se verificó que el selector de enfermedad es el **primer campo** de
+"Nueva ficha" (antes de Documento/Datos del paciente) y que "Editar
+ficha" ni siquiera permite cambiar de enfermedad (ahí es texto plano) --
+así que no hay nada más que perder al descartar el estado del
+formulario en un cambio de enfermedad. Confirmado con el usuario:
+`selectorEnfermedad.addEventListener('change', ...)` ahora hace
+`window.location.href = '/casos/nuevo?enfermedad_id=' + id` (recarga
+completa) en vez de parchar el DOM. Reusa el único render que siempre
+está correcto -- el del servidor -- y elimina de raíz toda la clase de
+bugs "quedó pegado un valor/sección de la ficha anterior", no solo los
+dos que ya se habían encontrado.
+
+**Efecto colateral aceptado:** si el usuario ya escribió algo en
+Documento/Datos del paciente antes de cambiar de enfermedad, se pierde
+con la recarga -- inevitable en la práctica dado el orden del
+formulario, y el usuario lo aceptó explícitamente.
+
+**Queda pendiente (no bloqueante, fuera de esta sesión):**
+`CasosController::seccionesClinicas()` y su ruta
+`/casos/nuevo/secciones-clinicas` quedan sin ningún llamador activo en
+el frontend (se dejaron intactos, no se tocó el controlador salvo el
+fix de Z.5) -- candidato a eliminar en una limpieza aparte si se
+confirma que nada más los usa.
+
+**Verificación:** Playwright con navegación real (`waitForNavigation`):
+A36→P35.0 cambia la URL a `?enfermedad_id=17`, tag CIE-10 se actualiza,
+tarjeta de antecedentes queda `hidden`. P35.0→A36 (caso inverso, el que
+antes quedaba con la tarjeta visible pero VACÍA): ahora "Agregar
+contacto"/"Agregar lugar" aparecen con contenido real, igual que una
+carga directa de A36. Cero errores de consola en ambos sentidos. Tres
+verificadores en verde (mismos 3 huérfanos preexistentes).

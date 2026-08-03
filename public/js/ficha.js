@@ -2,11 +2,6 @@ document.addEventListener('DOMContentLoaded', function () {
   var selectorEnfermedad = document.getElementById('diseaseSel');
   var contenedorClinico = document.getElementById('secciones-clinicas');
 
-  // Entrada F: mismas etiquetas que $etiquetasUnidadEdad en
-  // datos-paciente-nucleo.php -- repuebla el <select> de unidad al cambiar
-  // de ficha en "Nueva ficha" (ver datos.unidadesEdad más abajo).
-  var ETIQUETAS_UNIDAD_EDAD = { ANIOS: 'Años', MESES: 'Meses', DIAS: 'Días', HORAS: 'Horas', MINUTOS: 'Minutos' };
-
   // ---------- Peticion 2, Fase 4: resolucion de campos por clave ----------
   // cargar_fichas.php regenera campo_def.id en cada recarga; ficha.js no
   // puede seguir teniendo el numero pegado en el codigo. El servidor emite
@@ -522,226 +517,27 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   if (selectorEnfermedad && contenedorClinico) {
+    // Cambiar de enfermedad en "Nueva ficha" navega de verdad a
+    // /casos/nuevo?enfermedad_id=X (recarga completa), en vez de parchar el
+    // DOM por AJAX seccion por seccion. Antes había ~220 líneas acá
+    // reproduciendo a mano, campo por campo, la misma condición que ya
+    // calcula el render inicial del servidor (mostrarContactos, tieneAntecedentesEpi,
+    // nucleo_omitidos/incluidos, unidades_edad, detalle_domicilio, los
+    // wraps .b05-elem/.o95-elem/.b26-hide, etc.) -- cada ficha nueva con un
+    // caso especial exigía tocar dos lugares a la vez y era fácil que uno
+    // quedara desactualizado (2 bugs reales de esta sesión: P35.0 y B26
+    // mostraban "Antecedentes epidemiológicos" de la ficha anterior al
+    // cambiar sin recargar). La recarga completa reusa el único render que
+    // sí está siempre correcto -- el del servidor -- y de paso elimina
+    // cualquier valor tecleado en una sección de la ficha anterior (ej.
+    // "Gestante: Sí") que antes quedaba pegado visualmente aunque ya no
+    // aplicara. El selector de enfermedad es el primer campo del
+    // formulario (antes de Documento/Datos del paciente), así que no hay
+    // nada más que perder en la práctica.
     selectorEnfermedad.addEventListener('change', function () {
       var enfermedadId = selectorEnfermedad.value;
-      contenedorClinico.style.opacity = '0.5';
-
-      fetch('/casos/nuevo/secciones-clinicas?enfermedad_id=' + encodeURIComponent(enfermedadId))
-        .then(function (resp) { return resp.json(); })
-        .then(function (datos) {
-          mapaCampos = datos.mapaCampos || {};
-          // El nodo <script id="mapaCampos"> queda en el DOM despues del
-          // primer render; si no se reescribe aca, miente sobre la
-          // enfermedad activa para cualquier lector futuro (misma trampa
-          // que un campo_ID regenerado, ver Fase 7).
-          if (mapaCamposEl) mapaCamposEl.textContent = JSON.stringify(mapaCampos);
-          contenedorClinico.innerHTML = datos.html;
-          contenedorClinico.style.opacity = '1';
-
-          if (datos.htmlClasificacionChips) {
-            var chipSelect = document.querySelector('.chip-select');
-            if (chipSelect) {
-              var fieldParent = chipSelect.closest('.field');
-              if (fieldParent) {
-                fieldParent.outerHTML = datos.htmlClasificacionChips;
-              }
-            }
-          }
-
-          var captacionWrap = document.getElementById('notificacionCaptacionWrap');
-          if (captacionWrap) {
-            captacionWrap.hidden = !datos.usaCaptacion;
-          }
-
-          var pfaFechasWrap = document.getElementById('notificacionFechasPfaWrap');
-          if (pfaFechasWrap) {
-            pfaFechasWrap.hidden = (datos.cie10 !== 'A80');
-          }
-
-          var esB05 = (datos.cie10 === 'B05');
-          var b05FechasWrap = document.getElementById('notificacionFechasB05Wrap');
-          if (b05FechasWrap) {
-            b05FechasWrap.hidden = !esB05;
-          }
-
-          var esO95 = (datos.cie10 === 'O95');
-          var o95FechasWrap = document.getElementById('notificacionFechasO95Wrap');
-          if (o95FechasWrap) {
-            o95FechasWrap.hidden = !esO95;
-          }
-
-          var esB26 = (datos.cie10 === 'B26');
-          var b26FechasWrap = document.getElementById('notificacionFechasB26Wrap');
-          if (b26FechasWrap) {
-            b26FechasWrap.hidden = !esB26;
-            b26FechasWrap.style.display = esB26 ? '' : 'none';
-          }
-
-          var esP35 = (datos.cie10 === 'P35.0');
-          var p35FechasWrap = document.getElementById('notificacionFechasP35Wrap');
-          if (p35FechasWrap) {
-            p35FechasWrap.hidden = !esP35;
-            p35FechasWrap.style.display = esP35 ? '' : 'none';
-          }
-
-          document.querySelectorAll('.b05-field-wrap, .b05-elem').forEach(function(el) {
-            el.hidden = !esB05;
-          });
-          document.querySelectorAll('.o95-elem').forEach(function(el) {
-            el.hidden = !esO95;
-          });
-          document.querySelectorAll('.o95-hide').forEach(function(el) {
-            el.hidden = esO95;
-            el.style.display = esO95 ? 'none' : '';
-          });
-          document.querySelectorAll('.b26-hide').forEach(function(el) {
-            el.hidden = esB26;
-            el.style.display = esB26 ? 'none' : '';
-          });
-
-          // nucleo_omitidos: la tarjeta "Datos del paciente" no se vuelve a
-          // renderizar en este fetch (solo la seccion clinica), asi que hay
-          // que reocultar/mostrar a mano los campos del nucleo declarados
-          // como omitidos por la ficha nueva. datos.nucleoOmitidos ya viene
-          // decodificado del manifiesto (via enfermedad.nucleo_omitidos).
-          var nucleoOmitidos = datos.nucleoOmitidos || [];
-          document.querySelectorAll('[data-nucleo-campo]').forEach(function (el) {
-            var omitido = nucleoOmitidos.indexOf(el.getAttribute('data-nucleo-campo')) !== -1;
-            el.hidden = omitido;
-            el.style.display = omitido ? 'none' : '';
-          });
-
-          // nucleo_incluidos: al revés que nucleo_omitidos -- opt-in, el
-          // campo se muestra solo si está en la lista. "N.° de historia
-          // clínica" vive en el shell (nueva/index.php), no en esta
-          // tarjeta, pero tampoco se re-renderiza al cambiar de ficha.
-          var nucleoIncluidos = datos.nucleoIncluidos || [];
-          document.querySelectorAll('[data-nucleo-incluido]').forEach(function (el) {
-            var incluido = nucleoIncluidos.indexOf(el.getAttribute('data-nucleo-incluido')) !== -1;
-            el.hidden = !incluido;
-            el.style.display = incluido ? '' : 'none';
-          });
-
-          // unidades_edad: al revés que nucleo_omitidos, es opt-in -- el
-          // bloque solo se muestra si la ficha nueva declara unidades, y
-          // hay que repoblar las <option> del select (no hay una cascada
-          // genérica existente para reusar, a diferencia de Pueblo étnico).
-          var unidadesEdad = datos.unidadesEdad || [];
-          var bloqueEdadUnidad = document.querySelector('[data-edad-unidad-bloque]');
-          if (bloqueEdadUnidad) {
-            var mostrarEdadUnidad = unidadesEdad.length > 0;
-            bloqueEdadUnidad.hidden = !mostrarEdadUnidad;
-            bloqueEdadUnidad.style.display = mostrarEdadUnidad ? '' : 'none';
-            var selectEdadUnidad = bloqueEdadUnidad.querySelector('select[name="edad_unidad"]');
-            if (selectEdadUnidad) {
-              var valorUnidadActual = selectEdadUnidad.value;
-              selectEdadUnidad.innerHTML = '<option value="">Seleccionar…</option>';
-              unidadesEdad.forEach(function (unidad) {
-                var opt = document.createElement('option');
-                opt.value = unidad;
-                opt.textContent = ETIQUETAS_UNIDAD_EDAD[unidad] || unidad;
-                if (unidad === valorUnidadActual) opt.selected = true;
-                selectEdadUnidad.appendChild(opt);
-              });
-            }
-            if (!mostrarEdadUnidad) {
-              var inputEdadValor = bloqueEdadUnidad.querySelector('input[name="edad_valor"]');
-              if (inputEdadValor) inputEdadValor.value = '';
-            }
-          }
-
-          // detalle_domicilio (Entrada J acotada al bloque de domicilio):
-          // opt-in campo por campo, igual mecánica que nucleo_omitidos pero
-          // con la polaridad invertida (se muestra si ESTÁ en la lista, no
-          // si falta).
-          var detalleDomicilio = datos.detalleDomicilio || [];
-          document.querySelectorAll('[data-detalle-domicilio-campo]').forEach(function (el) {
-            var visible = detalleDomicilio.indexOf(el.getAttribute('data-detalle-domicilio-campo')) !== -1;
-            el.hidden = !visible;
-            el.style.display = visible ? '' : 'none';
-          });
-          var captGrid = document.querySelector('.b26-capt-grid');
-          if (captGrid) {
-            if (esB26) {
-              captGrid.classList.remove('thirds');
-              captGrid.classList.add('halves');
-            } else {
-              captGrid.classList.remove('halves');
-              captGrid.classList.add('thirds');
-            }
-          }
-          if (!esB05) {
-            var chkMenor = document.getElementById('chkEsMenorEdadB05');
-            if (chkMenor) chkMenor.checked = false;
-          }
-          if (!esO95) {
-            var chkCom = document.getElementById('o95HabilitarDatosComunitariosChk');
-            if (chkCom) {
-              chkCom.checked = false;
-              delete chkCom.dataset.userToggled;
-            }
-          }
-          actualizarTutorB05();
-          actualizarEtapaFichaO95();
-          actualizarEtniaOtra(false);
-          actualizarPuebloEtnicoB05();
-          actualizarGestante();
-          actualizarLugarInfeccionB26(datos.cie10);
-          actualizarCuadroClinicoB26(datos.cie10);
-          actualizarVacunacionB26(datos.cie10);
-
-          var antecedentesCard = document.getElementById('cardAntecedentesEpidemiologicos');
-          if (antecedentesCard) {
-            antecedentesCard.hidden = esB05 ? true : !datos.tieneAntecedentesEpi;
-          }
-
-          var labBody = document.getElementById('seccionLaboratorioBody');
-          var labCard = document.getElementById('seccionLaboratorioCard');
-          if (labBody && datos.htmlMuestras) {
-            labBody.innerHTML = datos.htmlMuestras;
-          }
-          if (labCard) {
-            labCard.hidden = !datos.usaMuestras;
-          }
-
-          // Bloques condicionales de tabla hija (capacidad 6): siblings
-          // planos de labCard (no un wrapper) para que
-          // renumerarSeccionesSiguientes() los cuente igual que cualquier
-          // otra tarjeta ".section" al recorrer contenedorClinico.nextElementSibling.
-          document.querySelectorAll('.bloque-condicional-muestra').forEach(function (el) { el.remove(); });
-          if (labCard && datos.htmlBloquesMuestra && datos.htmlBloquesMuestra.length) {
-            labCard.insertAdjacentHTML('afterend', datos.htmlBloquesMuestra.join(''));
-          }
-
-          renumerarSeccionesSiguientes();
-          if (window.SelectorBusqueda) {
-            window.SelectorBusqueda.escanear(contenedorClinico);
-            if (labBody) window.SelectorBusqueda.escanear(labBody);
-          }
-          if (typeof inicializarGruposSiNo === 'function') inicializarGruposSiNo();
-          evaluarDependencias();
-          if (esO95) sincronizarClasificacionO95();
-
-          var tagCie = document.getElementById('cieTag');
-          if (tagCie) tagCie.textContent = 'CIE-10 · ' + datos.cie10;
-
-          var opcion = selectorEnfermedad.selectedOptions[0];
-          var esInmediata = opcion && opcion.dataset.tipoNotif === 'INMEDIATA';
-          var textoTipoNotif = esInmediata ? 'Notificación inmediata' : 'Notificación semanal';
-          var tagTipoNotif = document.getElementById('tipoNotifTag');
-          if (tagTipoNotif) tagTipoNotif.textContent = textoTipoNotif;
-
-          var resumenEnfermedad = document.getElementById('resumenEnfermedad');
-          if (resumenEnfermedad && opcion) resumenEnfermedad.textContent = opcion.dataset.nombreCorto || opcion.text;
-          var resumenTipoNotif = document.getElementById('resumenTipoNotif');
-          if (resumenTipoNotif) resumenTipoNotif.textContent = esInmediata ? 'Inmediata' : 'Semanal';
-
-          actualizarProgreso();
-        })
-        .catch(function () {
-          contenedorClinico.style.opacity = '1';
-          toast('No se pudo cargar el cuadro clínico. Intenta de nuevo.');
-        });
+      if (!enfermedadId) return;
+      window.location.href = '/casos/nuevo?enfermedad_id=' + encodeURIComponent(enfermedadId);
     });
   }
 
