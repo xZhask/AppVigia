@@ -117,7 +117,7 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
     // B05, pintadas a mano en muestras.php dentro de un if ($esB05) --
     // PENDIENTES.md ítem C: se vuelven declarativas igual que el resto,
     // B05 las pasa a declarar acá en vez de estar hardcodeadas.
-    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones', 'resultado_pcr', 'fecha_result_pcr', 'genotipo', 'resultado_igm', 'fecha_result_igm', 'resultado_igg', 'fecha_result_igg'],
+    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones', 'resultado_pcr', 'fecha_result_pcr', 'genotipo', 'resultado_igm', 'fecha_result_igm', 'resultado_igg', 'fecha_result_igg', 'titulacion'],
 ];
 
 // Campos del núcleo compartido de "Datos del paciente" (columnas fijas de
@@ -308,14 +308,69 @@ function validarManifiesto(array $manifiesto): void
         }
 
         if (!empty($ficha['columnas_tablas_hija'])) {
-            foreach ($ficha['columnas_tablas_hija'] as $tabla => $columnas) {
+            foreach ($ficha['columnas_tablas_hija'] as $tabla => $declaracion) {
                 if (!isset(COLUMNAS_TABLA_HIJA_VALIDAS[$tabla])) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija tiene una tabla desconocida: \"{$tabla}\".");
                 }
+
+                // Forma plana (lista) -- compat con lo que ya declaraban A80/B05
+                // antes de PETICION_HC_Y_LABORATORIO.md Parte 2 -- o forma objeto
+                // {"columnas", "opciones", "texto_libre"}, hoy solo para
+                // caso_muestra: "opciones" restringe el vocabulario de una
+                // columna por ficha (reemplaza a la const PHP
+                // OPCIONES_MUESTRA_POR_ENFERMEDAD), "texto_libre" la vuelve un
+                // <input> en vez de <select> (hoy solo tiene sentido para
+                // "genotipo"). No se valida el CONTENIDO de "opciones" contra
+                // catalogo_item ni contra los arrays PHP de muestras.php (serían
+                // dos fuentes de verdad más para mantener sincronizadas) -- solo
+                // que la forma sea una lista no vacía de strings.
+                if (array_is_list($declaracion)) {
+                    $columnas = $declaracion;
+                    $opciones = [];
+                    $textoLibre = [];
+                } else {
+                    $clavesDesconocidas = array_diff(array_keys($declaracion), ['columnas', 'opciones', 'texto_libre']);
+                    if ($clavesDesconocidas) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} tiene claves desconocidas: " . implode(', ', $clavesDesconocidas) . ".");
+                    }
+                    $columnas = $declaracion['columnas'] ?? [];
+                    $opciones = $declaracion['opciones'] ?? [];
+                    $textoLibre = $declaracion['texto_libre'] ?? [];
+                }
+
                 foreach ($columnas as $col) {
                     if (!in_array($col, COLUMNAS_TABLA_HIJA_VALIDAS[$tabla], true)) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} incluye \"{$col}\", que no es una columna configurable de esa tabla.");
                     }
+                }
+
+                if (($opciones || $textoLibre) && $tabla !== 'caso_muestra') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} declara \"opciones\"/\"texto_libre\", que hoy solo están implementados para caso_muestra.");
+                }
+
+                foreach ($opciones as $col => $valores) {
+                    if (!in_array($col, COLUMNAS_TABLA_HIJA_VALIDAS[$tabla], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.opciones incluye \"{$col}\", que no es una columna configurable de esa tabla.");
+                    }
+                    if (!is_array($valores) || empty($valores) || !array_is_list($valores)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.opciones.{$col} debe ser una lista no vacía de valores.");
+                    }
+                    foreach ($valores as $v) {
+                        if (!is_string($v) || $v === '') {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.opciones.{$col} tiene un valor no válido (debe ser texto no vacío).");
+                        }
+                    }
+                }
+
+                foreach ($textoLibre as $col) {
+                    if (!in_array($col, COLUMNAS_TABLA_HIJA_VALIDAS[$tabla], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.texto_libre incluye \"{$col}\", que no es una columna configurable de esa tabla.");
+                    }
+                }
+
+                $columnasEnConflicto = array_intersect(array_keys($opciones), $textoLibre);
+                if ($columnasEnConflicto) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} declara \"" . implode(', ', $columnasEnConflicto) . "\" en \"opciones\" y \"texto_libre\" a la vez; son excluyentes.");
                 }
             }
         }

@@ -32,6 +32,22 @@
                 "caso_viaje": true,
                 "caso_vacuna": true
             },
+            "columnas_tablas_hija": {
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "SUERO",
+                            "ORINA",
+                            "TEJIDO"
+                        ],
+                        "tipo_prueba": [
+                            "PCR",
+                            "ELISA",
+                            "AG"
+                        ]
+                    }
+                }
+            },
             "_observaciones_tablas_hija": "La BD tiene hoy usa_muestras=0, usa_viajes=0, usa_vacunas=0 para esta ficha (el stub previo no las usaba). El cargador debe activarlas junto con la recarga: el PDF trae examenes de laboratorio (seccion VI), un antecedente de viaje\/lugar de estadia en las ultimas 2 semanas (seccion IV, repetible) y antecedente de vacuna antiamarilica (pregunta 33-34).",
             "nucleo_omitidos": [
                 "referencia_localizar",
@@ -324,7 +340,19 @@
                     "celular",
                     "doc",
                     "lugar_contacto"
-                ]
+                ],
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "HNF",
+                            "ASP_NF"
+                        ],
+                        "tipo_prueba": [
+                            "CULT",
+                            "PCR"
+                        ]
+                    }
+                }
             },
             "_observaciones_tablas_hija": "CORREGIDO (PENDIENTES_POST_FASE5.md punto 1.2\/3): esta nota decía que no había campos que llenar en caso_contacto -- era un error. Verificado contra el PDF (pág. 1-2): la pregunta 61 SÍ trae una tabla nominal (N.° \/ Apellidos y Nombres \/ Parentesco \/ Celular \/ Doc. identidad \/ Lugar de exposición) para familiares con tos prolongada, además de la matriz agregada por lugar (esa sí es campo_def, 'Contactos por lugar'). usa_contactos=1 es correcto; tablas_hijas.caso_contacto pasa de false a true para que coincida.",
             "nucleo_omitidos": [
@@ -716,6 +744,20 @@
                 "caso_muestra": true,
                 "caso_viaje": false,
                 "caso_vacuna": true
+            },
+            "columnas_tablas_hija": {
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "VESICULA",
+                            "SUERO"
+                        ],
+                        "tipo_prueba": [
+                            "PCR",
+                            "ELISA"
+                        ]
+                    }
+                }
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
@@ -1234,7 +1276,19 @@
                     "vacunado",
                     "fecha_vacunacion",
                     "profilaxis"
-                ]
+                ],
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "HISOPADO",
+                            "MEMBRANA"
+                        ],
+                        "tipo_prueba": [
+                            "CULT",
+                            "PCR"
+                        ]
+                    }
+                }
             },
             "nucleo_omitidos": [
                 "nombre_tutor",
@@ -1501,6 +1555,23 @@
                 "caso_muestra": true,
                 "caso_viaje": true,
                 "caso_vacuna": true
+            },
+            "columnas_tablas_hija": {
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "SUERO",
+                            "BIOPSIA",
+                            "SEROLOGIA",
+                            "HIGADO",
+                            "CULTIVO_MUESTRA"
+                        ],
+                        "tipo_prueba": [
+                            "PCR",
+                            "ELISA"
+                        ]
+                    }
+                }
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
@@ -1796,6 +1867,21 @@
                 "caso_muestra": true,
                 "caso_viaje": false,
                 "caso_vacuna": false
+            },
+            "columnas_tablas_hija": {
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "LESION",
+                            "BIOPSIA"
+                        ],
+                        "tipo_prueba": [
+                            "MICROSCOPIA",
+                            "CULT",
+                            "PCR"
+                        ]
+                    }
+                }
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
@@ -2103,6 +2189,21 @@
                 "caso_viaje": true,
                 "caso_vacuna": false
             },
+            "columnas_tablas_hija": {
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "SUERO",
+                            "SANGRE"
+                        ],
+                        "tipo_prueba": [
+                            "MICROSCOPIA",
+                            "PCR",
+                            "ELISA"
+                        ]
+                    }
+                }
+            },
             "_observaciones_tablas_hija": "usa_viajes=1: la sección 'Migración' del PDF (tiempo de residencia, dónde vivía antes, localidades visitadas, viajó últimos 6 meses) va en caso_viaje, no en campo_def. La BD tiene hoy una sección 'Migración' propia en campo_def (seccion_def.id=39) que la duplica — ver INFORME_CARGADOR.md C.1.",
             "nucleo_omitidos": [
                 "referencia_localizar",
@@ -2385,6 +2486,21 @@
                 "caso_muestra": true,
                 "caso_viaje": true,
                 "caso_vacuna": false
+            },
+            "columnas_tablas_hija": {
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "SANGRE",
+                            "SUERO"
+                        ],
+                        "tipo_prueba": [
+                            "FROTIS_SANGUINEO",
+                            "CULT",
+                            "PCR"
+                        ]
+                    }
+                }
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
@@ -3199,6 +3315,21 @@
                 "caso_viaje": false,
                 "caso_vacuna": false
             },
+            "columnas_tablas_hija": {
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "HECES",
+                            "VOMITO",
+                            "SUERO"
+                        ],
+                        "tipo_prueba": [
+                            "CULT",
+                            "RAPIDA"
+                        ]
+                    }
+                }
+            },
             "nucleo_omitidos": [
                 "referencia_localizar",
                 "pueblo_etnico"
@@ -3993,14 +4124,26 @@
                 "caso_lugar_infeccion": false
             },
             "columnas_tablas_hija": {
-                "caso_muestra": [
-                    "tipo_muestra",
-                    "fecha_toma",
-                    "fecha_envio_ins",
-                    "fecha_result",
-                    "agente_aislado",
-                    "observaciones"
-                ]
+                "caso_muestra": {
+                    "columnas": [
+                        "tipo_muestra",
+                        "fecha_toma",
+                        "fecha_envio_ins",
+                        "fecha_result",
+                        "agente_aislado",
+                        "observaciones"
+                    ],
+                    "opciones": {
+                        "tipo_muestra": [
+                            "HECES"
+                        ],
+                        "tipo_prueba": [
+                            "AISL_VIRAL",
+                            "PCR",
+                            "CULT"
+                        ]
+                    }
+                }
             },
             "nucleo_omitidos": [
                 "gestante",
@@ -4929,15 +5072,28 @@
                     "fecha_vacunacion",
                     "vacunado_72h"
                 ],
-                "caso_muestra": [
-                    "resultado_pcr",
-                    "fecha_result_pcr",
-                    "genotipo",
-                    "resultado_igm",
-                    "fecha_result_igm",
-                    "resultado_igg",
-                    "fecha_result_igg"
-                ]
+                "caso_muestra": {
+                    "columnas": [
+                        "resultado_pcr",
+                        "fecha_result_pcr",
+                        "genotipo",
+                        "resultado_igm",
+                        "fecha_result_igm",
+                        "resultado_igg",
+                        "fecha_result_igg"
+                    ],
+                    "opciones": {
+                        "tipo_muestra": [
+                            "SUERO",
+                            "HNF_FAR",
+                            "ORINA"
+                        ],
+                        "tipo_prueba": [
+                            "PCR",
+                            "ELISA"
+                        ]
+                    }
+                }
             },
             "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'direccion' para caso_contacto, pero esa tabla no tiene esa columna -- se deja fuera en vez de inventar una columna nueva para esto. caso_muestra (PENDIENTES.md ítem C, 2026-08-01): las 7 columnas de serología que antes pintaba a mano muestras.php dentro de un if ($esB05) -- tipo_muestra\/fecha_toma\/fecha_envio_ins\/fecha_recepcion_ins siguen fuera de esta lista porque siguen renderizándose sin pasar por \"columnas_tablas_hija\" (etiquetas propias de B05, no las genéricas; fecha_recepcion_ins ni siquiera está en COLUMNAS_TABLA_HIJA_VALIDAS) -- esta declaración solo cubre lo que se volvió declarativo.",
             "secciones": [
@@ -6869,7 +7025,19 @@
                     "fecha_salida",
                     "fecha_retorno",
                     "semana_gestacion"
-                ]
+                ],
+                "caso_muestra": {
+                    "opciones": {
+                        "tipo_muestra": [
+                            "SEROLOGIA",
+                            "HNF_FAR"
+                        ],
+                        "tipo_prueba": [
+                            "PCR",
+                            "ELISA"
+                        ]
+                    }
+                }
             },
             "nucleo_omitidos": [
                 "gestante",

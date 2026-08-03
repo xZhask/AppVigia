@@ -229,6 +229,7 @@ CREATE TABLE `caso_muestra` (
   `fecha_result_igm` date DEFAULT NULL,
   `resultado_igg` varchar(40) DEFAULT NULL,
   `fecha_result_igg` date DEFAULT NULL,
+  `titulacion` varchar(60) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `ix_mues_caso` (`caso_id`),
   CONSTRAINT `fk_mues_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE

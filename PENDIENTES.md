@@ -1358,3 +1358,103 @@ amplía `caso.clasificacion` a un ENUM superconjunto (mismo patrón que
 separada (mismo criterio que llevó a poner `edad_valor`/`edad_unidad` en
 `caso` y no en `persona`)? Prioridad alta — bloquea el uso real de una
 ficha que se dio por cotejada al 100%.
+
+**T. PETICION_HC_Y_LABORATORIO.md, Parte 2, Fase D1 "bloque declarativo"
+(puntos 1-4) — ✅ cerrado**
+
+`columnas_tablas_hija.<tabla>` acepta ahora, además de la lista plana de
+siempre, una forma objeto `{"columnas", "opciones", "texto_libre"}` —
+"opciones"/"texto_libre" implementados solo para `caso_muestra` (ver
+`cargar_fichas.php::validarManifiesto()`, que rechaza declararlos en
+cualquier otra tabla, y rechaza que una misma columna esté en ambos a la
+vez). La forma plana sigue aceptándose tal cual — ninguna ficha que ya
+declaraba una lista necesitó tocar ese formato para seguir funcionando.
+
+**1. Murió la const `OPCIONES_MUESTRA_POR_ENFERMEDAD`** (PHP,
+`CasosController.php`). Su contenido — opciones de tipo_muestra/tipo_prueba
+por ficha — se migró a `columnas_tablas_hija.caso_muestra.opciones` en el
+manifiesto (`scratch/migrar_opciones_muestra_manifiesto.php`, gitignored).
+13 fichas usan `tablas_hijas.caso_muestra` hoy; 12 tenían entrada en la
+const (todas salvo B24, que seguía sin filtro y se deja intacta — sigue
+mostrando el catálogo completo de tipo_muestra/tipo_prueba, cero cambio).
+De esas 12:
+- **P35.0 corregido** contra la página 20 del PDF, por instrucción
+  explícita del usuario: `tipo_muestra` pasó de
+  `["HNF_FAR","SEROLOGIA","SUERO","ORINA"]` (mal, nunca cotejado) a
+  `["SEROLOGIA","HNF_FAR"]` ("1.ª/2.ª muestra serológica" son la misma
+  opción de catálogo repetida en dos filas, no dos valores distintos —
+  confirmado contra `PETICION_P35_RUBEOLA_CONGENITA.md` 5.2). `tipo_prueba`
+  se preservó tal cual (`PCR`/`ELISA`) — no fue señalado como incorrecto y
+  P35.0 no declara "columnas" propias todavía (Fase D3, sigue pendiente:
+  su Laboratorio real necesita IgM/IgG/genotipo/titulación, no
+  tipo_prueba/resultado genéricos).
+- **B04X**: no usa `caso_muestra` en absoluto (no está entre las 13) — su
+  entrada en la const ya era código muerto sin ningún efecto. Se eliminó
+  sin migrar nada.
+- **B05 y A80**: se preservaron completos (tipo_muestra Y tipo_prueba,
+  incluida la mitad que hoy no se pinta — tipo_prueba en A80, ambas en
+  B05, cuyo `<select>` de tipo_muestra sigue hardcodeado en
+  `muestras.php` dentro de `if ($esB05)`) porque
+  `CasosController::filasMuestras()` usa
+  `$validosTipoMuestra`/`$validosTipoPrueba` para validar el POST
+  **independientemente de qué se haya pintado** — soltarlas habría
+  aflojado esa validación (más valores aceptados por POST forjado que los
+  que el formulario real ofrece). Convertidas de lista plana a objeto,
+  con "columnas" preservando exactamente lo que ya tenían.
+
+**2 y 4. `resultado_igm`/`resultado_igg`/`resultado_pcr` (restricción de
+opciones) y `genotipo` (texto libre u opciones restringidas)**: mismo
+mecanismo "opciones"/"texto_libre" de arriba, ya implementado en
+`muestras.php` (closures `$opcionesSeroPara()`/`$genotipoLibre`). Ninguna
+ficha lo declara todavía — queda listo para cuando se declare por ficha
+(Fase D3), sin efecto visual hoy (confirmado con diff de bytes, ver
+abajo).
+
+**3. Columna `titulacion` en `caso_muestra`**: migración simple
+(`sql/migraciones/add_titulacion_caso_muestra.php`, `varchar(60)` libre —
+el PDF pide un valor de dilución tipo "1:80", no una lista cerrada),
+agregada a `COLUMNAS_TABLA_HIJA_VALIDAS`, al render de `muestras.php`
+(mismo bloque `b05-serologia-group` que IgM/IgG), al POST de
+`filasMuestras()` y al INSERT de `CasoMuestra::reemplazarTodos()`.
+Verificado el round-trip a nivel de modelo (guardar y releer "1:80"
+dentro de una transacción con rollback). Tampoco la declara ninguna ficha
+todavía.
+
+**Hallazgo colateral, no corregido — `ver.php` no muestra la serología de
+B05 (IgM/IgG/genotipo/PCR/titulación)**: la sección "Laboratorio" de
+`ver.php` está completamente hardcodeada a 6 campos fijos
+(tipo_muestra/tipo_prueba/¿antibiótico?/resultado/fecha de toma/fecha de
+resultado), sin leer `columnas_muestra` en absoluto — los datos de
+serología de B05 se guardan pero nunca se muestran en el detalle del
+caso. Preexistente, no introducido por este cambio (titulacion cae en el
+mismo hueco); fuera de alcance de la Fase D1, que era declarar el
+mecanismo, no arreglar la vista de detalle. Queda para cuando se toque
+`ver.php` de tablas hija en general.
+
+**Verificación de cierre:** los tres verificadores en verde (mismos 3
+huérfanos preexistentes de siempre, ninguno relacionado a `caso_muestra`).
+Render real de las 13 fichas con `usa_muestras` comparando el `<select>`
+de tipo_muestra/tipo_prueba contra los valores esperados (11 con opciones
+migradas, A80.tipo_prueba confirmado ausente del render, B24 confirmado
+sin filtrar) — `scratch/test_opciones_muestra_bloque_declarativo.php`,
+gitignored. Prueba negativa: A36 no deja colarse `SEROLOGIA` (válido para
+P35.0/A95, no para A36) aunque ya no pase por la const vieja. Diff de
+bytes completo del render de "Nueva ficha" para A97 (clave nueva
+`columnas_tablas_hija` creada de cero) y B05 (lista→objeto, el caso más
+delicado): sin diferencias funcionales — solo token CSRF (uno por
+request), IDs de `campo_def` que cambiaron por recargar la misma ficha
+dos veces seguidas con `cargar_fichas.php --apply` (churn de
+autoincremento, no del contenido), y la indentación del bloque de
+genotipo (mismo HTML, mismo orden de 18 opciones).
+
+**Pendiente, explícitamente NO implementado en este commit** (ajustes 4 y
+5 de la aprobación del usuario, "capacidad 5 más la migración de B05" y
+"capacidad 6", cada una con su propio commit y diff de bytes antes de
+seguir): B05 sigue con `$esSuero`/`$esPcrGen` y las clases `.b05-*` en
+`ficha.js` — el mecanismo `depende_de_columna` todavía no existe, así que
+todavía hay dos formas de resolver lo mismo (B05 hardcodeado, P35.0/otras
+futuras declarativas). Tampoco existe `bloques_condicionales` (capacidad
+6) ni la columna `contexto` de `caso_muestra`. `numero_muestra`
+(preexistente, `tinyint(1) DEFAULT 1`) sigue sin leerse en ningún lado —
+anotado para revisar antes de decidir si capacidad 6 necesita una columna
+nueva o puede reusar esa.

@@ -1563,60 +1563,37 @@ class CasosController extends Controller
         ], JSON_UNESCAPED_UNICODE);
     }
 
-    private const OPCIONES_MUESTRA_POR_ENFERMEDAD = [
-        'A36' => [ // Difteria
-            'tipo_muestra' => ['HISOPADO', 'MEMBRANA'],
-            'tipo_prueba'  => ['CULT', 'PCR'],
-        ],
-        'A37.0' => [ // Tos ferina
-            'tipo_muestra' => ['HNF', 'ASP_NF'],
-            'tipo_prueba'  => ['CULT', 'PCR'],
-        ],
-        'B05' => [ // Sarampión / rubéola / febriles eruptivas
-            'tipo_muestra' => ['SUERO', 'HNF_FAR', 'ORINA'],
-            'tipo_prueba'  => ['PCR', 'ELISA'],
-        ],
-        'P35.0' => [ // Síndrome de rubéola congénita (SRC)
-            'tipo_muestra' => ['HNF_FAR', 'SEROLOGIA', 'SUERO', 'ORINA'],
-            'tipo_prueba'  => ['PCR', 'ELISA'],
-        ],
-        'B04X' => [ // Viruela del mono (Mpox)
-            'tipo_muestra' => ['HNF_ORF', 'LESION', 'COSTRA'],
-            'tipo_prueba'  => ['PCR'],
-        ],
-        'B01' => [ // Varicela con complicaciones
-            'tipo_muestra' => ['VESICULA', 'SUERO'],
-            'tipo_prueba'  => ['PCR', 'ELISA'],
-        ],
-        'A97' => [ // Dengue, chikungunya, zika y arbovirosis
-            'tipo_muestra' => ['SUERO', 'ORINA', 'TEJIDO'],
-            'tipo_prueba'  => ['PCR', 'ELISA', 'AG'],
-        ],
-        'A95' => [ // Fiebre amarilla
-            'tipo_muestra' => ['SUERO', 'BIOPSIA', 'SEROLOGIA', 'HIGADO', 'CULTIVO_MUESTRA'],
-            'tipo_prueba'  => ['PCR', 'ELISA'],
-        ],
-        'B57' => [ // Enfermedad de Chagas
-            'tipo_muestra' => ['SUERO', 'SANGRE'],
-            'tipo_prueba'  => ['MICROSCOPIA', 'PCR', 'ELISA'],
-        ],
-        'A00' => [ // EDA grave / Cólera
-            'tipo_muestra' => ['HECES', 'VOMITO', 'SUERO'],
-            'tipo_prueba'  => ['CULT', 'RAPIDA'],
-        ],
-        'A80' => [ // Parálisis flácida aguda (PFA)
-            'tipo_muestra' => ['HECES'],
-            'tipo_prueba'  => ['AISL_VIRAL', 'PCR', 'CULT'],
-        ],
-        'B55' => [ // Leishmaniasis
-            'tipo_muestra' => ['LESION', 'BIOPSIA'],
-            'tipo_prueba'  => ['MICROSCOPIA', 'CULT', 'PCR'],
-        ],
-        'A44' => [ // Carrión
-            'tipo_muestra' => ['SANGRE', 'SUERO'],
-            'tipo_prueba'  => ['FROTIS_SANGUINEO', 'CULT', 'PCR'],
-        ],
-    ];
+    /**
+     * Decodifica enfermedad.columnas_muestra. Desde PETICION_HC_Y_LABORATORIO.md
+     * (Parte 2, Fase D1 "bloque declarativo") acepta dos formas: lista plana
+     * (compat con lo que ya declaraban A80/B05) u objeto {"columnas",
+     * "opciones", "texto_libre"} -- reglas de qué es válido en cada clave en
+     * cargar_fichas.php::validarManifiesto(). Reemplaza a la const PHP
+     * OPCIONES_MUESTRA_POR_ENFERMEDAD (eliminada en este cambio): las
+     * opciones de tipo_muestra/tipo_prueba por ficha vivían en código, ahora
+     * son datos del manifiesto igual que el resto de columnas_tablas_hija.
+     */
+    private function resolverConfigMuestra(array $enfermedad): array
+    {
+        $porDefecto = ['columnas' => self::COLUMNAS_HIJA_DEFECTO['muestra'], 'opciones' => [], 'textoLibre' => []];
+
+        $json = $enfermedad['columnas_muestra'] ?? null;
+        if ($json === null) {
+            return $porDefecto;
+        }
+        $decodificado = json_decode($json, true);
+        if (!is_array($decodificado)) {
+            return $porDefecto;
+        }
+        if (array_is_list($decodificado)) {
+            return ['columnas' => $decodificado, 'opciones' => [], 'textoLibre' => []];
+        }
+        return [
+            'columnas'   => $decodificado['columnas'] ?? self::COLUMNAS_HIJA_DEFECTO['muestra'],
+            'opciones'   => $decodificado['opciones'] ?? [],
+            'textoLibre' => $decodificado['texto_libre'] ?? [],
+        ];
+    }
 
     private function datosMuestrasCatalogo(?array $enfermedad = null): array
     {
@@ -1624,24 +1601,22 @@ class CasosController extends Controller
         $todosPruebas   = CatalogoItem::porCatalogo(5);
         $todosResultado = CatalogoItem::porCatalogo(3);
 
-        $cie10 = $enfermedad['cie10'] ?? '';
-        $configFicha = self::OPCIONES_MUESTRA_POR_ENFERMEDAD[$cie10] ?? null;
+        $config   = $enfermedad ? $this->resolverConfigMuestra($enfermedad) : ['opciones' => [], 'textoLibre' => []];
+        $opciones = $config['opciones'];
 
-        if ($configFicha) {
-            if (!empty($configFicha['tipo_muestra'])) {
-                $permitidos = $configFicha['tipo_muestra'];
-                $todosMuestras = array_values(array_filter($todosMuestras, fn($it) => in_array($it['valor'], $permitidos, true)));
-            }
-            if (!empty($configFicha['tipo_prueba'])) {
-                $permitidos = $configFicha['tipo_prueba'];
-                $todosPruebas = array_values(array_filter($todosPruebas, fn($it) => in_array($it['valor'], $permitidos, true)));
-            }
+        if (!empty($opciones['tipo_muestra'])) {
+            $todosMuestras = array_values(array_filter($todosMuestras, fn($it) => in_array($it['valor'], $opciones['tipo_muestra'], true)));
+        }
+        if (!empty($opciones['tipo_prueba'])) {
+            $todosPruebas = array_values(array_filter($todosPruebas, fn($it) => in_array($it['valor'], $opciones['tipo_prueba'], true)));
         }
 
         return [
-            'opcionesTipoMuestra' => $todosMuestras,
-            'opcionesTipoPrueba'  => $todosPruebas,
-            'opcionesResultado'   => $todosResultado,
+            'opcionesTipoMuestra'  => $todosMuestras,
+            'opcionesTipoPrueba'   => $todosPruebas,
+            'opcionesResultado'    => $todosResultado,
+            'opcionesMuestraExtra' => $opciones,
+            'textoLibreMuestra'    => $config['textoLibre'] ?? [],
         ];
     }
 
@@ -1700,7 +1675,7 @@ class CasosController extends Controller
             'columnasContacto' => $resolver($enfermedad['columnas_contacto'] ?? null, 'contacto'),
             'columnasVacuna'   => $resolver($enfermedad['columnas_vacuna'] ?? null, 'vacuna'),
             'columnasViaje'    => $resolver($enfermedad['columnas_viaje'] ?? null, 'viaje'),
-            'columnasMuestra'  => $resolver($enfermedad['columnas_muestra'] ?? null, 'muestra'),
+            'columnasMuestra'  => $this->resolverConfigMuestra($enfermedad)['columnas'],
         ];
     }
 
@@ -1984,6 +1959,7 @@ class CasosController extends Controller
         $fechasResultIgm = $_POST['muestra_fecha_result_igm'] ?? [];
         $resultadosIgg = $_POST['muestra_resultado_igg'] ?? [];
         $fechasResultIgg = $_POST['muestra_fecha_result_igg'] ?? [];
+        $titulaciones = $_POST['muestra_titulacion'] ?? [];
 
         $datosMuestras = $this->datosMuestrasCatalogo($enfermedad);
         $validosTipoMuestra = array_column($datosMuestras['opcionesTipoMuestra'], 'valor');
@@ -2010,8 +1986,9 @@ class CasosController extends Controller
             $resIgmTxt = trim((string) ($fechasResultIgm[$i] ?? ''));
             $resIgg = trim((string) ($resultadosIgg[$i] ?? ''));
             $resIggTxt = trim((string) ($fechasResultIgg[$i] ?? ''));
+            $titulacionTxt = trim((string) ($titulaciones[$i] ?? ''));
 
-            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '') {
+            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '' && $titulacionTxt === '') {
                 continue;
             }
 
@@ -2060,6 +2037,7 @@ class CasosController extends Controller
                 'fecha_result_igm'    => $resIgmTxt !== '' ? fechaIsoValida($resIgmTxt) : null,
                 'resultado_igg'       => $resIgg !== '' ? $resIgg : null,
                 'fecha_result_igg'    => $resIggTxt !== '' ? fechaIsoValida($resIggTxt) : null,
+                'titulacion'          => $titulacionTxt !== '' ? $titulacionTxt : null,
             ];
         }
 

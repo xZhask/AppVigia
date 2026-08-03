@@ -25,12 +25,14 @@ class CasoMuestra extends Model
                 caso_id, tipo_muestra, tipo_prueba, recibio_antibiotico, resultado, 
                 fecha_toma, fecha_result, fecha_envio_ins, agente_aislado, observaciones,
                 numero_muestra, fecha_recepcion_ins, resultado_pcr, fecha_result_pcr,
-                genotipo, resultado_igm, fecha_result_igm, resultado_igg, fecha_result_igg
+                genotipo, resultado_igm, fecha_result_igm, resultado_igg, fecha_result_igg,
+                titulacion
              ) VALUES (
-                :caso, :tipo_muestra, :tipo_prueba, :recibio_antibiotico, :resultado, 
+                :caso, :tipo_muestra, :tipo_prueba, :recibio_antibiotico, :resultado,
                 :fecha_toma, :fecha_result, :fecha_envio_ins, :agente_aislado, :observaciones,
                 :numero_muestra, :fecha_recepcion_ins, :resultado_pcr, :fecha_result_pcr,
-                :genotipo, :resultado_igm, :fecha_result_igm, :resultado_igg, :fecha_result_igg
+                :genotipo, :resultado_igm, :fecha_result_igm, :resultado_igg, :fecha_result_igg,
+                :titulacion
              )'
         );
 
@@ -55,6 +57,7 @@ class CasoMuestra extends Model
                 'fecha_result_igm'    => $fila['fecha_result_igm'] ?? null,
                 'resultado_igg'       => $fila['resultado_igg'] ?? null,
                 'fecha_result_igg'    => $fila['fecha_result_igg'] ?? null,
+                'titulacion'          => $fila['titulacion'] ?? null,
             ]);
         }
     }

@@ -3,7 +3,10 @@
  * Fila dinámica de muestras de laboratorio del caso (caso_muestra). Variables
  * esperadas: $filasMuestras (array de ['tipo_muestra','tipo_prueba',
  * 'recibio_antibiotico','resultado','fecha_toma','fecha_result']),
- * $opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado (catalogo_item).
+ * $opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado (catalogo_item),
+ * $opcionesMuestraExtra (overrides declarativos por columna: tipo_muestra,
+ * tipo_prueba, resultado_igm, resultado_igg, resultado_pcr, genotipo),
+ * $textoLibreMuestra (columnas que se pintan como <input> en vez de <select>).
  */
 $erroresMuestras = $erroresMuestras ?? [];
 $columnasMuestra = $columnasMuestra ?? ['tipo_muestra', 'tipo_prueba', 'resultado', 'fecha_toma', 'fecha_result'];
@@ -12,16 +15,34 @@ $esPfa = isset($enfermedad['cie10']) && $enfermedad['cie10'] === 'A80';
 $cie10Actual = $enfermedad['cie10'] ?? '';
 $esB05 = ($cie10Actual === 'B05');
 
-$opcionesResultadoSero = [
+// opcionesMuestraExtra/textoLibreMuestra: overrides declarativos por ficha
+// sobre resultado_igm/resultado_igg/resultado_pcr/genotipo/titulacion
+// (PETICION_HC_Y_LABORATORIO.md, Parte 2, Fase D1 "bloque declarativo").
+// Ausente = vocabulario completo de siempre, mismo comportamiento que antes
+// de esta entrada -- ninguna ficha existente declara overrides todavía.
+$opcionesMuestraExtra = $opcionesMuestraExtra ?? [];
+$textoLibreMuestra = $textoLibreMuestra ?? [];
+
+$opcionesResultadoSeroDefecto = [
     'PENDIENTE' => 'Pendiente',
     'POSITIVO' => 'Positivo',
     'NEGATIVO' => 'Negativo',
     'INDETERMINADO' => 'Indeterminado',
 ];
+$opcionesSeroPara = function (string $col) use ($opcionesResultadoSeroDefecto, $opcionesMuestraExtra): array {
+    if (empty($opcionesMuestraExtra[$col])) {
+        return $opcionesResultadoSeroDefecto;
+    }
+    return array_intersect_key($opcionesResultadoSeroDefecto, array_flip($opcionesMuestraExtra[$col]));
+};
 
-$opcionesGenotipo = ['D8', 'B3', 'H1', 'D4', 'D9', 'G3', 'A', 'B1', 'C1', 'D1', 'D5', 'D6', 'D7', 'D10', 'D11', 'G1', 'G2', 'H2'];
+$opcionesGenotipoDefecto = ['D8', 'B3', 'H1', 'D4', 'D9', 'G3', 'A', 'B1', 'C1', 'D1', 'D5', 'D6', 'D7', 'D10', 'D11', 'G1', 'G2', 'H2'];
+$genotipoLibre = in_array('genotipo', $textoLibreMuestra, true);
+$opcionesGenotipo = !empty($opcionesMuestraExtra['genotipo'])
+    ? array_values(array_intersect($opcionesGenotipoDefecto, $opcionesMuestraExtra['genotipo']))
+    : $opcionesGenotipoDefecto;
 
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esB05, $opcionesResultadoSero, $opcionesGenotipo): void {
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esB05, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre): void {
     $errorToma = $error['fecha_toma'] ?? null;
     $errorEnvio = $error['fecha_envio_ins'] ?? null;
     $errorResult = $error['fecha_result'] ?? null;
@@ -162,7 +183,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
           <div class="control">
             <select name="muestra_resultado_pcr[]">
               <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
+              <?php foreach ($opcionesSeroPara('resultado_pcr') as $valOpt => $lblOpt): ?>
                 <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_pcr'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
               <?php endforeach; ?>
             </select>
@@ -179,12 +200,16 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <div class="field b05-pcr-group" style="<?= !$esPcrGen ? 'display:none;' : '' ?>">
           <label class="fl">Genotipo</label>
           <div class="control">
-            <select name="muestra_genotipo[]">
-              <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesGenotipo as $g): ?>
-                <option value="<?= $g ?>" <?= seleccionado($fila['genotipo'] ?? '', $g) ?>><?= $g ?></option>
-              <?php endforeach; ?>
-            </select>
+            <?php if ($genotipoLibre): ?>
+              <input type="text" name="muestra_genotipo[]" value="<?= e($fila['genotipo'] ?? '') ?>" placeholder="Genotipo…">
+            <?php else: ?>
+              <select name="muestra_genotipo[]">
+                <option value="">Seleccionar…</option>
+                <?php foreach ($opcionesGenotipo as $g): ?>
+                  <option value="<?= $g ?>" <?= seleccionado($fila['genotipo'] ?? '', $g) ?>><?= $g ?></option>
+                <?php endforeach; ?>
+              </select>
+            <?php endif; ?>
           </div>
         </div>
       <?php endif; ?>
@@ -194,7 +219,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
           <div class="control">
             <select name="muestra_resultado_igm[]">
               <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
+              <?php foreach ($opcionesSeroPara('resultado_igm') as $valOpt => $lblOpt): ?>
                 <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_igm'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
               <?php endforeach; ?>
             </select>
@@ -213,7 +238,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
           <div class="control">
             <select name="muestra_resultado_igg[]">
               <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesResultadoSero as $valOpt => $lblOpt): ?>
+              <?php foreach ($opcionesSeroPara('resultado_igg') as $valOpt => $lblOpt): ?>
                 <option value="<?= $valOpt ?>" <?= seleccionado($fila['resultado_igg'] ?? '', $valOpt) ?>><?= $lblOpt ?></option>
               <?php endforeach; ?>
             </select>
@@ -224,6 +249,12 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
           <label class="fl">Fecha resultado IgG</label>
           <div class="control mono"><input type="date" name="muestra_fecha_result_igg[]" value="<?= e($fila['fecha_result_igg'] ?? '') ?>" max="<?= date('Y-m-d') ?>"></div>
+        </div>
+      <?php endif; ?>
+      <?php if ($muestra('titulacion')): ?>
+        <div class="field b05-serologia-group" style="<?= !$esSuero ? 'display:none;' : '' ?>">
+          <label class="fl">Titulación</label>
+          <div class="control"><input type="text" name="muestra_titulacion[]" value="<?= e($fila['titulacion'] ?? '') ?>" placeholder="Titulación…"></div>
         </div>
       <?php endif; ?>
     </div>
