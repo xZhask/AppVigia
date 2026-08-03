@@ -17,13 +17,19 @@ $fechaInvest     = $campoA35('a35_fecha_de_investigacion_visita_domiciliaria');
 $fechaNotifEess  = $campoA35('a35_fecha_de_notificacion_ee_ss_a_red_microrred');
 $fechaNotifRed   = $campoA35('a35_fecha_de_notificacion_red_microrred_a_disa');
 
-// II. FUENTE DE NOTIFICACION del PDF (págs. 23-24): tipo/institución
-// informante/fuente + trabajador que diagnostica + EESS que notifica.
-// No es el genérico tipo/lugar de captación (notificacion-captacion.php,
-// oculto para A35 -- ver nueva/index.php) -- ese concepto no existe en
-// esta ficha, el PDF de A35 pide otra cosa en su lugar.
+// II. FUENTE DE NOTIFICACION del PDF (págs. 23-24): tipo/fuente +
+// trabajador que diagnostica + EESS que notifica. No es el genérico
+// tipo/lugar de captación (notificacion-captacion.php, oculto para
+// A35 -- ver nueva/index.php) -- ese concepto no existe en esta
+// ficha, el PDF de A35 pide otra cosa en su lugar.
+//
+// "Institución informante" (MINSA/EsSalud/Sanidad FF.AA. del PDF) NO
+// se capturó como campo_def: el aplicativo lo usan solo
+// establecimientos de Sanidad PNP (FFAA) -- mismo criterio que ya
+// usó A36 al omitir su propio "4. Inst. Adm." del PDF (nunca se
+// declaró como campo_def). Es un dato constante del establecimiento,
+// no algo que deba preguntarse caso por caso.
 $tipo               = $campoA35('a35_tipo');
-$institucionInf     = $campoA35('a35_institucion_informante');
 $fuente             = $campoA35('a35_fuente');
 $fuenteOtra         = $campoA35('a35_fuente_otra');
 $trabajadorDx       = $campoA35('a35_trabajador_diagnostico_inicial');
@@ -97,21 +103,6 @@ $fuenteOtraOculto   = !campoVisiblePorDependencia($fuenteOtra['campo'], $valores
         </select>
       </div>
       <?php if ($tipo['err']): ?><span class="hint err"><?= e($tipo['err']) ?></span><?php endif; ?>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($institucionInf['name']): ?>
-    <div class="field">
-      <label class="fl">Institución informante</label>
-      <div class="control">
-        <select name="<?= $institucionInf['name'] ?>" data-nosearch="true">
-          <option value="">Seleccionar…</option>
-          <?php foreach ($institucionInf['opciones'] as $op): ?>
-            <option value="<?= e($op['valor']) ?>" <?= seleccionado($institucionInf['val'], $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-      <?php if ($institucionInf['err']): ?><span class="hint err"><?= e($institucionInf['err']) ?></span><?php endif; ?>
     </div>
     <?php endif; ?>
 

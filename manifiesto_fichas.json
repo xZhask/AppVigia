@@ -3757,21 +3757,10 @@
                             ]
                         },
                         {
-                            "clave": "a35_institucion_informante",
-                            "etiqueta": "Institución informante",
-                            "tipo": "SELECT",
-                            "orden": 7,
-                            "opciones": [
-                                "MINSA",
-                                "EsSalud",
-                                "Sanidad FF.AA."
-                            ]
-                        },
-                        {
                             "clave": "a35_fuente",
                             "etiqueta": "Fuente",
                             "tipo": "SELECT",
-                            "orden": 8,
+                            "orden": 7,
                             "opciones": [
                                 "Médico",
                                 "Enfermera",
@@ -3783,7 +3772,7 @@
                             "clave": "a35_fuente_otra",
                             "etiqueta": "Fuente (especificar)",
                             "tipo": "TEXTO",
-                            "orden": 9,
+                            "orden": 8,
                             "depende_de": "Fuente",
                             "valor_activador": "OTRO"
                         },

@@ -2482,3 +2482,39 @@ específica para confirmar que `editar()` NO re-oculta "Fuente
 (especificar)" al recargar un caso guardado con Fuente=Otro (el
 `hidden` está ausente del HTML servido, no depende de que el JS lo
 quite después). Caso y persona de prueba eliminados en ambas.
+
+**A35.3. Quita "Institución informante" — es un dato constante del
+establecimiento, no de captura manual — ✅ cerrado**
+
+El usuario señaló: "creo que tipo de institución informante sería un
+dato que se maneja internamente, ya que el aplicativo solo será
+utilizado por establecimientos de salud pertenecientes a la PNP
+DIRSAPOL (FFAA)... hay datos que son obtenidos directamente de los
+datos guardados del establecimiento de salud." Mismo caso que "4.
+Inst. Adm." de A36 (MINSA/EsSalud/Privado/FFAA-Sanidad/Comunidad),
+que nunca se declaró como `campo_def` -- `establecimiento.institucion`
+(ENUM MINSA/ESSALUD/FFAA_SANIDAD/PRIVADO) ya es un dato guardado a
+nivel de establecimiento, no algo que deba preguntarse ficha por
+ficha.
+
+Se quitó `a35_institucion_informante` del manifiesto (quedan Tipo y
+Fuente de "II. Fuente de notificación", los otros dos sí son
+específicos del caso). `cargar_fichas.php --apply --cie10=A35` sin
+bloqueo. Tres verificadores en verde (A35 30/30). Byte-diff en las 6
+fichas revisadas: única diferencia el bloque de 12 líneas de
+"Institución informante" ya no aparece (comparado contra el estado
+real pre-cambio, regenerando la BD con el manifiesto viejo vía `git
+stash` + `cargar_fichas.php --apply` de ida y vuelta, no solo los
+archivos PHP -- el campo ya no existe en `campo_def` así que un
+stash-solo-de-PHP revienta `campos-por-clave.php`). Ronda
+crear()→BD→editar() confirmando que la clave ya no aparece en el mapa
+de campos ni en el HTML.
+
+**Hallazgo relacionado, NO corregido, pendiente de confirmar con el
+usuario:** `a35_establecimiento_que_notifica` (TEXTO libre, agregado
+en A35.2) tiene el mismo problema de fondo -- es literalmente el
+mismo establecimiento ya seleccionado en "Establecimiento (EESS)" al
+tope de la sección 1 de TODAS las fichas (`establecimiento_id`,
+generado del `establecimiento` del usuario que registra, o elegible
+para ADMIN). Se dejó como está porque el usuario no lo nombró
+explícitamente esta vez; queda para preguntar antes de tocarlo.
