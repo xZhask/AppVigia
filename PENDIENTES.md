@@ -1602,3 +1602,75 @@ enfermedad → agregar muestra). Con el fix aplicado, mismo script:
 flujo de recarga completa. La corrección preventiva de cache-busting
 (`asset()`) se mantiene: es una mejora real aunque no haya sido la causa
 de este bug.
+
+**W. Laboratorio real de P35.0 (PETICION_P35_RUBEOLA_CONGENITA.md Fase
+5.2, ítem 42) — ✅ cerrado**
+
+`caso_muestra: true` estaba declarado para P35.0 sin
+`columnas_tablas_hija` propio, así que caía a las columnas por defecto
+(`tipo_muestra`/`tipo_prueba`/`resultado`/`fecha_toma`/`fecha_result`) —
+ninguna de las cuatro últimas corresponde a lo que pide el PDF (pág. 20):
+IgM/IgG/Titulación para la muestra serológica, Resultado/Genotipo para
+el hisopado nasal y faríngeo.
+
+**Ruta elegida (de las dos que pedía el punto 5.2 de la petición): (a)**
+— las columnas ya existían (mismas que usa B05 desde la migración de
+capacidad 5), así que no hizo falta ninguna migración nueva, solo
+declarar `columnas_tablas_hija.caso_muestra` para P35.0: `tipo_muestra`,
+`fecha_toma`, `resultado_igm`/`fecha_result_igm`,
+`resultado_igg`/`fecha_result_igg`, `titulacion`, `resultado_pcr`/
+`fecha_result_pcr`, `genotipo` — se retiran `tipo_prueba` y `resultado`
+(genéricos, no están en el PDF de P35.0). `depende_de_columna`: IgM/IgG/
+Titulación visibles solo si `tipo_muestra=SEROLOGIA`; PCR/Genotipo solo
+si `tipo_muestra=HNF_FAR` — mismo mecanismo que B05 (capacidad 5), sin
+tocar código. `genotipo` declarado `texto_libre` (catálogo de sarampión
+no aplica a rubéola).
+
+**Dos preguntas abiertas, resueltas por decisión explícita del
+usuario** ("aplica tus recomendaciones en las 3 interrogantes"):
+1. **"Fecha de resultado"** — el PDF dibuja una sola casilla por fila;
+   se mantienen las fechas separadas por marcador
+   (`fecha_result_igm`/`fecha_result_igg`/`fecha_result_pcr`, heredadas
+   de B05) en vez de forzar una `fecha_result` genérica compartida —
+   nunca pierde precisión frente al papel, solo la supera.
+2. **Vocabulario de Resultado IgM/IgG/PCR** — se mantienen las 4
+   opciones (Pendiente/Positivo/Negativo/Indeterminado) en vez de
+   restringir a las 2 que dibuja el PDF (−/+); el `<select>` ya empieza
+   vacío = "no seleccionado", así que "Pendiente" no fuerza nada e
+   "Indeterminado" es un resultado real que el papel no contempla.
+3. **Etiqueta "Fecha de obtención"** — hallazgo aparte: la etiqueta de
+   `fecha_toma` tenía un caso especial hardcodeado solo para A80
+   (`$esPfa`, "Fecha de obtención" en vez de "Fecha de toma"). Se
+   generalizó a un `$esFechaObtencion = in_array($cie10Actual, ['A80',
+   'P35.0'], true)` separado — "Fecha resultado Fiocruz" (la otra mitad
+   de `$esPfa`) sigue siendo específico de A80, el PDF de P35.0 no
+   menciona Fiocruz, así que no se tocó esa segunda etiqueta.
+
+**Verificación de cierre:** los tres verificadores en verde. Dump del
+`<template>` de P35.0 vía CLI: las 8 columnas de laboratorio con
+`data-depende-columna`/`style="display:none;"` correctos, `tipo_muestra`
+limitado a SEROLOGIA/HNF_FAR, `genotipo` renderizado como `<input>`
+(no `<select>`), `tipo_prueba`/`resultado` genéricos ausentes, etiqueta
+"Fecha de obtención" confirmada. Playwright contra el navegador real
+(mismo caso B05 de arriba): fila vacía → las 8 columnas ocultas;
+`tipo_muestra=SEROLOGIA` → IgM/IgG/Titulación visibles, PCR/Genotipo
+ocultos; `tipo_muestra=HNF_FAR` → al revés — el toggle en vivo funciona
+igual que B05, cero errores de consola. Caso real `crear()` con una fila
+SEROLOGIA (IgM/IgG/Titulación llenos) y una HNF_FAR (PCR/Genotipo
+llenos) → guardado correcto en BD (`numero_muestra=1` en ambas, cada
+columna en su fila, `null` en la fila que no aplica) → `editar()`
+reabre ambas filas con la visibilidad correcta por fila → limpieza.
+Negativo: A36 (no declara estas columnas) sigue sin mostrar ningún
+`name="muestra_resultado_igm/igg/pcr/genotipo/titulacion"` en su HTML.
+
+**No corregido, ya documentado como deuda preexistente (ítem U):** el
+gap de que `filasMuestras()` no bloquea la PRESENCIA de estas columnas
+para una ficha que no las declara (solo su validez de valor) — con
+P35.0 declarándolas ahora, hay dos fichas expuestas a este gap en vez
+de una, pero es el mismo hallazgo ya anotado, no uno nuevo introducido
+por este commit.
+
+**Pendiente:** capacidad 6 (`bloques_condicionales`, ítem 43 — el
+segundo bloque de muestras de seguimiento viral, solo en casos
+confirmados de SRC) sigue sin implementarse — siguiente paso acordado
+con el usuario.

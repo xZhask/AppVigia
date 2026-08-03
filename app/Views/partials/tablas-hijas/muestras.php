@@ -17,6 +17,11 @@ $muestra = fn(string $col) => in_array($col, $columnasMuestra, true);
 $esPfa = isset($enfermedad['cie10']) && $enfermedad['cie10'] === 'A80';
 $cie10Actual = $enfermedad['cie10'] ?? '';
 $esB05 = ($cie10Actual === 'B05');
+// "Fecha de obtención" (en vez de "Fecha de toma"): A80 y P35.0 usan esa
+// palabra en el PDF para la misma columna fecha_toma. "Fecha resultado
+// Fiocruz" ($esPfa más abajo) sigue siendo específico de A80 -- el PDF de
+// P35.0 no menciona Fiocruz.
+$esFechaObtencion = in_array($cie10Actual, ['A80', 'P35.0'], true);
 
 // opcionesMuestraExtra/textoLibreMuestra: overrides declarativos por ficha
 // sobre resultado_igm/resultado_igg/resultado_pcr/genotipo/titulacion
@@ -58,7 +63,7 @@ $opcionesGenotipo = !empty($opcionesMuestraExtra['genotipo'])
     ? array_values(array_intersect($opcionesGenotipoDefecto, $opcionesMuestraExtra['genotipo']))
     : $opcionesGenotipoDefecto;
 
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esB05, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $dependeDeColumnaMuestra, $attrsDependencia): void {
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esB05, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $dependeDeColumnaMuestra, $attrsDependencia): void {
     $errorToma = $error['fecha_toma'] ?? null;
     $errorEnvio = $error['fecha_envio_ins'] ?? null;
     $errorResult = $error['fecha_result'] ?? null;
@@ -152,7 +157,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <?php endif; ?>
         <?php if ($muestra('fecha_toma')): ?>
         <div class="field">
-          <label class="fl"><?= $esPfa ? 'Fecha de obtención' : 'Fecha de toma' ?></label>
+          <label class="fl"><?= $esFechaObtencion ? 'Fecha de obtención' : 'Fecha de toma' ?></label>
           <div class="control mono <?= $errorToma ? 'err' : '' ?>"><input type="date" name="muestra_fecha_toma[]" value="<?= e($fila['fecha_toma'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
           <?php if ($errorToma): ?><span class="hint err"><?= e($errorToma) ?></span><?php endif; ?>
         </div>

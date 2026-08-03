@@ -7074,15 +7074,76 @@
                     "semana_gestacion"
                 ],
                 "caso_muestra": {
+                    "columnas": [
+                        "tipo_muestra",
+                        "fecha_toma",
+                        "resultado_igm",
+                        "fecha_result_igm",
+                        "resultado_igg",
+                        "fecha_result_igg",
+                        "titulacion",
+                        "resultado_pcr",
+                        "fecha_result_pcr",
+                        "genotipo"
+                    ],
                     "opciones": {
                         "tipo_muestra": [
                             "SEROLOGIA",
                             "HNF_FAR"
-                        ],
-                        "tipo_prueba": [
-                            "PCR",
-                            "ELISA"
                         ]
+                    },
+                    "texto_libre": [
+                        "genotipo"
+                    ],
+                    "depende_de_columna": {
+                        "resultado_igm": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SEROLOGIA"
+                            ]
+                        },
+                        "fecha_result_igm": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SEROLOGIA"
+                            ]
+                        },
+                        "resultado_igg": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SEROLOGIA"
+                            ]
+                        },
+                        "fecha_result_igg": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SEROLOGIA"
+                            ]
+                        },
+                        "titulacion": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "SEROLOGIA"
+                            ]
+                        },
+                        "resultado_pcr": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "HNF_FAR"
+                            ]
+                        },
+                        "fecha_result_pcr": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "HNF_FAR"
+                            ]
+                        },
+                        "genotipo": {
+                            "columna": "tipo_muestra",
+                            "valores_activadores": [
+                                "HNF_FAR"
+                            ]
+                        }
                     }
                 }
             },
