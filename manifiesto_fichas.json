@@ -3744,6 +3744,60 @@
                             "etiqueta": "Fecha de notificación Red/Microrred a DISA",
                             "tipo": "FECHA",
                             "orden": 5
+                        },
+                        {
+                            "clave": "a35_tipo",
+                            "etiqueta": "Tipo",
+                            "tipo": "SELECT",
+                            "orden": 6,
+                            "opciones": [
+                                "Notificación inmediata",
+                                "Búsqueda activa",
+                                "HIS MIS (otros)"
+                            ]
+                        },
+                        {
+                            "clave": "a35_institucion_informante",
+                            "etiqueta": "Institución informante",
+                            "tipo": "SELECT",
+                            "orden": 7,
+                            "opciones": [
+                                "MINSA",
+                                "EsSalud",
+                                "Sanidad FF.AA."
+                            ]
+                        },
+                        {
+                            "clave": "a35_fuente",
+                            "etiqueta": "Fuente",
+                            "tipo": "SELECT",
+                            "orden": 8,
+                            "opciones": [
+                                "Médico",
+                                "Enfermera",
+                                "Técnico sanitario",
+                                "Otro"
+                            ]
+                        },
+                        {
+                            "clave": "a35_fuente_otra",
+                            "etiqueta": "Fuente (especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 9,
+                            "depende_de": "Fuente",
+                            "valor_activador": "OTRO"
+                        },
+                        {
+                            "clave": "a35_trabajador_diagnostico_inicial",
+                            "etiqueta": "Trabajador de salud que hace el diagnóstico inicial",
+                            "tipo": "TEXTO",
+                            "orden": 10
+                        },
+                        {
+                            "clave": "a35_establecimiento_que_notifica",
+                            "etiqueta": "Establecimiento de salud que notifica",
+                            "tipo": "TEXTO",
+                            "orden": 11
                         }
                     ]
                 },

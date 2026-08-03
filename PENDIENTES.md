@@ -2424,3 +2424,61 @@ correcto, bloque visible con las 5 etiquetas esperadas, sin errores de
 consola. Ronda crear()→BD→editar(): los 5 valores se guardan en
 `caso_valor` con las claves correctas y reaparecen tal cual en el HTML
 de editar(); caso de prueba y persona asociada eliminados después.
+
+**A35.2. "II. Fuente de notificación" + retiro del bloque genérico de
+captación — ✅ cerrado**
+
+Segundo tramo pedido por el usuario, con captura de pantalla de la
+sección "II. FUENTE DE NOTIFICACION" del PDF: "Quita los datos de
+notificación que la ficha no requiere, como el tipo de captación,
+etc. Debajo de fechas añade los campos de fuente de notificación que
+el formulario aún no contempla."
+
+**Se quitó:** el bloque genérico `notificacionCaptacionWrap`
+(Tipo de captación/Lugar de captación/Clasificación en la captación)
+ya no se muestra para A35 -- se agregó `'A35'` a la misma lista de
+exclusión que ya usan A80/B05/O95/P35.0 en `nueva/index.php` y
+`fichas/editar.php`. Esos conceptos no existen en el PDF real de A35.
+
+**Se agregó,** dentro de la misma sección "Datos de notificación e
+investigación del caso" (debajo de las 5 fechas de A35.1), los 6
+campos de "II. FUENTE DE NOTIFICACION" transcritos del PDF: `a35_tipo`
+(SELECT: Notificación inmediata/Búsqueda activa/HIS MIS (otros)),
+`a35_institucion_informante` (SELECT: MINSA/EsSalud/Sanidad FF.AA.),
+`a35_fuente` (SELECT: Médico/Enfermera/Técnico sanitario/Otro),
+`a35_fuente_otra` (TEXTO, condicional a Fuente=Otro -- único campo
+nuevo con `depende_de`/`valor_activador` en el manifiesto de A35),
+`a35_trabajador_diagnostico_inicial` y `a35_establecimiento_que_notifica`
+(TEXTO libres).
+
+**Mecanismo del campo condicional:** `a35_fuente_otra` es el primer
+campo nuevo de A35 con `depende_de`, y el primer campo condicional que
+este proyecto renderiza DESDE UN PARTIAL A MEDIDA (fuera del loop
+genérico de `secciones-clinicas.php`, que es donde vive normalmente
+`campoVisiblePorDependencia()`). Se replicó a mano el mismo contrato
+que usa el loop genérico: `<div class="dep-wrap" data-depende-de="<?=
+$fuente['name'] ?>" data-valor-activador="OTRO" <?=
+$fuenteOtraOculto ? 'hidden' : '' ?>>`, con `$fuenteOtraOculto =
+!campoVisiblePorDependencia($fuenteOtra['campo'], $valoresCampos)` --
+misma función que usa el loop genérico para A36/B26, `$valoresCampos`
+ya está en scope porque `campos-por-clave.php` (requerido al tope de
+`nueva/index.php`/`editar.php`) también la usa. `evaluarDependencias()`
+de `ficha.js` no necesitó ningún cambio: no distingue si el `.dep-wrap`
+vino del loop genérico o de un partial a medida, solo lee los atributos
+`data-*`.
+
+**Verificación:** `cargar_fichas.php --apply --cie10=A35` sin bloqueo
+(25→31 campos). Tres verificadores en verde (A35 31/31, 0 huérfanos;
+203 claves revisadas, 0 faltantes). Byte-diff limpio en las 6 fichas
+revisadas (A36/B26/A80/O95/B05/P35.0) -- mismas 69 líneas de diferencia
+en las 6, todas dentro del bloque nuevo `notificacionFechasA35Wrap`
+(los 6 campos nuevos), nada fuera de él. Playwright: bloque de
+captación genérico confirmado invisible para A35, las 11 etiquetas del
+bloque A35 aparecen en el orden esperado, "Fuente (especificar)" arranca
+oculto, se revela al elegir "Otro" y se vuelve a ocultar al elegir
+"Médico" -- sin errores de consola. Dos rondas crear()→BD→editar(): la
+normal (Búsqueda activa/EsSalud/Otro + 3 campos de texto) y una
+específica para confirmar que `editar()` NO re-oculta "Fuente
+(especificar)" al recargar un caso guardado con Fuente=Otro (el
+`hidden` está ausente del HTML servido, no depende de que el JS lo
+quite después). Caso y persona de prueba eliminados en ambas.

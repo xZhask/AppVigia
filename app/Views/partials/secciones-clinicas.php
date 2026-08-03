@@ -91,6 +91,8 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // notificacion-fechas-a35.php
         'a35_caso_n', 'a35_fecha_de_conocimiento_local', 'a35_fecha_de_investigacion_visita_domiciliaria',
         'a35_fecha_de_notificacion_ee_ss_a_red_microrred', 'a35_fecha_de_notificacion_red_microrred_a_disa',
+        'a35_tipo', 'a35_institucion_informante', 'a35_fuente', 'a35_fuente_otra',
+        'a35_trabajador_diagnostico_inicial', 'a35_establecimiento_que_notifica',
     ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
