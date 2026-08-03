@@ -1,6 +1,6 @@
 # Mapeo de fichas — documento PDF (27 entradas) ↔ manifiesto (24 fichas)
 
-Generado 2026-08-02 (`PETICION_MAPEO_Y_EDAD.md`, Parte 1). Sirve para saber,
+Generado 2026-08-02 (`docs/peticiones/PETICION_MAPEO_Y_EDAD.md`, Parte 1). Sirve para saber,
 ante cualquier ficha, qué página del compendio MINSA (`INFORME PARA
 APLICATIVO DE EPIDEMIOLOGIA_removed.pdf`) hay que abrir para cotejarla.
 
