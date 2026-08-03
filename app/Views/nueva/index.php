@@ -113,6 +113,7 @@ if ($puedeElegirEstablecimiento) {
           <?php require __DIR__ . '/../partials/notificacion-fechas-o95.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b26.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-p350.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-a35.php'; ?>
         </div>
       </div>
 

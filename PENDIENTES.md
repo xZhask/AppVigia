@@ -2349,3 +2349,78 @@ seleccionado correctamente en su nueva posición; el gate del ítem 43
 (Z.7/Z.7.3) sigue funcionando igual desde la nueva ubicación. Tres
 verificadores en verde (P35.0 sigue 34/34 sin huérfanos), byte-diff
 limpio en A36/B26/A80/O95/B05.
+
+## 10. Cotejo de Tétanos (A35) — en curso, retomar desde acá
+
+Arranca el cotejo de A35 contra el PDF (págs. 23-24 del compendio).
+Primer tramo pedido explícitamente por el usuario: "fechas y campos de
+notificación y número de caso" — la cabecera de la ficha, antes de
+tocar "I. DATOS DEL PACIENTE" (núcleo, ya cubierto genéricamente) ni
+"II. FUENTE DE NOTIFICACION" (tipo/institución informante/fuente,
+concepto propio de A35 que NO es el genérico tipo/lugar de captación —
+queda pendiente para un tramo posterior).
+
+**A35.1. Nueva sección "Datos de notificación e investigación del
+caso" — ✅ cerrado**
+
+El PDF de A35 tiene un formato de cabecera distinto al resto: un
+recuadro "FECHA .........." / "CASO Nº........." junto al título
+(no una fila en tabla), y una tabla de 4 columnas -- "Fecha de
+conocimiento local", "Fecha de Investigación (visita domiciliaria)",
+"Fecha notificación EE SS a Red/Microrred", "Fecha notificación
+Red/Microrred a DISA" -- sin "código de registro" en la tabla (a
+diferencia de B26) ni escalamiento hasta CDC (a diferencia de B26/
+P35.0, que sí llegan a "Dirección de Salud a CDC"). Transcripción
+literal del PDF, no se copió la redacción de otra ficha: "EE SS" sin
+puntos, "Microrred" con doble r, "DISA" sin expandir, sin el
+sufijo "del caso" en "Fecha de conocimiento local" (B26 sí lo tiene).
+
+"FECHA .........." se interpreta como el mismo campo genérico
+`fecha_notif` que ya pide la tarjeta "1. Notificación" para las 24
+fichas (mismo criterio usado para las demás cabeceras a medida) — no
+se declaró un campo nuevo para eso. "CASO Nº........." sí es nuevo
+(`a35_caso_n`, TEXTO): mismo rol que "código de registro" en
+B05/B26/P35.0, aunque el PDF de A35 lo llama distinto y lo ubica en
+otro lugar de la página.
+
+**Mecanismo:** nueva sección `orden: 1` en el manifiesto ("Datos de
+notificación e investigación del caso", 5 campos: `a35_caso_n` +
+4 `FECHA`), secciones existentes de A35 renumeradas (+1). Partial
+nuevo `notificacion-fechas-a35.php`, calcado del patrón ya usado por
+B05/B26/O95/P35.0/PFA: se incluye sin condición en la tarjeta "1.
+Notificación" de `nueva/index.php`/`fichas/editar.php` (oculto si A35
+no es la ficha activa, para sobrevivir al cambio de enfermedad sin
+recargar), y se excluye del loop genérico de `secciones-clinicas.php`
+vía `$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA`/
+`$SECCIONES_CON_PARTIAL_A_MEDIDA` (mismo mecanismo que ya usan
+B05/B26/O95/P35.0, no algo nuevo).
+
+**Fuera de alcance a propósito, no se tocó:** el bloque genérico
+`notificacionCaptacionWrap` (tipo/lugar/clasificación en la captación)
+sigue mostrándose para A35 aunque esos conceptos no existen en su PDF
+real -- ahí vive "II. FUENTE DE NOTIFICACION" (tipo de notificación,
+institución informante, fuente, trabajador que diagnostica,
+establecimiento que notifica), un concepto distinto que corresponde a
+un tramo posterior del cotejo, no a "fechas y número de caso".
+
+**Nota para el ítem 5 de este documento:** con A35 son 6 fichas con
+cabecera de notificación propia (A80/PFA con columnas fijas de `caso`;
+B05, B26, O95, P35.0, A35 con `campo_def`) — cruza el umbral de "5 o 6
+fichas" que el ítem 5 puso como condición para diseñar
+`fecha_notif_desde` y hacer el retrofit de todas juntas. No se
+construyó acá (fuera del alcance pedido hoy), queda anotado para
+cuando se retome ese ítem.
+
+**Verificación:** `cargar_fichas.php --apply --cie10=A35` sin bloqueo
+por datos capturados. Tres verificadores en verde (A35 25/25 campos,
+0 huérfanos; mismos 3 huérfanos preexistentes de siempre en A80/B26/
+B55; 0 claves faltantes de 197). Byte-diff limpio en A36/B26/A80/O95/
+B05 -- la única diferencia es la aparición del nuevo bloque
+`notificacionFechasA35Wrap` oculto en el DOM de las 5, mismo patrón
+exacto que ya usan los bloques hermanos de B05/B26/O95/P35.0/PFA (se
+confirmó contra el antes/después vía `git stash`, no es una regresión
+de espacios en blanco como Z.8). Playwright: orden de secciones
+correcto, bloque visible con las 5 etiquetas esperadas, sin errores de
+consola. Ronda crear()→BD→editar(): los 5 valores se guardan en
+`caso_valor` con las claves correctas y reaparecen tal cual en el HTML
+de editar(); caso de prueba y persona asociada eliminados después.

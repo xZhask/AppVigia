@@ -87,6 +87,11 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // manifiesto como caería acá por defecto (orden: 6).
         'p35_0_clasificacion_del_caso',
     ],
+    'A35' => [
+        // notificacion-fechas-a35.php
+        'a35_caso_n', 'a35_fecha_de_conocimiento_local', 'a35_fecha_de_investigacion_visita_domiciliaria',
+        'a35_fecha_de_notificacion_ee_ss_a_red_microrred', 'a35_fecha_de_notificacion_red_microrred_a_disa',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -99,6 +104,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'B26' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Cuadro clínico', 'Complicaciones', 'Hospitalización y egreso'],
     'O95' => ['Datos de notificación'],
     'P35.0' => ['Datos de notificación e investigación del caso', 'Clasificación del caso'],
+    'A35' => ['Datos de notificación e investigación del caso'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {

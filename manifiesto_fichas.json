@@ -3712,8 +3712,44 @@
             ],
             "secciones": [
                 {
-                    "nombre": "Cuadro clínico",
+                    "nombre": "Datos de notificación e investigación del caso",
                     "orden": 1,
+                    "campos": [
+                        {
+                            "clave": "a35_caso_n",
+                            "etiqueta": "Caso N.°",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a35_fecha_de_conocimiento_local",
+                            "etiqueta": "Fecha de conocimiento local",
+                            "tipo": "FECHA",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a35_fecha_de_investigacion_visita_domiciliaria",
+                            "etiqueta": "Fecha de investigación (visita domiciliaria)",
+                            "tipo": "FECHA",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a35_fecha_de_notificacion_ee_ss_a_red_microrred",
+                            "etiqueta": "Fecha de notificación EE SS a Red/Microrred",
+                            "tipo": "FECHA",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "a35_fecha_de_notificacion_red_microrred_a_disa",
+                            "etiqueta": "Fecha de notificación Red/Microrred a DISA",
+                            "tipo": "FECHA",
+                            "orden": 5
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Cuadro clínico",
+                    "orden": 2,
                     "campos": [
                         {
                             "clave": "a35_fecha_de_inicio_de_lesion",
@@ -3790,7 +3826,7 @@
                 },
                 {
                     "nombre": "Atención",
-                    "orden": 2,
+                    "orden": 3,
                     "campos": [
                         {
                             "clave": "a35_paciente_atendido_por",
@@ -3867,7 +3903,7 @@
                 },
                 {
                     "nombre": "Diagnóstico definitivo",
-                    "orden": 3,
+                    "orden": 4,
                     "campos": [
                         {
                             "clave": "a35_diagnostico_definitivo",
