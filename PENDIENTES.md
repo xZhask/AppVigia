@@ -2012,3 +2012,60 @@ Playwright en navegador real: campo entero de A80 con teclas
 bloqueado); Temperatura de A36 con "38.5" → queda "38.5" (decimal
 correcto); con "12e" → queda "12" ("e" bloqueada); cero errores de
 consola en ambos casos.
+
+**Z.4. "Fecha de manifestación" (matrices SI/NO/DESCONOCIDO de P35.0)
+aceptaba fecha futura y quedaba habilitada aunque la fila fuera NO o
+DESCONOCIDO — ✅ cerrado**
+
+El usuario observó en "Cuadro clínico — manifestaciones" (Manifestaciones
+oftálmicas, Manifestación auditiva, Cardiopatía congénita, Otras
+manifestaciones) que la celda "Fecha de manifestación" de cada fila (i)
+admitía fechas posteriores a hoy y (ii) se podía llenar aunque la fila
+estuviera marcada NO o DESCONOCIDO, sin ninguna relación con el radio
+SI/NO/DESCONOCIDO de esa misma fila.
+
+Estos 4 campos son `tipo: MATRIZ` renderizados por `campos/matriz.php`,
+en modo `'hibrido'` (3 columnas exclusivas SI/NO/DESCONOCIDO + 1 columna
+libre "Fecha de manifestación") — el único modo `'hibrido'` real de las
+24 fichas hoy. El partial nunca gateaba las columnas libres a la
+columna "SI" de la misma fila (no existía el concepto), y ninguna celda
+de fecha de `matriz.php` tenía `max` (a diferencia de todo el resto de
+inputs `type="date"` de la app, que sí tienen `max="<?= date('Y-m-d')
+?>"` desde siempre).
+
+**Mecanismo (genérico en `matriz.php`, no hardcodeado a P35.0):** si el
+campo tiene modo `'hibrido'` y una de sus columnas exclusivas es
+literalmente "SI"/"SÍ" (`$colSiIdx`), las columnas libres de la misma
+fila llevan `data-gated-por-si="1"` y se renderizan `disabled` salvo que
+esa fila ya esté en SI (`$filaEsSi`). Todas las celdas `type="date"` de
+`matriz.php` (gateadas o no) llevan además `max="<?= date('Y-m-d') ?>"`.
+En `ficha.js`, `actualizarEstadoFila()` (la misma función que ya
+maneja `.fecha-dep`/`.otros-especificar-dep` de `grupo-si-no.php`) ahora
+también habilita/deshabilita y limpia cualquier `[data-gated-por-si]`
+de la fila al cambiar el radio — sin nuevo listener, reutilizando el
+`change` ya cableado sobre `.grupo-si-no-field` (matriz.php comparte esa
+clase de wrapper).
+
+**Alcance real verificado:** de los 24 fichas, solo P35.0 tiene columnas
+MATRIZ exclusivas en mayúsculas + una columna "SI" real (`a37_0`, `b55`,
+`z21`, `a50`, `y59_0` tienen columnas "Fecha..." pero en modo `'libre'`,
+sin ningún radio que gatear — cero cambio de comportamiento ahí). El
+`max` de fecha sí es universal al partial: además de P35.0, toca A80
+("Fechas de seguimiento 30/60/90/180 días", filas "Fecha
+programada"/"Fecha que se realizó", modo `'libre'`) — consultado al
+usuario antes de commitear por ser ficha ya revisada; confirmó aplicar
+el mismo criterio que el resto de la app (ninguna otra fecha del sistema
+admite futuro). Sin cambio en A36/B26/O95/B05 (ninguna de sus matrices
+tiene columna "Fecha" en ningún formato).
+
+**Verificación:** los tres verificadores en verde (mismos 3 huérfanos
+preexistentes A80/B26/B55, sin nuevos; 0 claves faltantes). Byte-diff
+`render_ficha_cli.php` de A36/B26/O95/B05: 0 líneas de diferencia. A80:
+único cambio real son los `max="2026-08-03"` en las celdas de
+"Fechas de seguimiento" (confirmado con el usuario). Playwright en
+navegador real sobre P35.0 ("Cataratas"): sin radio marcado → fecha
+deshabilitada; NO → deshabilitada; SI → habilitada, acepta
+`max="2026-08-03"`; DESCONOCIDO → deshabilitada y limpiada a "". A80
+("Fecha programada"): las 4 celdas quedan con `max="2026-08-03"` pero
+siguen habilitadas (sin columna SI que gatear). Cero errores de consola
+en ambos casos.

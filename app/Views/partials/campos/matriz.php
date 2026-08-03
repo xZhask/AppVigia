@@ -46,6 +46,20 @@ foreach ($columnas as $cIdx => $col) {
     }
 }
 
+// Si una de las columnas exclusivas es "SI" (p.ej. SI/NO/DESCONOCIDO),
+// las columnas libres de esa misma fila (p.ej. "Fecha de manifestación")
+// solo tienen sentido cuando la fila está marcada como SI -- se
+// deshabilitan en las demás filas (PENDIENTES.md, observación P35.0
+// "Cuadro clínico — manifestaciones"). $colSiIdx es null cuando el campo
+// no tiene una columna "SI" (a37_0/b55/z21/a50/y59_0: sin gate, sin cambio).
+$colSiIdx = null;
+foreach ($columnasRadio as $cIdx => $_) {
+    if (in_array(mb_strtoupper(trim((string) $columnas[$cIdx])), ['SI', 'SÍ'], true)) {
+        $colSiIdx = $cIdx;
+        break;
+    }
+}
+
 // Tres modos por CAMPO:
 //  - 'radio':   todas las columnas son exclusivas -> idéntico a como
 //               funcionaba siempre (A80: Localización de la parálisis,
@@ -93,6 +107,7 @@ if (empty($columnas) || empty($columnasRadio)) {
           } elseif ($modo === 'hibrido') {
               $valFilaRadio = $valores[$fIdx]['_radio'] ?? '';
           }
+          $filaEsSi = $colSiIdx !== null && (string) $valFilaRadio === (string) $columnas[$colSiIdx];
         ?>
           <tr class="grupo-si-no-row">
             <td style="font-size: 12px; font-weight: 500; color: var(--ink); padding: 8px 12px; border-bottom: 1px solid var(--line-2);"><?= e($fila) ?></td>
@@ -110,8 +125,10 @@ if (empty($columnas) || empty($columnasRadio)) {
                   </div>
                 <?php else:
                   $esFechaCelda = $esFecha((string) $col) || $filaEsFecha;
+                  $gateSi = $colSiIdx !== null;
+                  $deshabilitada = $gateSi && !$filaEsSi;
                 ?>
-                  <input type="<?= $esFechaCelda ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaCelda ? '' : '—' ?>" style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;">
+                  <input type="<?= $esFechaCelda ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaCelda ? '' : '—' ?>" <?= $esFechaCelda ? 'max="' . date('Y-m-d') . '"' : '' ?> <?= $gateSi ? 'data-gated-por-si="1"' : '' ?> <?= $deshabilitada ? 'disabled' : '' ?> style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;<?= $deshabilitada ? ' opacity:.55; cursor:not-allowed;' : '' ?>">
                 <?php endif; ?>
               </td>
             <?php endforeach; ?>

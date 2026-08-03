@@ -1194,7 +1194,12 @@ document.addEventListener('DOMContentLoaded', function () {
           fila.classList.remove('has-error');
           var depOtros = fila.querySelector('.otros-especificar-dep');
           var depFecha = fila.querySelector('.fecha-dep');
-          if (inputSeleccionado.value === 'SI') {
+          // Celdas libres de una fila de MATRIZ (p.ej. "Fecha de
+          // manifestación" en P35.0) marcadas por matriz.php con
+          // data-gated-por-si: solo se habilitan cuando esta fila quedó
+          // en SI, igual que .fecha-dep/.otros-especificar-dep arriba.
+          var celdasGateadas = fila.querySelectorAll('[data-gated-por-si]');
+          if (inputSeleccionado.value === 'SI' || inputSeleccionado.value === 'SÍ') {
             fila.classList.add('is-si');
             var labelText = fila.querySelector('.row-label');
             if (labelText) {
@@ -1203,7 +1208,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (depOtros) depOtros.style.display = 'block';
             if (depFecha) depFecha.style.display = 'block';
+            celdasGateadas.forEach(function(c) {
+              c.disabled = false;
+              c.style.opacity = '';
+              c.style.cursor = '';
+            });
           } else {
+            celdasGateadas.forEach(function(c) {
+              c.disabled = true;
+              c.value = '';
+              c.style.opacity = '.55';
+              c.style.cursor = 'not-allowed';
+            });
             fila.classList.remove('is-si');
             var labelText = fila.querySelector('.row-label');
             if (labelText) {
