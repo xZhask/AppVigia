@@ -2140,13 +2140,6 @@ Documento/Datos del paciente antes de cambiar de enfermedad, se pierde
 con la recarga -- inevitable en la práctica dado el orden del
 formulario, y el usuario lo aceptó explícitamente.
 
-**Queda pendiente (no bloqueante, fuera de esta sesión):**
-`CasosController::seccionesClinicas()` y su ruta
-`/casos/nuevo/secciones-clinicas` quedan sin ningún llamador activo en
-el frontend (se dejaron intactos, no se tocó el controlador salvo el
-fix de Z.5) -- candidato a eliminar en una limpieza aparte si se
-confirma que nada más los usa.
-
 **Verificación:** Playwright con navegación real (`waitForNavigation`):
 A36→P35.0 cambia la URL a `?enfermedad_id=17`, tag CIE-10 se actualiza,
 tarjeta de antecedentes queda `hidden`. P35.0→A36 (caso inverso, el que
@@ -2154,3 +2147,63 @@ antes quedaba con la tarjeta visible pero VACÍA): ahora "Agregar
 contacto"/"Agregar lugar" aparecen con contenido real, igual que una
 carga directa de A36. Cero errores de consola en ambos sentidos. Tres
 verificadores en verde (mismos 3 huérfanos preexistentes).
+
+**Limpieza (mismo día, a pedido del usuario):** `CasosController::seccionesClinicas()`
+(156 líneas) y la ruta `/casos/nuevo/secciones-clinicas` -- confirmado
+sin llamadores tras Z.6 -- se eliminaron por completo. `php -l` en
+ambos archivos, `curl` a la ruta confirma que ya no resuelve al
+controlador, tres verificadores en verde.
+
+**Z.7. Ítem 43 (seguimiento de excreción viral, solo casos confirmados
+de SRC) "no aparecía en el esquema" — ✅ cerrado, el mecanismo ya
+existía**
+
+El usuario cotejó el ítem 43 del PDF (tabla "Seguimiento de excreción
+viral", 2 filas de "Hisopado nasal y faríngeo", visible SOLO en casos
+confirmados de SRC) contra el formulario y no lo encontró en ningún
+lado, esperando verlo debajo de "Laboratorio", condicionado a
+"Clasificación del caso = Confirmado" (sección 7 del PDF).
+
+Investigando, el mecanismo YA estaba completamente implementado desde
+antes de esta sesión -- capacidad 6 (`bloques_condicionales`,
+`app/Views/partials/tablas-hijas/muestras-condicional.php`, backend en
+`CasosController::filasMuestras()`/`separarFilasMuestrasPorContexto()`) --
+con el bloque de P35.0 ya declarado en el manifiesto (`contexto:
+"seguimiento"`, `depende_de: "clasificacion"`, `valores_activadores:
+["CONFIRMADO"]`) y cargado en la base de datos. Confirmado con
+Playwright que el bloque SÍ aparece si se marca "Confirmado" en los
+chips genéricos de abajo del formulario.
+
+**La causa real:** P35.0 tiene DOS campos de clasificación
+independientes que se llaman igual ("Clasificación del caso"): (1) el
+`campo_def` propio de la ficha (sección 7, opciones Sospechoso/
+Confirmado/Descartado/Infección congénita por el virus de la rubéola,
+el que pide el PDF) y (2) el "clasificacion" genérico compartido por
+todas las fichas (chips al final del formulario, usado en
+paneles/reportes/filtros de lista, y del que depende el bloque del
+ítem 43). Marcar "Confirmado" en (1) no tocaba (2), así que el bloque
+seguía oculto. Mismo problema de fondo que A80 con su propio
+"Clasificación final" -- A80 ya lo resuelve con
+`sincronizarDescartadoPfa()` (JS que sincroniza su campo propio hacia
+el genérico); no existía el equivalente para P35.0.
+
+**Fix (confirmado con el usuario, mismo patrón que A80):**
+`sincronizarClasificacionP350()` en `ficha.js` -- al cambiar el campo
+propio de P35.0, sincroniza el genérico: Sospechoso/Confirmado/
+Descartado se copian tal cual; "Infección congénita" y vacío caen a
+"Sospechoso" (decisión explícita del usuario: el PDF dice "casos
+CONFIRMADOS de SRC", "Infección congénita" es una categoría distinta y
+NO debe activar el seguimiento -- y además evita que el genérico quede
+pegado en "Confirmado" si el usuario pasa por Confirmado y luego
+cambia de opinión). Se dejaron AMBOS campos visibles e independientes
+(igual que A80): no es una limpieza de UI, solo la sincronización que
+faltaba.
+
+**Verificación:** Playwright en navegador real -- elegir "Confirmado"
+en el campo propio de P35.0 revela el bloque y marca el chip genérico
+correspondiente; "Infección congénita" lo mantiene oculto; volver a
+"Sospechoso" también. Ronda completa crear()→verificar-bd→editar():
+2 filas de seguimiento (`contexto=seguimiento`) guardadas y
+recargadas correctamente, con el bloque visible (sin `hidden`) en
+`editar()`. Sin regresión en el sync propio de A80. Tres verificadores
+en verde, byte-diff limpio en A36/B26/A80/O95/B05.
