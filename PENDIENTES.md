@@ -1674,3 +1674,39 @@ por este commit.
 segundo bloque de muestras de seguimiento viral, solo en casos
 confirmados de SRC) sigue sin implementarse — siguiente paso acordado
 con el usuario.
+
+**X. "Antecedentes del paciente" (P35.0, en revisión activa, aún no
+cerrada) — motor genérico pisaba el manifiesto — ✅ cerrado**
+
+El usuario, cotejando P35.0 contra el PDF, encontró 3 síntomas de la
+misma causa: el motor genérico de `secciones-clinicas.php` (compartido
+por las 24 fichas) tiene reglas hardcodeadas que no contemplaban a
+P35.0: (1) inyecta "Fecha de inicio de síntomas" obligatoria al inicio
+de la primera sección clínica de toda ficha salvo una lista de
+exclusión (`A80`/`B05`/`O95`) — P35.0 no estaba, la heredaba sin que
+exista en el PDF de SRC; (2) agrupa todo campo `BOOLEANO` suelto (que no
+sea disparador de otro campo) bajo un encabezado fijo "Signos y
+síntomas" al final de la sección — pensado para checklists de síntomas,
+pero P35.0 no tiene ninguno: sus booleanos (`p35_0_nacio_prematuro` en
+"Antecedentes del paciente", 2 más en "Antecedentes de la madre", 2 más
+en "Hospitalización y defunción") son hechos puntuales que quedaban
+desterrados fuera de su `orden` real del manifiesto.
+
+**Corregido, acotado por `cie10 === 'P35.0'` en ambos archivos:**
+- `secciones-clinicas.php`: agregado a la lista de exclusión de "Fecha
+  de inicio de síntomas" (mismo patrón que A80/B05/O95); los `BOOLEANO`
+  de P35.0 ya no se separan a "Signos y síntomas", quedan inline en su
+  `orden`.
+- `CasosController::crear()`/`actualizar()`: la validación de servidor
+  (que hacía obligatoria la fecha vía un mecanismo de respaldo -- "toma
+  la primera fecha de cualquier campo_def que tenga valor" -- si el
+  formulario no la mostraba) ahora se salta entera para P35.0:
+  `caso.fecha_inicio_sintomas` queda `NULL` (columna ya nullable), sin
+  inventar un valor de respaldo ni bloquear el guardado.
+
+**Verificación:** los tres verificadores en verde. Byte-diff de A80,
+B05, O95, A36 y B26 (`render_ficha_cli.php`, HEAD vs. working tree):
+0 líneas de diferencia en las 5 -- cero efecto colateral. Caso real
+P35.0 `crear()` con `nacio_prematuro=1` y sin fecha de inicio de
+síntomas: guardado sin error, `fecha_inicio_sintomas` NULL en BD,
+`nacio_prematuro` guardado correctamente en `caso_valor` → limpieza.

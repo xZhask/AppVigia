@@ -220,14 +220,21 @@ class CasosController extends Controller
             $erroresFijos['distrito_id'] = 'Selecciona el distrito de domicilio.';
         }
 
+        // P35.0 no pide "fecha de inicio de síntomas" en el PDF (SRC es
+        // congénito, no un cuadro con inicio agudo) -- ni la muestra el
+        // formulario ni la exige el servidor; caso.fecha_inicio_sintomas
+        // queda NULL para esta ficha, columna ya nullable.
+        $esP350ParaSintomas = (($enfermedad['cie10'] ?? '') === 'P35.0');
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
-        if ($fechaInicioSintomas === '') {
+        if ($fechaInicioSintomas === '' && !$esP350ParaSintomas) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
         $fechaInicioSintomasIso = null;
         $errorFechaInicioSintomas = null;
         if ($fechaInicioSintomas === '') {
-            $errorFechaInicioSintomas = 'Ingresa la fecha de inicio de síntomas.';
+            if (!$esP350ParaSintomas) {
+                $errorFechaInicioSintomas = 'Ingresa la fecha de inicio de síntomas.';
+            }
         } else {
             $fechaInicioSintomasIso = fechaIsoValida($fechaInicioSintomas);
             if (!$fechaInicioSintomasIso) {
@@ -790,14 +797,17 @@ class CasosController extends Controller
             $erroresFijos['distrito_id'] = 'Selecciona el distrito de domicilio.';
         }
 
+        $esP350ParaSintomas = (($enfermedad['cie10'] ?? '') === 'P35.0');
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
-        if ($fechaInicioSintomas === '') {
+        if ($fechaInicioSintomas === '' && !$esP350ParaSintomas) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
         $fechaInicioSintomasIso = null;
         $errorFechaInicioSintomas = null;
         if ($fechaInicioSintomas === '') {
-            $errorFechaInicioSintomas = 'Ingresa la fecha de inicio de síntomas.';
+            if (!$esP350ParaSintomas) {
+                $errorFechaInicioSintomas = 'Ingresa la fecha de inicio de síntomas.';
+            }
         } else {
             $fechaInicioSintomasIso = fechaIsoValida($fechaInicioSintomas);
             if (!$fechaInicioSintomasIso) {

@@ -173,9 +173,14 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // partial a medida no se repiten acá.
     $campos = array_values(array_filter($campos, fn($c) => !$claveCubiertaPorPartial($c['clave'])));
 
+    // P35.0 no tiene secciones de "lista de síntomas": sus BOOLEANO son
+    // hechos puntuales (¿nació prematuro?, ¿hospitalización?, etc.) que
+    // deben quedarse en su orden del manifiesto, no desterrarse al final
+    // bajo "Signos y síntomas" (pensado para fichas con checklists reales).
+    $esP350 = (($enfermedad['cie10'] ?? '') === 'P35.0');
     $idsPadre = array_filter(array_column($campos, 'depende_de'));
-    $camposBooleanos = array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !in_array($c['id'], $idsPadre));
-    $camposOtros = array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || in_array($c['id'], $idsPadre));
+    $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !in_array($c['id'], $idsPadre));
+    $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || in_array($c['id'], $idsPadre));
 
     if (!empty($camposOtros)): ?>
         <div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
@@ -379,7 +384,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     </span>
   </div>
   <div class="section-body">
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95'], true)): ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
