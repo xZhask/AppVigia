@@ -7,7 +7,7 @@ No avanzar a la siguiente fase sin validar la anterior.
 
 ## Contexto del proyecto
 
-Aplicativo web interno para el Área de Estadística de DIRSAPOL (Sanidad PNP) que
+Aplicativo web interno para el Área de Epidemiología de DIRSAPOL (Sanidad PNP) que
 reemplaza el flujo actual de consolidación manual por Excel. Los establecimientos
 (IPRESS PNP) registran fichas epidemiológicas de distintas enfermedades según los
 modelos MINSA, y el área genera reportes consolidados de forma dinámica.

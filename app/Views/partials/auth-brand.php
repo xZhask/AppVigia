@@ -17,7 +17,7 @@
   </div>
 
   <div class="auth-foot">
-    <span><b>DIRSAPOL</b> · Área de Estadística</span>
+    <span><b>DIRSAPOL</b> · Área de Epidemiología</span>
     <span>Fichas modelo <b>MINSA / CDC</b></span>
   </div>
 

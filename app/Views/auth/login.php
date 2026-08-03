@@ -41,7 +41,7 @@ use App\Core\Csrf;
     <form class="auth-form" method="post" action="/login" autocomplete="on">
       <?= Csrf::campoOculto() ?>
       <h2>Iniciar sesión</h2>
-      <p class="lead">Acceso para el personal autorizado de las IPRESS PNP y del Área de Estadística.</p>
+      <p class="lead">Acceso para el personal autorizado de las IPRESS PNP y del Área de Epidemiología.</p>
 
       <?php if (!empty($mensaje)): ?>
         <div class="auth-alert-ok">
@@ -121,7 +121,7 @@ use App\Core\Csrf;
 
       <p class="auth-note">
         Sistema de uso institucional restringido. Los accesos y las acciones sobre las fichas quedan registrados.
-        Si necesitas una cuenta, solicítala al Área de Estadística de la OFIGCS&nbsp;–&nbsp;DIRSAPOL.
+        Si necesitas una cuenta, solicítala al Área de Epidemiología de la OFIGCS&nbsp;–&nbsp;DIRSAPOL.
       </p>
     </form>
   </section>
