@@ -1796,3 +1796,138 @@ completo. Quedan las preguntas de la Fase 6 de
 PETICION_P35_RUBEOLA_CONGENITA.md (edad en meses/días, N.° de historia
 clínica, tiempo de residencia, pueblo étnico vs. etnia/raza,
 `o95_establecimiento_sanidad_pnp`) sin revisar en esta sesión.
+
+**Z. CSS del control "pill" (Sí/No/Ign./Desc.) dependía en silencio de
+qué otros campos hubiera en la misma página — ✅ cerrado**
+
+El usuario, mientras esperaba la investigación de la Fase 6, mandó
+capturas de P35.0 mostrando radios nativos sin estilo (sin el fondo
+gris redondeado tipo interruptor que sí se ve en B05/A36/A80). Causa
+raíz: el CSS de `.seg`/`.seg-label`/`.sr-only` (el que oculta el
+`<input type=radio>` real y pinta la píldora) nunca vivió en una hoja
+de estilos global -- estaba embebido en un `<style>` dentro de
+`grupo-si-no.php` y otra copia casi idéntica dentro de
+`si-no-fecha.php`. Cualquier otro partial que reusa esas mismas clases
+(`select.php` en su rama de 3 opciones Sí/No/Desc., `matriz.php` en modo
+radio, `cronologia.php`, y el partial a medida `demoras-o95.php`)
+dependía de que, en algún otro lugar de esa misma página, se dibujara
+al menos un campo `GRUPO_SI_NO` o `SI_NO_FECHA` que sí trajera el
+`<style>` consigo -- si no, el radio nativo quedaba visible sin pintar.
+
+P35.0 no tiene ningún campo `GRUPO_SI_NO`/`SI_NO_FECHA` (solo `SELECT` y
+`MATRIZ`), así que el CSS nunca llegaba a su página. **No es exclusivo
+de P35.0:** se verificaron las 5 fichas "ya revisadas" y **O95 tiene el
+mismo bug** en "Las cuatro demoras" (`demoras-o95.php`), por la misma
+razón -- confirmado con el usuario antes de tocar nada, ya que O95 está
+en la lista de fichas ya revisadas.
+
+**Corregido:** nuevo `public/css/campos-dinamicos.css` (cargado siempre
+desde `app/Views/layouts/shell.php`, junto a `theme.css`/`dark.css`) con
+las reglas antes embebidas, ahora sin exigir la clase ancestro
+`.grupo-si-no-field`/`.si-no-fecha-field` para las reglas base
+(`.sr-only`, `.seg-label`, `.seg-label.on`, variante oscura) -- así
+aplican también a `matriz.php`/`select.php`/`demoras-o95.php` sin
+importar qué otro campo haya en la página. Las reglas de layout
+responsive (`@media max-width:639px`) se dejaron igual de acotadas que
+antes (no se les cambió el alcance). Se quitaron los dos `<style>`
+embebidos de `grupo-si-no.php`/`si-no-fecha.php` (duplicados, ya
+redundantes).
+
+**Verificación:** los tres verificadores en verde. Byte-diff de A80,
+B05, O95, A36, B26 y P35.0 (`render_ficha_cli.php`): la única diferencia
+es la línea `<link>` nueva en `<head>` y la desaparición de los dos
+`<style>` embebidos donde aplicaban -- cero cambios de contenido/campos.
+Playwright contra el navegador real: P35.0 (60 usos de `.seg-label`) y
+"Las cuatro demoras" de O95 (8 usos) ahora resuelven `border-radius:6px`
+y ocultan el radio nativo (antes: sin la regla, radio visible); captura
+de pantalla de ambas confirma el estilo píldora correcto; B05 (72 usos,
+ya funcionaba) sigue igual, sin regresión; cero errores de consola en
+los tres casos.
+
+**Z.2. Tabla de viajes de la madre (ítem 33, P35.0) + B05 tenía la suya
+completamente rota — ✅ cerrado**
+
+El usuario pidió que, al elegir "Sí" en "¿Durante el embarazo viajó
+fuera del país?" (P35.0), aparezca un formulario de viaje con las
+columnas del PDF: País, Localidad/ciudad, Fecha de salida, Fecha de
+retorno, Semana de gestación. Antes de construirlo se investigó el
+mecanismo existente de `caso_viaje`/`viajes.php` (8 fichas lo usan), lo
+que destapó un hallazgo más serio, no relacionado al pedido:
+
+**B05 no mostraba su tabla de viajes en absoluto, ni oculta ni vacía.**
+`secciones-clinicas.php` (bloque especial que dibuja la tabla dentro de
+"Lugar probable de infección" cuando el booleano vale Sí) comparaba
+contra la clave literal `'paciente_viajo_7_30_dias'`, que ya no existe
+-- la real es `b05_paciente_viajo_entre_los_7_a_30_dias_antes_del_inic`
+(prefijo `b05_` de "clave ahora autoritativa" o de la recarga de
+fichas). Como la condición nunca era verdadera, el `require` de
+`viajes.php` nunca corría: no era un problema de visibilidad, la tabla
+simplemente no existía en el HTML. El mismo patrón se repetía en
+`public/js/ficha.js` (`actualizarBloqueViajesB05()`, vía
+`campoPorClave('paciente_viajo_7_30_dias')` sobre `mapaCampos`) --
+doblemente roto, en PHP y en JS. Confirmado con el usuario antes de
+tocar nada (B05 es una ficha ya revisada) que se arreglara primero esto
+y se usara ya funcionando como base para P35.0.
+
+**Corregido:**
+- `secciones-clinicas.php`: clave corregida a la real; se agregó un
+  bloque análogo para P35.0 (`p35_0_durante_el_embarazo_viajo_fuera_del_pais`,
+  BOOLEANO valor `'1'`/`'0'`, no catálogo SI/NO/DESCONOCIDO como B05).
+- `ficha.js`: misma clave corregida en `actualizarBloqueViajesB05()`
+  (dos ocurrencias); nueva `actualizarBloqueViajesP350()` en espejo,
+  con el mismo comportamiento (auto-agrega una fila vacía la primera vez
+  que se elige "Sí", coherente con lo que pidió el usuario: "debería
+  aparecer un formulario para registrar").
+- **Segundo hallazgo en cascada:** al corregir la clave de B05, el
+  `require` de `viajes.php` sí empezó a ejecutarse dentro de
+  `$renderizarCampos` (closure de `secciones-clinicas.php`) -- y
+  `$filasViajes` no estaba en su `use(...)`, nunca se había ejercitado
+  porque la clave rota lo hacía inalcanzable. Corregido agregando
+  `$filasViajes`/`$erroresViajes`/`$columnasViaje` al `use(...)` de la
+  closure.
+- **Tercer hallazgo:** el endpoint AJAX `seccionesClinicas()` (mismo
+  patrón que [[seccionesclinicas_extrae_claves_a_mano]]) no definía esas
+  3 variables antes de su propio `require` de `secciones-clinicas.php`
+  -- hoy no fallaba porque nunca llegaba a usarlas (clave rota), pero al
+  corregir la clave habría roto el JSON de CUALQUIER ficha al cambiar de
+  enfermedad por el combo (warning de "Undefined variable" filtrándose
+  al body de la respuesta). Corregido: se adelantó la resolución de
+  `datosColumnasTablaHija()` (ya se llamaba más abajo para muestras, se
+  reutiliza el mismo resultado) antes del primer `require`.
+- **Columna nueva `caso_viaje.localidad`** (migración
+  `add_localidad_caso_viaje.php`): el PDF de P35.0 pide País y
+  Localidad/ciudad como columnas separadas; antes se colapsaban en un
+  solo campo de texto libre ("Lugar visitado (país o ciudad)"). Gateada
+  por `columnas_tablas_hija.caso_viaje` igual que `semana_gestacion`
+  (Fase 5.1) -- las otras 7 fichas que usan viajes no la declaran, sin
+  cambio para ellas. `viajes.php`/`filasViajes()`/`CasoViaje::reemplazarTodos()`
+  actualizados; `cargar_fichas.php` y el manifiesto de P35.0 actualizados
+  y recargados (`--apply --cie10=P35.0`).
+- P35.0 se excluyó de la tarjeta genérica "Antecedentes epidemiológicos"
+  (`nueva/index.php`/`fichas/editar.php`, variable `$isP350`, mismo
+  trato que `$isB05`) -- ya no muestra la tabla de viajes siempre
+  visible ahí; solo aparece condicionada al booleano, junto a la
+  pregunta, como pide el PDF.
+
+**Alcance no cubierto (visible, no oculto):** "Transporte ida"/"Transporte
+retorno" siguen apareciendo siempre en la fila de viaje de P35.0 (no
+están en el PDF del ítem 33) porque `viajes.php` nunca las hizo
+condicionales para ninguna de las 8 fichas -- acotarlas requeriría un
+cambio más invasivo al widget compartido, fuera del pedido de hoy.
+
+**Verificación:** los tres verificadores en verde. Byte-diff de A80,
+O95, A36 y B26 (`render_ficha_cli.php`, normalizando IDs de `campo_def`
+que se recorren al recargar el manifiesto, timestamp de notificación y
+versión de caché de `ficha.js`): 0 líneas de diferencia real en las 4.
+B05: única diferencia es la tabla de viajes apareciendo (antes ausente
+del todo). El endpoint AJAX `seccionesClinicas()` probado para las 6
+fichas relevantes: JSON válido, sin warnings filtrados. Playwright en
+navegador real: toggle de B05 (catálogo SI/NO/DESCONOCIDO) y de P35.0
+(booleano 1/0) -- ambos ocultos por defecto, visibles con fila
+auto-agregada al elegir "Sí"/"1", ocultos de nuevo al revertir; cero
+errores de consola. Caso real P35.0 `crear()`→`verificar-bd`→`editar()`
+con un viaje (país, localidad, fechas, semana de gestación): guardado y
+recargado correctamente, con "Localidad/ciudad" mostrando su propio
+valor separado de "País" → limpieza. Caso real B05 con un viaje
+(transporte ida/retorno, sin localidad): guardado correcto, sin la
+columna que B05 no declara.

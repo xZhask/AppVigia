@@ -7069,6 +7069,7 @@
             "columnas_tablas_hija": {
                 "caso_viaje": [
                     "pais",
+                    "localidad",
                     "fecha_salida",
                     "fecha_retorno",
                     "semana_gestacion"

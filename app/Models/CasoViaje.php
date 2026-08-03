@@ -10,7 +10,7 @@ class CasoViaje extends Model
 
     /**
      * Reemplaza todas las filas de viajes de un caso. $filas ya validada:
-     * cada elemento es ['pais','fecha_salida','fecha_retorno'] (fechas ISO o null).
+     * cada elemento es ['pais','localidad','fecha_salida','fecha_retorno'] (fechas ISO o null).
      * `pais` se usa como "lugar visitado" libre (nacional o internacional);
      * no se normaliza contra distrito_id en esta fase.
      * Debe ejecutarse dentro de la transacción abierta por el llamador.
@@ -21,14 +21,15 @@ class CasoViaje extends Model
         $pdo->prepare('DELETE FROM caso_viaje WHERE caso_id = :caso')->execute(['caso' => $casoId]);
 
         $consulta = $pdo->prepare(
-            'INSERT INTO caso_viaje (caso_id, pais, fecha_salida, fecha_retorno, semana_gestacion, transporte_ida, transporte_retorno)
-             VALUES (:caso, :pais, :fecha_salida, :fecha_retorno, :semana_gestacion, :transporte_ida, :transporte_retorno)'
+            'INSERT INTO caso_viaje (caso_id, pais, localidad, fecha_salida, fecha_retorno, semana_gestacion, transporte_ida, transporte_retorno)
+             VALUES (:caso, :pais, :localidad, :fecha_salida, :fecha_retorno, :semana_gestacion, :transporte_ida, :transporte_retorno)'
         );
 
         foreach ($filas as $fila) {
             $consulta->execute([
                 'caso'               => $casoId,
                 'pais'               => $fila['pais'],
+                'localidad'          => $fila['localidad'] ?? null,
                 'fecha_salida'       => $fila['fecha_salida'],
                 'fecha_retorno'      => $fila['fecha_retorno'],
                 'semana_gestacion'   => $fila['semana_gestacion'] ?? null,

@@ -178,10 +178,15 @@ $es = $estados[$caso['estado']];
       $isPfa = ($enfermedad['cie10'] ?? '') === 'A80';
       $isB05 = ($enfermedad['cie10'] ?? '') === 'B05';
       $isB26 = ($enfermedad['cie10'] ?? '') === 'B26';
-      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
-      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
-      $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
-      $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26;
+      // Ítem Z.2: P35.0 muestra "Viajes" (los de la madre) condicionado al
+      // booleano "¿Durante el embarazo viajó fuera del país?", dentro de
+      // "Antecedentes de la madre" (secciones-clinicas.php) -- no siempre
+      // visible acá, mismo trato que B05 con su propio booleano de viaje.
+      $isP350 = ($enfermedad['cie10'] ?? '') === 'P35.0';
+      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350;
+      $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350;
+      $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350;
       // Roles con columnas_sujeto que NO tienen sección propia en el
       // manifiesto (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2): los que sí
       // tienen sección ya se anclan solos dentro de secciones-clinicas.php

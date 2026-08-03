@@ -406,6 +406,19 @@ class CasosController extends Controller
         $fechaInicioSintomas = '';
         $errorFechaInicioSintomas = null;
 
+        // Ítem Z.2 (PENDIENTES.md): secciones-clinicas.php ahora necesita
+        // filasViajes/erroresViajes/columnasViaje (bloque condicional de
+        // viajes de B05/P35.0) -- se resuelven ANTES del require de acá
+        // abajo para no repetir el hallazgo de "esta ruta cherry-pickea
+        // claves a mano y una nueva queda huérfana en silencio"
+        // (seccionesclinicas_extrae_claves_a_mano): sin datos capturados
+        // todavía (recién se cambió de enfermedad), así que las filas
+        // empiezan vacías, igual que valoresCampos/erroresCampos arriba.
+        $filasViajes = [];
+        $erroresViajes = [];
+        $datosColumnasTablaHija = $this->datosColumnasTablaHija($enfermedad);
+        $columnasViaje = $datosColumnasTablaHija['columnasViaje'] ?? [];
+
         require __DIR__ . '/../Views/partials/campos-por-clave.php';
 
         ob_start();
@@ -421,7 +434,6 @@ class CasosController extends Controller
         $dependeDeColumnaMuestra = $datosMuestras['dependeDeColumnaMuestra'];
         $filasMuestras       = [];
         $erroresMuestras     = [];
-        $datosColumnasTablaHija     = $this->datosColumnasTablaHija($enfermedad);
         $columnasMuestra            = $datosColumnasTablaHija['columnasMuestra'] ?? [];
         $bloquesCondicionalesMuestra = $datosColumnasTablaHija['bloquesCondicionalesMuestra'] ?? [];
 
@@ -1876,6 +1888,7 @@ class CasosController extends Controller
     private function filasViajes(): array
     {
         $lugares = $_POST['viaje_pais'] ?? [];
+        $localidades = $_POST['viaje_localidad'] ?? [];
         $salidas = $_POST['viaje_fecha_salida'] ?? [];
         $retornos = $_POST['viaje_fecha_retorno'] ?? [];
         $transportesIda = $_POST['viaje_transporte_ida'] ?? [];
@@ -1886,13 +1899,14 @@ class CasosController extends Controller
         $errores = [];
         foreach ($lugares as $i => $lugar) {
             $lugar = trim((string) $lugar);
+            $localidad = trim((string) ($localidades[$i] ?? ''));
             $salidaTxt = trim((string) ($salidas[$i] ?? ''));
             $retornoTxt = trim((string) ($retornos[$i] ?? ''));
             $transIda = trim((string) ($transportesIda[$i] ?? ''));
             $transRetorno = trim((string) ($transportesRetorno[$i] ?? ''));
             $semanaGestacionTxt = trim((string) ($semanasGestacion[$i] ?? ''));
 
-            if ($lugar === '' && $salidaTxt === '' && $retornoTxt === '' && $transIda === '' && $transRetorno === '' && $semanaGestacionTxt === '') {
+            if ($lugar === '' && $localidad === '' && $salidaTxt === '' && $retornoTxt === '' && $transIda === '' && $transRetorno === '' && $semanaGestacionTxt === '') {
                 continue;
             }
 
@@ -1918,6 +1932,7 @@ class CasosController extends Controller
 
             $filas[] = [
                 'pais'               => $lugar !== '' ? $lugar : null,
+                'localidad'          => $localidad !== '' ? $localidad : null,
                 'fecha_salida'       => $salidaIso,
                 'fecha_retorno'      => $retornoIso,
                 'semana_gestacion'   => $semanaGestacionTxt !== '' ? (int) $semanaGestacionTxt : null,

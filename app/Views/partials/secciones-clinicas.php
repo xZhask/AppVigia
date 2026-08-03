@@ -166,7 +166,7 @@ $campoFechaUltSeg = (($enfermedad['cie10'] ?? '') === 'B05')
     ? $campo('b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $claveCubiertaPorPartial): void {
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje): void {
     $campos = CampoDef::porSeccion($seccionId);
     // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
     // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
@@ -227,7 +227,13 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if ($tieneDependencia): ?></div><?php endif;
             $tipoAnterior = $campo['tipo'];
 
-            if (($campo['clave'] ?? '') === 'paciente_viajo_7_30_dias') {
+            // Ítem Z.2 (PENDIENTES.md): esta clave quedó obsoleta -- la real es
+            // b05_paciente_viajo_entre_los_7_a_30_dias_antes_del_inic (prefijo
+            // b05_ de la convención "clave ahora autoritativa"). Como nunca
+            // coincidía, este bloque no se ejecutaba: la tabla de viajes de
+            // B05 no aparecía en absoluto (ni oculta, ni vacía -- el require
+            // nunca corría). Corregido a la clave real.
+            if (($campo['clave'] ?? '') === 'b05_paciente_viajo_entre_los_7_a_30_dias_antes_del_inic') {
                 $valPacienteViajo = $valoresCampos[$campo['id']] ?? '';
                 $esViajoInicial = ($valPacienteViajo === 'SI') || !empty($filasViajes ?? []);
                 ?>
@@ -237,6 +243,23 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                   <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
                 </div>
                 <div class="fields" style="width: 100%; margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
+                <?php
+            }
+
+            // Ítem Z.2: mismo mecanismo que B05, pero P35.0 es BOOLEANO
+            // (valor '1'/'0', no catálogo SI/NO/DESCONOCIDO) -- el ítem 33 del
+            // PDF de SRC exige la tabla de viajes de la madre justo debajo de
+            // esta pregunta, no siempre visible en "Antecedentes epidemiológicos".
+            if (($campo['clave'] ?? '') === 'p35_0_durante_el_embarazo_viajo_fuera_del_pais') {
+                $valViajoP350 = $valoresCampos[$campo['id']] ?? '';
+                $esViajoInicialP350 = ($valViajoP350 === '1') || !empty($filasViajes ?? []);
+                ?>
+                </div>
+                <div id="p350-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esViajoInicialP350 ? 'display: none;' : '' ?>" <?= !$esViajoInicialP350 ? 'hidden' : '' ?>>
+                  <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
+                  <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                </div>
+                <div class="fields" style="width: 100%; margin-bottom:0">
                 <?php
             }
 

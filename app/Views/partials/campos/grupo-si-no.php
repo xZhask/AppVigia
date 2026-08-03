@@ -95,41 +95,4 @@ $anchoSeg = $permitirIgnorado ? '190px' : '130px';
   </div>
   <?php if ($error): ?><span class="hint err" style="margin-top:8px; display:block;"><?= e($error) ?></span><?php endif; ?>
 </div>
-
-<style>
-/* Estilos embebidos para GRUPO_SI_NO respetando la regla de no tocar theme.css */
-.grupo-si-no-field .sr-only {
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;
-}
-.grupo-si-no-field .seg-label {
-  border:0; background:none; font-size:12px; color:var(--muted); padding:4px 0; border-radius:6px; font-weight:500;
-  display: inline-block;
-  user-select: none;
-}
-.grupo-si-no-field .seg-label.on {
-  background:#fff; color:var(--ink); box-shadow:var(--shadow-soft);
-}
-html[data-theme="dark"] .grupo-si-no-field .seg-label.on {
-  background: var(--line); color: var(--ink); box-shadow: var(--shadow-soft);
-}
-.grupo-si-no-row:focus-within {
-  background: var(--paper);
-}
-.grupo-si-no-row.has-error {
-  background: rgba(230, 57, 70, 0.05); /* s-confirmado transparent */
-  border: 1px solid var(--s-confirmado);
-}
-@media (max-width: 639px) {
-  .grupo-si-no-field .grupo-si-no-row {
-    flex-direction: column;
-    align-items: stretch !important;
-    padding: 8px 0;
-  }
-  .grupo-si-no-field .seg {
-    width: 100% !important;
-    margin-top: 8px;
-  }
-  .grupo-si-no-field .grupo-si-no-row { border-left: none !important; }
-  .grupo-si-no-field .grupo-si-no-row.is-si { border-left: 3px solid var(--accent) !important; }
-}
-</style>
+<?php // Estilos .seg/.seg-label/.sr-only: ver public/css/campos-dinamicos.css (siempre cargado desde shell.php) ?>

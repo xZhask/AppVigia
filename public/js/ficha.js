@@ -1656,11 +1656,22 @@ document.addEventListener('DOMContentLoaded', function () {
   actualizarBloqueVacunasB05();
 
   // B05 Lugar probable de infección: Mostrar/ocultar y desplegar viajes según Paciente viajó
+  //
+  // Ítem Z.2 (PENDIENTES.md): la clave 'paciente_viajo_7_30_dias' quedó
+  // obsoleta -- mapaCampos usa la clave real
+  // "b05_paciente_viajo_entre_los_7_a_30_dias_antes_del_inic" (prefijo b05_
+  // de "clave ahora autoritativa"), así que campoPorClave() siempre
+  // devolvía '' y este bloque nunca corría de verdad: el .hidden lo
+  // limpiaba el evaluarDependencias() genérico (por data-depende-de del
+  // propio campo), pero el style.display:none inline con el que el
+  // servidor renderiza la tarjeta al inicio quedaba pegado para siempre
+  // -- la tabla de viajes de B05 nunca llegaba a verse aunque el atributo
+  // "hidden" ya estuviera en false. Corregido a la clave real.
   function actualizarBloqueViajesB05() {
     var wrapperViajes = document.getElementById('b05-wrapper-viajes-registrados');
     if (!wrapperViajes) return;
 
-    var val = leerValorCampoPorNombre(campoPorClave('paciente_viajo_7_30_dias'));
+    var val = leerValorCampoPorNombre(campoPorClave('b05_paciente_viajo_entre_los_7_a_30_dias_antes_del_inic'));
     var esViajo = (val === 'SI');
 
     if (esViajo) {
@@ -1681,8 +1692,40 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.addEventListener('change', function(e) {
-    if (e.target && e.target.name === campoPorClave('paciente_viajo_7_30_dias')) {
+    if (e.target && e.target.name === campoPorClave('b05_paciente_viajo_entre_los_7_a_30_dias_antes_del_inic')) {
       actualizarBloqueViajesB05();
+    }
+  });
+
+  // P35.0 Antecedentes de la madre: mismo mecanismo que B05, pero el
+  // campo es BOOLEANO (valor '1'/'0', no catálogo SI/NO/DESCONOCIDO).
+  function actualizarBloqueViajesP350() {
+    var wrapperViajes = document.getElementById('p350-wrapper-viajes-registrados');
+    if (!wrapperViajes) return;
+
+    var val = leerValorCampoPorNombre(campoPorClave('p35_0_durante_el_embarazo_viajo_fuera_del_pais'));
+    var esViajo = (val === '1');
+
+    if (esViajo) {
+      wrapperViajes.hidden = false;
+      wrapperViajes.style.display = '';
+
+      var subrows = wrapperViajes.querySelector('.subrows');
+      if (subrows && subrows.children.length === 0) {
+        var btnAgregar = wrapperViajes.querySelector('.agregar-fila[data-lista="viajes"]');
+        if (btnAgregar) {
+          btnAgregar.click();
+        }
+      }
+    } else {
+      wrapperViajes.hidden = true;
+      wrapperViajes.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.name === campoPorClave('p35_0_durante_el_embarazo_viajo_fuera_del_pais')) {
+      actualizarBloqueViajesP350();
     }
   });
 
@@ -1691,11 +1734,13 @@ document.addEventListener('DOMContentLoaded', function () {
       setTimeout(function() {
         actualizarBloqueVacunasB05();
         actualizarBloqueViajesB05();
+        actualizarBloqueViajesP350();
       }, 50);
     }
   });
 
   actualizarBloqueViajesB05();
+  actualizarBloqueViajesP350();
 
   function obtenerCie10Actual() {
     var enfermedadSel = document.getElementById('diseaseSel');

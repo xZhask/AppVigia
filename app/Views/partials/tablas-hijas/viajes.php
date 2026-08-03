@@ -7,24 +7,34 @@
  *
  * $columnasViaje (PETICION_P35_RUBEOLA_CONGENITA.md Fase 5.1): a
  * diferencia de vacunas.php/contactos.php, este partial nunca había leído
- * columnas_tablas_hija.caso_viaje -- las 5 columnas base se muestran
+ * columnas_tablas_hija.caso_viaje -- las 4 columnas base se muestran
  * siempre para las 8 fichas que usan viajes (igual que antes); solo
- * "semana_gestacion" (columna extra, propia de P35.0) es condicional.
+ * "localidad" y "semana_gestacion" (columnas extra, propias de P35.0) son
+ * condicionales (ítem 33 del PDF de SRC: País y Localidad/ciudad son
+ * columnas separadas, no un solo campo de texto libre).
  */
 $erroresViajes = $erroresViajes ?? [];
 $columnasViaje = $columnasViaje ?? ['pais', 'fecha_salida', 'fecha_retorno'];
 $mostrarColViaje = fn(string $col) => in_array($col, $columnasViaje, true);
-$filaViaje = function (array $fila = ['pais' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''], ?array $error = null) use ($mostrarColViaje): void {
+$etiquetaPais = $mostrarColViaje('localidad') ? 'País' : 'Lugar visitado (país o ciudad)';
+$filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''], ?array $error = null) use ($mostrarColViaje, $etiquetaPais): void {
     $errorSalida = $error['fecha_salida'] ?? null;
     $errorRetorno = $error['fecha_retorno'] ?? null;
     ?>
   <div class="subrow">
     <div class="fields" style="flex:1; display:flex; flex-wrap:wrap; gap:12px">
       <!-- 1. Lugar visitado -->
-      <div class="field" style="flex:2; min-width:200px">
-        <label class="fl">Lugar visitado (país o ciudad)</label>
-        <div class="control"><input type="text" name="viaje_pais[]" value="<?= e($fila['pais'] ?? '') ?>" placeholder="País o ciudad…"></div>
+      <div class="field" style="flex:<?= $mostrarColViaje('localidad') ? '1' : '2' ?>; min-width:160px">
+        <label class="fl"><?= e($etiquetaPais) ?></label>
+        <div class="control"><input type="text" name="viaje_pais[]" value="<?= e($fila['pais'] ?? '') ?>" placeholder="<?= $mostrarColViaje('localidad') ? 'País…' : 'País o ciudad…' ?>"></div>
       </div>
+      <?php if ($mostrarColViaje('localidad')): ?>
+      <!-- Localidad/ciudad (columna extra, propia de fichas que la declaren) -->
+      <div class="field" style="flex:1; min-width:160px">
+        <label class="fl">Localidad/ciudad</label>
+        <div class="control"><input type="text" name="viaje_localidad[]" value="<?= e($fila['localidad'] ?? '') ?>" placeholder="Localidad o ciudad…"></div>
+      </div>
+      <?php endif; ?>
       <!-- 2. Fecha de ingreso -->
       <div class="field" style="flex:1; min-width:130px">
         <label class="fl">Fecha de ingreso</label>

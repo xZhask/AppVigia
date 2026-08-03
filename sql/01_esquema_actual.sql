@@ -328,6 +328,7 @@ CREATE TABLE `caso_viaje` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `caso_id` int(11) NOT NULL,
   `pais` varchar(60) DEFAULT NULL,
+  `localidad` varchar(80) DEFAULT NULL,
   `distrito_id` char(6) DEFAULT NULL,
   `fecha_salida` date DEFAULT NULL,
   `fecha_retorno` date DEFAULT NULL,
