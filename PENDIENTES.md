@@ -2272,3 +2272,32 @@ recargadas con el `<select>` correcto marcado en las 3 filas (2 datos +
 1 plantilla vacía). Tres verificadores en verde, byte-diff limpio en
 A36/B26/A80/O95/B05 (el cambio queda acotado a la columna nueva del
 bloque de P35.0).
+
+**Z.7.3. Regresión real del fix Z.7.1: el bloque quedó SIEMPRE visible,
+ignorando el atributo `hidden` — ✅ cerrado**
+
+El usuario reportó (con captura, "Clasificación del caso" en
+"Seleccionar…") que "Seguimiento de excreción viral" aparecía desde la
+carga de la ficha, dejando agregar muestras sin haber clasificado el
+caso -- exactamente lo que el ítem 43 debía impedir. No era una
+decisión de UX pendiente: era una regresión real introducida por el fix
+de Z.7.1. `.dep-wrap.card.section{display:block}` (3 clases,
+especificidad (0,3,0)) le ganaba a `.dep-wrap[hidden]{display:none}`
+(1 clase + 1 atributo, especificidad (0,2,0)) -- el bloque quedaba
+`display:block` SIEMPRE, sin importar el atributo `hidden` que
+`evaluarDependencias()` sí seguía poniendo/quitando correctamente. El
+atributo estaba bien, la regla CSS lo ignoraba.
+
+**Fix:** agregada `.dep-wrap.card.section[hidden]{display:none}` (4
+"clases" de especificidad), gana sobre la regla de Z.7.1 cuando el
+atributo está presente. `Laboratorio` (sección 9, ítem 42 del PDF) NO
+tiene el calificador "SOLO EN CASOS CONFIRMADOS" que sí tiene el ítem
+43 -- se deja sin gate a propósito, es correcto que se pueda llenar
+antes de clasificar (la muestra suele ser insumo para clasificar, no al
+revés).
+
+**Verificación:** Playwright, ronda completa -- carga fresca sin tocar
+nada: `hidden` presente, no visible. Tras elegir "Confirmado": `hidden`
+ausente, visible, con el mismo look de tarjeta de Z.7.1 intacto (fondo
+blanco, sombra, borde). Tras volver a "Sospechoso": `hidden` presente
+de nuevo, oculto. Tres verificadores en verde.

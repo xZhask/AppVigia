@@ -645,8 +645,14 @@
    usa en un ".card.section" completo -- display:contents también le quita
    la caja al CARD (fondo, borde, sombra, padding), dejando el título y el
    botón "flotando" sueltos contra el fondo de la página en vez de verse
-   como una tarjeta más. Restaurado a block solo para esta combinación. */
+   como una tarjeta más. Restaurado a block solo para esta combinación.
+   OJO: por especificidad (3 clases > .dep-wrap[hidden], 1 clase + 1
+   atributo) esta regla le ganaba a ".dep-wrap[hidden]{display:none}" de
+   arriba y el bloque quedaba SIEMPRE visible sin importar el atributo
+   hidden -- regresión real, corregida agregando la variante [hidden]
+   explícita con más especificidad todavía. */
 .dep-wrap.card.section{display:block}
+.dep-wrap.card.section[hidden]{display:none}
 
 /* ============================================================
    ESTILOS GLOBALES DE SCROLLBAR (LIGHT & DARK MODE)
