@@ -5,16 +5,17 @@
  * `pais` se usa como "lugar visitado" libre (nacional o internacional);
  * no se normaliza contra distrito_id en esta fase.
  *
- * $columnasViaje (PETICION_P35_RUBEOLA_CONGENITA.md Fase 5.1): a
- * diferencia de vacunas.php/contactos.php, este partial nunca había leído
- * columnas_tablas_hija.caso_viaje -- las 4 columnas base se muestran
- * siempre para las 8 fichas que usan viajes (igual que antes); solo
- * "localidad" y "semana_gestacion" (columnas extra, propias de P35.0) son
- * condicionales (ítem 33 del PDF de SRC: País y Localidad/ciudad son
- * columnas separadas, no un solo campo de texto libre).
+ * $columnasViaje (PETICION_P35_RUBEOLA_CONGENITA.md Fase 5.1 + ítem Z.2):
+ * "pais"/"fecha_salida"/"fecha_retorno" se muestran siempre (identidad
+ * mínima de la fila). "localidad"/"semana_gestacion" son opt-in, propias
+ * de P35.0 (ítem 33 del PDF de SRC: País y Localidad/ciudad son columnas
+ * separadas). "transporte_ida"/"transporte_retorno" son opt-OUT: se
+ * muestran salvo que la ficha declare columnas_tablas_hija.caso_viaje
+ * sin incluirlas -- P35.0 no las pide en su PDF, las demás 7 fichas (que
+ * no declaran esta clave) siguen viéndolas vía COLUMNAS_HIJA_DEFECTO.
  */
 $erroresViajes = $erroresViajes ?? [];
-$columnasViaje = $columnasViaje ?? ['pais', 'fecha_salida', 'fecha_retorno'];
+$columnasViaje = $columnasViaje ?? ['pais', 'fecha_salida', 'fecha_retorno', 'transporte_ida', 'transporte_retorno'];
 $mostrarColViaje = fn(string $col) => in_array($col, $columnasViaje, true);
 $etiquetaPais = $mostrarColViaje('localidad') ? 'País' : 'Lugar visitado (país o ciudad)';
 $filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''], ?array $error = null) use ($mostrarColViaje, $etiquetaPais): void {
@@ -41,6 +42,7 @@ $filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_sa
         <div class="control mono <?= $errorSalida ? 'err' : '' ?>"><input type="date" name="viaje_fecha_salida[]" value="<?= e($fila['fecha_salida'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         <?php if ($errorSalida): ?><span class="hint err"><?= e($errorSalida) ?></span><?php endif; ?>
       </div>
+      <?php if ($mostrarColViaje('transporte_ida')): ?>
       <!-- 3. Transporte ida -->
       <div class="field" style="flex:1; min-width:130px">
         <label class="fl">Transporte ida</label>
@@ -54,6 +56,7 @@ $filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_sa
           </select>
         </div>
       </div>
+      <?php endif; ?>
       <!-- 4. Fecha de salida -->
       <div class="field" style="flex:1; min-width:130px">
         <label class="fl">Fecha de salida</label>
@@ -67,6 +70,7 @@ $filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_sa
         <div class="control mono"><input type="number" min="0" max="45" name="viaje_semana_gestacion[]" value="<?= e($fila['semana_gestacion'] ?? '') ?>"></div>
       </div>
       <?php endif; ?>
+      <?php if ($mostrarColViaje('transporte_retorno')): ?>
       <!-- 5. Transporte retorno -->
       <div class="field" style="flex:1; min-width:130px">
         <label class="fl">Transporte retorno</label>
@@ -80,6 +84,7 @@ $filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_sa
           </select>
         </div>
       </div>
+      <?php endif; ?>
     </div>
     <button type="button" class="ra quitar-fila" title="Quitar viaje" style="margin-top:22px">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 4.5h9M6 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4.5 4.5v8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.3 7v4M8.7 7v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>

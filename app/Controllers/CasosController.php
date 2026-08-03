@@ -1693,15 +1693,17 @@ class CasosController extends Controller
      * ficha nueva sin configurar no herede de golpe las columnas de otra.
      * "nombres"/"vacuna"/"vacuna_otro"/"fecha" no aparecen acá porque los
      * widgets de contactos.php/vacunas.php las muestran siempre (son la
-     * identidad de la fila, no tiene sentido ocultarlas). `viaje` y
-     * `muestra` no tienen columnas de más que ocultar -- sus widgets no
-     * cambiaron en la Fase 5, así que el valor por defecto es "todas las
-     * que ya existían" para no dar marcha atrás en lo que ya se veía.
+     * identidad de la fila, no tiene sentido ocultarlas). `viaje` incluye
+     * aquí transporte_ida/transporte_retorno (ítem Z.2, PENDIENTES.md):
+     * P35.0 las excluye declarando su propia lista sin ellas (no están en
+     * su PDF), pero las 7 fichas que no declaran columnas_tablas_hija.caso_viaje
+     * en absoluto deben seguir viéndolas -- "todas las que ya existían"
+     * para esas, sin marcha atrás en lo que ya se veía.
      */
     private const COLUMNAS_HIJA_DEFECTO = [
         'contacto' => ['parentesco', 'doc', 'celular'],
         'vacuna'   => ['dosis'],
-        'viaje'    => ['pais', 'fecha_salida', 'fecha_retorno'],
+        'viaje'    => ['pais', 'fecha_salida', 'fecha_retorno', 'transporte_ida', 'transporte_retorno'],
         'muestra'  => ['tipo_muestra', 'tipo_prueba', 'resultado', 'fecha_toma', 'fecha_result'],
     ];
 

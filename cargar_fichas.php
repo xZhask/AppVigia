@@ -112,7 +112,7 @@ const TIPOS_VALIDOS = ['TEXTO', 'NUMERO', 'FECHA', 'BOOLEANO', 'SELECT', 'MULTIS
 const COLUMNAS_TABLA_HIJA_VALIDAS = [
     'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h'],
     'caso_vacuna'   => ['dosis', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
-    'caso_viaje'    => ['pais', 'localidad', 'fecha_salida', 'fecha_retorno', 'semana_gestacion'],
+    'caso_viaje'    => ['pais', 'localidad', 'fecha_salida', 'fecha_retorno', 'semana_gestacion', 'transporte_ida', 'transporte_retorno'],
     // Las últimas 7 (resultado_pcr..fecha_result_igg) eran de serología de
     // B05, pintadas a mano en muestras.php dentro de un if ($esB05) --
     // PENDIENTES.md ítem C: se vuelven declarativas igual que el resto,

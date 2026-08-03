@@ -1909,11 +1909,25 @@ y se usara ya funcionando como base para P35.0.
   visible ahí; solo aparece condicionada al booleano, junto a la
   pregunta, como pide el PDF.
 
-**Alcance no cubierto (visible, no oculto):** "Transporte ida"/"Transporte
-retorno" siguen apareciendo siempre en la fila de viaje de P35.0 (no
-están en el PDF del ítem 33) porque `viajes.php` nunca las hizo
-condicionales para ninguna de las 8 fichas -- acotarlas requeriría un
-cambio más invasivo al widget compartido, fuera del pedido de hoy.
+**Adenda (mismo día, feedback del usuario tras ver la primera captura):**
+"tipo de transporte no es requerido según la ficha" -- se acotaron
+`transporte_ida`/`transporte_retorno` en `viajes.php` con el mismo
+mecanismo `$mostrarColViaje()`, pero en sentido opt-OUT (al revés de
+`localidad`/`semana_gestacion`, que son opt-in): se agregaron a
+`COLUMNAS_TABLA_HIJA_VALIDAS['caso_viaje']` (cargar_fichas.php) y a
+`CasosController::COLUMNAS_HIJA_DEFECTO['viaje']` (antes
+`['pais','fecha_salida','fecha_retorno']`, ahora incluye ambos
+transportes) -- así las 7 fichas que NO declaran
+`columnas_tablas_hija.caso_viaje` (no tocadas hoy) siguen viéndolas por
+el valor por defecto, mientras que P35.0 (que sí declara su propia
+lista explícita, sin incluirlas) las excluye automáticamente, sin
+necesidad de recargar el manifiesto de nuevo. Verificado: las 6 fichas
+restantes que usan viajes (A97, A37.0, A95, B57, A44, B04X) y B05 siguen
+mostrando ambos selects de transporte; P35.0 ya no muestra ninguno.
+Byte-diff de A36/A80/O95/B26: 0 líneas; B05: solo diferencias de
+indentación en comentarios HTML (cosmético, invisible en el navegador).
+Round-trip real: B05 sigue guardando transporte_ida/retorno; P35.0 los
+guarda `NULL` sin error.
 
 **Verificación:** los tres verificadores en verde. Byte-diff de A80,
 O95, A36 y B26 (`render_ficha_cli.php`, normalizando IDs de `campo_def`
