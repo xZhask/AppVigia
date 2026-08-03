@@ -7,44 +7,48 @@ cierre de la petición.
 
 ---
 
-## 1. `ver.php` no tiene lógica de anexo (Anexo 1 / Anexo 2) para O95
+## 1. `ver.php` no lee ninguno de los mecanismos declarativos que el formulario sí usa para decidir qué mostrar
 
-`app/Views/fichas/ver.php` renderiza todas las secciones de una ficha
-guardada por igual, sin distinguir si una muerte materna se notificó como
-Anexo 1 o Anexo 2. Resultado: al ver un caso O95 notificado como Anexo 1,
-las 8 secciones exclusivas del Anexo 2 (Antecedentes patológicos,
-Atención prenatal, Complicaciones, Hospitalizaciones, Parto o aborto,
-Entorno social y comunitario, Datos comunitarios, Las cuatro demoras)
-igual se muestran, vacías, debajo de las secciones reales.
+`app/Views/fichas/ver.php` renderiza toda ficha guardada con un único
+motor genérico, campo por campo, como texto plano. No conoce ni el anexo
+activo, ni los 21 partials a medida, ni las columnas declaradas de tabla
+hija que "Nueva ficha"/"Editar" sí consultan para decidir qué pintar. Es
+una sola deuda con tres síntomas, no tres bugs sueltos:
 
-Ahora que `o95_tipo_de_ficha` persiste (Petición 2, Agregado 1), esto es
-arreglable: `ver.php` puede leer ese valor igual que
-`secciones-clinicas.php` y ocultar/omitir las secciones que no
-correspondan al anexo notificado.
-
-## 2. `ver.php` no usa ninguno de los 21 partials a medida
-
-El formulario de "Nueva ficha" / "Editar" pinta a mano 21 secciones con
-lógica propia (dependencias entre campos, tablas hijas, widgets como el
-MATRIZ de B26, formato específico por tipo de dato). `ver.php` no incluye
-ninguno de esos partials: renderiza *todas* las secciones con el motor
-genérico (campo por campo, como texto plano), incluidas las de las 5
-fichas que sí tienen partials a medida (B05, B26, O95, y las que se sumen
-después).
-
-Consecuencia observable: para esas 5 fichas, lo que el formulario muestra
-al capturar y lo que `ver.php` muestra al consultar son visualmente
-distintos (un ejemplo concreto: el MATRIZ `b26_contactos_por_lugar` se ve
-en `ver.php` como JSON crudo, no como tabla). No es una regresión de esta
-sesión — es preexistente y aplica a cualquier ficha con partial a medida.
+- **Anexo de O95 (Anexo 1 / Anexo 2):** al ver un caso O95 notificado
+  como Anexo 1, las 8 secciones exclusivas del Anexo 2 (Antecedentes
+  patológicos, Atención prenatal, Complicaciones, Hospitalizaciones,
+  Parto o aborto, Entorno social y comunitario, Datos comunitarios, Las
+  cuatro demoras) igual se muestran, vacías, debajo de las secciones
+  reales. Arreglable: ahora que `o95_tipo_de_ficha` persiste (Petición 2,
+  Agregado 1), `ver.php` puede leer ese valor igual que
+  `secciones-clinicas.php` y ocultar/omitir lo que no corresponda.
+- **21 partials a medida ignorados:** el formulario pinta a mano 21
+  secciones con lógica propia (dependencias entre campos, tablas hijas,
+  widgets como el MATRIZ de B26, formato específico por tipo de dato).
+  `ver.php` no incluye ninguno — para las fichas con partial a medida
+  (B05, B26, O95, y las que se sumen después) lo que el formulario
+  muestra al capturar y lo que `ver.php` muestra al consultar son
+  visualmente distintos (ejemplo concreto: el MATRIZ
+  `b26_contactos_por_lugar` se ve en `ver.php` como JSON crudo, no como
+  tabla).
+- **Tabla hija `caso_muestra`, columnas declarativas ignoradas:** la
+  sección "Laboratorio" de `ver.php` está hardcodeada a 6 campos fijos
+  (tipo_muestra/tipo_prueba/¿antibiótico?/resultado/fecha de
+  toma/fecha de resultado) sin leer `columnas_muestra` — la serología de
+  B05 (IgM/IgG/genotipo/PCR) se guarda pero nunca se muestra en el
+  detalle del caso, y `titulacion` (agregada en
+  PETICION_HC_Y_LABORATORIO.md Parte 2, Fase D1) cae en el mismo hueco en
+  cuanto alguna ficha la declare.
 
 Investigado durante la Petición 2 al evaluar si excluir secciones de
 `ver.php` (ver conversación): no hay separación clara hoy entre "esta
-sección tiene rendering dedicado en `ver.php`" y "esta sección solo se ve
-por el motor genérico" — cada ficha con partials a medida necesitaría su
-propio tratamiento en `ver.php`. Material de Petición 3.
+sección/columna tiene rendering dedicado en `ver.php`" y "esto solo se ve
+por el motor genérico" — cada ficha con partial a medida, y cada tabla
+hija con columnas declarativas, necesitaría su propio tratamiento en
+`ver.php`. Material de Petición 3.
 
-## 3. La validación de servidor de `obligatorio` no sabe de anexo (O95)
+## 2. La validación de servidor de `obligatorio` no sabe de anexo (O95)
 
 `validarCamposDinamicos()` en `CasosController.php` evalúa
 `$campo['obligatorio']` campo por campo, sin conocer si ese campo
@@ -65,7 +69,7 @@ Si se necesita hacer alguno obligatorio, la validación de servidor
 primero tiene que aprender a excluir campos de secciones no visibles
 para el anexo actual.
 
-## 4. El cargador salta en silencio las secciones sin campos — ✅ cerrado (solo el reporte)
+## 3. El cargador salta en silencio las secciones sin campos — ✅ cerrado (solo el reporte)
 
 Cerrado 2026-08-01. `cargar_fichas.php` no se tocó (sigue omitiendo
 `seccion_def` para toda sección con `"campos": []`, a propósito — eso
@@ -110,7 +114,7 @@ el manifiesto.
 
 </details>
 
-## 5. Hueco de contenido en Y59.0 (ESAVI): Anexo 6.2
+## 4. Hueco de contenido en Y59.0 (ESAVI): Anexo 6.2
 
 "Anexo 6.2 — Lista de chequeo del vacunatorio" es un anexo real del
 MINSA (contenido disponible: 12 secciones romanas, patrón Sí/No +
@@ -120,7 +124,7 @@ necesita una sección condicional (activarse solo si la clasificación
 final es 2 o 3) que el motor de fichas no soporta hoy. Resolver cuando
 se valide la ficha Y59.0.
 
-## 6. `fecha_notif` derivable de la cabecera estándar MINSA — esperar a tener más fichas cotejadas
+## 5. `fecha_notif` derivable de la cabecera estándar MINSA — esperar a tener más fichas cotejadas
 
 `fecha_notif` (columna NOT NULL de `caso`, de la que derivan
 `semana_epi`/`anio_epi`, el badge de SE, la curva epidemiológica, los
@@ -148,7 +152,7 @@ por ficha. Tres correcciones a ese análisis, para no repetirlas:
    de escalamiento completa o que Z21 tenga una sola fecha suelta: el
    mecanismo no exige que las 6 existan, solo que exista LA que se
    declare como canónica.
-3. **No es la misma clase de problema que el ítem 3 de este documento.**
+3. **No es la misma clase de problema que el ítem 2 de este documento.**
    Ahí el campo obligatorio está oculto por el anexo activo (el
    servidor exige algo que el formulario nunca mostró). Acá el campo
    origen de `fecha_notif_desde` está siempre visible en el
@@ -168,7 +172,7 @@ dejando `fecha_notif` como input visible y redundante con ella. Cuando
 5 o 6 fichas tengan la cabecera (o su fecha canónica equivalente),
 construir `fecha_notif_desde` y hacer el retrofit de todas juntas.
 
-## 7. Normalizar `clave` explícita en los ~870 campos restantes del manifiesto — ✅ cerrado
+## 6. Normalizar `clave` explícita en los ~870 campos restantes del manifiesto — ✅ cerrado
 
 Cerrado 2026-08-01 en 21 commits (`0c06edc`..`862ceb8`), uno por ficha
 (las 21 que faltaban de las 24: O95, B05 y P35.0 ya estaban 100%
@@ -223,7 +227,7 @@ por caso.
 
 </details>
 
-## 8. Ubigeo de O95 (fallecimiento y referencia) sin integridad referencial real — falta un tipo UBIGEO en el motor (hallazgo A.7)
+## 7. Ubigeo de O95 (fallecimiento y referencia) sin integridad referencial real — falta un tipo UBIGEO en el motor (hallazgo A.7)
 
 Al corregir las 6 claves de ubigeo de O95 (`o95_departamento_fallecimiento`
 / `_provincia_fallecimiento` / `_distrito_fallecimiento` y sus 3
@@ -259,7 +263,7 @@ pérdida.
 (schema de `campo_def`, `cargar_fichas.php`, `campo-dinamico.php`,
 `verificar_fichas.php`), no algo que quepa en una corrección de claves.
 
-## 9. Núcleo no tiene rol y "ocupación" no es un campo núcleo — hallazgo de PETICION_P35_RUBEOLA_CONGENITA.md Fase 1
+## 8. Núcleo no tiene rol y "ocupación" no es un campo núcleo — hallazgo de PETICION_P35_RUBEOLA_CONGENITA.md Fase 1
 
 Al cotejar P35.0 contra el PDF (bloque IV, ítem 29 "Ocupación" de la
 madre) se evaluó si `nucleo_omitidos` podía generalizarse a
@@ -300,7 +304,7 @@ antes el segundo render (partial parametrizado por rol + prefijo de
 nombre) — recién ahí generalizar `nucleo_omitidos` a objeto-por-rol
 tiene sentido.
 
-## 10. Estado de PETICION_P35_RUBEOLA_CONGENITA.md al 2026-08-01 — retomar desde acá
+## 9. Estado de PETICION_P35_RUBEOLA_CONGENITA.md al 2026-08-01 — retomar desde acá
 
 Fases 0, 1 y 2 completas (2a/2b/2c/2d, todas commiteadas). Los "8
 puntos" (`if (cie10 === 'P96')` hardcodeados) ya se reemplazaron por
@@ -477,7 +481,7 @@ algunas filas, sin fecha en otras) se creó, verificó en BD
 prefill en `editar()` (checked/value coinciden con lo guardado) y se
 actualizó cambiando un valor (`actualizar()` lo reflejó correctamente
 sin tocar los otros 3 campos). `ver()` no truena (sigue mostrando JSON
-crudo para `MATRIZ` — ítem 2 de este documento, preexistente, no es
+crudo para `MATRIZ` — ítem 1 de este documento, preexistente, no es
 parte de este cierre). 0 excepciones, 0 warnings/notices con `E_ALL`.
 
 **Cambio de aspecto esperado, no es un bug:** al convertir de
@@ -1420,16 +1424,11 @@ Verificado el round-trip a nivel de modelo (guardar y releer "1:80"
 dentro de una transacción con rollback). Tampoco la declara ninguna ficha
 todavía.
 
-**Hallazgo colateral, no corregido — `ver.php` no muestra la serología de
-B05 (IgM/IgG/genotipo/PCR/titulación)**: la sección "Laboratorio" de
-`ver.php` está completamente hardcodeada a 6 campos fijos
-(tipo_muestra/tipo_prueba/¿antibiótico?/resultado/fecha de toma/fecha de
-resultado), sin leer `columnas_muestra` en absoluto — los datos de
-serología de B05 se guardan pero nunca se muestran en el detalle del
-caso. Preexistente, no introducido por este cambio (titulacion cae en el
-mismo hueco); fuera de alcance de la Fase D1, que era declarar el
-mecanismo, no arreglar la vista de detalle. Queda para cuando se toque
-`ver.php` de tablas hija en general.
+**Hallazgo colateral, no corregido:** `ver.php` no muestra la serología de
+B05 (IgM/IgG/genotipo/PCR) ni mostrará `titulacion` en cuanto alguna
+ficha la declare — mismo hueco que las secciones de anexo y los 21
+partials a medida, agrupado en el ítem 1 de este documento (no es un
+cuarto síntoma suelto, es el mismo patrón).
 
 **Verificación de cierre:** los tres verificadores en verde (mismos 3
 huérfanos preexistentes de siempre, ninguno relacionado a `caso_muestra`).
@@ -1454,7 +1453,60 @@ seguir): B05 sigue con `$esSuero`/`$esPcrGen` y las clases `.b05-*` en
 `ficha.js` — el mecanismo `depende_de_columna` todavía no existe, así que
 todavía hay dos formas de resolver lo mismo (B05 hardcodeado, P35.0/otras
 futuras declarativas). Tampoco existe `bloques_condicionales` (capacidad
-6) ni la columna `contexto` de `caso_muestra`. `numero_muestra`
-(preexistente, `tinyint(1) DEFAULT 1`) sigue sin leerse en ningún lado —
-anotado para revisar antes de decidir si capacidad 6 necesita una columna
-nueva o puede reusar esa.
+6) ni la columna `contexto` de `caso_muestra`. `numero_muestra` quedó
+resuelto por separado — ver ítem U.
+
+**U. `numero_muestra` revivido — ordinal de sueros pareados para P35.0 —
+✅ cerrado**
+
+P35.0 pide "1.ª muestra serológica" / "2.ª muestra serológica" /
+"Hisopado nasal y faríngeo" (página 20). El commit anterior había
+declarado `tipo_muestra: [SEROLOGIA, HNF_FAR]` (2 valores, corrigiendo la
+const vieja), pero eso deja la distinción 1.ª/2.ª sin ningún soporte
+salvo el orden de las filas — frágil para sueros pareados, donde el
+usuario señaló que la comparación entre ambos sostiene el diagnóstico.
+
+**Decisión (entre dos rutas reportadas, ver conversación):** revivir
+`numero_muestra` en vez de agregar `SEROLOGIA_1`/`SEROLOGIA_2` al
+catálogo compartido. La columna existía desde `708821f` ("PFA y
+Sarampión Ok", `tinyint(1) DEFAULT 1`) pero nunca se conectó a ningún
+`<input>` ni a `filasMuestras()` — todo caso hasta hoy tenía
+`numero_muestra=1` por default, nunca otra cosa. Se terminó de cablear:
+`COLUMNAS_TABLA_HIJA_VALIDAS['caso_muestra']` (`cargar_fichas.php`),
+render en `muestras.php` (`<select>` "1.ª"/"2.ª", vocabulario
+override-able vía el mismo `opciones` de siempre), captura en
+`filasMuestras()`, y declarado para P35.0
+(`columnas_tablas_hija.caso_muestra.columnas` ahora explícito = default +
+`numero_muestra`; `opciones.tipo_muestra` sin cambios).
+
+**Hallazgo durante la prueba negativa — gate de columna agregado solo
+para `numero_muestra`, no para el resto de la serología:** al forzar
+`numero_muestra` por POST en A36 (que no lo declara), el valor se
+guardaba igual — `filasMuestras()` valida VALORES (`$validos*`, contra
+catálogo/`opciones`) pero no valida PRESENCIA DE COLUMNA, a diferencia de
+`sanearCamposNucleo()` para el núcleo. Se agregó el gate específico para
+`numero_muestra` (`$columnasMuestraDeclaradas` vía
+`resolverConfigMuestra()`, mismo criterio que el núcleo) y se confirmó
+con prueba negativa que ahora sí se descarta. **Pero el mismo hueco
+sigue abierto para `resultado_igm`/`resultado_igg`/`resultado_pcr`/
+`genotipo`/`titulacion`** — confirmado que A36 acepta y guarda esos 5
+valores por POST forjado aunque no los declare (preexistente desde que
+se agregaron las columnas de serología de B05, no introducido por esta
+sesión ni por el commit anterior). Sin explotar hoy (nadie envía esos
+campos si el formulario no los pinta), pero es el mismo patrón de riesgo
+que motivó `sanearCamposNucleo()` en su momento. No corregido — requiere
+decidir si se gatea columna por columna (6 checks) o se generaliza
+`filasMuestras()` para gatear cualquier columna de `caso_muestra` contra
+lo declarado, de una vez. Buen candidato para resolver junto con la
+migración de B05 (capacidad 5), ya que esa migración va a tocar
+`filasMuestras()`/`muestras.php` de todas formas.
+
+**Verificación de cierre:** los tres verificadores en verde. Render real
+confirma el campo presente solo en P35.0 (A36/B05/A80/B24 sin cambios).
+Prueba negativa en A36 (con el gate ya agregado). Caso real
+crear→verificar BD→editar→actualizar (invirtiendo 1.ª/2.ª a propósito,
+confirmando que seguir invertido no depende de posición sino del valor
+guardado)→ver, con limpieza posterior. Diff de bytes completo del render
+de P35.0: única diferencia funcional el bloque nuevo de "N.° de muestra"
+(más token CSRF y la hora de notificación de O95, que cambia por reloj,
+ninguno de los dos relacionado).

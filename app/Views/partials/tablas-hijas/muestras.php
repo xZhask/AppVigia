@@ -5,7 +5,8 @@
  * 'recibio_antibiotico','resultado','fecha_toma','fecha_result']),
  * $opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado (catalogo_item),
  * $opcionesMuestraExtra (overrides declarativos por columna: tipo_muestra,
- * tipo_prueba, resultado_igm, resultado_igg, resultado_pcr, genotipo),
+ * tipo_prueba, resultado_igm, resultado_igg, resultado_pcr, genotipo,
+ * numero_muestra),
  * $textoLibreMuestra (columnas que se pintan como <input> en vez de <select>).
  */
 $erroresMuestras = $erroresMuestras ?? [];
@@ -42,7 +43,18 @@ $opcionesGenotipo = !empty($opcionesMuestraExtra['genotipo'])
     ? array_values(array_intersect($opcionesGenotipoDefecto, $opcionesMuestraExtra['genotipo']))
     : $opcionesGenotipoDefecto;
 
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esB05, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre): void {
+// numero_muestra: ordinal de repetición (1.ª/2.ª muestra del mismo tipo),
+// no un tipo de muestra nuevo -- resuelve la ambigüedad de sueros pareados
+// sin depender del orden de las filas (PETICION_HC_Y_LABORATORIO.md, Parte
+// 2, capacidad "revivir numero_muestra"). Columna preexistente desde
+// 708821f ("PFA y Sarampión Ok"), escrita desde siempre con DEFAULT 1 pero
+// nunca capturada hasta ahora.
+$opcionesNumeroMuestraDefecto = ['1' => '1.ª', '2' => '2.ª'];
+$opcionesNumeroMuestra = !empty($opcionesMuestraExtra['numero_muestra'])
+    ? array_intersect_key($opcionesNumeroMuestraDefecto, array_flip($opcionesMuestraExtra['numero_muestra']))
+    : $opcionesNumeroMuestraDefecto;
+
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esB05, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $opcionesNumeroMuestra): void {
     $errorToma = $error['fecha_toma'] ?? null;
     $errorEnvio = $error['fecha_envio_ins'] ?? null;
     $errorResult = $error['fecha_result'] ?? null;
@@ -93,6 +105,18 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
               <option value="">Seleccionar…</option>
               <?php foreach ($opcionesTipoMuestra as $op): ?>
                 <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['tipo_muestra'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('numero_muestra')): ?>
+        <div class="field">
+          <label class="fl">N.° de muestra</label>
+          <div class="control">
+            <select name="muestra_numero_muestra[]">
+              <?php foreach ($opcionesNumeroMuestra as $valOpt => $lblOpt): ?>
+                <option value="<?= $valOpt ?>" <?= seleccionado((string) ($fila['numero_muestra'] ?? '1'), $valOpt) ?>><?= $lblOpt ?></option>
               <?php endforeach; ?>
             </select>
           </div>

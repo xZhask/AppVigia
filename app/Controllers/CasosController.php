@@ -1960,11 +1960,25 @@ class CasosController extends Controller
         $resultadosIgg = $_POST['muestra_resultado_igg'] ?? [];
         $fechasResultIgg = $_POST['muestra_fecha_result_igg'] ?? [];
         $titulaciones = $_POST['muestra_titulacion'] ?? [];
+        $numerosMuestra = $_POST['muestra_numero_muestra'] ?? [];
 
         $datosMuestras = $this->datosMuestrasCatalogo($enfermedad);
         $validosTipoMuestra = array_column($datosMuestras['opcionesTipoMuestra'], 'valor');
         $validosTipoPrueba  = array_column($datosMuestras['opcionesTipoPrueba'], 'valor');
         $validosResultado   = array_column($datosMuestras['opcionesResultado'], 'valor');
+        $validosNumeroMuestra = !empty($datosMuestras['opcionesMuestraExtra']['numero_muestra'])
+            ? $datosMuestras['opcionesMuestraExtra']['numero_muestra']
+            : ['1', '2'];
+        // numero_muestra es el ordinal que distingue sueros pareados (Fase D1
+        // "revivir numero_muestra") -- a diferencia de tipo_muestra/tipo_prueba
+        // (ya gateados por $validos* arriba, que vienen de datosMuestrasCatalogo)
+        // y del resto de columnas de serología (resultado_igm/igg/pcr/genotipo/
+        // titulacion, que NO tienen gate de columna -- ver PENDIENTES.md), a
+        // este SÍ se le exige que la ficha lo declare en columnas_tablas_hija
+        // antes de aceptar el valor por POST -- mismo criterio que
+        // sanearCamposNucleo() para el núcleo.
+        $columnasMuestraDeclaradas = $enfermedad ? $this->resolverConfigMuestra($enfermedad)['columnas'] : self::COLUMNAS_HIJA_DEFECTO['muestra'];
+        $numeroMuestraDeclarado = in_array('numero_muestra', $columnasMuestraDeclaradas, true);
 
         $filas = [];
         $errores = [];
@@ -1987,6 +2001,7 @@ class CasosController extends Controller
             $resIgg = trim((string) ($resultadosIgg[$i] ?? ''));
             $resIggTxt = trim((string) ($fechasResultIgg[$i] ?? ''));
             $titulacionTxt = trim((string) ($titulaciones[$i] ?? ''));
+            $numeroMuestraTxt = trim((string) ($numerosMuestra[$i] ?? ''));
 
             if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '' && $titulacionTxt === '') {
                 continue;
@@ -2038,6 +2053,7 @@ class CasosController extends Controller
                 'resultado_igg'       => $resIgg !== '' ? $resIgg : null,
                 'fecha_result_igg'    => $resIggTxt !== '' ? fechaIsoValida($resIggTxt) : null,
                 'titulacion'          => $titulacionTxt !== '' ? $titulacionTxt : null,
+                'numero_muestra'      => ($numeroMuestraDeclarado && in_array($numeroMuestraTxt, $validosNumeroMuestra, true)) ? (int) $numeroMuestraTxt : null,
             ];
         }
 
