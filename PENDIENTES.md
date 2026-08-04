@@ -2615,3 +2615,65 @@ síntomas" visible en toda la página (el genérico, con asterisco de
 obligatorio); el otro ocurrencia que reporta un `locator` sin filtrar
 es el bloque oculto de B26, no un duplicado real. Render de las 6
 fichas ya revisadas: bytes idénticos (no se tocó código compartido).
+
+**A35.7. "No recuerda día" cambia "Fecha de inicio de lesión" a
+mm/aaaa — ✅ cerrado**
+
+Pedido del usuario: el checkbox "No recuerda día" (ya existente,
+posicionado junto a "Fecha de inicio de lesión" en el PDF, ítem 1)
+debería cambiar el formato de esa fecha a mm/aaaa, ya que el día
+exacto no se recuerda. Decisión tomada con el usuario vía
+AskUserQuestion: (1) afecta SOLO "Fecha de inicio de lesión", no la
+"Fecha de inicio de síntomas" genérica; (2) parche puntual de A35, no
+una capacidad genérica reutilizable por otras fichas.
+
+**Mecanismo:** `sincronizarNoRecuerdaDiaA35()` nueva en `ficha.js`
+(gateada por `cieTag`, mismo patrón que `sincronizarClasificacionP350()`),
+justo después de esa función. Al marcar el checkbox, el `<input>` de
+"Fecha de inicio de lesión" cambia `type="date"` → `type="month"`
+(recorta el valor a los primeros 7 caracteres, aaaa-mm); al
+desmarcarlo, vuelve a `type="date"` completando el día como "01". El
+`campo_def` sigue siendo tipo FECHA (`fechaIsoValida()` exige
+aaaa-mm-dd estricto, NO se tocó ese validador ni ningún archivo
+compartido de PHP): justo antes del `submit` del formulario, si el
+campo sigue en modo mes, se pasa `type="text"` por una fracción de
+segundo para poder escribirle "-01" (un `<input type="month">` nunca
+aceptaría un valor de 10 caracteres) y así el servidor recibe siempre
+una fecha completa y válida.
+
+Cero condiciones nuevas por CIE-10 en código PHP compartido -- toda la
+lógica vive en una función de `ficha.js` que se auto-excluye para
+cualquier ficha que no sea A35, mismo patrón ya usado por
+`sincronizarDescartadoPfa()`/`sincronizarClasificacionP350()`.
+
+**Verificación:** Playwright confirma el ciclo completo
+date→month→date preservando el mes (marcar/desmarcar/volver a
+marcar). Ronda crear()→BD→editar() por HTTP directo: guarda
+"2026-06-01" con el día en "01", `a35_no_recuerda_dia` guardado en
+"1"; al recargar `editar()`, el HTML servido sigue siendo
+`type="date"` (el servidor no sabe de esto, es puro comportamiento de
+cliente) pero la página cargada en el navegador lo muestra ya como
+`type="month"` con valor "2026-06" -- confirmado con Playwright, no
+solo leyendo el HTML crudo. Byte-diff de las 6 fichas ya revisadas:
+única diferencia el query string `?v=<mtime>` del `<script
+src="/js/ficha.js">` (cache-busting esperado al tocar un archivo
+compartido), ningún otro byte cambia.
+
+**Hallazgo real, no relacionado, encontrado al probar el submit real
+del botón "Registrar ficha" con Playwright (nunca antes probado así
+en esta sesión -- las rondas crear()→editar() anteriores usaban POST
+HTTP directo, sin pasar por la validación nativa del navegador):**
+`cuadro-clinico-b26.php` tiene su propio `<input type="date"
+id="fechaInicioSintomasB26" name="fecha_inicio_sintomas" required>`
+oculto -- mismo `name` que el campo genérico `caso.fecha_inicio_sintomas`
+que SÍ es visible y obligatorio para casi todas las fichas. Al haber
+DOS controles con el mismo `name` y el segundo `required` pero oculto
+(`hidden`), el navegador NO PUEDE enfocarlo para mostrar el mensaje
+de validación nativo y BLOQUEA el envío del formulario con
+"An invalid form control with name='fecha_inicio_sintomas' is not
+focusable." -- confirmado que pasa igual para A36 (ficha de control,
+no relacionada con A35), así que es un bug que probablemente afecta
+**el botón "Registrar ficha" de cualquier ficha que no sea B26 en un
+navegador real**, no solo A35. No se tocó: es una ficha ya revisada
+(B26) y el hallazgo se reporta aparte antes de decidir el arreglo, sin
+mezclarlo con el trabajo de A35 de este tramo.

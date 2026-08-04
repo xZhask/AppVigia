@@ -220,6 +220,55 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- A35: "No recuerda día" cambia Fecha de inicio de lesión a mm/aaaa ----------
+  // Ítem 1 del PDF de A35 (pág. 23): "NO RECUERDA DIA ( )" junto a "FECHA DE
+  // INICIO DE LESION" -- el día exacto no siempre se recuerda, así que el
+  // control cambia de <input type="date"> a <input type="month"> mientras el
+  // checkbox esté marcado. campo_def sigue siendo FECHA (fechaIsoValida()
+  // exige aaaa-mm-dd estricto, no se toca): al enviar el formulario con el
+  // checkbox marcado, se completa el día como "01" un instante antes del
+  // submit (type se pasa a "text" para poder escribir un valor que un
+  // <input type="month"> nunca aceptaría). Parche puntual de A35, no un
+  // tipo de campo nuevo ni una capacidad genérica -- decisión explícita del
+  // usuario (PENDIENTES.md ítem A35.7): otras fichas con "no recuerda día"
+  // (ej. A36) se resuelven aparte si hace falta, no heredan esto gratis.
+  function sincronizarNoRecuerdaDiaA35() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('A35') === -1) return;
+
+    var chkNoRecuerda = document.querySelector('[name="' + campoPorClave('a35_no_recuerda_dia') + '"]');
+    var inputFechaLesion = document.querySelector('[name="' + campoPorClave('a35_fecha_de_inicio_de_lesion') + '"]');
+    if (!chkNoRecuerda || !inputFechaLesion) return;
+
+    function aplicarModo() {
+      if (chkNoRecuerda.checked) {
+        var soloMes = inputFechaLesion.value ? inputFechaLesion.value.slice(0, 7) : '';
+        inputFechaLesion.type = 'month';
+        inputFechaLesion.value = soloMes;
+      } else {
+        var valorMes = inputFechaLesion.value;
+        inputFechaLesion.type = 'date';
+        inputFechaLesion.value = valorMes ? valorMes + '-01' : '';
+      }
+    }
+
+    chkNoRecuerda.addEventListener('change', aplicarModo);
+    aplicarModo();
+
+    var formulario = inputFechaLesion.closest('form');
+    if (formulario) {
+      formulario.addEventListener('submit', function () {
+        if (inputFechaLesion.type === 'month' && inputFechaLesion.value) {
+          var valorCompletar = inputFechaLesion.value;
+          inputFechaLesion.type = 'text';
+          inputFechaLesion.value = valorCompletar + '-01';
+        }
+      });
+    }
+  }
+  sincronizarNoRecuerdaDiaA35();
+
   // ---------- Núcleo: gestante solo si sexo=F, semanas solo si gestante=Sí ----------
   var sexoSel = document.querySelector('[name="sexo"]');
   var gestanteSel = document.getElementById('gestanteSel');
