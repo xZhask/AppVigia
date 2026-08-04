@@ -2518,3 +2518,27 @@ tope de la sección 1 de TODAS las fichas (`establecimiento_id`,
 generado del `establecimiento` del usuario que registra, o elegible
 para ADMIN). Se dejó como está porque el usuario no lo nombró
 explícitamente esta vez; queda para preguntar antes de tocarlo.
+
+**A35.4. Quita "Establecimiento de salud que notifica" — mismo
+razonamiento que A35.3, confirmado por el usuario — ✅ cerrado**
+
+El hallazgo abierto que quedó anotado en A35.3 (que
+`a35_establecimiento_que_notifica` es redundante con "Establecimiento
+(EESS)", ya presente en la sección 1 de las 24 fichas) se confirmó:
+"tampoco me fijé, remuévelo, ya que es un campo repetido."
+
+Se quitó el campo del manifiesto de A35 (29→30... 30→29 campos), del
+partial `notificacion-fechas-a35.php` y de la exclusión de
+`secciones-clinicas.php`. "Trabajador de salud que hace el diagnóstico
+inicial" (que sí es específico del caso, no del establecimiento) subió
+a la misma fila `.fields.thirds` de Tipo/Fuente, la fila `.fields
+halves` que quedaba con un solo campo se eliminó.
+
+Verificación: `cargar_fichas.php` sin bloqueo (A35 29/29 campos). Tres
+verificadores en verde. Byte-diff en las 6 fichas revisadas
+(regenerando la BD de ida y vuelta con `git stash` +
+`cargar_fichas.php --apply`, mismo método que A35.3 porque el campo ya
+no existe en `campo_def`): única diferencia el bloque de 9 líneas de
+"Establecimiento de salud que notifica" ya no aparece, y "Trabajador..."
+se movió de fila -- nada más. Ronda crear()→BD→editar() confirmando
+que la clave ya no aparece en el mapa de campos ni en el HTML.

@@ -29,11 +29,14 @@ $fechaNotifRed   = $campoA35('a35_fecha_de_notificacion_red_microrred_a_disa');
 // usó A36 al omitir su propio "4. Inst. Adm." del PDF (nunca se
 // declaró como campo_def). Es un dato constante del establecimiento,
 // no algo que deba preguntarse caso por caso.
+// "Establecimiento de salud que notifica" tampoco se capturó: es el
+// mismo establecimiento ya elegido en "Establecimiento (EESS)" al
+// tope de la sección 1 (compartido por las 24 fichas) -- redundante,
+// mismo criterio que "Institución informante" arriba.
 $tipo               = $campoA35('a35_tipo');
 $fuente             = $campoA35('a35_fuente');
 $fuenteOtra         = $campoA35('a35_fuente_otra');
 $trabajadorDx       = $campoA35('a35_trabajador_diagnostico_inicial');
-$establecimientoNot = $campoA35('a35_establecimiento_que_notifica');
 $fuenteOtraOculto   = !campoVisiblePorDependencia($fuenteOtra['campo'], $valoresCampos);
 ?>
 
@@ -132,9 +135,7 @@ $fuenteOtraOculto   = !campoVisiblePorDependencia($fuenteOtra['campo'], $valores
       </div>
     </div>
     <?php endif; ?>
-  </div>
 
-  <div class="fields halves" style="margin-top:14px">
     <?php if ($trabajadorDx['name']): ?>
     <div class="field">
       <label class="fl">Trabajador de salud que hace el diagnóstico inicial</label>
@@ -142,16 +143,6 @@ $fuenteOtraOculto   = !campoVisiblePorDependencia($fuenteOtra['campo'], $valores
         <input type="text" name="<?= $trabajadorDx['name'] ?>" value="<?= e($trabajadorDx['val']) ?>" placeholder="Nombre completo…">
       </div>
       <?php if ($trabajadorDx['err']): ?><span class="hint err"><?= e($trabajadorDx['err']) ?></span><?php endif; ?>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($establecimientoNot['name']): ?>
-    <div class="field">
-      <label class="fl">Establecimiento de salud que notifica</label>
-      <div class="control">
-        <input type="text" name="<?= $establecimientoNot['name'] ?>" value="<?= e($establecimientoNot['val']) ?>" placeholder="Nombre del establecimiento…">
-      </div>
-      <?php if ($establecimientoNot['err']): ?><span class="hint err"><?= e($establecimientoNot['err']) ?></span><?php endif; ?>
     </div>
     <?php endif; ?>
   </div>

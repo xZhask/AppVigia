@@ -3780,13 +3780,7 @@
                             "clave": "a35_trabajador_diagnostico_inicial",
                             "etiqueta": "Trabajador de salud que hace el diagnóstico inicial",
                             "tipo": "TEXTO",
-                            "orden": 10
-                        },
-                        {
-                            "clave": "a35_establecimiento_que_notifica",
-                            "etiqueta": "Establecimiento de salud que notifica",
-                            "tipo": "TEXTO",
-                            "orden": 11
+                            "orden": 9
                         }
                     ]
                 },
