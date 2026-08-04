@@ -3799,22 +3799,16 @@
                             "orden": 1
                         },
                         {
-                            "clave": "a35_fecha_de_inicio_de_sintomas",
-                            "etiqueta": "Fecha de inicio de síntomas",
-                            "tipo": "FECHA",
-                            "orden": 2
-                        },
-                        {
                             "clave": "a35_no_recuerda_dia",
                             "etiqueta": "No recuerda día",
                             "tipo": "BOOLEANO",
-                            "orden": 3
+                            "orden": 2
                         },
                         {
                             "clave": "a35_herida",
                             "etiqueta": "Herida",
                             "tipo": "SELECT",
-                            "orden": 4,
+                            "orden": 3,
                             "opciones": [
                                 "Única",
                                 "Múltiple"
@@ -3824,7 +3818,7 @@
                             "clave": "a35_tipo_de_herida",
                             "etiqueta": "Tipo de herida",
                             "tipo": "SELECT",
-                            "orden": 5,
+                            "orden": 4,
                             "opciones": [
                                 "Superficial",
                                 "Profunda"
@@ -3834,19 +3828,19 @@
                             "clave": "a35_causa_de_la_herida",
                             "etiqueta": "Causa de la herida",
                             "tipo": "TEXTO",
-                            "orden": 6
+                            "orden": 5
                         },
                         {
                             "clave": "a35_lugar_de_la_herida",
                             "etiqueta": "Lugar de la herida",
                             "tipo": "TEXTO",
-                            "orden": 7
+                            "orden": 6
                         },
                         {
                             "clave": "a35_signos_y_sintomas",
                             "etiqueta": "Signos y síntomas",
                             "tipo": "GRUPO_SI_NO",
-                            "orden": 8,
+                            "orden": 7,
                             "opciones": [
                                 "Fiebre",
                                 "Trismus (no succiona)",
@@ -3861,7 +3855,7 @@
                             "clave": "a35_complicaciones",
                             "etiqueta": "Complicaciones",
                             "tipo": "TEXTAREA",
-                            "orden": 9
+                            "orden": 8
                         }
                     ]
                 },

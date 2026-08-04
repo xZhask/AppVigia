@@ -2584,3 +2584,34 @@ sí deben seguir (celular, localidad, domicilio actual) confirmados
 visibles, sin errores de consola. Sin ronda crear→editar nueva: el
 mecanismo `nucleo_omitidos` ya está probado por 20+ fichas, esto solo
 agrega A35 a un patrón existente, no una capacidad nueva.
+
+**A35.6. Quita "Fecha de inicio de síntomas" duplicada en Cuadro
+clínico — ✅ cerrado**
+
+El usuario notó "actualmente existen dos controles de fecha de inicio
+de los síntomas en el formulario web". Causa: `secciones-clinicas.php`
+siempre pinta un campo fijo `caso.fecha_inicio_sintomas` (requerido,
+al tope de la primera tarjeta clínica) para toda ficha que no esté en
+['A80','B05','O95','P35.0'] -- A35 no estaba en esa lista, así que lo
+recibía. El manifiesto de A35 declaraba ADEMÁS su propio
+`a35_fecha_de_inicio_de_sintomas` (FECHA, ítem 2 del PDF, "Cuadro
+clínico" orden 2) -- mismo concepto, dos controles.
+
+Mismo patrón exacto que el "duplicado conceptual muerto" que ya se
+había encontrado en B26 (`b26_fecha_de_inicio_de_sintomas`, ítem N.3
+de este documento) -- ahí se dejó sin resolver porque ya podía tener
+datos capturados. A35 recién se está cargando en esta sesión (sin
+datos reales todavía), así que en vez de suprimirlo con el mecanismo
+de exclusión (dejándolo "muerto" en `campo_def` como B26), se borró
+directamente del manifiesto -- más limpio, nada que arrastrar.
+
+Se renumeró el resto de "Cuadro clínico" (No recuerda día, Herida,
+Tipo de herida, Causa de la herida, Lugar de la herida, Signos y
+síntomas, Complicaciones: orden 3→2 ... 9→8).
+
+Verificación: `cargar_fichas.php` sin bloqueo (A35 28/28 campos). Tres
+verificadores en verde. Playwright: un solo "Fecha de inicio de
+síntomas" visible en toda la página (el genérico, con asterisco de
+obligatorio); el otro ocurrencia que reporta un `locator` sin filtrar
+es el bloque oculto de B26, no un duplicado real. Render de las 6
+fichas ya revisadas: bytes idénticos (no se tocó código compartido).
