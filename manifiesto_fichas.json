@@ -3708,7 +3708,11 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "nacionalidad",
+                "etnia",
+                "nombre_tutor",
+                "celular_tutor"
             ],
             "secciones": [
                 {

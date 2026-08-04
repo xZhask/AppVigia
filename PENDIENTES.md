@@ -2542,3 +2542,45 @@ no existe en `campo_def`): única diferencia el bloque de 9 líneas de
 "Establecimiento de salud que notifica" ya no aparece, y "Trabajador..."
 se movió de fila -- nada más. Ronda crear()→BD→editar() confirmando
 que la clave ya no aparece en el mapa de campos ni en el HTML.
+
+**A35.5. Núcleo de "Datos del persona": quita Nacionalidad, Etnia/raza,
+Nombre y celular de madre/tutor — ✅ cerrado**
+
+Captura de pantalla del usuario con recuadros rojos sobre "Nacionalidad"
+y sobre el bloque "Etnia/raza" + "Nombre de la madre/tutor/responsable"
++ "N.° Celular del tutor/responsable": "hay algunos campos que no se
+requieren y aparecen en el formulario". El PDF de A35 (pág. 23, "I.
+DATOS DEL PACIENTE") no pide ninguno de los cuatro -- Tétanos no tiene
+componente de gestación/pediátrico/tutor como sí lo tienen B05/O95/P35.0,
+ni pide etnia o nacionalidad.
+
+Se agregaron `nacionalidad`, `etnia`, `nombre_tutor`, `celular_tutor`
+a `nucleo_omitidos` de A35 (que ya tenía `referencia_localizar` y
+`pueblo_etnico`) -- mecanismo existente y ya usado por otras 20+
+fichas en `datos-paciente-nucleo.php`, ningún código nuevo. No afecta
+a `datos-paciente-nucleo.php` en sí (archivo compartido, sin cambios):
+cada ficha decide qué omite vía su propio dato en
+`enfermedad.nucleo_omitidos`, así que esto no puede tener efecto
+colateral en ninguna otra ficha -- confirmado con un render de las 6
+fichas ya revisadas, bytes idénticos al estado anterior.
+
+**Segundo pedido, sin cambio de código (nota para lo que sigue):**
+"hay un campo dirección de salud, en este pasa lo mismo que con los
+datos de ipress seleccionada, son datos que se infieren internamente,
+DIRSAPOL sería el dato." El PDF de A35 pide "DIRECCION DE SALUD" en
+la misma sección I -- hoy NO existe como campo en ningún lado del
+núcleo (`datos-paciente-nucleo.php` nunca lo declaró, ni para A35 ni
+para ninguna otra ficha -- mismo hueco que "GERESA/DIRESA/DIRIS" de
+A36, nunca implementado). No hay nada que quitar todavía: es un aviso
+preventivo para cuando se termine de cotejar "I. Datos del paciente"
+-- NO agregar ese campo como select/texto libre, se asume DIRSAPOL
+siempre. Mismo criterio que A35.3 (Institución informante) y A35.4
+(Establecimiento que notifica).
+
+Verificación: `cargar_fichas.php` sin bloqueo (A35 29/29 campos sin
+cambio de cantidad, solo cambia qué se omite). Tres verificadores en
+verde. Playwright: los 4 campos confirmados ocultos, los campos que
+sí deben seguir (celular, localidad, domicilio actual) confirmados
+visibles, sin errores de consola. Sin ronda crear→editar nueva: el
+mecanismo `nucleo_omitidos` ya está probado por 20+ fichas, esto solo
+agrega A35 a un patrón existente, no una capacidad nueva.
