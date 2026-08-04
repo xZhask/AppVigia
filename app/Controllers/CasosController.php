@@ -224,16 +224,21 @@ class CasosController extends Controller
         // P35.0 no pide "fecha de inicio de síntomas" en el PDF (SRC es
         // congénito, no un cuadro con inicio agudo) -- ni la muestra el
         // formulario ni la exige el servidor; caso.fecha_inicio_sintomas
-        // queda NULL para esta ficha, columna ya nullable.
-        $esP350ParaSintomas = (($enfermedad['cie10'] ?? '') === 'P35.0');
+        // queda NULL para esta ficha, columna ya nullable. A35 (Tétanos)
+        // se suma por el mismo motivo: su propia "Fecha de inicio de
+        // lesión" no es obligatoria en el manifiesto (día exacto no
+        // siempre se conoce, de ahí "No recuerda día") y no hay un solo
+        // campo estándar equivalente -- forzar aquí un valor la haría
+        // obligatoria por la puerta de atrás.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
-        if ($fechaInicioSintomas === '' && !$esP350ParaSintomas) {
+        if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
         $fechaInicioSintomasIso = null;
         $errorFechaInicioSintomas = null;
         if ($fechaInicioSintomas === '') {
-            if (!$esP350ParaSintomas) {
+            if (!$sinFechaInicioSintomasObligatoria) {
                 $errorFechaInicioSintomas = 'Ingresa la fecha de inicio de síntomas.';
             }
         } else {
@@ -681,15 +686,18 @@ class CasosController extends Controller
             $erroresFijos['distrito_id'] = 'Selecciona el distrito de domicilio.';
         }
 
-        $esP350ParaSintomas = (($enfermedad['cie10'] ?? '') === 'P35.0');
+        // Ver comentario en crear(): P35.0 y A35 no tienen un campo
+        // estándar de "fecha de inicio de síntomas" -- no se muestra ni
+        // se exige.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
-        if ($fechaInicioSintomas === '' && !$esP350ParaSintomas) {
+        if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
         $fechaInicioSintomasIso = null;
         $errorFechaInicioSintomas = null;
         if ($fechaInicioSintomas === '') {
-            if (!$esP350ParaSintomas) {
+            if (!$sinFechaInicioSintomasObligatoria) {
                 $errorFechaInicioSintomas = 'Ingresa la fecha de inicio de síntomas.';
             }
         } else {

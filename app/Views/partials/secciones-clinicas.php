@@ -191,8 +191,16 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // bajo "Signos y síntomas" (pensado para fichas con checklists reales).
     $esP350 = (($enfermedad['cie10'] ?? '') === 'P35.0');
     $idsPadre = array_filter(array_column($campos, 'depende_de'));
-    $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !in_array($c['id'], $idsPadre));
-    $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || in_array($c['id'], $idsPadre));
+    // a35_no_recuerda_dia no es un síntoma: es un modificador de precisión
+    // de "Fecha de inicio de lesión" (checkbox que cambia ese input a
+    // mes/año, ver sincronizarNoRecuerdaDiaA35() en ficha.js) -- debe
+    // quedar junto a esa fecha en su orden del manifiesto, no barrido al
+    // final bajo "Signos y síntomas" (ese bloque es para síntomas reales,
+    // ver el caso de P35.0 arriba).
+    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia'];
+    $esBooleanoJuntoASuCampo = fn($c) => in_array($c['id'], $idsPadre) || in_array($c['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true);
+    $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !$esBooleanoJuntoASuCampo($c));
+    $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || $esBooleanoJuntoASuCampo($c));
 
     if (!empty($camposOtros)): ?>
         <div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
@@ -219,7 +227,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);
                 ?><div class="dep-wrap" data-depende-de="campo_<?= (int) $campo['depende_de'] ?>" data-valor-activador="<?= e($campo['valor_activador']) ?>" <?= $oculto ? 'hidden' : '' ?>><?php
             endif;
-            if ($campo['tipo'] === 'BOOLEANO'): ?>
+            if ($campo['tipo'] === 'BOOLEANO' && in_array($campo['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true)): ?>
+              <div class="field">
+                <?php require __DIR__ . '/campos/booleano.php'; ?>
+              </div>
+            <?php elseif ($campo['tipo'] === 'BOOLEANO'): ?>
               <div class="field">
                 <label class="fl"><?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?></label>
                 <div class="control">
@@ -419,7 +431,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     </span>
   </div>
   <div class="section-body">
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0'], true)): ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>

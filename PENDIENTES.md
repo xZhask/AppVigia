@@ -2677,3 +2677,81 @@ no relacionada con A35), así que es un bug que probablemente afecta
 navegador real**, no solo A35. No se tocó: es una ficha ya revisada
 (B26) y el hallazgo se reporta aparte antes de decidir el arreglo, sin
 mezclarlo con el trabajo de A35 de este tramo.
+
+**A35.8. Quita la "Fecha de inicio de síntomas" genérica (seguía
+obligatoria) y reposiciona "No recuerda día" — ✅ cerrado**
+
+El usuario mandó una captura de "Nueva ficha": arriba del todo seguía
+apareciendo un campo `dd/mm/aaaa` obligatorio (recortado en la
+captura, sin etiqueta visible) justo antes de "Fecha de inicio de
+lesión". Causa: A35.6 solo borró el `campo_def` propio duplicado
+(`a35_fecha_de_inicio_de_sintomas`) del manifiesto, pero nunca sumó
+`'A35'` al array de exclusión de `secciones-clinicas.php:422` que ya
+usan A80/B05/O95/P35.0 -- ese `if` sigue pintando el campo fijo
+`caso.fecha_inicio_sintomas`, con asterisco de obligatorio, para
+cualquier ficha que no esté en la lista. El propio A35.6 lo dejó
+documentado como decisión consciente en su momento ("Playwright: un
+solo 'Fecha de inicio de síntomas' visible... el genérico, con
+asterisco de obligatorio"), pero el usuario ahora pide lo contrario:
+"no existe un solo campo estándar para fecha de inicio de síntomas,
+no debería ser obligatorio" -- A35 ya tiene su propio campo semántico
+("Fecha de inicio de lesión", no obligatorio en el manifiesto, con
+"No recuerda día" reconociendo que ni el día es siempre seguro).
+
+Segundo pedido de la misma captura: el checkbox "No recuerda día"
+aparecía al final de la tarjeta, bajo un subtítulo "SIGNOS Y SÍNTOMAS"
+que no le corresponde (mecanismo genérico: todo BOOLEANO suelto -- que
+no sea padre de una dependencia -- se barre a esa grilla, pensada para
+síntomas reales tipo Fiebre/Trismus).
+
+**Mecanismo (2 archivos, 4 cambios puntuales):**
+1. `secciones-clinicas.php:422` -- se agregó `'A35'` al array de
+   exclusión (`['A80','B05','O95','P35.0','A35']`). Ya no se pinta el
+   campo fijo para A35.
+2. `CasosController.php` (`crear()` y `actualizar()`, 2 bloques
+   gemelos) -- `$esP350ParaSintomas` se generalizó a
+   `$sinFechaInicioSintomasObligatoria`, ahora
+   `in_array($cie10, ['P35.0','A35'], true)`. Sin este cambio, el
+   campo seguía siendo obligatorio "por la puerta de atrás": al no
+   mostrarse, `$_POST['fecha_inicio_sintomas']` llega vacío y
+   `extraerFechaInicioSintomas()` (fallback que toma el primer campo
+   FECHA con valor, en orden de manifiesto) hubiera intentado usar
+   alguna de las 4 fechas de notificación de A35 -- que van ANTES que
+   "Fecha de inicio de lesión" en el manifiesto -- y si ninguna tenía
+   valor, bloqueaba el registro igual. Ahora `caso.fecha_inicio_sintomas`
+   queda `NULL` para A35, igual que para P35.0 (columna ya nullable).
+3. `secciones-clinicas.php` (filtro `$camposBooleanos`/`$camposOtros`,
+   dentro de `$renderizarCampos`) -- se agregó
+   `$clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia']`: este
+   BOOLEANO puntual ya no se barre a la grilla de "Signos y síntomas",
+   se queda en `$camposOtros` en su orden natural del manifiesto
+   (orden 2, justo después de "Fecha de inicio de lesión", orden 1).
+4. `secciones-clinicas.php` (rama de render de `$camposOtros`) -- las
+   claves de `$clavesBooleanoJuntoASuCampo` ya no usan el `<select>`
+   Sí/No inline (pensado para BOOLEANO que son padres de una
+   dependencia): se renderizan con `campos/booleano.php` (el mismo
+   checkbox de siempre, cero cambios en `ficha.js` ni en su
+   `name="campo_<id>"` -- `sincronizarNoRecuerdaDiaA35()` de A35.7
+   sigue funcionando sin tocar nada).
+
+Exclusión por CLAVE (no por CIE-10 disperso en la condición de
+render): el único `if ($cie10 === ...)` nuevo es una entrada más en
+arrays ya existentes con ese propósito (línea 422, y
+`$sinFechaInicioSintomasObligatoria` en el controlador, generalización
+de una variable que ya existía solo para P35.0) -- no un branch nuevo
+en código compartido.
+
+**Verificación:** los 3 verificadores en verde (A35 sigue 28/28, sin
+huérfanos ni claves faltantes; los huérfanos preexistentes de
+A80/B26/B55 no cambiaron). Byte-diff de las 6 fichas ya revisadas
+(A36/B26/A80/O95/B05/P35.0): idénticos, solo difiere el
+`csrf_token` (ruido de sesión esperado, nada de código compartido
+cambió su HTML). Playwright contra "Nueva ficha" de A35: 0
+ocurrencias visibles de "Fecha de inicio de síntomas"; "No recuerda
+día" queda en la misma fila que "Fecha de inicio de lesión" (0px de
+distancia vertical); el ciclo de A35.7 (date↔month) se repitió y
+sigue funcionando igual. Ronda `crear()` por HTTP directo dejando
+"Fecha de inicio de lesión" en blanco: HTTP 302 (éxito, antes
+bloqueaba con "Ingresa la fecha de inicio de síntomas."), confirmado
+en BD que `caso.fecha_inicio_sintomas` quedó `NULL`; caso de prueba
+borrado después.
