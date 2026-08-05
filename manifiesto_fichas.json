@@ -3876,52 +3876,60 @@
                             ]
                         },
                         {
-                            "clave": "a35_hospitalizado",
-                            "etiqueta": "Hospitalizado",
-                            "tipo": "BOOLEANO",
-                            "orden": 2
+                            "clave": "a35_paciente_atendido_por_otro",
+                            "etiqueta": "Paciente atendido por (especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 2,
+                            "depende_de": "Paciente atendido por",
+                            "valor_activador": "OTRO"
                         },
                         {
-                            "clave": "a35_fecha_de_hospitalizacion",
-                            "etiqueta": "Fecha de hospitalización",
-                            "tipo": "FECHA",
-                            "orden": 3
+                            "clave": "a35_hospitalizado",
+                            "etiqueta": "Hospitalizado",
+                            "tipo": "SELECT",
+                            "orden": 3,
+                            "opciones": [
+                                "Sí",
+                                "No"
+                            ]
                         },
                         {
                             "clave": "a35_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
-                            "orden": 4
+                            "orden": 4,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "a35_fecha_de_hospitalizacion",
+                            "etiqueta": "Fecha de hospitalización",
+                            "tipo": "FECHA",
+                            "orden": 5,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a35_n_h_c",
                             "etiqueta": "N.° H.C.",
                             "tipo": "TEXTO",
-                            "orden": 5
+                            "orden": 6,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a35_tiempo_de_hospitalizacion_dias",
                             "etiqueta": "Tiempo de hospitalización (días)",
                             "tipo": "NUMERO",
-                            "orden": 6
-                        },
-                        {
-                            "clave": "a35_condiciones_de_alta",
-                            "etiqueta": "Condiciones de alta",
-                            "tipo": "TEXTO",
-                            "orden": 7
-                        },
-                        {
-                            "clave": "a35_fecha_de_alta",
-                            "etiqueta": "Fecha de alta",
-                            "tipo": "FECHA",
-                            "orden": 8
+                            "orden": 7,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a35_fallecido",
                             "etiqueta": "Fallecido",
                             "tipo": "SELECT",
-                            "orden": 9,
+                            "orden": 8,
                             "opciones": [
                                 "Sí",
                                 "No",
@@ -3929,10 +3937,20 @@
                             ]
                         },
                         {
+                            "clave": "a35_fecha_de_alta",
+                            "etiqueta": "Fecha de alta",
+                            "tipo": "FECHA",
+                            "orden": 9,
+                            "depende_de": "Fallecido",
+                            "valor_activador": "NO"
+                        },
+                        {
                             "clave": "a35_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
-                            "orden": 10
+                            "orden": 10,
+                            "depende_de": "Fallecido",
+                            "valor_activador": "SI"
                         }
                     ]
                 },

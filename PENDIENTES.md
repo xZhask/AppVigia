@@ -2755,3 +2755,80 @@ sigue funcionando igual. Ronda `crear()` por HTTP directo dejando
 bloqueaba con "Ingresa la fecha de inicio de síntomas."), confirmado
 en BD que `caso.fecha_inicio_sintomas` quedó `NULL`; caso de prueba
 borrado después.
+
+**A35.9. Ordena "Atención" y conecta sus 3 dependencias condicionales
+— ✅ cerrado**
+
+El usuario mandó capturas del formulario web y del PDF ("ATENCION")
+lado a lado: los campos ya existían (cotejados contra el PDF en un
+tramo anterior) pero sin ningún orden ni condicional -- todos sueltos
+y siempre visibles, "Paciente atendido por" sin su "Otro:
+especificar", "Hospitalizado"/"Fallecido" sin ocultar/mostrar sus
+campos dependientes. Mandó un árbol explícito con el orden y las 3
+relaciones pedidas.
+
+**Hallazgo adicional, confirmado y corregido con permiso del usuario
+(AskUserQuestion):** `a35_condiciones_de_alta` (TEXTO, casilla vacía)
+no es un campo real -- en el PDF "CONDICIONES DE ALTA" es el título de
+la caja (mismo patrón que "ATENCION"), no una línea para llenar; lo
+único que se responde ahí es "FALLECIDO". Se eliminó del manifiesto
+(A35 sin datos reales todavía, igual criterio que A35.6).
+
+**Mecanismo, calcado del patrón ya usado por A36 en su propia sección
+"Evolución"** (`a36_hospitalizado`, `depende_de: "Hospitalizado"` con
+`valor_activador: "SI"`, líneas ~1350-1456 del manifiesto) — la
+primera vez que A35 reutiliza `depende_de`/`valor_activador` con un
+padre que NO es la propia sección a medida (A35.2 ya lo había usado
+para `a35_fuente_otra`, pero ahí el padre vivía en el mismo partial a
+mano; acá vive en el loop genérico de `secciones-clinicas.php`, cero
+código nuevo, solo manifiesto):
+
+1. `a35_hospitalizado` cambió de tipo `BOOLEANO` a `SELECT` (opciones
+   Sí/No, sin "Ignorado" -- el PDF de A35 solo trae dos casillas
+   "SI___ NO___", a diferencia de A36 que sí tiene 3). Un `BOOLEANO`
+   no puede ser padre de `depende_de` con un `valor_activador` de
+   texto ("SI"/"NO"): su valor guardado es `'1'`/`'0'`, no hay
+   precedente de eso en todo el manifiesto (verificado, cero
+   coincidencias). `SELECT` con 2 opciones sí funciona igual que la
+   familia A36/B05/etc.
+2. `a35_hospital`, `a35_fecha_de_hospitalizacion`, `a35_n_h_c`,
+   `a35_tiempo_de_hospitalizacion_dias`: los 4 con
+   `depende_de: "Hospitalizado"`, `valor_activador: "SI"`.
+3. `a35_paciente_atendido_por_otro` (TEXTO, nuevo): `depende_de:
+   "Paciente atendido por"`, `valor_activador: "OTRO"` -- el PDF trae
+   "OTRO ________" y el manifiesto nunca había declarado el campo de
+   texto para escribirlo.
+4. `a35_fecha_de_alta`: `depende_de: "Fallecido"`,
+   `valor_activador: "NO"`. `a35_fecha_de_defuncion`: mismo padre,
+   `valor_activador: "SI"`. Con "Ignorado" ninguno matchea -> ambas
+   fechas ocultas, tal como pidió el usuario.
+
+Reordenados los 10 campos de la sección al orden pedido: Paciente
+atendido por → (especificar) → Hospitalizado → Hospital → Fecha de
+hospitalización → N.° H.C. → Tiempo de hospitalización (días) →
+Fallecido → Fecha de alta → Fecha de defunción. Cero cambios en
+`secciones-clinicas.php`/`ficha.js`/`campo-dinamico.php`: el motor
+`.dep-wrap`/`data-depende-de`/`data-valor-activador` +
+`campoVisiblePorDependencia()` ya resuelve todo desde el loop
+genérico, no hizo falta ningún partial a medida ni condición nueva en
+PHP compartido.
+
+**Nota de UI encontrada durante la verificación (sin acción, ya
+existente):** "Fallecido" (3 opciones Sí/No/Ignorado) se autodetecta
+en `select.php` (`$es3OpcionesSiNoDesc`) y se pinta como control
+segmentado de radios (Sí/No/Desc.), no como `<select>` -- mismo
+mecanismo que ya usa "Lugar del fallecimiento" en O95. Nada que
+corregir, solo relevante para quien reproduzca la verificación con
+Playwright: hay que interactuar con los `<input type="radio">`, no
+con un `<select>`.
+
+**Verificación:** 3 verificadores en verde (A35 28/28, sin claves
+faltantes; huérfanos preexistentes de A80/B26/B55 sin cambios).
+`verificar_render.php` completo: ninguna otra ficha cambió (no se
+tocó código compartido, solo `manifiesto_fichas.json` + recarga
+scopeada a `--cie10=A35`). Playwright contra "Nueva ficha": estado
+inicial con las 3 preguntas disparadoras visibles y sus 6 campos
+dependientes ocultos; "Otro" revela "especificar"; Hospitalizado
+Sí/No muestra/oculta los 4 campos de hospitalización; Fallecido
+Sí/No/Ignorado muestra Fecha de defunción / Fecha de alta / ninguna
+respectivamente -- las 9 aserciones pasaron, cero errores de consola.
