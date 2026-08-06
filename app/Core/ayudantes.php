@@ -157,26 +157,45 @@ function marcado(mixed $valor): string
 }
 
 /**
- * Valores de clasificación final permitidos para una ficha: por defecto las
- * 4 genéricas, o el subconjunto propio que defina
+ * Catálogo único de valores de clasificación final que puede mostrar el chip
+ * "Clasificación del caso" (clasificacion-chips.php), con su etiqueta y color
+ * de punto. Cada ficha filtra/ordena un subconjunto vía
  * enfermedad.opciones_clasificacion (CSV) — ej. difteria solo admite
- * Confirmado/Descartado (AUDITORIA_FICHA_DIFTERIA.md, punto 7).
+ * Confirmado/Descartado (AUDITORIA_FICHA_DIFTERIA.md, punto 7), O95 usa un
+ * subconjunto propio (Directa/Indirecta/Incidental/Por determinar) en vez de
+ * las 4 genéricas. Ya no hay excepciones hardcodeadas por CIE-10 aquí: todo
+ * ficha nueva que necesite valores propios solo agrega entradas al catálogo
+ * y su CSV en la BD.
+ */
+const CATALOGO_CLASIFICACION = [
+    'SOSPECHOSO'     => ['etiqueta' => 'Sospechoso',      'dot' => 'dot-sos'],
+    'PROBABLE'       => ['etiqueta' => 'Probable',        'dot' => 'dot-pro'],
+    'CONFIRMADO'     => ['etiqueta' => 'Confirmado',      'dot' => 'dot-con'],
+    'DESCARTADO'     => ['etiqueta' => 'Descartado',      'dot' => 'dot-des'],
+    'DIRECTA'        => ['etiqueta' => 'Directa',         'dot' => 'dot-con'],
+    'INDIRECTA'      => ['etiqueta' => 'Indirecta',       'dot' => 'dot-pro'],
+    'INCIDENTAL'     => ['etiqueta' => 'Incidental',      'dot' => 'dot-sos'],
+    'POR_DETERMINAR' => ['etiqueta' => 'Por determinar',  'dot' => 'dot-des'],
+];
+
+/**
+ * Valores de clasificación final permitidos para una ficha: por defecto las
+ * 4 genéricas, o el subconjunto/orden propio que defina
+ * enfermedad.opciones_clasificacion (CSV), intersectado contra
+ * CATALOGO_CLASIFICACION (así el orden de salida es siempre el del catálogo,
+ * no el de la BD).
  *
  * @return string[]
  */
 function opcionesClasificacionPara(array $enfermedad): array
 {
-    if (($enfermedad['cie10'] ?? '') === 'O95') {
-        return ['DIRECTA', 'INDIRECTA', 'INCIDENTAL', 'POR_DETERMINAR'];
-    }
-    $genericas = ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'];
     $restriccion = trim($enfermedad['opciones_clasificacion'] ?? '');
     if ($restriccion === '') {
-        return $genericas;
+        return ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'];
     }
 
     $permitidas = array_map('trim', explode(',', $restriccion));
-    return array_values(array_intersect($genericas, $permitidas));
+    return array_values(array_intersect(array_keys(CATALOGO_CLASIFICACION), $permitidas));
 }
 
 /**

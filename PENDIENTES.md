@@ -3093,3 +3093,92 @@ definitivo↔Clasificación del caso). Sigue pendiente cotejar "I. Datos
 del paciente" campo por campo contra el PDF, y el resto de "III.
 Información clínica" (Investigador).
 
+---
+
+## 11. Catálogo único de "Clasificación del caso" — Fase 1 cerrada, Fase 2 pendiente por ficha
+
+Continuación directa de la pregunta de evaluación de A35.13/A35.14
+(ítem 10 de arriba). El usuario rechazó dos propuestas intermedias
+(ocultar el chip genérico cuando hay campo propio; sincronizar en
+ambos sentidos como ya hace O95 vía `sincronizarClasificacionO95()`)
+y aclaró la intención real: quiere un **catálogo real** de posibles
+resultados de clasificación, filtrado por ficha, y evaluar el costo
+de que el chip "Clasificación del caso" sea la **única entrada** para
+la clasificación/diagnóstico final en **todas** las fichas que lo
+pidan (revisadas y no revisadas), no solo A35.
+
+**Evaluación (auditoría del manifiesto completo, no solo A35):** 13
+de las 24 fichas tienen hoy un campo propio de clasificación/
+diagnóstico final, además del chip genérico: A35, A97, A37.0, B57,
+B04X, A00, A33, A80, B05, A50, P35.0, Y59.0, O95 — 4 de esas 13 ya
+están revisadas/cerradas (A80, B05, P35.0, O95). El obstáculo real no
+es solo "cuál catálogo se ve": los vocabularios son heterogéneos, no
+subconjuntos entre sí. A97 tiene 21 combinaciones síndrome×desenlace
+(Dengue/Chikungunya/Zika/Fiebre amarilla), A80 tiene su propio
+catálogo de Polio (salvaje/derivado de vacuna/asociado a vacuna/
+compatible/Descartado), B57 el suyo de Chagas, Y59.0 el suyo de
+ESAVI, A00 una escala de deshidratación que no es "clasificación de
+caso". **A50 tiene DOS campos de clasificación que no son la misma
+cosa** (uno para la gestante, otro para el recién nacido/aborto/
+mortinato) — no hay forma de fusionarlos en un chip único sin perder
+información. Además `clasificacion-chips.php` se incluye siempre al
+**final** del formulario (`nueva/index.php:332`, `editar.php:276`),
+sin relación con el orden de secciones de cada ficha — si el chip
+pasa a ser la única entrada, el campo desaparece de su posición
+propia en el PDF (p. ej. A35 lo tiene en su sección III) y solo queda
+al final para todas, lo que rompe la fidelidad posición-a-posición
+con el PDF mantenida en todo el cotejo.
+
+**Decisión del usuario, en dos fases:**
+1. **Fase 1 (bajo riesgo, hecha hoy):** reemplazar los 2 mecanismos ad
+   hoc existentes (`enfermedad.opciones_clasificacion` CSV que filtra
+   un subconjunto de las 4 genéricas + un `if ($cie10 === 'O95')`
+   hardcodeado en `ayudantes.php` que reemplazaba el catálogo entero)
+   por un catálogo único data-driven, sin cambiar el comportamiento
+   visible de ninguna ficha todavía.
+2. **Fase 2 (grande, ficha por ficha, NO se tocó):** decidir para cada
+   una de las 13 fichas si su chip se vuelve la única entrada — no es
+   un cambio mecánico único, son ~13 evaluaciones distintas (posición
+   en el formulario, vocabulario propio, casos como A50 con dos
+   campos). Queda pendiente resolverlo cuando le toque su cotejo
+   individual a cada ficha, no de golpe — así no se reabren las 4 ya
+   cerradas sin necesidad.
+
+**Mecanismo (Fase 1):** `CATALOGO_CLASIFICACION` (const nueva en
+`ayudantes.php`) — único punto de verdad para los 8 valores hoy
+usados por el chip genérico (`SOSPECHOSO`, `PROBABLE`, `CONFIRMADO`,
+`DESCARTADO`, `DIRECTA`, `INDIRECTA`, `INCIDENTAL`, `POR_DETERMINAR`),
+cada uno con su etiqueta y clase de punto (`dot-sos`/`dot-pro`/
+`dot-con`/`dot-des`). `opcionesClasificacionPara($enfermedad)` se
+simplificó: ya no tiene el `if` hardcodeado de O95 (innecesario —
+`enfermedad.opciones_clasificacion` de O95 en BD ya traía
+`'DIRECTA,INDIRECTA,INCIDENTAL,POR_DETERMINAR'`, el `if` solo
+duplicaba lo que la columna ya decía), ahora intersecta el CSV contra
+`array_keys(CATALOGO_CLASIFICACION)` en vez de contra la lista fija
+de 4 genéricas — así el orden de salida sigue siendo el del catálogo,
+no el de la BD, igual que antes. `clasificacion-chips.php` ya no
+declara dos arrays literales duplicados (uno genérico, uno para O95):
+ahora hace `array_intersect_key(CATALOGO_CLASIFICACION,
+array_flip($valoresPermitidos))` y usa eso para pintar los chips; el
+bloque específico de O95 (leer `o95_clasificacion_final_de_la_muerte`/
+`o95_clasificacion_inicial` para precargar el valor inicial, con el
+respaldo semántico "vacío → POR_DETERMINAR" que es una regla de
+negocio de O95, no plomería de catálogo) se mantuvo intacto.
+
+**Verificación:** script que recalcula
+`opcionesClasificacionPara()` para las 24 filas reales de `enfermedad`
+y compara contra la lógica vieja (copiada literal) — 24/24 idénticas,
+0 diferencias; confirma también que las 8 claves del catálogo cubren
+todos los valores que cualquier ficha usa hoy. `php -l` limpio en los
+2 archivos. Tres verificadores en verde (sin hallazgos nuevos, solo
+los huérfanos/mecanismos-no-estándar preexistentes de siempre en
+A80/B26/B55/O95, ninguno relacionado a este cambio). Byte-diff de las
+6 fichas revisadas + A35: **cero diferencias** (fuera del token CSRF,
+que cambia siempre) — comparado contra el HTML generado por los 2
+archivos en su versión previa (`git stash` acotado a esos 2 archivos,
+no al resto de cambios pendientes de la sesión).
+
+**No se tocó:** ninguna UI, ninguna ficha, ningún JS. Es
+exclusivamente la base de datos/plomería para que la Fase 2 (cuando
+se retome, ficha por ficha) no tenga que reinventar el catálogo cada
+vez.

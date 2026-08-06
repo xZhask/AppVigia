@@ -4,20 +4,16 @@
  * reutilizado por "Nueva ficha" y "Editar ficha" para que ambos queden
  * siempre idénticos. Variables esperadas: $clasificacionActual, $enfermedad.
  *
- * Cada ficha puede restringir las 4 opciones genéricas a un subconjunto
- * propio (enfermedad.opciones_clasificacion, CSV; NULL = las 4 genéricas) —
+ * Las opciones y su etiqueta/color salen de CATALOGO_CLASIFICACION
+ * (ayudantes.php); cada ficha filtra/ordena su subconjunto vía
+ * enfermedad.opciones_clasificacion (CSV; NULL = las 4 genéricas) —
  * ej. difteria solo admite Confirmado/Descartado (AUDITORIA_FICHA_DIFTERIA.md).
  */
 $esO95Chips = (($enfermedad['cie10'] ?? '') === 'O95');
+$valoresPermitidosClasif = opcionesClasificacionPara($enfermedad);
+$opcionesClasificacion = array_intersect_key(CATALOGO_CLASIFICACION, array_flip($valoresPermitidosClasif));
 
 if ($esO95Chips) {
-    $opcionesClasificacion = [
-        'DIRECTA'        => ['dot' => 'dot-con', 'etiqueta' => 'Directa'],
-        'INDIRECTA'      => ['dot' => 'dot-pro', 'etiqueta' => 'Indirecta'],
-        'INCIDENTAL'     => ['dot' => 'dot-sos', 'etiqueta' => 'Incidental'],
-        'POR_DETERMINAR' => ['dot' => 'dot-des', 'etiqueta' => 'Por determinar'],
-    ];
-
     // Este partial se incluye sin condición aunque O95 no sea la ficha
     // activa (mismo motivo que notificacion-fechas-b26.php): $campo
     // resuelve siempre contra la O95 real, no contra $enfermedad.
@@ -26,19 +22,11 @@ if ($esO95Chips) {
     if ($valCausaClasif === '') {
         $valCausaClasif = $campoO95Chips('o95_clasificacion_inicial')['val'];
     }
-    if ($valCausaClasif && in_array($valCausaClasif, array_keys($opcionesClasificacion), true)) {
+    if ($valCausaClasif && in_array($valCausaClasif, $valoresPermitidosClasif, true)) {
         $clasificacionActual = $valCausaClasif;
-    } elseif (!in_array($clasificacionActual, array_keys($opcionesClasificacion), true)) {
+    } elseif (!in_array($clasificacionActual, $valoresPermitidosClasif, true)) {
         $clasificacionActual = 'POR_DETERMINAR';
     }
-} else {
-    $opcionesClasificacion = [
-        'SOSPECHOSO' => ['dot' => 'dot-sos', 'etiqueta' => 'Sospechoso'],
-        'PROBABLE'   => ['dot' => 'dot-pro', 'etiqueta' => 'Probable'],
-        'CONFIRMADO' => ['dot' => 'dot-con', 'etiqueta' => 'Confirmado'],
-        'DESCARTADO' => ['dot' => 'dot-des', 'etiqueta' => 'Descartado'],
-    ];
-    $opcionesClasificacion = array_intersect_key($opcionesClasificacion, array_flip(opcionesClasificacionPara($enfermedad)));
 }
 ?>
 <div class="field">
