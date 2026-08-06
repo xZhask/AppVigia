@@ -3182,3 +3182,377 @@ no al resto de cambios pendientes de la sesión).
 exclusivamente la base de datos/plomería para que la Fase 2 (cuando
 se retome, ficha por ficha) no tenga que reinventar el catálogo cada
 vez.
+
+---
+
+## 12. Cotejo de Tétanos neonatal (A33) — en pausa (A33.1-A33.8 cerrados), falta "Investigador de campo"
+
+Arranca el cotejo de A33 contra el PDF (pág. 21 del compendio, texto
+extraído con `pdftotext -f 21 -l 21 -layout`). Primer tramo pedido
+explícitamente por el usuario: "coteja la sección de notificaciones,
+ya que esta no tiene tipo de captación pero sí las fechas de
+notificaciones y número de caso" — mismo alcance que A35.1, dejando
+fuera a propósito "I. DATOS DEL ESTABLECIMIENTO NOTIFICANTE" (DISA,
+RED, nombre del establecimiento, "Captación del caso" con sus propias
+3 opciones -- Notificación regular/Búsqueda activa/Defunción,
+concepto distinto del genérico tipo/lugar de captación) para un tramo
+posterior.
+
+**A33.1. Nueva sección "Datos de notificación e investigación del
+caso" — ✅ cerrado**
+
+El PDF de A33 tiene el mismo formato de cabecera que A35: "CASO
+N°........." junto al título, y una tabla de columnas de fecha (sin
+"código de registro"). A diferencia de A35 (4 columnas, tope en DISA)
+y de B26/P35.0 (tope en CDC), **A33 tiene 5 columnas, tope en DGE**
+(Dirección General de Epidemiología): "Fecha de conocimiento local",
+"Fecha de Investigación (visita domiciliaria)", "Fecha notificación
+EE SS a Red/Microrred", "Fecha notificación Red/Microrred a DISA",
+"Fecha de Notificación DGE" -- transcripción literal del PDF,
+verificada contra el texto extraído del PDF real, no copiada de otra
+ficha.
+
+**Mecanismo:** calco exacto del de A35.1 -- nueva sección `orden: 1`
+en el manifiesto ("Datos de notificación e investigación del caso",
+6 campos: `a33_caso_n` + 5 `FECHA`), las 4 secciones existentes de
+A33 renumeradas (+1). Partial nuevo `notificacion-fechas-a33.php`
+(solo el bloque de fechas + caso N.°, sin el bloque de
+tipo/fuente/trabajador que sí tiene A35 -- ese es "I. DATOS DEL
+ESTABLECIMIENTO NOTIFICANTE", fuera de alcance de este tramo), se
+incluye sin condición en la tarjeta "1. Notificación" de
+`nueva/index.php`/`fichas/editar.php` (oculto si A33 no es la ficha
+activa) y se excluye del loop genérico de `secciones-clinicas.php`
+vía `$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA`/
+`$SECCIONES_CON_PARTIAL_A_MEDIDA` (mismo mecanismo que ya usan
+B05/B26/O95/P35.0/A35). A33 se agrega también a la exclusión del
+bloque genérico `notificacionCaptacionWrap` (tipo/lugar/clasificación
+en la captación, que no existe en el PDF de A33).
+
+**Hallazgo relacionado, NO corregido a propósito (fuera del alcance
+pedido):** A33 tiene el mismo problema que A35 tenía antes de
+A35.6/A35.8 -- el campo propio `a33_fecha_de_inicio_de_sintomas` (en
+"Cuadro clínico") convive con el campo genérico obligatorio "Fecha de
+inicio de síntomas" que sigue mostrándose para A33 (no está en la
+exclusión de la línea ~483 de `secciones-clinicas.php`). Queda para
+cuando se coteje "III. INFORMACION CLINICA" de A33.
+
+**Verificación:** `cargar_fichas.php --apply --cie10=A33` (5/5
+secciones, 33/33 campos). Tres verificadores en verde. Byte-diff de
+las 6 fichas revisadas + A35: única diferencia, el nuevo bloque
+`notificacionFechasA33Wrap` oculto (46 líneas idénticas en las 7),
+mismo patrón exacto que los bloques hermanos de B05/B26/O95/P35.0/
+A35. Confirmado en HTML renderizado que para A33 el bloque genérico
+de captación queda oculto y el nuevo bloque de fechas se muestra.
+
+**A33.2. "Captación del caso" (Notificación regular/Búsqueda
+activa/Defunción) — ✅ cerrado**
+
+El usuario pidió agregar el campo que A33.1 había dejado fuera de
+alcance a propósito: "Captación del caso" (dato propio del caso, del
+bloque "I. DATOS DEL ESTABLECIMIENTO NOTIFICANTE" del PDF, distinto
+del genérico tipo/lugar de captación que ya está oculto para A33).
+Campo nuevo `a33_captacion_del_caso` (SELECT, orden 7 de la sección de
+notificación), 3 opciones literales del PDF.
+
+**DISA/RED/Nombre del establecimiento del mismo bloque del PDF
+siguen sin capturarse, a propósito:** son datos constantes del
+establecimiento ya elegido en "Establecimiento (EESS)" (verificado en
+BD: `red_salud.nombre` ya trae "Red X · Sanidad PNP" y
+`red_salud.diresa` es constante `'DIRSAPOL'` para las 33 redes de
+Sanidad PNP) -- mismo criterio ya aplicado a "Institución informante"
+de A35 (A35.1).
+
+**Verificación:** `cargar_fichas.php --apply --cie10=A33` (5/5
+secciones, 34/34 campos). Tres verificadores en verde. Byte-diff
+completo (HEAD -> estado actual) de las 6 fichas revisadas + A35:
+único cambio, el bloque oculto `notificacionFechasA33Wrap` completo
+(A33.1 + A33.2 juntos), idéntico en las 7. Confirmado en HTML
+renderizado que el `<select>` de 3 opciones aparece visible para A33.
+
+**A33.3. Ajusta `nucleo_omitidos` de "II. DATOS DEL PACIENTE" — ✅
+cerrado**
+
+El usuario cotejó "II. DATOS DEL PACIENTE" del PDF (pág. 21) contra
+lo que el núcleo genérico muestra hoy y pidió 5 ajustes: ocultar
+nombre y teléfono de madre/tutor, etnia/raza y dirección (ninguno
+aparece en el PDF de A33), pero SÍ mostrar "Referencia para
+localizar" (que el PDF sí pide, y que por error estaba en la lista de
+omitidos desde la carga inicial del manifiesto, sin que nadie lo
+hubiera cotejado todavía).
+
+**Mecanismo:** `nucleo_omitidos` de A33 (mismo mecanismo que A35.5,
+`datos-paciente-nucleo.php`, sin tocar código compartido) pasa de
+`["referencia_localizar", "pueblo_etnico"]` a `["pueblo_etnico",
+"etnia", "nombre_tutor", "celular_tutor", "direccion"]` --
+`referencia_localizar` sale de la lista (ahora se muestra),
+`pueblo_etnico` se mantiene (ya estaba bien), se agregan `etnia`,
+`nombre_tutor`, `celular_tutor` y `direccion`. `celular` (teléfono del
+propio paciente, el "Telef." que el PDF sí pide junto a "Edad") y
+`localidad` NO se tocaron -- corresponden a otra fila del PDF, no son
+"teléfono de tutor".
+
+**Nota, no implementada a propósito:** a diferencia de A35.5 (que
+también quitó `nacionalidad` del núcleo), el usuario no mencionó
+Nacionalidad esta vez y el PDF de A33 tampoco la pide explícitamente
+en "II. DATOS DEL PACIENTE" -- probablemente el mismo caso que A35,
+pero no se tocó sin que el usuario lo pida, para no exceder el
+alcance de lo pedido.
+
+**Verificación:** `cargar_fichas.php --apply --cie10=A33` (5/5
+secciones, 34/34 campos, sin tocar ninguna sección/campo -- el cambio
+es solo la columna `nucleo_omitidos` de `enfermedad`). Tres
+verificadores en verde. HTML renderizado de A33 confirma: `direccion`,
+`etnia`, `pueblo_etnico`, `nombre_tutor`, `celular_tutor` ocultos;
+`referencia_localizar`, `celular`, `localidad`, `nacionalidad`
+visibles. Byte-diff de las 6 fichas revisadas + A35: bytes idénticos
+a la ronda anterior (A33.3 no toca ningún archivo compartido, solo el
+dato de A33 en BD).
+
+**A33.4. "III. INFORMACION CLINICA": quita el duplicado de fecha,
+Succión/Llanto normal a SI/NO, Hospitalizado/Fallecido con el mismo
+comportamiento condicional de A35 — ✅ cerrado**
+
+El usuario mandó el PDF de la sección + una captura del render actual
+mostrando 3 problemas: "Fecha de inicio de síntomas" duplicada,
+"Succión/Llanto normal durante los 2 primeros días de vida" debían
+ser preguntas SI/NO (no checkboxes sueltos) y pidió expresamente que
+"Atendido por, Hospitalizado y Fallecido" tengan el mismo
+comportamiento que ya tiene A35 (A35.9).
+
+**Fecha duplicada -- causa raíz distinta a la de A35/P35.0:** Aquí
+el campo genérico obligatorio (`caso.fecha_inicio_sintomas`, tarjeta
+"3. Cuadro clínico") y el campo propio `a33_fecha_de_inicio_de_sintomas`
+piden literalmente lo mismo, con la misma etiqueta -- a diferencia de
+A35 (que no tiene ese concepto en absoluto y necesitó excluir el
+genérico) o P35.0. La solución correcta acá es la opuesta a A35.8: no
+excluir el genérico, sino **borrar el campo propio redundante**
+(`a33_fecha_de_inicio_de_sintomas` sale del manifiesto por completo) y
+dejar que el campo genérico -- que ya es obligatorio, ya tiene el
+`min`/`max` correctos y ya coincide con la etiqueta del PDF -- lo
+cubra solo. Ningún archivo PHP compartido tocado para esto, ni
+`CasosController.php` ni la exclusión de `secciones-clinicas.php`
+(A33 nunca entra a esa lista, a diferencia de A35/P35.0).
+
+**Succión/Llanto normal:** `BOOLEANO` -> `SELECT` (Sí/No), etiqueta
+sin signo de interrogación (transcripción literal del PDF: "SUCCION
+NORMAL DURANTE LOS 2 PRIMEROS DIAS DE VIDA SI ( ) NO( )", no es una
+pregunta con "¿...?" como sugería el checkbox). No se agregaron a
+`$clavesSegmentado2Botones` (select.php, A35.11) -- quedan como
+`<select>` simple, mismo criterio que `a35_hospitalizado` (2 opciones
+Sí/No sin variante segmentada, reservada para casos puntuales).
+
+**Hospitalizado/Fallecido, "mismo comportamiento que A35":**
+`a33_hospitalizado` `BOOLEANO` -> `SELECT` (Sí/No) con
+`depende_de`/`valor_activador` en Fecha de hospitalización, Hospital
+y N.° H.C. (SI). `a33_fallecido` `BOOLEANO` -> `SELECT`
+(Sí/No/Ignorado, mismo 3er valor que A35) con Fecha de defunción
+dependiendo de SI. A diferencia de A35 (que eliminó
+`a35_condiciones_de_alta` por ser solo el título de una caja), A33 sí
+tiene "CONDICIONES DE ALTA _______" como línea real para llenar en su
+PDF -- se mantiene como campo (`a33_condiciones_de_alta`, TEXTO) y,
+siguiendo la misma lógica de A35 para "Fecha de alta" (solo tiene
+sentido si el paciente no falleció), tanto `a33_condiciones_de_alta`
+como `a33_fecha_de_alta` pasan a depender de Fallecido=NO. Al dejar
+de ser BOOLEANO, Hospitalizado y Fallecido dejan de barrerse al
+bloque genérico "Signos y síntomas" (mismo mecanismo que ya arregló
+esto para A35 en A35.9) -- ya no hace falta agregarlos a
+`$clavesBooleanoJuntoASuCampo`, el problema desaparece con la
+conversión a SELECT.
+
+**Verificación:** `cargar_fichas.php --apply --cie10=A33` (5/5
+secciones, 33/33 campos -- 34 menos el campo eliminado). Tres
+verificadores en verde. Playwright contra un navegador real (login
+con sesión creada directamente en `$_SESSION['usuario']`, mismo
+formato que `Auth::intentarLogin()`, y navegación a
+`/casos/nuevo?enfermedad_id=15` -- el selector de ficha usa
+`enfermedad_id`, no `cie10`, como parámetro real): confirma un solo
+"Fecha de inicio de síntomas" visible dentro de `#secciones-clinicas`
+(el segundo hallado en el HTML crudo es el bloque oculto de B26, ya
+conocido, no relacionado); Succión normal es `<select>`; Hospitalizado
+= Sí revela Hospital/Fecha de hospitalización/N.° H.C.; Fallecido =
+Sí revela Fecha de defunción y oculta Condiciones/Fecha de alta;
+Fallecido = No hace exactamente lo contrario. Byte-diff de las 6
+fichas revisadas + A35: bytes idénticos a la ronda anterior (el
+cambio solo afecta la sección "Cuadro clínico" de A33, que únicamente
+se renderiza cuando A33 es la ficha activa -- no hay bloque oculto
+compartido para esta sección, a diferencia de la de notificación).
+
+**A33.5. "Fecha/Condiciones de alta" también dependen de
+Hospitalizado=Sí, no solo de Fallecido=No — ✅ cerrado (A33 + A35)**
+
+El usuario probó A33.4 en el navegador y encontró un caso de borde:
+con Hospitalizado=No y Fallecido=No, "Condiciones de alta" y "Fecha
+de alta" igual aparecían -- un paciente que nunca fue hospitalizado
+no debería tener nada que dar de alta. Antes de implementar, se
+discutió con el usuario la alternativa (que "Fecha de alta" dependa
+de Hospitalizado=Sí en vez de Fallecido=No): se descartó, porque un
+paciente hospitalizado y fallecido mostraría "Fecha de alta" a la vez
+que "Fecha de defunción" -- una contradicción peor que el caso de
+borde original. La solución correcta es que dependa de **ambas
+condiciones a la vez** (Hospitalizado=Sí Y Fallecido=No).
+
+**Mecanismo, sin JS nuevo:** `evaluarDependencias()` (`ficha.js:81`)
+ya oculta en cascada cualquier `.dep-wrap` cuyo `.dep-wrap` padre esté
+oculto -- construido originalmente para depende_de encadenados, pero
+sirve igual para forzar un AND entre dos condiciones independientes.
+Se anida un `.dep-wrap[data-depende-de="Hospitalizado"][valor-activador="SI"]`
+nuevo alrededor de los `.dep-wrap` que ya existían para "Condiciones
+de alta"/"Fecha de alta" (A33) y "Fecha de alta" (A35, que no tiene
+"Condiciones de alta" -- se eliminó en A35.9 por ser solo el título
+de una caja). "Fecha de defunción" no se toca, sigue dependiendo solo
+de Fallecido=Sí -- no hace falta AND ahí, morir no depende de haber
+estado hospitalizado.
+
+En `secciones-clinicas.php`: `$campoHospitalizadoA33`/
+`$campoHospitalizadoA35` precalculados fuera de `$renderizarCampos`
+(mismo motivo que `$campoFechaUltSeg`/`$campoDistritoInfeccionA35`:
+adentro del loop `$campo` ya está tomado por la fila de campo_def de
+cada iteración), agregados al `use()` de la clausura. Dos hooks por
+clave (mismo patrón que el resto del archivo): uno abre el wrapper
+extra antes de `a33_condiciones_de_alta`/`a35_fecha_de_alta`, otro lo
+cierra después de `a33_fecha_de_alta`/`a35_fecha_de_alta`.
+
+**Verificación:** `php -l` limpio. Tres verificadores en verde. Byte-diff
+de las 6 fichas revisadas (A36/B26/A80/O95/B05/P35.0): **0 líneas de
+diferencia** en las 6 (no solo el mismo tamaño en bytes -- diff línea
+por línea, con CSRF normalizado). Playwright en navegador real contra
+A33 y A35 con las 3 combinaciones: Hospitalizado=No+Fallecido=No ->
+Fecha (y Condiciones) de alta ocultas en ambas; Hospitalizado=Sí+
+Fallecido=No -> aparecen en ambas; Hospitalizado=Sí+Fallecido=Sí ->
+Fecha de alta se oculta y Fecha de defunción aparece, en ambas.
+
+**A33.6. "Atendido por (parto)" → Otro revela "especificar" — ✅
+cerrado**
+
+El usuario confirmó "Datos de la madre" sin cambios y pidió el
+condicional que faltaba en "Atención del parto": el PDF (pág. 22)
+trae "OTRO (Especificar) ____" después de la lista de opciones
+(Médico/Obstetriz/Enfermera/Técnico sanitario/Partera/Otro), igual
+que ya tiene "Paciente atendido por" de A35.9 y el propio "Atendido
+por" de A33 en Cuadro clínico (A33.4) -- ninguno de los dos necesitaba
+esto porque sus PDF respectivos no traen línea de especificar ahí,
+pero "Atención del parto" sí.
+
+**Hallazgo evitado antes de aplicar:** A33 ya tenía un campo
+"Atendido por" en Cuadro clínico (A33.4). `depende_de` resuelve por
+texto de ETIQUETA, no por clave (`cargar_fichas.php:854`,
+`$idPorEtiqueta[$campo['etiqueta']]`) -- declarar el nuevo campo con
+`depende_de: "Atendido por"` habría sido ambiguo dentro de la MISMA
+ficha (a diferencia de la colisión entre fichas distintas, que sí es
+segura por diseño). Se renombraron las etiquetas de
+`a33_atendido_por_parto`/`a33_atendido_por_parto_otro` a "Atendido
+por (parto)"/"Atendido por (parto, especificar)" para que sean únicas
+dentro de A33 -- verificado con un script que no queden más etiquetas
+duplicadas en la ficha. **Regla para el resto del cotejo:** si una
+ficha ya tiene un "Atendido por" en otra sección y aparece un segundo
+"Atendido por" que necesite `depende_de`, la etiqueta tiene que
+diferenciarse (paréntesis con el contexto, como acá), no puede quedar
+literalmente igual.
+
+**Verificación:** `cargar_fichas.php --apply --cie10=A33` (5/5
+secciones, 34/34 campos). Tres verificadores en verde. Playwright:
+"Atendido por (parto, especificar)" oculto por defecto, aparece al
+elegir "Otro", se vuelve a ocultar al cambiar a "Médico". No se tocó
+ningún archivo PHP compartido (solo manifiesto), así que no hace
+falta byte-diff de las demás fichas -- la sección "Atención del
+parto" de A33 solo se renderiza cuando A33 es la ficha activa.
+
+**A33.7. Nueva sección "Vacunas con toxoide tetánico", entre Atención
+del parto y Diagnóstico definitivo — ✅ cerrado**
+
+El usuario mandó el PDF de la sección (pág. 22) y pidió el mismo
+patrón ya resuelto para A35 (A35.10/A35.11: checklist horizontal de
+dosis + segmentado Sí/No para "documentado por carnet"), con dos
+diferencias explícitas: (1) A33 NO pide Distrito -- solo "Lugar de
+aplicación de la vacuna" como texto libre, sin selector de ubigeo; (2)
+el orden de "Vacunas..." y "Diagnóstico definitivo" debe quedar igual
+al de A35 (vacunas primero, diagnóstico después).
+
+**Transcripción literal, distinta de A35 en el nombre de los
+campos:** el PDF de A33 dice "DOCUMENTO CON CARNET" (no "Documentado
+por carnet" como A35) y numera las dosis "1A...5A" (no "1D...5D" como
+A35) -- se respetó la redacción propia de A33, no se copió la de A35
+pese a ser el mismo concepto. Nueva sección `orden: 5` ("Vacunas con
+toxoide tetánico", nombre del PDF), Diagnóstico definitivo pasa a
+`orden: 6`. `tablas_hijas.caso_vacuna` a `false` (mismo criterio que
+A35.10, evita que la tarjeta fija genérica de vacunas repetibles
+quede duplicada debajo).
+
+**Mecanismo, 100% reutilizado de A35.11, sin capacidad nueva:** las 5
+claves `a33_dosis_1a`..`5a` se agregaron a
+`$clavesBooleanoJuntoASuCampo` (evita el barrido a "Signos y
+síntomas"); los 2 hooks por clave que abren/cierran la fila
+horizontal "Dosis recibidas" ahora disparan con `in_array($clave,
+['a35_dosis_1d', 'a33_dosis_1a'])` (y su cierre con `..._5d`/`..._5a`)
+en vez de comparar contra una sola clave. `a33_documento_con_carnet`
+se agregó a `$clavesSegmentado2Botones` de `select.php` (mismo
+segmentado de 2 botones que ya usa A35, no el genérico `<select>`
+plano). "Lugar de aplicación de la vacuna" es un `TEXTO` genérico
+simple -- a diferencia de A35 (A35.12), no se construyó ningún
+selector de ubigeo ni se excluyó del loop genérico, porque el pedido
+explícito era que NO llevara distrito.
+
+**Verificación:** `cargar_fichas.php --apply --cie10=A33` (6/6
+secciones, 42/42 campos). Tres verificadores en verde. Byte-diff
+línea por línea de las 6 fichas revisadas (se tocó
+`secciones-clinicas.php` y `select.php`, ambos compartidos): 0
+diferencias en las 6. Playwright + captura de pantalla en A33:
+confirma el orden de tarjetas (Atención del parto → **Vacunas con
+toxoide tetánico** → Diagnóstico definitivo, igual que A35), la
+tarjeta genérica de vacunas repetibles ausente, "Documento con
+carnet" segmentado Sí/No, 1A-5A como checkboxes en fila horizontal,
+Fecha de la última dosis y Lugar de aplicación visibles, y sin ningún
+selector de ubigeo (confirmado que A33 no usa el mecanismo de A35.12).
+
+**A33.8. "Diagnóstico definitivo" propio sincroniza con el chip
+genérico "Clasificación del caso" — ✅ cerrado**
+
+El usuario pidió replicar en A33 el mismo patrón ya cerrado en A35
+(A35.13/A35.14, ver también `p350_doble_clasificacion.md`): el campo
+propio `a33_diagnostico_definitivo` (Confirmado/Descartado, sección
+"V. Diagnóstico definitivo" del PDF, A33.7) es idéntico en forma al
+"Diagnóstico definitivo" de A35 -- mismo par de valores, sin
+"Probable" ni equivalente de "Infección congénita" -- así que el
+camino de menor esfuerzo/riesgo documentado en
+`p350_doble_clasificacion.md` aplicó tal cual, sin adaptar nada:
+
+1. `UPDATE enfermedad SET opciones_clasificacion =
+   'CONFIRMADO,DESCARTADO' WHERE cie10 = 'A33'` (mismo valor que A35 y
+   Difteria/A36). Restringe los chips genéricos de A33 a solo
+   Confirmado/Descartado -- Sospechoso/Probable dejan de existir en el
+   DOM para esta ficha, así que no hace falta valor de respaldo ni
+   bloqueo por JS.
+2. `sincronizarDiagnosticoDefinitivoA33()` en `ficha.js`, calco
+   literal de `sincronizarDiagnosticoDefinitivoA35()` (gate por
+   `#cieTag` conteniendo "A33", mapeo CONFIRMADO/DESCARTADO 1:1,
+   `evaluarDependencias()` tras marcar el radio genérico).
+
+**Verificación:** los 3 verificadores en verde (no se tocó ningún
+campo_def ni sección). No aplica byte-diff de HTML -- `ficha.js` es
+JS de cliente, no afecta el render PHP. Playwright con sesión real:
+en A33, los chips genéricos disponibles quedaron `['CONFIRMADO',
+'DESCARTADO']` (confirmado el UPDATE); elegir "Confirmado" en el
+select propio marcó el chip genérico CONFIRMADO, elegir "Descartado"
+lo movió a DESCARTADO. Prueba de regresión en A35 (ficha ajena,
+disciplina de verificación habitual): mismo comportamiento intacto,
+sin interferencia entre las dos funciones (cada una gatea por su
+propio `#cieTag`).
+
+**Pendiente para cerrar el cotejo completo de A33:** "Investigador de
+campo" (pág. 22 del PDF) sigue sin cotejarse línea por línea.
+
+**Pausa (2026-08-06):** el usuario decide continuar el cotejo
+ficha-por-ficha con **Tos ferina (`A37.0`)** en otra sesión, para no
+cargar más esta. A33 queda tal cual (A33.1-A33.8 cerrados, falta solo
+"Investigador de campo" cuando se retome). Ver ítem 13 más abajo.
+
+## 13. Cotejo de Tos ferina (A37.0) — próximo, sin empezar
+
+Siguiente ficha a auditar contra el PDF, elegida por el usuario
+2026-08-06 al pausar A33. Sin cotejar todavía ninguna sección.
+Mismo flujo que las anteriores: extraer el texto de la página
+correspondiente del compendio con `pdftotext -f <pág> -l <pág>
+-layout "INFORME PARA APLICATIVO DE EPIDEMIOLOGIA_removed.pdf" -`
+(no se sabe aún qué página del PDF le corresponde -- ubicarla primero),
+comparar sección por sección contra `manifiesto_fichas.json` (clave
+`A37.0`) y el HTML renderizado real.

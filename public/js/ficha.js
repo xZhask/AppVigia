@@ -258,6 +258,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- A33: "Diagnóstico definitivo" propio -> "clasificacion" genérico ----------
+  // Mismo patrón que sincronizarDiagnosticoDefinitivoA35() arriba (A33.8): A33
+  // (Tétanos neonatal) tiene su propio campo "Diagnóstico definitivo"
+  // (Confirmado/Descartado, idéntico en forma al de A35) además del
+  // "clasificacion" genérico. enfermedad.opciones_clasificacion también se
+  // restringió a 'CONFIRMADO,DESCARTADO' para A33, así que tampoco hace
+  // falta valor de respaldo: Sospechoso/Probable no existen en el DOM.
+  function sincronizarDiagnosticoDefinitivoA33() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('A33') === -1) return;
+
+    var selectPropio = document.querySelector('[name="' + campoPorClave('a33_diagnostico_definitivo') + '"]');
+    if (!selectPropio || !selectPropio.value) return;
+
+    var EQUIVALENTES_DIAGNOSTICO_A33 = { CONFIRMADO: 'CONFIRMADO', DESCARTADO: 'DESCARTADO' };
+    var valorGenerico = EQUIVALENTES_DIAGNOSTICO_A33[selectPropio.value];
+    if (!valorGenerico) return;
+
+    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + valorGenerico + '"]');
+    if (radioGenerico && !radioGenerico.checked) {
+      radioGenerico.checked = true;
+      evaluarDependencias();
+    }
+  }
+
+  sincronizarDiagnosticoDefinitivoA33();
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === campoPorClave('a33_diagnostico_definitivo')) {
+      sincronizarDiagnosticoDefinitivoA33();
+    }
+  });
+
   // ---------- A35: "No recuerda día" cambia Fecha de inicio de lesión a mm/aaaa ----------
   // Ítem 1 del PDF de A35 (pág. 23): "NO RECUERDA DIA ( )" junto a "FECHA DE
   // INICIO DE LESION" -- el día exacto no siempre se recuerda, así que el

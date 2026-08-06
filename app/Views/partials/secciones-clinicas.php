@@ -98,6 +98,17 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // clave en $renderizarCampos más abajo.
         'a35_distrito_probable_infeccion',
     ],
+    'A33' => [
+        // notificacion-fechas-a33.php -- fechas + N.° de caso + Captación
+        // del caso (Notificación regular/Búsqueda activa/Defunción). DISA/
+        // RED/Nombre del establecimiento del PDF NO se capturan como
+        // campo_def: son datos constantes del establecimiento ya elegido en
+        // "Establecimiento (EESS)" (red_salud.nombre/diresa), mismo criterio
+        // que "Institución informante" de A35 (A35.1).
+        'a33_caso_n', 'a33_fecha_de_conocimiento_local', 'a33_fecha_de_investigacion_visita_domiciliaria',
+        'a33_fecha_de_notificacion_ee_ss_a_red_microrred', 'a33_fecha_de_notificacion_red_microrred_a_disa',
+        'a33_fecha_de_notificacion_dge', 'a33_captacion_del_caso',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -111,6 +122,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'O95' => ['Datos de notificación'],
     'P35.0' => ['Datos de notificación e investigación del caso', 'Clasificación del caso'],
     'A35' => ['Datos de notificación e investigación del caso'],
+    'A33' => ['Datos de notificación e investigación del caso'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
@@ -192,7 +204,22 @@ $campoDistritoInfeccionA35 = (($enfermedad['cie10'] ?? '') === 'A35')
     ? $campo('a35_distrito_probable_infeccion')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje): void {
+// "Condiciones de alta"/"Fecha de alta" (A33/A35) solo tienen sentido si el
+// paciente estuvo hospitalizado -- además de depender de Fallecido=No (ver
+// PENDIENTES.md, discusión con el usuario sobre Hospitalizado vs Fallecido).
+// El motor de dependencias ya cascada un .dep-wrap[hidden] a lo que tiene
+// adentro (ficha.js evaluarDependencias(), línea ~81), así que anidar un
+// .dep-wrap de Hospitalizado=Sí alrededor del/de los .dep-wrap ya existentes
+// de Fallecido=No logra el AND (Hospitalizado=Sí Y Fallecido=No) sin JS
+// nuevo. Mismo motivo que $campoFechaUltSeg para precalcular afuera.
+$campoHospitalizadoA33 = (($enfermedad['cie10'] ?? '') === 'A33')
+    ? $campo('a33_hospitalizado')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+$campoHospitalizadoA35 = (($enfermedad['cie10'] ?? '') === 'A35')
+    ? $campo('a35_hospitalizado')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje): void {
     $campos = CampoDef::porSeccion($seccionId);
     // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
     // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
@@ -214,7 +241,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // el checklist "Dosis recibidas" de toxoide tetánico (PENDIENTES.md
     // A35.11), no un síntoma; se agrupan aparte en una fila horizontal
     // propia (ver el hook por clave más abajo), no en "Signos y síntomas".
-    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d'];
+    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a'];
     $esBooleanoJuntoASuCampo = fn($c) => in_array($c['id'], $idsPadre) || in_array($c['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true);
     $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !$esBooleanoJuntoASuCampo($c));
     $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || $esBooleanoJuntoASuCampo($c));
@@ -239,7 +266,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if (($campo['clave'] ?? '') === 'b05_hospitalizado') {
                 ?></div><div class="eyebrow" style="margin-bottom:12px">Condición del paciente</div><div class="fields" style="margin-bottom:16px"><?php
             }
-            if (($campo['clave'] ?? '') === 'a35_dosis_1d') {
+            if (in_array($campo['clave'] ?? '', ['a35_dosis_1d', 'a33_dosis_1a'], true)) {
                 ?></div><div class="eyebrow" style="margin-bottom:10px">Dosis recibidas</div><div class="fields" style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px"><?php
             }
             // A35.12: "Distrito" (excluido arriba del loop genérico vía
@@ -266,6 +293,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 require __DIR__ . '/selector-ubigeo.php';
                 ?>
                 </div><div class="fields" style="margin-bottom:16px"><?php
+            }
+            $abreWrapHospitalizadoAlta = in_array($campo['clave'] ?? '', ['a33_condiciones_de_alta', 'a35_fecha_de_alta'], true);
+            if ($abreWrapHospitalizadoAlta) {
+                $campoHospitalizadoAlta = (($campo['clave'] ?? '') === 'a33_condiciones_de_alta') ? $campoHospitalizadoA33 : $campoHospitalizadoA35;
+                ?><div class="dep-wrap" data-depende-de="<?= e($campoHospitalizadoAlta['name']) ?>" data-valor-activador="SI"><?php
             }
             $tieneDependencia = !empty($campo['depende_de']);
             if ($tieneDependencia):
@@ -294,9 +326,12 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 }
             endif;
             if ($tieneDependencia): ?></div><?php endif;
+            if (in_array($campo['clave'] ?? '', ['a33_fecha_de_alta', 'a35_fecha_de_alta'], true)) {
+                ?></div><?php // cierra el .dep-wrap de Hospitalizado=Sí abierto arriba
+            }
             $tipoAnterior = $campo['tipo'];
 
-            if (($campo['clave'] ?? '') === 'a35_dosis_5d') {
+            if (in_array($campo['clave'] ?? '', ['a35_dosis_5d', 'a33_dosis_5a'], true)) {
                 ?></div><div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>"><?php
             }
 

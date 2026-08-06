@@ -74,7 +74,7 @@ $es = $estados[$caso['estado']];
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35'], true) ? 'hidden' : '' ?>>
+          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33'], true) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
@@ -83,6 +83,7 @@ $es = $estados[$caso['estado']];
           <?php require __DIR__ . '/../partials/notificacion-fechas-b26.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-p350.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a35.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-a33.php'; ?>
         </div>
       </div>
 

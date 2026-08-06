@@ -4050,40 +4050,98 @@
                 "caso_contacto": false,
                 "caso_muestra": false,
                 "caso_viaje": false,
-                "caso_vacuna": true
+                "caso_vacuna": false
             },
             "nucleo_omitidos": [
-                "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "etnia",
+                "nombre_tutor",
+                "celular_tutor",
+                "direccion"
             ],
             "secciones": [
                 {
-                    "nombre": "Cuadro clínico",
+                    "nombre": "Datos de notificación e investigación del caso",
                     "orden": 1,
                     "campos": [
                         {
-                            "clave": "a33_fecha_de_inicio_de_sintomas",
-                            "etiqueta": "Fecha de inicio de síntomas",
-                            "tipo": "FECHA",
+                            "clave": "a33_caso_n",
+                            "etiqueta": "Caso N.°",
+                            "tipo": "TEXTO",
                             "orden": 1
                         },
                         {
-                            "clave": "a33_succion_normal_durante_los_2_primeros_dias_de_vida",
-                            "etiqueta": "¿Succión normal durante los 2 primeros días de vida?",
-                            "tipo": "BOOLEANO",
+                            "clave": "a33_fecha_de_conocimiento_local",
+                            "etiqueta": "Fecha de conocimiento local",
+                            "tipo": "FECHA",
                             "orden": 2
                         },
                         {
-                            "clave": "a33_llanto_normal_durante_los_2_primeros_dias_de_vida",
-                            "etiqueta": "¿Llanto normal durante los 2 primeros días de vida?",
-                            "tipo": "BOOLEANO",
+                            "clave": "a33_fecha_de_investigacion_visita_domiciliaria",
+                            "etiqueta": "Fecha de investigación (visita domiciliaria)",
+                            "tipo": "FECHA",
                             "orden": 3
+                        },
+                        {
+                            "clave": "a33_fecha_de_notificacion_ee_ss_a_red_microrred",
+                            "etiqueta": "Fecha de notificación EE SS a Red/Microrred",
+                            "tipo": "FECHA",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "a33_fecha_de_notificacion_red_microrred_a_disa",
+                            "etiqueta": "Fecha de notificación Red/Microrred a DISA",
+                            "tipo": "FECHA",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "a33_fecha_de_notificacion_dge",
+                            "etiqueta": "Fecha de notificación DGE",
+                            "tipo": "FECHA",
+                            "orden": 6
+                        },
+                        {
+                            "clave": "a33_captacion_del_caso",
+                            "etiqueta": "Captación del caso",
+                            "tipo": "SELECT",
+                            "orden": 7,
+                            "opciones": [
+                                "Notificación regular",
+                                "Búsqueda activa",
+                                "Defunción"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Cuadro clínico",
+                    "orden": 2,
+                    "campos": [
+                        {
+                            "clave": "a33_succion_normal_durante_los_2_primeros_dias_de_vida",
+                            "etiqueta": "Succión normal durante los 2 primeros días de vida",
+                            "tipo": "SELECT",
+                            "orden": 1,
+                            "opciones": [
+                                "Sí",
+                                "No"
+                            ]
+                        },
+                        {
+                            "clave": "a33_llanto_normal_durante_los_2_primeros_dias_de_vida",
+                            "etiqueta": "Llanto normal durante los 2 primeros días de vida",
+                            "tipo": "SELECT",
+                            "orden": 2,
+                            "opciones": [
+                                "Sí",
+                                "No"
+                            ]
                         },
                         {
                             "clave": "a33_signos_y_sintomas",
                             "etiqueta": "Signos y síntomas",
                             "tipo": "GRUPO_SI_NO",
-                            "orden": 4,
+                            "orden": 3,
                             "opciones": [
                                 "Fiebre",
                                 "Trismus (no succiona)",
@@ -4098,13 +4156,13 @@
                             "clave": "a33_complicaciones",
                             "etiqueta": "Complicaciones",
                             "tipo": "TEXTAREA",
-                            "orden": 5
+                            "orden": 4
                         },
                         {
                             "clave": "a33_atendido_por",
                             "etiqueta": "Atendido por",
                             "tipo": "SELECT",
-                            "orden": 6,
+                            "orden": 5,
                             "opciones": [
                                 "Médico",
                                 "Enfermera",
@@ -4115,56 +4173,77 @@
                         {
                             "clave": "a33_hospitalizado",
                             "etiqueta": "Hospitalizado",
-                            "tipo": "BOOLEANO",
-                            "orden": 7
+                            "tipo": "SELECT",
+                            "orden": 6,
+                            "opciones": [
+                                "Sí",
+                                "No"
+                            ]
                         },
                         {
                             "clave": "a33_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
-                            "orden": 8
+                            "orden": 7,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a33_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
-                            "orden": 9
+                            "orden": 8,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a33_n_h_c",
                             "etiqueta": "N.° H.C.",
                             "tipo": "TEXTO",
-                            "orden": 10
+                            "orden": 9,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a33_condiciones_de_alta",
                             "etiqueta": "Condiciones de alta",
                             "tipo": "TEXTO",
-                            "orden": 11
+                            "orden": 10,
+                            "depende_de": "Fallecido",
+                            "valor_activador": "NO"
                         },
                         {
                             "clave": "a33_fecha_de_alta",
                             "etiqueta": "Fecha de alta",
                             "tipo": "FECHA",
-                            "orden": 12
+                            "orden": 11,
+                            "depende_de": "Fallecido",
+                            "valor_activador": "NO"
                         },
                         {
                             "clave": "a33_fallecido",
                             "etiqueta": "Fallecido",
-                            "tipo": "BOOLEANO",
-                            "orden": 13
+                            "tipo": "SELECT",
+                            "orden": 12,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Ignorado"
+                            ]
                         },
                         {
                             "clave": "a33_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
-                            "orden": 14
+                            "orden": 13,
+                            "depende_de": "Fallecido",
+                            "valor_activador": "SI"
                         }
                     ]
                 },
                 {
                     "nombre": "Datos de la madre",
-                    "orden": 2,
+                    "orden": 3,
                     "campos": [
                         {
                             "clave": "a33_nombres_y_apellidos_de_la_madre",
@@ -4224,11 +4303,11 @@
                 },
                 {
                     "nombre": "Atención del parto",
-                    "orden": 3,
+                    "orden": 4,
                     "campos": [
                         {
                             "clave": "a33_atendido_por_parto",
-                            "etiqueta": "Atendido por",
+                            "etiqueta": "Atendido por (parto)",
                             "tipo": "SELECT",
                             "orden": 1,
                             "opciones": [
@@ -4241,28 +4320,94 @@
                             ]
                         },
                         {
+                            "clave": "a33_atendido_por_parto_otro",
+                            "etiqueta": "Atendido por (parto, especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 2,
+                            "depende_de": "Atendido por (parto)",
+                            "valor_activador": "OTRO"
+                        },
+                        {
                             "clave": "a33_instrumento_utilizado_para_cortar_el_cordon_umbilic",
                             "etiqueta": "Instrumento utilizado para cortar el cordón umbilical",
                             "tipo": "TEXTO",
-                            "orden": 2
+                            "orden": 3
                         },
                         {
                             "clave": "a33_tratamiento_aplicado_al_munon_umbilical_en_el_domic",
                             "etiqueta": "Tratamiento aplicado al muñón umbilical en el domicilio",
                             "tipo": "TEXTAREA",
-                            "orden": 3
+                            "orden": 4
                         },
                         {
                             "clave": "a33_lugar_del_parto_establecimiento_de_salud",
                             "etiqueta": "Lugar del parto: establecimiento de salud",
                             "tipo": "TEXTO",
+                            "orden": 5
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Vacunas con toxoide tetánico",
+                    "orden": 5,
+                    "campos": [
+                        {
+                            "clave": "a33_documento_con_carnet",
+                            "etiqueta": "Documento con carnet",
+                            "tipo": "SELECT",
+                            "orden": 1,
+                            "opciones": [
+                                "Sí",
+                                "No"
+                            ]
+                        },
+                        {
+                            "clave": "a33_dosis_1a",
+                            "etiqueta": "1A",
+                            "tipo": "BOOLEANO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a33_dosis_2a",
+                            "etiqueta": "2A",
+                            "tipo": "BOOLEANO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a33_dosis_3a",
+                            "etiqueta": "3A",
+                            "tipo": "BOOLEANO",
                             "orden": 4
+                        },
+                        {
+                            "clave": "a33_dosis_4a",
+                            "etiqueta": "4A",
+                            "tipo": "BOOLEANO",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "a33_dosis_5a",
+                            "etiqueta": "5A",
+                            "tipo": "BOOLEANO",
+                            "orden": 6
+                        },
+                        {
+                            "clave": "a33_fecha_de_la_ultima_dosis",
+                            "etiqueta": "Fecha de la última dosis",
+                            "tipo": "FECHA",
+                            "orden": 7
+                        },
+                        {
+                            "clave": "a33_lugar_de_aplicacion_de_la_vacuna",
+                            "etiqueta": "Lugar de aplicación de la vacuna",
+                            "tipo": "TEXTO",
+                            "orden": 8
                         }
                     ]
                 },
                 {
                     "nombre": "Diagnóstico definitivo",
-                    "orden": 4,
+                    "orden": 6,
                     "campos": [
                         {
                             "clave": "a33_diagnostico_definitivo",
