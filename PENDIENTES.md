@@ -2832,3 +2832,264 @@ dependientes ocultos; "Otro" revela "especificar"; Hospitalizado
 Sí/No muestra/oculta los 4 campos de hospitalización; Fallecido
 Sí/No/Ignorado muestra Fecha de defunción / Fecha de alta / ninguna
 respectivamente -- las 9 aserciones pasaron, cero errores de consola.
+
+**A35.10. Reordena "Antecedente epidemiológico" antes de "Diagnóstico
+definitivo" y lo reconstruye contra el PDF real — ✅ cerrado**
+
+El usuario mandó la página "IV. ANTECEDENTE EPIDEMIOLOGICO" del PDF:
+en el orden real del documento va justo después de "Atención", pero
+en el formulario web aparecía "Diagnóstico definitivo" ahí (el
+manifiesto de A35 solo tenía 4 secciones: Notificación, Cuadro
+clínico, Atención, Diagnóstico definitivo -- "Antecedente
+epidemiológico" no existía como sección propia). Además, la ficha SÍ
+tenía activada la tarjeta fija genérica "4. Antecedentes
+epidemiológicos" (`tablas_hijas.caso_vacuna: true` desde que se cargó
+A35 por primera vez, heredado del scaffold del lote), pero esa
+tarjeta usa `tablas-hijas/vacunas.php` -- una tabla de filas
+repetibles (vacuna/dosis/fecha/fabricante/lote/...) pensada para
+antecedentes vacunales genéricos, que no se parece en nada a la caja
+fija del PDF de A35 ("Documentado por carnet: SI/NO" + 5 casillas de
+fecha "1D...5D" + "Fecha última dosis") -- y encima esa tarjeta fija
+SIEMPRE se renderiza DESPUÉS de todas las secciones del manifiesto
+(estructuralmente, en `nueva/index.php`/`editar.php`), así que ni
+reordenando el manifiesto hubiera aparecido cerca de "Atención". Por
+eso el usuario la describió como "no muy cercanos a lo de la ficha".
+
+**Solución:** en vez de usar la tarjeta fija genérica, se construyó
+"Antecedente epidemiológico" como sección propia del manifiesto de
+A35 (`orden: 4`, entre Atención y Diagnóstico definitivo que pasó a
+`orden: 5`) con 10 campos nuevos transcritos del PDF: Distrito,
+Localidad, Dirección N.° (lugar probable de infección -- 3 líneas en
+blanco del PDF, no la tabla repetible genérica de
+`tablas-hijas/lugar-infeccion.php`, pensada para múltiples lugares;
+acá el PDF solo pide uno), Documentado por carnet (SELECT Sí/No), 1D
+a 5D (5 `FECHA` independientes, una por casilla del PDF) y Fecha
+última dosis. Se puso `tablas_hijas.caso_vacuna: false` para A35 (ya
+no hace falta la tabla repetible) -- con eso, la tarjeta fija
+genérica queda `hidden` para A35 (ninguno de sus otros disparadores
+--contactos/viajes/lugar_infeccion/roles_sujeto-- aplica tampoco),
+sin dejar una tarjeta duplicada o vacía más abajo en el formulario.
+
+**Sin condicionales, a propósito:** el usuario aclaró "CONDICIONALES:
+No existen dependencias explícitas en la ficha" -- los 10 campos son
+independientes entre sí, ningún `depende_de`. También descartó
+explícitamente ocultar 1D-5D detrás de "Documentado por carnet" ("si
+Documentado por carnet = No, permitir igualmente registrar las
+dosis"). Las 2 "validaciones recomendadas" que mandó (si hay Fecha
+última dosis debería haber al menos una dosis; permitir dosis sin
+carnet) son advertencias de calidad de dato, no reglas duras -- no se
+programó ninguna validación server-side nueva (ningún otro campo de
+esta ficha hace ese tipo de validación cruzada tampoco); si el
+usuario la quiere exigida de verdad, es un pedido aparte.
+
+**Verificación:** 3 verificadores en verde (A35 38/38, sin huérfanos
+ni claves faltantes). `verificar_render.php` completo: solo A35
+cambió. Playwright: orden de tarjetas visibles confirmado --
+Notificación, Datos del persona, Cuadro clínico, Atención,
+**Antecedente epidemiológico**, Diagnóstico definitivo, Investigador,
+Clasificación del caso (la tarjeta fija genérica y "Laboratorio" ya
+no aparecen, quedaron `hidden`); los 10 campos en el orden pedido.
+Ronda `crear()`→BD→`editar()` por HTTP directo con datos en los 7
+campos de texto/fecha: HTTP 302, los 7 valores confirmados en
+`caso_valor` tal cual se enviaron, `editar()` los recarga
+correctamente en sus `value=`; caso de prueba borrado después.
+
+**A35.11. Ajustes visuales de "Antecedente epidemiológico": dosis
+como checklist, "Documentado por carnet" como radio Sí/No — ✅
+cerrado**
+
+El usuario aclaró que el PDF es ambiguo pero no pide una fecha por
+cada dosis (1D-5D): pide MARCAR qué dosis se recibieron, y una sola
+"Fecha de la última dosis" aparte -- mandó un mockup ASCII con los 5
+checkboxes en una fila y "Documentado por carnet" como radio Sí/No
+(no un `<select>`).
+
+**Dosis 1D-5D:** de `FECHA` a `BOOLEANO` (checkbox) en el manifiesto.
+Se suman a `$clavesBooleanoJuntoASuCampo`
+(`secciones-clinicas.php`, mecanismo creado en A35.9 para
+`a35_no_recuerda_dia`) para que NO se barran a "Signos y síntomas" --
+son un checklist de dosis, no un síntoma. Además, dos hooks nuevos por
+CLAVE (mismo patrón ya usado para `b05_hospitalizado`/eyebrow
+"Condición del paciente"): al llegar a `a35_dosis_1d` se cierra el
+`.fields` en curso y se abre uno nuevo con `display:flex` (fila
+horizontal, no grilla de 2 columnas) bajo el eyebrow "Dosis
+recibidas"; al terminar `a35_dosis_5d` se cierra esa fila y se reabre
+un `.fields` normal para "Fecha última dosis", que sigue siendo
+`FECHA` sin cambios.
+
+**"Documentado por carnet":** seguía siendo `SELECT` (Sí/No, creado en
+A35.10), pero con solo 2 opciones no activaba el control segmentado
+que `select.php` ya tenía para 3 opciones Sí/No/Desc (`o95_...`,
+`a35_fallecido`, etc.) -- se renderizaba como `<select>` plano. Se
+agregó una segunda variante segmentada de 2 botones (sin "Desc.") en
+`select.php`, pero **filtrada por CLAVE explícita**
+(`$clavesSegmentado2Botones = ['a35_documentado_por_carnet']`), no por
+"cualquier SELECT de 2 opciones Sí/No" -- ya existen 9+ campos así en
+A36/A80/etc. (`a36_antibiotico_antes_del_ingreso`,
+`a80_musculos_respiratorios`, `a80_verificada_con_carne`, ...),
+todos en fichas ya revisadas, que deben seguir viéndose como
+`<select>` normal. Confirmado con byte-diff: las 6 fichas ya
+revisadas quedan idénticas pese a que `select.php` es código
+compartido.
+
+**Verificación:** 3 verificadores en verde. Byte-diff de las 6 fichas
+revisadas: idénticas (el cambio en `select.php`, código compartido,
+no las afecta por estar filtrado por clave). Playwright: captura con
+1D y 2D marcados coincide con el mockup del usuario. Ronda
+`crear()`→BD: `a35_documentado_por_carnet=SI`, `a35_dosis_1d=1`,
+`a35_dosis_2d=1`, `a35_dosis_3d/4d/5d=0` (sin marcar),
+`a35_fecha_ultima_dosis=2020-02-15` -- todo tal cual se envió; caso de
+prueba borrado después.
+
+**Pendiente, sin implementar todavía -- pedido de análisis, no de
+código:** el usuario preguntó por añadir Departamento/Provincia como
+ayuda visual para acotar "Distrito" (que hoy es TEXTO libre), dejando
+claro que en BD solo debe quedar el Distrito. Ver el mensaje de
+respuesta al usuario para las opciones evaluadas (reusar el selector
+de ubigeo real con FK vs. un selector A35-propio que solo postea el
+nombre del distrito) -- ninguna se implementó, queda pendiente de que
+el usuario elija el enfoque.
+
+**A35.12. Departamento/Provincia como ayuda visual del Distrito real
+(selector-ubigeo.php), solo el Distrito queda en BD — ✅ cerrado**
+
+El usuario eligió la opción recomendada de A35.11 (reusar el selector
+real de ubigeo, resolviendo el `distrito_id` a texto al guardar). Al
+implementarlo apareció una segunda mitad del mismo problema: para que
+`editar()` pueda reabrir el selector con el distrito ya elegido, hay
+que reconstruir el `distrito_id` a partir del nombre guardado --
+mismo tipo de resolución, pero en la dirección contraria. Se agregó
+`Distrito::buscarPorNombre()` para eso (nombre no es único a nivel
+nacional -- varios departamentos repiten nombre de distrito -- se
+resuelve al primero por id, determinista; no introduce más
+ambigüedad que la que ya tiene guardar solo el nombre, que es
+justamente lo que pidió el usuario).
+
+**Mecanismo:**
+1. `a35_distrito_probable_infeccion` se agregó a
+   `$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA['A35']` -- el filtro
+   genérico de `$renderizarCampos` (línea ~186, corre para TODA
+   sección de TODA ficha, no solo las de `$SECCIONES_CON_PARTIAL_A_MEDIDA`)
+   ya lo excluye del loop normal sin tocar nada más.
+2. Prefetch `$campoDistritoInfeccionA35 = $campo('a35_distrito_probable_infeccion')`
+   fuera del loop (mismo patrón que `$campoFechaUltSeg` de B05) --
+   hace falta su valor guardado (el nombre) antes de llegar a la
+   posición del campo en el loop.
+3. Hook por clave en `a35_localidad_probable_infeccion` (ahora el
+   primer campo restante de la sección, ya que Distrito -- orden 1 --
+   quedó excluido): resuelve el nombre guardado vía
+   `Distrito::buscarPorNombre()`, arma el contexto con
+   `contextoUbigeo($distritoResuelto['id'])` (mismo helper que ya usa
+   el domicilio del paciente) y `require selector-ubigeo.php` con
+   3 `name=` literales propios (`a35_lugar_infeccion_departamento_id`,
+   `_provincia_id`, `_distrito_id` -- prefijo `a35lugarinf-ubigeo`
+   para no colisionar con el `pac-ubigeo` del domicilio del paciente
+   en la misma página) y `$distritoRequerido = false`.
+4. `CasosController::validarCamposDinamicos()`: nuevo caso especial
+   por clave (mismo patrón que los 3 de O95) -- lee
+   `$_POST['a35_lugar_infeccion_distrito_id']`, resuelve con
+   `Distrito::buscarPorId()` y guarda `$distrito['nombre']` en el slot
+   de `a35_distrito_probable_infeccion`. Departamento/Provincia
+   posteados NUNCA se leen -- son ayuda visual pura, tal como pidió el
+   usuario ("solo se tomará en cuenta el distrito").
+5. `verificar_render.php`: se sumó la clave a
+   `CLAVES_MECANISMO_NO_ESTANDAR` (mismo registro que ya tienen las 3
+   claves de O95 y `b26_contactos_por_lugar`) para que la corrida
+   siga en verde en vez de marcarla huérfana.
+
+**Verificación:** 3 verificadores en verde (A35 38/38, 1 "no estándar
+OK", 0 huérfanos). Byte-diff de las 6 fichas revisadas: idénticas
+pese a tocar `secciones-clinicas.php` y `CasosController.php`
+(compartidos). Playwright: cascada Departamento→Provincia→Distrito
+funciona en un navegador real (Lima→Lima→San Juan de Lurigancho).
+Ronda `crear()`→BD→`editar()` por HTTP directo: solo
+`a35_distrito_probable_infeccion = "San Juan de Lurigancho"` queda en
+`caso_valor` (ningún rastro de departamento/provincia); `editar()`
+reconstruye los 3 `<select>` con las 3 opciones correctas
+preseleccionadas (Lima/Lima/San Juan de Lurigancho, ids
+15/1501/150132) parseando el HTML servido. Caso de prueba borrado
+después.
+
+**A35.13. "Diagnóstico definitivo" propio sincroniza "Clasificación
+del caso" genérico — ✅ cerrado**
+
+El usuario mandó una captura mostrando "Diagnóstico definitivo"
+(campo propio de A35, Confirmado/Descartado) y "Clasificación del
+caso" (chips genéricos Sospechoso/Probable/Confirmado/Descartado, al
+final de todas las fichas) desalineados -- pidió que se sincronicen,
+exactamente el mismo problema ya resuelto para P35.0
+([[p350_doble_clasificacion]]) y A80 (`sincronizarDescartadoPfa()`).
+
+**Mecanismo:** `sincronizarDiagnosticoDefinitivoA35()` nueva en
+`ficha.js`, calco directo de `sincronizarClasificacionP350()` (gateada
+por `cieTag`, mismo criterio "vacío cae a Sospechoso"). A35 solo
+tiene 2 valores con equivalente directo (Confirmado/Descartado, sin
+"Probable" ni el equivalente de "Infección congénita" que sí tiene
+P35.0). Cero cambios en PHP: el campo propio ya renderizaba como
+`<select>` con buscador (no activa el segmentado 2-botones de A35.11,
+que solo aplica a `a35_documentado_por_carnet`).
+
+**Verificación:** Playwright confirma el ciclo Confirmado→CONFIRMADO,
+Descartado→DESCARTADO en el radio genérico. Solo se tocó `ficha.js`
+(compartido): mismo patrón de verificación ya usado en A35.7/A35.9 --
+diferencia esperada limitada al `?v=` de cache-busting.
+
+**Pedido de evaluación, sin implementar (respuesta al usuario, no
+código):** el usuario preguntó por el costo de eliminar la
+duplicación de raíz -- conservar SOLO la sección de clasificación
+final propia de cada ficha (con su nombre y opciones particulares) al
+final del formulario, y quitar el "clasificacion" genérico de chips
+en las 24 fichas. Ver la respuesta al usuario en la conversación para
+el análisis completo; no se tocó nada de esto todavía, es una
+decisión de alcance mayor (afecta reportes/paneles/filtros que leen
+`caso.clasificacion`, y a todas las fichas ya revisadas más las que
+faltan).
+
+**A35.14. Restringe "Clasificación del caso" genérico a
+Confirmado/Descartado para A35 — ✅ cerrado**
+
+El usuario confirmó que la sincronización de A35.13 funciona, pero
+notó que "Sospechoso" y "Probable" seguían apareciendo como chips
+elegibles en "Clasificación del caso" -- nada impedía hacer clic ahí
+directamente después de que la sincronización ya hubiera marcado
+Confirmado/Descartado, dejando una combinación que no tiene sentido
+para Tétanos (su "Diagnóstico definitivo" real, ítem III del PDF,
+solo tiene esos dos desenlaces).
+
+**No hizo falta código nuevo.** `clasificacion-chips.php` ya
+documentaba el mecanismo exacto para esto:
+`enfermedad.opciones_clasificacion` (columna VARCHAR CSV) restringe
+las 4 opciones genéricas a un subconjunto -- Difteria (A36) ya lo usa
+(`'CONFIRMADO,DESCARTADO'`, mismo desenlace binario que A35). Se
+aplicó el mismo valor a A35 con un `UPDATE enfermedad SET
+opciones_clasificacion = 'CONFIRMADO,DESCARTADO' WHERE cie10 = 'A35'`
+-- columna fuera del alcance de `cargar_fichas.php` (su UPDATE de
+`enfermedad` no la incluye en la lista de columnas), así que sobrevive
+sin problema a futuras recargas del manifiesto de A35.
+
+Con eso, `opcionesClasificacionPara($enfermedad)` (que ya filtraba por
+esta columna) deja de ofrecer Sospechoso/Probable para A35 en
+absoluto -- no hay combinación posible que discrepe, porque esas dos
+opciones ni existen en el DOM. Se simplificó
+`sincronizarDiagnosticoDefinitivoA35()` en `ficha.js`: ya no hace
+falta el respaldo "vacío cae a Sospechoso" (ese valor ya no es
+seleccionable para A35), simplemente no hace nada si "Diagnóstico
+definitivo" está vacío, dejando el chip en lo que ya esté marcado
+(por defecto, "Confirmado" -- primer valor de la lista restringida,
+mismo comportamiento que ya tenía Difteria de antes).
+
+**Verificación:** Playwright confirma que "Clasificación del caso"
+solo ofrece 2 chips (Confirmado/Descartado) y que el ciclo
+Confirmado↔Descartado sigue sincronizando igual. `verificar_fichas.php`
+en verde (cambio de BD fuera del manifiesto, no afecta secciones/
+campos). Byte-diff de las 6 fichas revisadas: idénticas (cambio de
+BD aislado a la fila de A35; el único archivo compartido tocado,
+`ficha.js`, solo cambia su comentario y un `return` temprano dentro
+de una función ya gateada por `cieTag.indexOf('A35')`).
+
+Con esto, A35 queda al 100% para lo trabajado hasta ahora (fechas,
+Cuadro clínico, Atención, Antecedente epidemiológico, Diagnóstico
+definitivo↔Clasificación del caso). Sigue pendiente cotejar "I. Datos
+del paciente" campo por campo contra el PDF, y el resto de "III.
+Información clínica" (Investigador).
+

@@ -966,6 +966,22 @@ class CasosController extends Controller
                 $paraGuardar[$campoId] = $valTipoFicha;
                 continue;
             }
+            // A35.12: el selector real Departamento/Provincia/Distrito de
+            // "Lugar probable de infección" postea distrito_id (no
+            // campo_<id>, ver secciones-clinicas.php); departamento/provincia
+            // son solo ayuda visual y no se leen acá -- solo el nombre del
+            // distrito llega a este campo_def, que sigue siendo TEXTO.
+            if ($campo['clave'] === 'a35_distrito_probable_infeccion') {
+                $distritoInfeccion = !empty($_POST['a35_lugar_infeccion_distrito_id'])
+                    ? \App\Models\Distrito::buscarPorId($_POST['a35_lugar_infeccion_distrito_id'])
+                    : null;
+                $valDistritoInfeccion = $distritoInfeccion['nombre'] ?? '';
+                $valoresCampos[$campoId] = $valDistritoInfeccion;
+                if ($valDistritoInfeccion !== '') {
+                    $paraGuardar[$campoId] = $valDistritoInfeccion;
+                }
+                continue;
+            }
             $tipo = $campo['tipo'];
             $obligatorio = (int) $campo['obligatorio'] === 1;
             $nombreCampo = 'campo_' . $campoId;

@@ -220,6 +220,44 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- A35: "Diagnóstico definitivo" propio -> "clasificacion" genérico ----------
+  // Mismo patrón que sincronizarClasificacionP350() arriba: A35 tiene su
+  // propio campo "Diagnóstico definitivo" (Confirmado/Descartado, sección
+  // "III. Diagnóstico definitivo" del PDF) además del "clasificacion"
+  // genérico compartido (chips al final del formulario). Sin esto, elegir
+  // Confirmado/Descartado en el campo propio no movía el chip inferior.
+  // A diferencia de P35.0/A80, acá NO hace falta un valor de respaldo para
+  // cuando el campo propio está vacío: enfermedad.opciones_clasificacion ya
+  // restringe los chips genéricos de A35 a solo Confirmado/Descartado
+  // (mismo mecanismo que Difteria, ver PENDIENTES.md A35.14) -- "Sospechoso"
+  // y "Probable" ni siquiera existen en el DOM para esta ficha, así que no
+  // hay combinación posible que discrepe con el campo propio.
+  function sincronizarDiagnosticoDefinitivoA35() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('A35') === -1) return;
+
+    var selectPropio = document.querySelector('[name="' + campoPorClave('a35_diagnostico_definitivo') + '"]');
+    if (!selectPropio || !selectPropio.value) return;
+
+    var EQUIVALENTES_DIAGNOSTICO_A35 = { CONFIRMADO: 'CONFIRMADO', DESCARTADO: 'DESCARTADO' };
+    var valorGenerico = EQUIVALENTES_DIAGNOSTICO_A35[selectPropio.value];
+    if (!valorGenerico) return;
+
+    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + valorGenerico + '"]');
+    if (radioGenerico && !radioGenerico.checked) {
+      radioGenerico.checked = true;
+      evaluarDependencias();
+    }
+  }
+
+  sincronizarDiagnosticoDefinitivoA35();
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === campoPorClave('a35_diagnostico_definitivo')) {
+      sincronizarDiagnosticoDefinitivoA35();
+    }
+  });
+
   // ---------- A35: "No recuerda día" cambia Fecha de inicio de lesión a mm/aaaa ----------
   // Ítem 1 del PDF de A35 (pág. 23): "NO RECUERDA DIA ( )" junto a "FECHA DE
   // INICIO DE LESION" -- el día exacto no siempre se recuerda, así que el

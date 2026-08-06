@@ -92,6 +92,11 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         'a35_caso_n', 'a35_fecha_de_conocimiento_local', 'a35_fecha_de_investigacion_visita_domiciliaria',
         'a35_fecha_de_notificacion_ee_ss_a_red_microrred', 'a35_fecha_de_notificacion_red_microrred_a_disa',
         'a35_tipo', 'a35_fuente', 'a35_fuente_otra', 'a35_trabajador_diagnostico_inicial',
+        // "Antecedente epidemiológico" (PENDIENTES.md A35.12): el resto de la
+        // sección se pinta genérico, solo "Distrito" se reemplaza por el
+        // selector Departamento/Provincia/Distrito real -- ver el hook por
+        // clave en $renderizarCampos más abajo.
+        'a35_distrito_probable_infeccion',
     ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
@@ -178,7 +183,16 @@ $campoFechaUltSeg = (($enfermedad['cie10'] ?? '') === 'B05')
     ? $campo('b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje): void {
+// A35.12: "Distrito" de "Antecedente epidemiológico" se reemplaza por el
+// selector real Departamento/Provincia/Distrito (mismo motivo que
+// $campoFechaUltSeg: hace falta su valor guardado -- el nombre del
+// distrito, no un id -- para reconstruir el contexto del selector antes
+// de llegar a su posición en el loop).
+$campoDistritoInfeccionA35 = (($enfermedad['cie10'] ?? '') === 'A35')
+    ? $campo('a35_distrito_probable_infeccion')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje): void {
     $campos = CampoDef::porSeccion($seccionId);
     // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
     // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
@@ -196,8 +210,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // mes/año, ver sincronizarNoRecuerdaDiaA35() en ficha.js) -- debe
     // quedar junto a esa fecha en su orden del manifiesto, no barrido al
     // final bajo "Signos y síntomas" (ese bloque es para síntomas reales,
-    // ver el caso de P35.0 arriba).
-    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia'];
+    // ver el caso de P35.0 arriba). a35_dosis_1d..5d: mismo motivo -- son
+    // el checklist "Dosis recibidas" de toxoide tetánico (PENDIENTES.md
+    // A35.11), no un síntoma; se agrupan aparte en una fila horizontal
+    // propia (ver el hook por clave más abajo), no en "Signos y síntomas".
+    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d'];
     $esBooleanoJuntoASuCampo = fn($c) => in_array($c['id'], $idsPadre) || in_array($c['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true);
     $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !$esBooleanoJuntoASuCampo($c));
     $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || $esBooleanoJuntoASuCampo($c));
@@ -221,6 +238,34 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             $esSubgrupo = ($campo['tipo'] === 'GRUPO_SI_NO' && $tipoAnterior === 'GRUPO_SI_NO');
             if (($campo['clave'] ?? '') === 'b05_hospitalizado') {
                 ?></div><div class="eyebrow" style="margin-bottom:12px">Condición del paciente</div><div class="fields" style="margin-bottom:16px"><?php
+            }
+            if (($campo['clave'] ?? '') === 'a35_dosis_1d') {
+                ?></div><div class="eyebrow" style="margin-bottom:10px">Dosis recibidas</div><div class="fields" style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px"><?php
+            }
+            // A35.12: "Distrito" (excluido arriba del loop genérico vía
+            // $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA) se reemplaza acá, justo
+            // antes de "Localidad" (su posición original, orden 1 vs 2), por
+            // el selector real Departamento/Provincia/Distrito -- Departamento
+            // y Provincia son solo ayuda visual para acotar la lista (no se
+            // guardan); solo el nombre del Distrito llega a
+            // a35_distrito_probable_infeccion (ver validarCamposDinamicos()).
+            if (($campo['clave'] ?? '') === 'a35_localidad_probable_infeccion') {
+                $nombreDistritoGuardadoA35 = trim((string) $campoDistritoInfeccionA35['val']);
+                $distritoResueltoA35 = $nombreDistritoGuardadoA35 !== '' ? \App\Models\Distrito::buscarPorNombre($nombreDistritoGuardadoA35) : null;
+                ?></div><div style="margin-bottom:14px">
+                <div class="eyebrow" style="margin-bottom:10px">Lugar probable de infección</div>
+                <?php
+                extract(contextoUbigeo($distritoResueltoA35['id'] ?? null));
+                $prefijo = 'a35lugarinf-ubigeo';
+                $nombreCampoDepartamento = 'a35_lugar_infeccion_departamento_id';
+                $nombreCampoProvincia = 'a35_lugar_infeccion_provincia_id';
+                $nombreCampoDistrito = 'a35_lugar_infeccion_distrito_id';
+                $distritoSeleccionado = $distritoResueltoA35['id'] ?? '';
+                $distritoRequerido = false;
+                $errorDistrito = $campoDistritoInfeccionA35['err'];
+                require __DIR__ . '/selector-ubigeo.php';
+                ?>
+                </div><div class="fields" style="margin-bottom:16px"><?php
             }
             $tieneDependencia = !empty($campo['depende_de']);
             if ($tieneDependencia):
@@ -250,6 +295,10 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             endif;
             if ($tieneDependencia): ?></div><?php endif;
             $tipoAnterior = $campo['tipo'];
+
+            if (($campo['clave'] ?? '') === 'a35_dosis_5d') {
+                ?></div><div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>"><?php
+            }
 
             // Ítem Z.2 (PENDIENTES.md): esta clave quedó obsoleta -- la real es
             // b05_paciente_viajo_entre_los_7_a_30_dias_antes_del_inic (prefijo

@@ -31,4 +31,21 @@ class Distrito extends Model
 
         return $fila ?: null;
     }
+
+    /**
+     * Busca por nombre exacto -- usado para reconstruir el contexto
+     * departamento/provincia de un distrito guardado solo como texto (ver
+     * PENDIENTES.md A35.12). El nombre no es único a nivel nacional (varios
+     * departamentos repiten nombre de distrito); se resuelve al primero por
+     * id de forma determinista, sin más ambigüedad que la que ya tiene el
+     * dato guardado.
+     */
+    public static function buscarPorNombre(string $nombre): ?array
+    {
+        $consulta = Database::conexion()->prepare('SELECT * FROM distrito WHERE nombre = :nombre ORDER BY id LIMIT 1');
+        $consulta->execute(['nombre' => $nombre]);
+        $fila = $consulta->fetch();
+
+        return $fila ?: null;
+    }
 }

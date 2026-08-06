@@ -3704,7 +3704,7 @@
                 "caso_contacto": false,
                 "caso_muestra": false,
                 "caso_viaje": false,
-                "caso_vacuna": true
+                "caso_vacuna": false
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
@@ -3955,8 +3955,78 @@
                     ]
                 },
                 {
-                    "nombre": "Diagnóstico definitivo",
+                    "nombre": "Antecedente epidemiológico",
                     "orden": 4,
+                    "campos": [
+                        {
+                            "clave": "a35_distrito_probable_infeccion",
+                            "etiqueta": "Distrito",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a35_localidad_probable_infeccion",
+                            "etiqueta": "Localidad",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a35_direccion_probable_infeccion",
+                            "etiqueta": "Dirección N.°",
+                            "tipo": "TEXTO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a35_documentado_por_carnet",
+                            "etiqueta": "Documentado por carnet",
+                            "tipo": "SELECT",
+                            "orden": 4,
+                            "opciones": [
+                                "Sí",
+                                "No"
+                            ]
+                        },
+                        {
+                            "clave": "a35_dosis_1d",
+                            "etiqueta": "1D",
+                            "tipo": "BOOLEANO",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "a35_dosis_2d",
+                            "etiqueta": "2D",
+                            "tipo": "BOOLEANO",
+                            "orden": 6
+                        },
+                        {
+                            "clave": "a35_dosis_3d",
+                            "etiqueta": "3D",
+                            "tipo": "BOOLEANO",
+                            "orden": 7
+                        },
+                        {
+                            "clave": "a35_dosis_4d",
+                            "etiqueta": "4D",
+                            "tipo": "BOOLEANO",
+                            "orden": 8
+                        },
+                        {
+                            "clave": "a35_dosis_5d",
+                            "etiqueta": "5D",
+                            "tipo": "BOOLEANO",
+                            "orden": 9
+                        },
+                        {
+                            "clave": "a35_fecha_ultima_dosis",
+                            "etiqueta": "Fecha última dosis",
+                            "tipo": "FECHA",
+                            "orden": 10
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Diagnóstico definitivo",
+                    "orden": 5,
                     "campos": [
                         {
                             "clave": "a35_diagnostico_definitivo",

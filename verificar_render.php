@@ -45,6 +45,7 @@ const CLAVES_MECANISMO_NO_ESTANDAR = [
     'o95_hora_de_la_notificacion'  => 'notificacion-fechas-o95.php: name="hora_notificacion" literal, remapeado en CasosController.php:1001.',
     'o95_identificado_por'         => 'notificacion-fechas-o95.php: name="identificado_por" literal, remapeado en CasosController.php:1007.',
     'o95_tipo_de_ficha'            => 'notificacion-fechas-o95.php: name="o95_tipo_ficha" literal, remapeado en CasosController.php:1013.',
+    'a35_distrito_probable_infeccion' => 'secciones-clinicas.php: selector real Departamento/Provincia/Distrito, name="a35_lugar_infeccion_distrito_id" literal, remapeado en CasosController.php (validarCamposDinamicos).',
 ];
 
 $modoJson = in_array('--json', $argv, true);
