@@ -18,7 +18,8 @@ $erroresViajes = $erroresViajes ?? [];
 $columnasViaje = $columnasViaje ?? ['pais', 'fecha_salida', 'fecha_retorno', 'transporte_ida', 'transporte_retorno'];
 $mostrarColViaje = fn(string $col) => in_array($col, $columnasViaje, true);
 $etiquetaPais = $mostrarColViaje('localidad') ? 'País' : 'Lugar visitado (país o ciudad)';
-$filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''], ?array $error = null) use ($mostrarColViaje, $etiquetaPais): void {
+$esA370Viaje = (($enfermedad['cie10'] ?? '') === 'A37.0');
+$filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''], ?array $error = null) use ($mostrarColViaje, $etiquetaPais, $esA370Viaje): void {
     $errorSalida = $error['fecha_salida'] ?? null;
     $errorRetorno = $error['fecha_retorno'] ?? null;
     ?>
@@ -30,10 +31,14 @@ $filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_sa
         <div class="control"><input type="text" name="viaje_pais[]" value="<?= e($fila['pais'] ?? '') ?>" placeholder="<?= $mostrarColViaje('localidad') ? 'País…' : 'País o ciudad…' ?>"></div>
       </div>
       <?php if ($mostrarColViaje('localidad')): ?>
-      <!-- Localidad/ciudad (columna extra, propia de fichas que la declaren) -->
+      <!-- Localidad/ciudad (columna extra, propia de fichas que la declaren).
+      A37.0 reusa esta misma columna de texto libre como "Departamento"
+      (ítem 59 del PDF: País/Departamento/Fecha de salida/Fecha de retorno)
+      -- no se creó una columna nueva en caso_viaje para esto, solo cambia
+      la etiqueta visible. -->
       <div class="field" style="flex:1; min-width:160px">
-        <label class="fl">Localidad/ciudad</label>
-        <div class="control"><input type="text" name="viaje_localidad[]" value="<?= e($fila['localidad'] ?? '') ?>" placeholder="Localidad o ciudad…"></div>
+        <label class="fl"><?= $esA370Viaje ? 'Departamento' : 'Localidad/ciudad' ?></label>
+        <div class="control"><input type="text" name="viaje_localidad[]" value="<?= e($fila['localidad'] ?? '') ?>" placeholder="<?= $esA370Viaje ? 'Departamento…' : 'Localidad o ciudad…' ?>"></div>
       </div>
       <?php endif; ?>
       <!-- 2. Fecha de ingreso -->

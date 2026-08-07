@@ -415,6 +415,23 @@ document.addEventListener('DOMContentLoaded', function () {
       wrapPartoB05.style.display = esGestante ? '' : 'none';
     }
 
+    // A37.0: "¿La gestante recibió Tdap?" solo aplica si persona.gestante=1
+    // (ver secciones-clinicas.php, #wrapTdapGestanteA370 -- arranca oculto,
+    // este es el único lugar que lo des-oculta). Mismo mecanismo que
+    // wrapLugarPartoB05 arriba, reusado; no existe en otras fichas, el
+    // guard hace que sea un no-op en cualquier otra.
+    var wrapTdapGestante = document.getElementById('wrapTdapGestanteA370');
+    if (wrapTdapGestante) {
+      wrapTdapGestante.hidden = !esGestante;
+      wrapTdapGestante.style.display = esGestante ? '' : 'none';
+      if (!esGestante) {
+        wrapTdapGestante.querySelectorAll('input, select, textarea').forEach(function (el) {
+          if (el.type === 'checkbox' || el.type === 'radio') { el.checked = false; } else { el.value = ''; }
+        });
+      }
+      evaluarDependencias();
+    }
+
     if (!esGestante) {
       var semanas = document.getElementById('semanasGestacion');
       if (semanas) semanas.value = '';
@@ -806,6 +823,26 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
       });
+
+      // A37.0: "¿La madre fue vacunada con Tdap durante la gestación?"
+      // solo aplica si el paciente es <1 año (ver secciones-clinicas.php,
+      // #wrapTdapMadreA370 -- arranca oculto, este es el único lugar que
+      // lo des-oculta). No existe en otras fichas: el guard de abajo hace
+      // que esto sea un no-op en cualquier otra.
+      var wrapTdapMadre = document.getElementById('wrapTdapMadreA370');
+      if (wrapTdapMadre) {
+        var ocultarTdapMadre = !(edad < 1);
+        if (wrapTdapMadre.hidden !== ocultarTdapMadre) {
+          wrapTdapMadre.hidden = ocultarTdapMadre;
+          wrapTdapMadre.style.display = ocultarTdapMadre ? 'none' : '';
+          if (ocultarTdapMadre) {
+            wrapTdapMadre.querySelectorAll('input, select, textarea').forEach(function (el) {
+              if (el.type === 'checkbox' || el.type === 'radio') { el.checked = false; } else { el.value = ''; }
+            });
+          }
+          evaluarDependencias();
+        }
+      }
     }
   }
   if (fechaNac) fechaNac.addEventListener('change', calcularEdad);
@@ -1699,18 +1736,85 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // A37.0 Lugar probable de infección: mismo mecanismo que B05/P35.0 arriba
+  // -- evaluarDependencias() (el motor genérico .dep-wrap) solo alterna el
+  // atributo "hidden", nunca el style="display:none" inline con el que el
+  // servidor renderiza el wrap oculto al inicio, así que sin esta función
+  // dedicada la tabla nunca llega a verse aunque "hidden" ya esté en false
+  // (mismo bug histórico documentado arriba para B05).
+  function actualizarBloqueViajesA370() {
+    var wrapperViajes = document.getElementById('a370-wrapper-viajes-registrados');
+    if (!wrapperViajes) return;
+
+    var val = leerValorCampoPorNombre(campoPorClave('a37_0_viajo_en_los_ultimos_21_dias'));
+    var esViajo = (val === '1');
+
+    if (esViajo) {
+      wrapperViajes.hidden = false;
+      wrapperViajes.style.display = '';
+
+      var subrows = wrapperViajes.querySelector('.subrows');
+      if (subrows && subrows.children.length === 0) {
+        var btnAgregar = wrapperViajes.querySelector('.agregar-fila[data-lista="viajes"]');
+        if (btnAgregar) {
+          btnAgregar.click();
+        }
+      }
+    } else {
+      wrapperViajes.hidden = true;
+      wrapperViajes.style.display = 'none';
+    }
+  }
+
+  function actualizarBloqueContactosA370() {
+    var wrapperContactos = document.getElementById('a370-wrapper-contactos-registrados');
+    if (!wrapperContactos) return;
+
+    var val = leerValorCampoPorNombre(campoPorClave('a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_'));
+    var esFamiliarConTos = (val === '1');
+
+    if (esFamiliarConTos) {
+      wrapperContactos.hidden = false;
+      wrapperContactos.style.display = '';
+
+      var subrows = wrapperContactos.querySelector('.subrows');
+      if (subrows && subrows.children.length === 0) {
+        var btnAgregar = wrapperContactos.querySelector('.agregar-fila[data-lista="contactos"]');
+        if (btnAgregar) {
+          btnAgregar.click();
+        }
+      }
+    } else {
+      wrapperContactos.hidden = true;
+      wrapperContactos.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.name === campoPorClave('a37_0_viajo_en_los_ultimos_21_dias')) {
+      actualizarBloqueViajesA370();
+    }
+    if (e.target && e.target.name === campoPorClave('a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_')) {
+      actualizarBloqueContactosA370();
+    }
+  });
+
   document.addEventListener('click', function(e) {
     if (e.target && e.target.closest('.quitar-fila')) {
       setTimeout(function() {
         actualizarBloqueVacunasB05();
         actualizarBloqueViajesB05();
         actualizarBloqueViajesP350();
+        actualizarBloqueViajesA370();
+        actualizarBloqueContactosA370();
       }, 50);
     }
   });
 
   actualizarBloqueViajesB05();
   actualizarBloqueViajesP350();
+  actualizarBloqueViajesA370();
+  actualizarBloqueContactosA370();
 
   function obtenerCie10Actual() {
     var enfermedadSel = document.getElementById('diseaseSel');
@@ -2951,6 +3055,29 @@ document.addEventListener('DOMContentLoaded', function () {
           inpNombre.disabled = esCasa;
           inpNombre.placeholder = esCasa ? '— No aplica —' : 'Nombre del lugar…';
           if (esCasa) inpNombre.value = '';
+        }
+      }
+    }
+    // A37.0 "Contactos por lugar": a diferencia de B26, acá "Casa" deshabilita
+    // TANTO Nombre del lugar COMO Dirección (esa dirección ya se captura en
+    // "Datos personales"; una casa tampoco tiene "nombre propio") -- el resto
+    // de opciones (incluida "Otro") habilita ambos, así "Otro" siempre deja
+    // "Nombre del lugar" disponible para especificar el lugar nuevo.
+    if (e.target.classList.contains('sel-lugar-tipo-a370')) {
+      var rowA370 = e.target.closest('.row-lugar-a370');
+      if (rowA370) {
+        var esCasaA370 = (e.target.value === 'CASA');
+        var inpNombreA370 = rowA370.querySelector('.inp-lugar-nombre-a370');
+        var inpDireccionA370 = rowA370.querySelector('.inp-lugar-direccion-a370');
+        if (inpNombreA370) {
+          inpNombreA370.disabled = esCasaA370;
+          inpNombreA370.placeholder = esCasaA370 ? '— No aplica —' : 'Nombre del lugar…';
+          if (esCasaA370) inpNombreA370.value = '';
+        }
+        if (inpDireccionA370) {
+          inpDireccionA370.disabled = esCasaA370;
+          inpDireccionA370.placeholder = esCasaA370 ? '— No aplica —' : 'Dirección del lugar…';
+          if (esCasaA370) inpDireccionA370.value = '';
         }
       }
     }

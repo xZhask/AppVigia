@@ -164,6 +164,7 @@ class CasosController extends Controller
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
             'pueblo_etnico'      => $_POST['pueblo_etnico'] ?? '',
+            'ocupacion'          => trim($_POST['ocupacion'] ?? ''),
             'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
             'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
@@ -229,8 +230,17 @@ class CasosController extends Controller
         // lesión" no es obligatoria en el manifiesto (día exacto no
         // siempre se conoce, de ahí "No recuerda día") y no hay un solo
         // campo estándar equivalente -- forzar aquí un valor la haría
-        // obligatoria por la puerta de atrás.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35'], true);
+        // obligatoria por la puerta de atrás. A37.0 se suma por un motivo
+        // distinto: sí tiene un campo estándar único y siempre determinable
+        // (ítem 26 del PDF), pero vive en su propio campo_def dentro de
+        // "Cuadro clínico" -- el genérico no puede mostrarse ahí porque
+        // secciones-clinicas.php lo ancla a $secciones[0], que para A37.0
+        // es "Datos del paciente (adicionales)" (queda antes de Cuadro
+        // clínico en el manifiesto). Exigir el genérico duplicaría el dato
+        // y, peor, extraerFechaInicioSintomas() tomaría la primera FECHA
+        // enviada (probablemente "Fecha de conocimiento local del caso" de
+        // la cabecera de notificación), no la fecha de síntomas real.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -554,6 +564,7 @@ class CasosController extends Controller
             'etnia'              => (string) ($caso['etnia'] ?? ''),
             'etnia_otra'         => (string) ($caso['etnia_otra'] ?? ''),
             'pueblo_etnico'      => (string) ($caso['pueblo_etnico'] ?? ''),
+            'ocupacion'          => (string) ($caso['ocupacion'] ?? ''),
             'nombre_tutor'       => (string) ($caso['nombre_tutor'] ?? ''),
             'celular_tutor'      => (string) ($caso['celular_tutor'] ?? ''),
             'gestante'           => $caso['gestante'] !== null ? (string) $caso['gestante'] : '',
@@ -644,6 +655,7 @@ class CasosController extends Controller
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
             'pueblo_etnico'      => $_POST['pueblo_etnico'] ?? '',
+            'ocupacion'          => trim($_POST['ocupacion'] ?? ''),
             'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
             'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
@@ -688,8 +700,9 @@ class CasosController extends Controller
 
         // Ver comentario en crear(): P35.0 y A35 no tienen un campo
         // estándar de "fecha de inicio de síntomas" -- no se muestra ni
-        // se exige.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35'], true);
+        // se exige. A37.0 sí lo tiene, pero dentro de su propio Cuadro
+        // clínico -- ver el motivo completo en crear().
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -925,14 +938,16 @@ class CasosController extends Controller
         $paraGuardar = [];
 
         foreach ($campos as $campoId => $campo) {
-            // Peticion 2, Fase 5: estos 4 son casos especiales que escapan el
+            // Peticion 2, Fase 5: estos 5 son casos especiales que escapan el
             // motor de tipos (arman o combinan valores de $_POST con nombres
             // literales, no campo_NNNN) y se identifican por clave, no por
             // ID -- cargar_fichas.php regenera el ID en cada recarga, la
             // clave es estable. No se rediseña la logica de cada uno; ver
             // MAPA_IDS_CAMPOS.md y FASE2_RESOLVEDOR_POR_CLAVE.md para el
             // porque de cada clave (b26_contactos_por_lugar existia; los
-            // otros tres no persistian antes de esta fase).
+            // otros no persistian antes de esta fase; a37_0_contactos_por_lugar
+            // se sumó 2026-08-07 calcando el mismo patrón de B26 -- ver
+            // secciones-clinicas.php).
             if ($campo['clave'] === 'b26_contactos_por_lugar' && isset($_POST['b26_lugar_tipo']) && is_array($_POST['b26_lugar_tipo'])) {
                 $matrizLugares = [];
                 foreach ($_POST['b26_lugar_tipo'] as $idx => $tipo) {
@@ -946,6 +961,25 @@ class CasosController extends Controller
                 }
                 $paraGuardar[$campoId] = json_encode($matrizLugares, JSON_UNESCAPED_UNICODE);
                 $valoresCampos[$campoId] = $matrizLugares;
+                continue;
+            }
+            if ($campo['clave'] === 'a37_0_contactos_por_lugar' && isset($_POST['a370_lugar_tipo']) && is_array($_POST['a370_lugar_tipo'])) {
+                $lugaresA370 = [];
+                foreach ($_POST['a370_lugar_tipo'] as $idx => $tipo) {
+                    $lugaresA370[] = [
+                        'tipo'                    => trim((string) $tipo),
+                        'nombre'                  => trim((string) ($_POST['a370_lugar_nombre'][$idx] ?? '')),
+                        'direccion'               => trim((string) ($_POST['a370_lugar_direccion'][$idx] ?? '')),
+                        'total'                   => trim((string) ($_POST['a370_lugar_total'][$idx] ?? '')),
+                        'con_sintomas'            => trim((string) ($_POST['a370_lugar_con_sintomas'][$idx] ?? '')),
+                        'esquema_completo'        => trim((string) ($_POST['a370_lugar_esquema_completo'][$idx] ?? '')),
+                        'esquema_incompleto'      => trim((string) ($_POST['a370_lugar_esquema_incompleto'][$idx] ?? '')),
+                        'recibieron_vacunacion'   => trim((string) ($_POST['a370_lugar_recibieron_vacunacion'][$idx] ?? '')),
+                        'recibieron_antibioticos' => trim((string) ($_POST['a370_lugar_recibieron_antibioticos'][$idx] ?? '')),
+                    ];
+                }
+                $paraGuardar[$campoId] = json_encode($lugaresA370, JSON_UNESCAPED_UNICODE);
+                $valoresCampos[$campoId] = $lugaresA370;
                 continue;
             }
             if ($campo['clave'] === 'o95_hora_de_la_notificacion' && !empty($_POST['hora_notificacion'])) {
@@ -1145,6 +1179,7 @@ class CasosController extends Controller
             'etnia'              => '',
             'etnia_otra'         => '',
             'pueblo_etnico'      => '',
+            'ocupacion'          => '',
             'nombre_tutor'       => '',
             'celular_tutor'      => '',
             'gestante'           => '',
@@ -1288,6 +1323,7 @@ class CasosController extends Controller
                 'etnia'              => $etnia,
                 'etnia_otra'         => $etniaOtra,
                 'pueblo_etnico'      => $puebloEtnico,
+                'ocupacion'          => $valoresFijos['ocupacion'] !== '' ? $valoresFijos['ocupacion'] : null,
                 'nombre_tutor'       => $valoresFijos['nombre_tutor'] !== '' ? $valoresFijos['nombre_tutor'] : null,
                 'celular_tutor'      => $valoresFijos['celular_tutor'] !== '' ? $valoresFijos['celular_tutor'] : null,
                 'gestante'           => $gestante,
@@ -1519,6 +1555,21 @@ class CasosController extends Controller
         ];
     }
 
+    /**
+     * Códigos de "resultado" que ninguna ficha comparte con otra (a
+     * diferencia de POS/NEG/IND, que sí vienen del catálogo 3 compartido) --
+     * A37.0 (VIII. Laboratorio, ítem 64) pide Contaminado/No viable además
+     * de Positivo/Negativo, sin "Indeterminado". Se resuelven acá (no en
+     * `catalogo_item`) para no tocar una tabla compartida por las otras 11
+     * fichas con `usa_muestras=1`: sin que una ficha declare estos códigos
+     * en su `opciones.resultado`, nadie más los ve -- mismo criterio opt-in
+     * que `texto_libre`/`depende_de_columna`.
+     */
+    private const OPCIONES_RESULTADO_EXTRA = [
+        'CONTAM'   => 'Contaminado',
+        'NOVIABLE' => 'No viable',
+    ];
+
     private function datosMuestrasCatalogo(?array $enfermedad = null): array
     {
         $todosMuestras  = CatalogoItem::porCatalogo(4);
@@ -1533,6 +1584,14 @@ class CasosController extends Controller
         }
         if (!empty($opciones['tipo_prueba'])) {
             $todosPruebas = array_values(array_filter($todosPruebas, fn($it) => in_array($it['valor'], $opciones['tipo_prueba'], true)));
+        }
+        if (!empty($opciones['resultado'])) {
+            $todosResultado = array_values(array_filter($todosResultado, fn($it) => in_array($it['valor'], $opciones['resultado'], true)));
+            foreach ($opciones['resultado'] as $codigo) {
+                if (isset(self::OPCIONES_RESULTADO_EXTRA[$codigo]) && !in_array($codigo, array_column($todosResultado, 'valor'), true)) {
+                    $todosResultado[] = ['valor' => $codigo, 'etiqueta' => self::OPCIONES_RESULTADO_EXTRA[$codigo]];
+                }
+            }
         }
 
         return [

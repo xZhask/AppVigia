@@ -51,7 +51,8 @@
             "_observaciones_tablas_hija": "La BD tiene hoy usa_muestras=0, usa_viajes=0, usa_vacunas=0 para esta ficha (el stub previo no las usaba). El cargador debe activarlas junto con la recarga: el PDF trae examenes de laboratorio (seccion VI), un antecedente de viaje\/lugar de estadia en las ultimas 2 semanas (seccion IV, repetible) y antecedente de vacuna antiamarilica (pregunta 33-34).",
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -332,7 +333,7 @@
             "tablas_hijas": {
                 "caso_muestra": true,
                 "caso_viaje": true,
-                "caso_vacuna": true,
+                "caso_vacuna": false,
                 "caso_contacto": true
             },
             "columnas_tablas_hija": {
@@ -342,7 +343,21 @@
                     "doc",
                     "lugar_contacto"
                 ],
+                "caso_viaje": [
+                    "pais",
+                    "localidad",
+                    "fecha_salida",
+                    "fecha_retorno"
+                ],
                 "caso_muestra": {
+                    "columnas": [
+                        "tipo_muestra",
+                        "tipo_prueba",
+                        "fecha_toma",
+                        "fecha_result",
+                        "resultado",
+                        "agente_aislado"
+                    ],
                     "opciones": {
                         "tipo_muestra": [
                             "HNF",
@@ -351,19 +366,157 @@
                         "tipo_prueba": [
                             "CULT",
                             "PCR"
+                        ],
+                        "resultado": [
+                            "POS",
+                            "NEG",
+                            "CONTAM",
+                            "NOVIABLE"
+                        ],
+                        "agente_aislado": [
+                            "B_PERTUSSIS",
+                            "B_PARAPERTUSSIS",
+                            "B_HOLMESII",
+                            "BORDETELLA_SP"
                         ]
+                    },
+                    "depende_de_columna": {
+                        "agente_aislado": {
+                            "columna": "resultado",
+                            "valores_activadores": [
+                                "POS"
+                            ]
+                        }
                     }
                 }
             },
             "_observaciones_tablas_hija": "CORREGIDO (PENDIENTES_POST_FASE5.md punto 1.2\/3): esta nota decía que no había campos que llenar en caso_contacto -- era un error. Verificado contra el PDF (pág. 1-2): la pregunta 61 SÍ trae una tabla nominal (N.° \/ Apellidos y Nombres \/ Parentesco \/ Celular \/ Doc. identidad \/ Lugar de exposición) para familiares con tos prolongada, además de la matriz agregada por lugar (esa sí es campo_def, 'Contactos por lugar'). usa_contactos=1 es correcto; tablas_hijas.caso_contacto pasa de false a true para que coincida.",
+            "_nota_laboratorio": "VIII. Laboratorio (ítem 62-64 del PDF, pág. 2), 2026-08-07: 'Agente identificado' (ítem 64) es capacidad nueva en muestras.php -- select opt-in vía columnas_tablas_hija.caso_muestra.opciones.agente_aislado (con 4 especies de Bordetella hardcodeadas como default local en el partial, mismo patrón que opcionesGenotipoDefecto; A80 sigue con texto libre para agente_aislado, sin cambio) gateado a Resultado=Positivo (capacidad 5, depende_de_columna). 'Resultado' agrega Contaminado\/No viable -- códigos CONTAM\/NOVIABLE resueltos en CasosController::OPCIONES_RESULTADO_EXTRA (no en catalogo_item compartido, para no afectar a las otras 11 fichas con usa_muestras=1); sin 'Indeterminado' porque el PDF no lo ofrece para esta ficha. 'Tipo de muestra'\/'Tipo de prueba' ya estaban correctamente filtrados desde antes de este cotejo (HNF\/ASP_NF, CULT\/PCR).",
             "nucleo_omitidos": [
-                "referencia_localizar",
-                "pueblo_etnico"
+                "nombre_tutor",
+                "celular_tutor"
+            ],
+            "unidades_edad": [
+                "ANIOS",
+                "MESES"
+            ],
+            "detalle_domicilio": [
+                "TIPO_ZONA",
+                "TIPO_VIA",
+                "NOMBRE_VIA",
+                "NUMERO",
+                "MZ_LOTE",
+                "TIEMPO_RESIDENCIA"
             ],
             "secciones": [
                 {
-                    "nombre": "Cuadro clínico",
+                    "nombre": "Datos de notificación e investigación del caso",
                     "orden": 1,
+                    "_nota": "El PDF (Secc. I, ítems 1-5: GERESA/DIRESA/DIRIS, Red de Salud, Micro red, EESS notificante, Inst. Adm.) no se modela como campo_def: 1/2/4/5 ya son núcleo del sistema, derivados de caso.establecimiento_id -> establecimiento.nombre/institucion -> red_salud.nombre/diresa (capturados una sola vez al crear el caso, selector 'Establecimiento (EESS)'). Ítem 3 'Micro red' no tiene equivalente -- el sistema no modela ese nivel jerárquico (bloqueado, ver PENDIENTES.md).",
+                    "campos": [
+                        {
+                            "clave": "a37_0_codigo_de_registro_n",
+                            "etiqueta": "Código de registro N.°",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a37_0_fecha_de_conocimiento_local_del_caso",
+                            "etiqueta": "Fecha de conocimiento local del caso",
+                            "tipo": "FECHA",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a37_0_fecha_de_notificacion_ee_ss_a_red_microred",
+                            "etiqueta": "Fecha de notificación EE.SS a Red/Microred",
+                            "tipo": "FECHA",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a37_0_fecha_de_notificacion_red_microrred_a_direccion_r",
+                            "etiqueta": "Fecha de notificación Red/Microrred a Dirección Regional de Salud",
+                            "tipo": "FECHA",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "a37_0_fecha_de_notificacion_de_direccion_de_salud_a_cdc",
+                            "etiqueta": "Fecha de notificación de Dirección de Salud a CDC",
+                            "tipo": "FECHA",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "a37_0_fecha_de_investigacion_visita_domiciliaria",
+                            "etiqueta": "Fecha de investigación (visita domiciliaria)",
+                            "tipo": "FECHA",
+                            "orden": 6
+                        },
+                        {
+                            "clave": "a37_0_caso_captado_en",
+                            "etiqueta": "Caso captado en",
+                            "tipo": "SELECT",
+                            "orden": 7,
+                            "catalogo_nombre": "A37.0 - Caso captado en",
+                            "opciones": [
+                                "Emergencia",
+                                "Consultorio externo",
+                                "Búsqueda institucional",
+                                "Búsqueda comunitaria"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Datos del paciente (adicionales)",
+                    "orden": 2,
+                    "_nota": "Ocupación (ítem 17) no va acá: se promovió a núcleo (persona.ocupacion), ver datos-paciente-nucleo.php -- A37.0 no la omite, así que se muestra junto a Etnia/Pueblo étnico.",
+                    "campos": [
+                        {
+                            "clave": "a37_0_puerpera",
+                            "etiqueta": "Puérpera",
+                            "tipo": "BOOLEANO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a37_0_lugar_de_trabajo_o_estudio",
+                            "etiqueta": "Lugar de trabajo o estudio",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a37_0_es_menor_de_edad",
+                            "etiqueta": "¿Es menor de edad?",
+                            "tipo": "BOOLEANO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a37_0_nombre_de_madre_o_tutor",
+                            "etiqueta": "Nombre de madre o tutor",
+                            "tipo": "TEXTO",
+                            "orden": 4,
+                            "depende_de": "¿Es menor de edad?",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "a37_0_telefono_de_madre_o_tutor",
+                            "etiqueta": "Teléfono de madre o tutor",
+                            "tipo": "TEXTO",
+                            "orden": 5,
+                            "depende_de": "¿Es menor de edad?",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "a37_0_n_doc_identidad_de_madre_o_tutor",
+                            "etiqueta": "N.° Doc. Identidad de madre o tutor",
+                            "tipo": "TEXTO",
+                            "orden": 6,
+                            "depende_de": "¿Es menor de edad?",
+                            "valor_activador": "1"
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Cuadro clínico",
+                    "orden": 3,
                     "campos": [
                         {
                             "clave": "a37_0_fecha_de_inicio_de_sintomas",
@@ -423,13 +576,15 @@
                             "clave": "a37_0_otros_sintomas",
                             "etiqueta": "Otros síntomas",
                             "tipo": "SI_NO_FECHA",
-                            "orden": 10
+                            "orden": 10,
+                            "especificar": true,
+                            "_nota": "2026-08-06: ítem 28 del PDF trae 'Otros:' con línea en blanco propia debajo de la tabla de signos y síntomas. Primer intento la modeló como campo_def TEXTO aparte, siempre visible -- corregido a 'especificar':true (config del propio SI_NO_FECHA): el texto ahora vive junto a la fecha, visible solo cuando se marca Sí."
                         }
                     ]
                 },
                 {
                     "nombre": "Tratamiento",
-                    "orden": 2,
+                    "orden": 4,
                     "campos": [
                         {
                             "clave": "a37_0_paciente_recibio_antibiotico",
@@ -443,22 +598,27 @@
                             "tipo": "MATRIZ",
                             "orden": 2,
                             "filas": [
-                                "Antibiótico 1",
-                                "Antibiótico 2",
-                                "Antibiótico 3"
+                                "1",
+                                "2",
+                                "3"
                             ],
                             "columnas": [
+                                "Nombre antibiótico",
                                 "Dosis",
                                 "Fecha de inicio",
                                 "Vía de administración",
                                 "N.° de días"
-                            ]
+                            ],
+                            "depende_de": "¿Paciente recibió antibiótico?",
+                            "valor_activador": "1",
+                            "_corregido": "2026-08-06: la tabla del PDF (ítem 30) trae 'Nombre antibiótico' como columna propia (3 filas en blanco para llenar) -- v1.0 la había modelado al revés, con el nombre fijo en la fila ('Antibiótico 1/2/3') sin forma de escribirlo. 2026-08-06 (2da corrección): el PDF muestra la tabla como dependiente de '29. Paciente recibió antibiótico: Sí/No' -- agregado depende_de (primer caso de MATRIZ dependiente en el manifiesto; el motor .dep-wrap es genérico por tipo, confirmado por lectura de secciones-clinicas.php y campoVisiblePorDependencia())."
                         }
                     ]
                 },
                 {
                     "nombre": "Complicaciones y hospitalización",
-                    "orden": 3,
+                    "orden": 5,
+                    "_nota": "2026-08-06: jerarquía de dependencias dada por el usuario -- Historia clínica..Otras infecciones (por laboratorio) dependen de Hospitalización=Sí; Comorbilidad (especificar) ya dependía de su propio Sí (sin cambio); Otras infecciones (especificar)/Fecha de diagnóstico ahora dependen de '¿Se diagnosticaron otras infecciones..?'=Sí (antes sueltos, sin depende_de); Fecha de defunción/Causa básica dependen de Defunción=Sí. Cadena de 2 niveles (p.ej. Otras infecciones especificar -> su propio Sí -> Hospitalización) soportada por el motor existente (evaluarDependencias() en ficha.js re-evalúa en varias pasadas; server-side, campoVisiblePorDependencia() ve el valor ya limpiado del padre porque los campos se procesan en orden).",
                     "campos": [
                         {
                             "clave": "a37_0_neumonia",
@@ -506,7 +666,9 @@
                             "clave": "a37_0_otros",
                             "etiqueta": "Otros",
                             "tipo": "SI_NO_FECHA",
-                            "orden": 8
+                            "orden": 8,
+                            "especificar": true,
+                            "_nota": "2026-08-06: ítem 38 del PDF trae 'Otros (especificar)' con línea en blanco propia debajo de la tabla de complicaciones. Primer intento la modeló como campo_def TEXTO aparte, siempre visible -- corregido a 'especificar':true (config del propio SI_NO_FECHA, mismo criterio que a37_0_otros_sintomas en Cuadro clínico): el texto ahora vive junto a la fecha, visible solo cuando se marca Sí."
                         },
                         {
                             "clave": "a37_0_hospitalizacion",
@@ -518,43 +680,57 @@
                             "clave": "a37_0_n_historia_clinica",
                             "etiqueta": "N.° historia clínica",
                             "tipo": "TEXTO",
-                            "orden": 10
+                            "orden": 10,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_nombre_de_establecimiento_de_salud",
                             "etiqueta": "Nombre de establecimiento de salud",
                             "tipo": "TEXTO",
-                            "orden": 11
+                            "orden": 11,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
-                            "orden": 12
+                            "orden": 12,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_n_de_dias_de_hospitalizacion",
                             "etiqueta": "N.° de días de hospitalización",
                             "tipo": "NUMERO",
-                            "orden": 13
+                            "orden": 13,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_dx_de_ingreso",
                             "etiqueta": "Dx de ingreso",
                             "tipo": "TEXTO",
-                            "orden": 14
+                            "orden": 14,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_fecha_de_alta",
                             "etiqueta": "Fecha de alta",
                             "tipo": "FECHA",
-                            "orden": 15
+                            "orden": 15,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_dx_de_egreso",
                             "etiqueta": "Dx de egreso",
                             "tipo": "TEXTO",
-                            "orden": 16
+                            "orden": 16,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_presenta_alguna_comorbilidad",
@@ -565,7 +741,9 @@
                                 "Sí",
                                 "No",
                                 "Desconocido"
-                            ]
+                            ],
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_comorbilidad_especificar",
@@ -586,19 +764,25 @@
                                 "No",
                                 "Desconocido"
                             ],
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1",
                             "_corregido": "v1.0 tenía BOOLEANO; el PDF muestra Sí(especificar)\/No\/Desconocido"
                         },
                         {
                             "clave": "a37_0_otras_infecciones_especificar",
                             "etiqueta": "Otras infecciones (especificar)",
                             "tipo": "TEXTO",
-                            "orden": 20
+                            "orden": 20,
+                            "depende_de": "¿Se diagnosticaron otras infecciones por laboratorio?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a37_0_fecha_de_diagnostico_de_otras_infecciones",
                             "etiqueta": "Fecha de diagnóstico de otras infecciones",
                             "tipo": "FECHA",
-                            "orden": 21
+                            "orden": 21,
+                            "depende_de": "¿Se diagnosticaron otras infecciones por laboratorio?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a37_0_defuncion",
@@ -610,62 +794,116 @@
                             "clave": "a37_0_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
-                            "orden": 23
+                            "orden": 23,
+                            "depende_de": "Defunción",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_causa_basica_de_defuncion",
                             "etiqueta": "Causa básica de defunción",
                             "tipo": "TEXTO",
-                            "orden": 24
+                            "orden": 24,
+                            "depende_de": "Defunción",
+                            "valor_activador": "1"
                         }
                     ]
                 },
                 {
                     "nombre": "Antecedentes vacunales (preguntas contextuales)",
-                    "orden": 4,
-                    "_nota": "El listado de dosis recibidas (Pentavalente 1a\/2a\/3a, DPT refuerzos) es una lista de vacunas aplicadas: va en caso_vacuna, no aquí. Estas 5 preguntas sí son campo_def porque son condicionales de un solo valor, no una lista.",
+                    "orden": 6,
+                    "_nota": "2026-08-06: 'Dosis recibidas' (ítem 51: Pentavalente 1a\/2a\/3a, DPT 1er\/2do refuerzo) pasó de caso_vacuna (tabla genérica de vacunas aplicadas) a 5 BOOLEANO propios de la ficha -- mismo patrón que 'Dosis recibidas' de toxoide tetánico en A35\/A33 (a35_dosis_1d..5d\/a33_dosis_1a..5a): es un checklist cerrado de 5 ítems fijos, no una lista abierta, así que caso_vacuna (pensado para vacunas/fechas arbitrarias) no encajaba -- tablas_hijas.caso_vacuna pasa a false. Las 6 preguntas que siguen sí son campo_def sueltos porque son condicionales de un solo valor, no una lista. Los bloques 'madre'\/'gestante' se muestran\/ocultan de verdad -- 'madre' según la edad calculada del paciente (envuelto en #wrapTdapMadreA370, toggled por calcularEdad() en ficha.js), 'gestante' según el núcleo persona.gestante (envuelto en #wrapTdapGestanteA370, toggled por actualizarGestante(), mecanismo ya existente reusado -- ver wrapLugarPartoB05). Ninguno de los 2 wraps se valida server-side (igual que wrapLugarPartoB05): es un gate de UI, no una regla de negocio dura. Lo mismo aplica a 'Fecha de última dosis' respecto a las 5 dosis: el usuario pidió que solo se habilite si hay al menos una dosis marcada, pero A35 (ya cotejada) tampoco enforce esa regla para su propia 'Fecha última dosis' -- se dejó sin implementar por consistencia con el precedente, pendiente de confirmar con el usuario si de verdad la quiere (ver PENDIENTES.md ítem 13).",
                     "campos": [
                         {
-                            "clave": "a37_0_la_madre_fue_vacunada_con_tdap_durante_la_gestaci",
-                            "etiqueta": "¿La madre fue vacunada con Tdap durante la gestación? (si el caso es <1 año)",
+                            "clave": "a37_0_pentavalente_1ra",
+                            "etiqueta": "1.ª",
                             "tipo": "BOOLEANO",
                             "orden": 1
+                        },
+                        {
+                            "clave": "a37_0_pentavalente_2da",
+                            "etiqueta": "2.ª",
+                            "tipo": "BOOLEANO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a37_0_pentavalente_3ra",
+                            "etiqueta": "3.ª",
+                            "tipo": "BOOLEANO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a37_0_dpt_1er_refuerzo",
+                            "etiqueta": "1.er Refuerzo",
+                            "tipo": "BOOLEANO",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "a37_0_dpt_2do_refuerzo",
+                            "etiqueta": "2.º Refuerzo",
+                            "tipo": "BOOLEANO",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "a37_0_fecha_de_ultima_dosis",
+                            "etiqueta": "Fecha de última dosis",
+                            "tipo": "FECHA",
+                            "orden": 6,
+                            "_nota": "2026-08-06: ítem 52 del PDF. Ítem 53 'EE.SS donde se vacunó' queda deliberadamente fuera -- el usuario no lo incluyó en su jerarquía/resumen de dependencias."
+                        },
+                        {
+                            "clave": "a37_0_la_madre_fue_vacunada_con_tdap_durante_la_gestaci",
+                            "etiqueta": "¿La madre fue vacunada con Tdap durante la gestación?",
+                            "tipo": "BOOLEANO",
+                            "orden": 7
                         },
                         {
                             "clave": "a37_0_fecha_de_vacunacion_tdap_de_la_madre",
                             "etiqueta": "Fecha de vacunación Tdap de la madre",
                             "tipo": "FECHA",
-                            "orden": 2
+                            "orden": 8,
+                            "depende_de": "¿La madre fue vacunada con Tdap durante la gestación?",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_la_gestante_recibio_tdap_si_el_caso_es_gestante",
-                            "etiqueta": "¿La gestante recibió Tdap? (si el caso es gestante)",
+                            "etiqueta": "¿La gestante recibió Tdap?",
                             "tipo": "BOOLEANO",
-                            "orden": 3
+                            "orden": 9
                         },
                         {
                             "clave": "a37_0_semana_de_gestacion_durante_la_vacunacion_tdap",
                             "etiqueta": "Semana de gestación durante la vacunación Tdap",
                             "tipo": "NUMERO",
-                            "orden": 4
+                            "orden": 10,
+                            "depende_de": "¿La gestante recibió Tdap?",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a37_0_fecha_de_vacunacion_tdap_gestante",
                             "etiqueta": "Fecha de vacunación Tdap (gestante)",
                             "tipo": "FECHA",
-                            "orden": 5
+                            "orden": 11,
+                            "depende_de": "¿La gestante recibió Tdap?",
+                            "valor_activador": "1"
                         }
                     ]
                 },
                 {
                     "nombre": "Lugar probable de infección",
-                    "orden": 5,
+                    "orden": 7,
+                    "_nota": "2026-08-06: ítem 59 del PDF (¿viajó en los últimos 21 días?) faltaba por completo -- se agregó como campo propio que gatea la tabla caso_viaje (antes siempre visible en la tarjeta fija 'Antecedentes epidemiológicos', ahora movida acá y condicionada, mismo mecanismo que ya usan B05\/P35.0 para su propia tabla de viajes). Ítem 60 (¿contacto con casos...?) ahora gatea la pregunta 61 (¿algún familiar...?), que a su vez gatea la tabla caso_contacto (antes también siempre visible en la tarjeta fija, ahora movida acá y condicionada). Columnas de caso_viaje para A37.0: país\/fecha salida\/fecha retorno + 'localidad' reusada como 'Departamento' (ver viajes.php, mismo campo de texto libre que P35.0 usa como 'Localidad\/ciudad', solo cambia la etiqueta) -- no se creó una columna nueva en la BD para esto.",
                     "campos": [
+                        {
+                            "clave": "a37_0_viajo_en_los_ultimos_21_dias",
+                            "etiqueta": "¿Viajó en los últimos 21 días antes del inicio de la tos?",
+                            "tipo": "BOOLEANO",
+                            "orden": 1
+                        },
                         {
                             "clave": "a37_0_contacto_con_casos_probables_o_confirmados_de_tos",
                             "etiqueta": "¿Contacto con casos probables o confirmados de tos ferina?",
                             "tipo": "SELECT",
-                            "orden": 1,
+                            "orden": 2,
                             "opciones": [
                                 "Sí",
                                 "No",
@@ -676,25 +914,27 @@
                             "clave": "a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_",
                             "etiqueta": "¿Algún miembro de la familia o persona cercana ha tenido tos por más de 2 semanas?",
                             "tipo": "BOOLEANO",
-                            "orden": 2
+                            "orden": 3,
+                            "depende_de": "¿Contacto con casos probables o confirmados de tos ferina?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a37_0_contactos_directos_domiciliarios",
                             "etiqueta": "Contactos directos domiciliarios",
                             "tipo": "NUMERO",
-                            "orden": 3
+                            "orden": 4
                         },
                         {
                             "clave": "a37_0_contactos_directos_extradomiciliarios",
                             "etiqueta": "Contactos directos extradomiciliarios",
                             "tipo": "NUMERO",
-                            "orden": 4
+                            "orden": 5
                         },
                         {
                             "clave": "a37_0_contactos_por_lugar",
                             "etiqueta": "Contactos por lugar",
                             "tipo": "MATRIZ",
-                            "orden": 5,
+                            "orden": 6,
                             "filas": [
                                 "Casa",
                                 "Nido\/guardería",
@@ -704,6 +944,8 @@
                                 "Otro"
                             ],
                             "columnas": [
+                                "Nombre del lugar",
+                                "Dirección",
                                 "Total",
                                 "Con síntomas",
                                 "Esquema de vacunación completo",
@@ -711,13 +953,13 @@
                                 "Recibieron vacunación",
                                 "Recibieron antibióticos"
                             ],
-                            "_corregido": "v1.0 no traía filas\/columnas explícitas; el PDF (pág. 2, tabla VII) no incluye la fila 'Universidad\/Instituto' que sí tienen Varicela y Parotiditis"
+                            "_corregido": "v1.0 no traía filas\/columnas explícitas; el PDF (pág. 2, tabla VII) no incluye la fila 'Universidad\/Instituto' que sí tienen Varicela y Parotiditis. 2026-08-06: faltaban 'Nombre del lugar' y 'Dirección' (confirmado contra el PDF y contra las propias notas _corregido de B01\/B26, que aclaran que ESAS dos fichas NO llevan el detalle de vacunación\/antibióticos de Tos ferina -- prueba indirecta de que ese detalle sí es de A37.0, y que a A37.0 le faltaban nombre\/dirección)."
                         }
                     ]
                 },
                 {
                     "nombre": "Clasificación final",
-                    "orden": 6,
+                    "orden": 8,
                     "campos": [
                         {
                             "clave": "a37_0_clasificacion_final",
@@ -762,7 +1004,8 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -994,7 +1237,8 @@
             "_observaciones_tablas_hija": "La BD tiene usa_muestras=1, pero el PDF de Parotiditis (pág. 4) no trae ninguna sección de laboratorio — a diferencia de Varicela, que sí la trae. Revisar si el flag es correcto.",
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -1296,7 +1540,8 @@
                 "nombre_tutor",
                 "celular_tutor",
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -1578,7 +1823,8 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -1888,7 +2134,8 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -2210,7 +2457,8 @@
             "_observaciones_tablas_hija": "usa_viajes=1: la sección 'Migración' del PDF (tiempo de residencia, dónde vivía antes, localidades visitadas, viajó últimos 6 meses) va en caso_viaje, no en campo_def. La BD tiene hoy una sección 'Migración' propia en campo_def (seccion_def.id=39) que la duplica — ver INFORME_CARGADOR.md C.1.",
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -2507,7 +2755,8 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "nucleo_incluidos": [
                 "n_historia_clinica"
@@ -2880,7 +3129,8 @@
             "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion', pero caso_contacto no tiene esa columna (no existe en el esquema) -- se deja fuera en vez de inventar una columna nueva para esto.",
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -3339,7 +3589,8 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -3712,7 +3963,8 @@
                 "nacionalidad",
                 "etnia",
                 "nombre_tutor",
-                "celular_tutor"
+                "celular_tutor",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -4057,7 +4309,8 @@
                 "etnia",
                 "nombre_tutor",
                 "celular_tutor",
-                "direccion"
+                "direccion",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -4464,7 +4717,8 @@
                 "nombre_tutor",
                 "celular_tutor",
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -5513,13 +5767,6 @@
                     "orden": 2,
                     "campos": [
                         {
-                            "clave": "b05_ocupacion",
-                            "etiqueta": "Ocupación",
-                            "tipo": "TEXTO",
-                            "orden": 2,
-                            "obligatorio": false
-                        },
-                        {
                             "clave": "b05_lugar_probable_de_parto",
                             "etiqueta": "Lugar probable de parto",
                             "tipo": "TEXTO",
@@ -6368,7 +6615,8 @@
             "_nota_sensible": "Antes de la recarga (RECARGA_FICHAS.md Fase 3), el 100% de los campos de esta ficha (45\/45) estaban marcados campo_def.sensible=1 en la BD -- coherente con que toda la ficha trata de estado VIH de gestante y niño. La v2.1 no había trasladado esa marca al manifiesto (hallazgo de CIERRE_RECARGA_Y_FASE5.md Parte 0); se restaura aquí en todos los campos.",
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -6739,7 +6987,8 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -7077,7 +7326,8 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -7481,7 +7731,8 @@
             "nucleo_omitidos": [
                 "gestante",
                 "celular",
-                "nombre_tutor"
+                "nombre_tutor",
+                "ocupacion"
             ],
             "nucleo_incluidos": [
                 "n_historia_clinica"
@@ -7887,7 +8138,8 @@
             "_nota_columnas": "ANTES_DE_COMPARAR_FICHAS.md, prueba de humo: sin esto, el widget mostraba solo 'Dosis' (el mínimo por defecto) para ESAVI -- justo la ficha que motivó ampliar caso_vacuna con estas columnas. Se configuran todas: es la única ficha que las necesitaba todas.",
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -8273,7 +8525,7 @@
                 "CASO_INDICE",
                 "AGRESOR"
             ],
-            "_nota_general": "Ficha de maxima confidencialidad: todos los campos deben ser sensible=1.",
+            "_nota_general": "Ficha de maxima confidencialidad: todos los campos deben ser sensible=1. Ocupación de la persona agredida (antes y07_ocupacion) se promovió a núcleo (persona.ocupacion) -- no se omite acá, así que se muestra; y07_ocupacion_agresor es otra persona y se queda como campo_def propio.",
             "tablas_hijas": {
                 "caso_contacto": false,
                 "caso_muestra": false,
@@ -8379,13 +8631,6 @@
                             "etiqueta": "¿Tiene empleo remunerado?",
                             "tipo": "BOOLEANO",
                             "orden": 5,
-                            "sensible": true
-                        },
-                        {
-                            "clave": "y07_ocupacion",
-                            "etiqueta": "Ocupación",
-                            "tipo": "TEXTO",
-                            "orden": 6,
                             "sensible": true
                         }
                     ]
@@ -8631,7 +8876,8 @@
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {
@@ -8951,7 +9197,8 @@
                 "celular_tutor",
                 "gestante",
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "nucleo_incluidos": [
                 "n_historia_clinica"
@@ -10603,7 +10850,8 @@
             "_nota_residencia_madre": "PENDIENTES_POST_FASE5.md punto 4: 'Residencia habitual de la madre' (PDF pág. 28) ya no vive en campo_def -- se captura en caso_sujeto (rol MADRE: distrito_id + direccion, con selector de UBIGEO), fuera del manifiesto\/cargador. Ver app\/Views\/partials\/tablas-hijas\/residencia-madre.php y CasosController::datosResidenciaMadre().",
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico"
+                "pueblo_etnico",
+                "ocupacion"
             ],
             "secciones": [
                 {

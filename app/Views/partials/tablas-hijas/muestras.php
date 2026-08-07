@@ -63,7 +63,25 @@ $opcionesGenotipo = !empty($opcionesMuestraExtra['genotipo'])
     ? array_values(array_intersect($opcionesGenotipoDefecto, $opcionesMuestraExtra['genotipo']))
     : $opcionesGenotipoDefecto;
 
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esB05, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $dependeDeColumnaMuestra, $attrsDependencia): void {
+// "Agente identificado"/"agente aislado" es TEXTO libre para las demás
+// fichas que lo usan (A80: nombre de cepa, sin vocabulario cerrado) -- a
+// diferencia de genotipo (select por defecto, texto libre opt-out), acá es
+// al revés: solo se vuelve <select> cuando la ficha declara
+// opciones.agente_aislado (opt-in), sin tocar el comportamiento de A80.
+// A37.0 (VIII. Laboratorio, ítem 64) es la primera en declararlo, con las 4
+// especies de Bordetella del PDF -- no hay catálogo compartido de
+// "agentes" entre fichas, así que el default vive acá igual que genotipo.
+$opcionesAgenteDefecto = [
+    'B_PERTUSSIS'      => 'B. pertussis',
+    'B_PARAPERTUSSIS'  => 'B. parapertussis',
+    'B_HOLMESII'       => 'B. holmesii',
+    'BORDETELLA_SP'    => 'Bordetella sp.',
+];
+$opcionesAgente = !empty($opcionesMuestraExtra['agente_aislado'])
+    ? array_intersect_key($opcionesAgenteDefecto, array_flip($opcionesMuestraExtra['agente_aislado']))
+    : [];
+
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esB05, $cie10Actual, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $opcionesAgente, $dependeDeColumnaMuestra, $attrsDependencia): void {
     $errorToma = $error['fecha_toma'] ?? null;
     $errorEnvio = $error['fecha_envio_ins'] ?? null;
     $errorResult = $error['fecha_result'] ?? null;
@@ -177,9 +195,20 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         </div>
         <?php endif; ?>
         <?php if ($muestra('agente_aislado')): ?>
-        <div class="field">
-          <label class="fl">Agente aislado</label>
-          <div class="control"><input type="text" name="muestra_agente_aislado[]" value="<?= e($fila['agente_aislado'] ?? '') ?>" placeholder="Agente aislado…"></div>
+        <div class="field"<?= $attrsDependencia('agente_aislado') ?> style="<?= !$visiblePorDependencia('agente_aislado') ? 'display:none;' : '' ?>">
+          <label class="fl"><?= $cie10Actual === 'A37.0' ? 'Agente identificado' : 'Agente aislado' ?></label>
+          <div class="control">
+            <?php if (!empty($opcionesAgente)): ?>
+              <select name="muestra_agente_aislado[]">
+                <option value="">Seleccionar…</option>
+                <?php foreach ($opcionesAgente as $valOpt => $lblOpt): ?>
+                  <option value="<?= e($valOpt) ?>" <?= seleccionado($fila['agente_aislado'] ?? '', $valOpt) ?>><?= e($lblOpt) ?></option>
+                <?php endforeach; ?>
+              </select>
+            <?php else: ?>
+              <input type="text" name="muestra_agente_aislado[]" value="<?= e($fila['agente_aislado'] ?? '') ?>" placeholder="Agente aislado…">
+            <?php endif; ?>
+          </div>
         </div>
         <?php endif; ?>
         <?php if ($muestra('observaciones')): ?>

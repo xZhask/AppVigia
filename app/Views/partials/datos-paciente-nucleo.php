@@ -313,14 +313,10 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
     </div>
   </div>
 
-  <?php if ($b05['ocupacion']['name']): ?>
-  <div class="field b05-elem" <?= $esB05 ? '' : 'hidden' ?>>
+  <div class="field" data-nucleo-campo="ocupacion" <?= $nucleoOmite('ocupacion') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Ocupación</label>
-    <div class="control">
-      <input type="text" name="<?= $b05['ocupacion']['name'] ?>" value="<?= e($b05['ocupacion']['val']) ?>" placeholder="Ocupación…">
-    </div>
+    <div class="control"><input type="text" name="ocupacion" value="<?= e($valoresFijos['ocupacion'] ?? '') ?>" placeholder="Ocupación…"></div>
   </div>
-  <?php endif; ?>
 </div>
 
 <!-- 3b. Nombre de Madre/Responsable/Tutor y Celular del tutor (En la siguiente fila después de Etnia) -->

@@ -109,6 +109,17 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         'a33_fecha_de_notificacion_ee_ss_a_red_microrred', 'a33_fecha_de_notificacion_red_microrred_a_disa',
         'a33_fecha_de_notificacion_dge', 'a33_captacion_del_caso',
     ],
+    'A37.0' => [
+        // notificacion-fechas-a370.php
+        'a37_0_codigo_de_registro_n', 'a37_0_fecha_de_conocimiento_local_del_caso', 'a37_0_fecha_de_notificacion_ee_ss_a_red_microred',
+        'a37_0_fecha_de_notificacion_red_microrred_a_direccion_r', 'a37_0_fecha_de_notificacion_de_direccion_de_salud_a_cdc',
+        'a37_0_fecha_de_investigacion_visita_domiciliaria', 'a37_0_caso_captado_en',
+        // clasificacion-caso-a370.php (2026-08-07, mismo motivo que
+        // p35_0_clasificacion_del_caso): reposicionada después de
+        // "Laboratorio" en vez de quedar en su orden del manifiesto (8),
+        // que caería ANTES de la tarjeta fija de Laboratorio.
+        'a37_0_clasificacion_final',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -123,6 +134,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'P35.0' => ['Datos de notificación e investigación del caso', 'Clasificación del caso'],
     'A35' => ['Datos de notificación e investigación del caso'],
     'A33' => ['Datos de notificación e investigación del caso'],
+    'A37.0' => ['Datos de notificación e investigación del caso', 'Clasificación final'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
@@ -219,7 +231,7 @@ $campoHospitalizadoA35 = (($enfermedad['cie10'] ?? '') === 'A35')
     ? $campo('a35_hospitalizado')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje): void {
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto): void {
     $campos = CampoDef::porSeccion($seccionId);
     // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
     // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
@@ -241,7 +253,13 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // el checklist "Dosis recibidas" de toxoide tetánico (PENDIENTES.md
     // A35.11), no un síntoma; se agrupan aparte en una fila horizontal
     // propia (ver el hook por clave más abajo), no en "Signos y síntomas".
-    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a'];
+    // a37_0_viajo_en_los_ultimos_21_dias/a37_0_algun_miembro_de_la_familia...:
+    // ninguno de los 2 es "padre" real de otro campo_def (solo de un wrap a
+    // medida hecho a mano en el hook por clave más abajo, que el motor
+    // $idsPadre no puede detectar porque no es un depende_de real) -- sin
+    // esto, ambos caían al grupo baneado "Signos y síntomas" y el hook de
+    // más abajo nunca se ejecutaba (el campo nunca pasaba por este loop).
+    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a', 'a37_0_pentavalente_1ra', 'a37_0_pentavalente_2da', 'a37_0_pentavalente_3ra', 'a37_0_dpt_1er_refuerzo', 'a37_0_dpt_2do_refuerzo', 'a37_0_viajo_en_los_ultimos_21_dias', 'a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_'];
     $esBooleanoJuntoASuCampo = fn($c) => in_array($c['id'], $idsPadre) || in_array($c['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true);
     $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !$esBooleanoJuntoASuCampo($c));
     $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || $esBooleanoJuntoASuCampo($c));
@@ -268,6 +286,17 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             }
             if (in_array($campo['clave'] ?? '', ['a35_dosis_1d', 'a33_dosis_1a'], true)) {
                 ?></div><div class="eyebrow" style="margin-bottom:10px">Dosis recibidas</div><div class="fields" style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px"><?php
+            }
+            // A37.0 (2026-08-06): "Dosis recibidas" (ítem 51) es un
+            // checklist cerrado de 5 casillas -- mismo patrón que las
+            // dosis de A35/A33 arriba, pero repartido en 2 grupos
+            // (Pentavalente/DPT) porque cada uno tiene su propia
+            // numeración.
+            if (($campo['clave'] ?? '') === 'a37_0_pentavalente_1ra') {
+                ?></div><div class="eyebrow" style="margin-bottom:10px">Pentavalente</div><div class="fields" style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px"><?php
+            }
+            if (($campo['clave'] ?? '') === 'a37_0_dpt_1er_refuerzo') {
+                ?></div><div class="eyebrow" style="margin-bottom:10px">DPT</div><div class="fields" style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px"><?php
             }
             // A35.12: "Distrito" (excluido arriba del loop genérico vía
             // $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA) se reemplaza acá, justo
@@ -299,6 +328,19 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $campoHospitalizadoAlta = (($campo['clave'] ?? '') === 'a33_condiciones_de_alta') ? $campoHospitalizadoA33 : $campoHospitalizadoA35;
                 ?><div class="dep-wrap" data-depende-de="<?= e($campoHospitalizadoAlta['name']) ?>" data-valor-activador="SI"><?php
             }
+            // A37.0 (2026-08-06): "madre vacunada Tdap" solo aplica si el
+            // paciente es <1 año (calcularEdad() en ficha.js); "gestante
+            // recibió Tdap" solo si persona.gestante=1 (actualizarGestante(),
+            // mismo mecanismo que ya usa wrapLugarPartoB05 en
+            // datos-paciente-nucleo.php). Ambos wraps arrancan ocultos por
+            // defecto -- el JS los des-oculta en la carga si aplica, igual
+            // que #campoSemanasGestacion/#campoTrimestreGestacion.
+            if (($campo['clave'] ?? '') === 'a37_0_la_madre_fue_vacunada_con_tdap_durante_la_gestaci') {
+                ?><div id="wrapTdapMadreA370" hidden style="display:none;"><?php
+            }
+            if (($campo['clave'] ?? '') === 'a37_0_la_gestante_recibio_tdap_si_el_caso_es_gestante') {
+                ?><div id="wrapTdapGestanteA370" hidden style="display:none;"><?php
+            }
             $tieneDependencia = !empty($campo['depende_de']);
             if ($tieneDependencia):
                 $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);
@@ -319,6 +361,112 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                   </select>
                 </div>
               </div>
+            <?php elseif (($campo['clave'] ?? '') === 'a37_0_contactos_por_lugar'):
+                // Ítem 62 del PDF (VII. Contactos directos): el PDF trae una
+                // tabla-checklist de 6 filas fijas por tipo de lugar (Casa,
+                // Nido/guardería, Colegio, Centro de trabajo, Establecimiento
+                // de salud, Otro), igual que B26 en su propia página --
+                // B26 ya tradujo eso a una lista dinámica "+ Agregar lugar"
+                // en vez de una matriz siempre visible con las 6 filas en
+                // blanco (lugar-probable-infeccion-b26.php). Se calca el
+                // mismo patrón acá (más columnas: A37.0 pide 6 conteos por
+                // lugar contra los 2 de B26), en vez del render genérico de
+                // campos/matriz.php. Sigue siendo MATRIZ en el manifiesto
+                // (igual que b26_contactos_por_lugar) solo como ancla de
+                // almacenamiento; el remapeo de name= vive en
+                // CasosController::validarCamposDinamicos().
+                $filasLugarA370 = is_array($valor) ? $valor : [];
+                $filaLugarA370 = function (array $f = ['tipo' => 'CASA', 'nombre' => '', 'direccion' => '', 'total' => '', 'con_sintomas' => '', 'esquema_completo' => '', 'esquema_incompleto' => '', 'recibieron_vacunacion' => '', 'recibieron_antibioticos' => '']): void {
+                    $tipo = $f['tipo'] ?? 'CASA';
+                    $esCasa = ($tipo === 'CASA');
+                    ?>
+                    <div class="subrow row-lugar-a370" style="margin-bottom:12px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02));display:flex;">
+                      <div style="flex:1">
+                        <div class="fields halves" style="margin-bottom:10px">
+                          <div class="field">
+                            <label class="fl">Tipo de lugar</label>
+                            <div class="control">
+                              <select name="a370_lugar_tipo[]" class="sel-lugar-tipo-a370" data-nosearch="true">
+                                <option value="CASA" <?= seleccionado($tipo, 'CASA') ?>>Casa</option>
+                                <option value="NIDO_GUARDERIA" <?= seleccionado($tipo, 'NIDO_GUARDERIA') ?>>Nido / guardería</option>
+                                <option value="COLEGIO" <?= seleccionado($tipo, 'COLEGIO') ?>>Colegio</option>
+                                <option value="CENTRO_TRABAJO" <?= seleccionado($tipo, 'CENTRO_TRABAJO') ?>>Centro de trabajo</option>
+                                <option value="ESTABLECIMIENTO_SALUD" <?= seleccionado($tipo, 'ESTABLECIMIENTO_SALUD') ?>>Establecimiento de salud</option>
+                                <option value="OTROS" <?= seleccionado($tipo, 'OTROS') ?>>Otro (especificar)</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="field">
+                            <label class="fl">Nombre del lugar</label>
+                            <div class="control">
+                              <input type="text" name="a370_lugar_nombre[]" value="<?= e($f['nombre']) ?>" placeholder="<?= $esCasa ? '— No aplica —' : 'Nombre del lugar…' ?>" <?= $esCasa ? 'disabled' : '' ?> class="inp-lugar-nombre-a370">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="fields" style="margin-bottom:10px">
+                          <div class="field wide">
+                            <label class="fl">Dirección</label>
+                            <div class="control">
+                              <?php
+                              // Casa: la dirección de residencia ya se captura en
+                              // "Datos personales" -- no tiene sentido repetirla
+                              // (ni "Nombre del lugar", una casa no tiene nombre
+                              // propio). El resto de opciones sí necesita ambos.
+                              ?>
+                              <input type="text" name="a370_lugar_direccion[]" value="<?= e($f['direccion']) ?>" placeholder="<?= $esCasa ? '— No aplica —' : 'Dirección del lugar…' ?>" <?= $esCasa ? 'disabled' : '' ?> class="inp-lugar-direccion-a370">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="fields thirds" style="margin-bottom:10px">
+                          <div class="field">
+                            <label class="fl">Total</label>
+                            <div class="control mono"><input type="number" min="0" step="1" name="a370_lugar_total[]" value="<?= e($f['total']) ?>" placeholder="0" style="text-align:center"></div>
+                          </div>
+                          <div class="field">
+                            <label class="fl">Con síntomas</label>
+                            <div class="control mono"><input type="number" min="0" step="1" name="a370_lugar_con_sintomas[]" value="<?= e($f['con_sintomas']) ?>" placeholder="0" style="text-align:center"></div>
+                          </div>
+                          <div class="field">
+                            <label class="fl">Esquema de vacunación completo</label>
+                            <div class="control mono"><input type="number" min="0" step="1" name="a370_lugar_esquema_completo[]" value="<?= e($f['esquema_completo']) ?>" placeholder="0" style="text-align:center"></div>
+                          </div>
+                        </div>
+                        <div class="fields thirds" style="margin-bottom:0">
+                          <div class="field">
+                            <label class="fl">Esquema de vacunación incompleto</label>
+                            <div class="control mono"><input type="number" min="0" step="1" name="a370_lugar_esquema_incompleto[]" value="<?= e($f['esquema_incompleto']) ?>" placeholder="0" style="text-align:center"></div>
+                          </div>
+                          <div class="field">
+                            <label class="fl">Recibieron vacunación</label>
+                            <div class="control mono"><input type="number" min="0" step="1" name="a370_lugar_recibieron_vacunacion[]" value="<?= e($f['recibieron_vacunacion']) ?>" placeholder="0" style="text-align:center"></div>
+                          </div>
+                          <div class="field">
+                            <label class="fl">Recibieron antibióticos</label>
+                            <div class="control mono"><input type="number" min="0" step="1" name="a370_lugar_recibieron_antibioticos[]" value="<?= e($f['recibieron_antibioticos']) ?>" placeholder="0" style="text-align:center"></div>
+                          </div>
+                        </div>
+                      </div>
+                      <button type="button" class="ra quitar-fila" title="Quitar lugar" style="margin-top:22px;margin-left:10px">
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 4.5h9M6 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4.5 4.5v8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.3 7v4M8.7 7v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                      </button>
+                    </div>
+                    <?php
+                };
+                ?>
+                <div class="field wide">
+                  <label class="fl"><?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?></label>
+                  <div class="subrows" data-lista="a370-lugar-contactos" id="listaLugarContactosA370" style="margin-top:8px">
+                    <?php foreach ($filasLugarA370 as $fl): $filaLugarA370($fl); endforeach; ?>
+                  </div>
+                  <template id="plantilla-a370-lugar-contactos">
+                    <?php $filaLugarA370(); ?>
+                  </template>
+                  <button type="button" class="btn btn-ghost agregar-fila" data-plantilla="plantilla-a370-lugar-contactos" data-lista="a370-lugar-contactos" style="margin-top:10px">
+                    <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    Agregar lugar
+                  </button>
+                  <?php if ($error): ?><span class="hint err"><?= e($error) ?></span><?php endif; ?>
+                </div>
             <?php else:
                 require __DIR__ . '/campo-dinamico.php';
                 if ($campo['etiqueta'] === 'Descripción de la erupción cutánea' || stripos($campo['etiqueta'], 'descripción de la erupción') !== false) {
@@ -329,9 +477,18 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if (in_array($campo['clave'] ?? '', ['a33_fecha_de_alta', 'a35_fecha_de_alta'], true)) {
                 ?></div><?php // cierra el .dep-wrap de Hospitalizado=Sí abierto arriba
             }
+            if (($campo['clave'] ?? '') === 'a37_0_fecha_de_vacunacion_tdap_de_la_madre') {
+                ?></div><?php // cierra #wrapTdapMadreA370
+            }
+            if (($campo['clave'] ?? '') === 'a37_0_fecha_de_vacunacion_tdap_gestante') {
+                ?></div><?php // cierra #wrapTdapGestanteA370
+            }
             $tipoAnterior = $campo['tipo'];
 
             if (in_array($campo['clave'] ?? '', ['a35_dosis_5d', 'a33_dosis_5a'], true)) {
+                ?></div><div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>"><?php
+            }
+            if (($campo['clave'] ?? '') === 'a37_0_dpt_2do_refuerzo') {
                 ?></div><div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>"><?php
             }
 
@@ -368,6 +525,42 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                   <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
                 </div>
                 <div class="fields" style="width: 100%; margin-bottom:0">
+                <?php
+            }
+
+            // A37.0 (2026-08-06): ítem 59 del PDF -- "¿Viajó en los últimos
+            // 21 días?" gatea la tabla caso_viaje, mismo mecanismo que
+            // B05/P35.0 arriba (antes la tabla vivía siempre visible en la
+            // tarjeta fija "Antecedentes epidemiológicos"; A37.0 se excluyó
+            // de esa tarjeta en nueva/index.php\/editar.php para que solo
+            // aparezca acá, condicionada).
+            if (($campo['clave'] ?? '') === 'a37_0_viajo_en_los_ultimos_21_dias') {
+                $valViajoA370 = $valoresCampos[$campo['id']] ?? '';
+                $esViajoInicialA370 = ($valViajoA370 === '1') || !empty($filasViajes ?? []);
+                ?>
+                </div>
+                <div id="a370-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esViajoInicialA370 ? 'display: none;' : '' ?>" <?= !$esViajoInicialA370 ? 'hidden' : '' ?>>
+                  <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
+                  <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                </div>
+                <div class="fields" style="width: 100%; margin-bottom:16px">
+                <?php
+            }
+
+            // A37.0: ítem 61 del PDF -- "¿Algún miembro de la familia...?"
+            // gatea la tabla caso_contacto (misma lógica que la tabla de
+            // viajes arriba; antes vivía siempre visible en "Antecedentes
+            // epidemiológicos", ahora condicionada acá).
+            if (($campo['clave'] ?? '') === 'a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_') {
+                $valFamiliarTosA370 = $valoresCampos[$campo['id']] ?? '';
+                $esFamiliarTosInicialA370 = ($valFamiliarTosA370 === '1') || !empty($filasContactos ?? []);
+                ?>
+                </div>
+                <div id="a370-wrapper-contactos-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esFamiliarTosInicialA370 ? 'display: none;' : '' ?>" <?= !$esFamiliarTosInicialA370 ? 'hidden' : '' ?>>
+                  <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si tuvo tos prolongada, registrar el familiar/contacto</div>
+                  <?php require __DIR__ . '/tablas-hijas/contactos.php'; ?>
+                </div>
+                <div class="fields" style="width: 100%; margin-bottom:16px">
                 <?php
             }
 
@@ -515,7 +708,14 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     </span>
   </div>
   <div class="section-body">
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35'], true)): ?>
+    <?php // Este campo fijo siempre se ancla a $secciones[0] -- para fichas
+    // con una sección propia (no clínica) ANTES de "Cuadro clínico" en el
+    // manifiesto (A37.0: "Datos del paciente (adicionales)" queda de
+    // $secciones[0] tras filtrar la de notificación), el genérico
+    // aterrizaría ahí por error. A37.0 ya trae su propia
+    // "Fecha de inicio de síntomas" (ítem 26) dentro de su Cuadro clínico
+    // real -- ver mismo motivo en CasosController::crear()/actualizar(). ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>

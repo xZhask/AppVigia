@@ -136,7 +136,7 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // es núcleo real (persona.referencia_localizar). Para no cambiar nada
 // visualmente en las 23 fichas que no lo pedían, todas declaran esta
 // omisión salvo B05.
-const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'nombre_tutor', 'celular_tutor', 'gestante'];
+const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'ocupacion', 'nombre_tutor', 'celular_tutor', 'gestante'];
 
 // Simétrico de NUCLEO_OMITIBLES: campos del núcleo ocultos por defecto que
 // una ficha declara para MOSTRAR (opt-in), en vez de mostrados por defecto
@@ -256,6 +256,14 @@ function validarManifiesto(array $manifiesto): void
                     }
                     if (!is_bool($campo['decimales'])) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"decimales\" no booleano.");
+                    }
+                }
+                if (array_key_exists('especificar', $campo)) {
+                    if ($tipo !== 'SI_NO_FECHA') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"especificar\" pero no es SI_NO_FECHA (es {$tipo}).");
+                    }
+                    if (!is_bool($campo['especificar'])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"especificar\" no booleano.");
                     }
                 }
                 if (!empty($campo['depende_de'])) {
@@ -689,6 +697,16 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
     // trata "sin config" igual que "config sin decimales".
     if ($tipo === 'NUMERO' && array_key_exists('decimales', $campo)) {
         $config = json_encode(['decimales' => $campo['decimales']], JSON_UNESCAPED_UNICODE);
+    }
+
+    // SI_NO_FECHA: por defecto solo Sí/No + fecha (si Sí). "especificar":
+    // true es el opt-in explícito para los "Otros" que además necesitan un
+    // campo de texto libre -- se renderiza junto a la fecha, condicionado
+    // al mismo Sí (campos/si-no-fecha.php), no como un campo_def aparte
+    // siempre visible (ver A37.0, corregido 2026-08-06 tras detectar que
+    // el TEXTO suelto no debía depender de nada).
+    if ($tipo === 'SI_NO_FECHA' && array_key_exists('especificar', $campo)) {
+        $config = json_encode(['especificar' => $campo['especificar']], JSON_UNESCAPED_UNICODE);
     }
 
     $stmt = $pdo->prepare(

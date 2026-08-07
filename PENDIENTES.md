@@ -3546,13 +3546,716 @@ ficha-por-ficha con **Tos ferina (`A37.0`)** en otra sesión, para no
 cargar más esta. A33 queda tal cual (A33.1-A33.8 cerrados, falta solo
 "Investigador de campo" cuando se retome). Ver ítem 13 más abajo.
 
-## 13. Cotejo de Tos ferina (A37.0) — próximo, sin empezar
+## 13. Cotejo de Tos ferina (A37.0) — en curso, "Notificación" y "Datos del paciente" cerrados (págs. 1-2)
 
-Siguiente ficha a auditar contra el PDF, elegida por el usuario
-2026-08-06 al pausar A33. Sin cotejar todavía ninguna sección.
-Mismo flujo que las anteriores: extraer el texto de la página
-correspondiente del compendio con `pdftotext -f <pág> -l <pág>
--layout "INFORME PARA APLICATIVO DE EPIDEMIOLOGIA_removed.pdf" -`
-(no se sabe aún qué página del PDF le corresponde -- ubicarla primero),
-comparar sección por sección contra `manifiesto_fichas.json` (clave
-`A37.0`) y el HTML renderizado real.
+Elegida por el usuario 2026-08-06 al pausar A33 (ver ítem 12). Texto
+real extraído con `pdftotext -f 1 -l 2 -layout "INFORME PARA
+APLICATIVO DE EPIDEMIOLOGIA_removed.pdf" -` (pág. 1-2, cabecera + Secc.
+I "Datos del establecimiento notificante" + Secc. II "Datos del
+paciente" + III "Cuadro clínico" en adelante).
+
+**Cerrado en esta sesión (cabecera + Secc. I + Secc. II del PDF):**
+
+- Nueva sección de manifiesto "Datos de notificación e investigación
+  del caso" (orden 1): Código de registro N.°, las 5 fechas de la
+  cadena EE.SS.→Red/Microred→Dirección Regional de Salud→CDC→
+  investigación, y "Caso captado en" (SELECT, catálogo propio
+  `A37.0 - Caso captado en`: Emergencia/Consultorio externo/Búsqueda
+  institucional/Búsqueda comunitaria). **Corrección post-implementación
+  (mismo día):** el primer intento dejó estos 7 campos en una tarjeta
+  nueva aparte, generada por el render genérico -- el usuario avisó que
+  rompía el patrón de las demás fichas cotejadas (B26/A33/A35/P35.0/
+  O95/B05), que siempre pintan su cabecera de fechas DENTRO de la
+  tarjeta fija "1. Notificación", vía el 4.º camino de render
+  (`notificacion-fechas-<ficha>.php`, "name literal remapeado a mano",
+  ver plantilla de cotejo, Paso 0). Corregido: `notificacion-fechas-a370.php`
+  nuevo (mismo patrón que `notificacion-fechas-a33.php`, resuelve por
+  clave vía `$resolvedorPara('A37.0')`), incluido en `nueva/index.php`
+  y `editar.php` junto a sus 7 hermanos; `A37.0` sumada al arreglo que
+  oculta el bloque genérico `tipo_captacion`/`lugar_captacion`/
+  `clasificacion_captacion` (no lo pide el PDF) en esos mismos 2
+  archivos; y sumada a `$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA` **y**
+  `$SECCIONES_CON_PARTIAL_A_MEDIDA` en `secciones-clinicas.php` (las
+  dos, no solo la primera -- la sección solo desaparece del render
+  genérico si ambas están declaradas) para que la tarjeta nueva no
+  quede duplicada. El `campo_def` en sí no cambió, solo por dónde se
+  pinta. Reverificado completo tras el fix: 24/24 OK en los 3
+  verificadores, caso de prueba de punta a punta con los 7 campos
+  persistiendo igual que antes, y render de A36/A33/A35/B26/B05/O95/
+  P35.0 sin cambios (ninguno perdió ni ganó nada).
+- Ítems 1/2/4/5 de la Secc. I (GERESA/DIRESA/DIRIS, Red de Salud, EESS
+  notificante, Inst. Adm.) **no** se modelan como `campo_def`: ya son
+  núcleo del sistema, derivados de `caso.establecimiento_id` →
+  `establecimiento.nombre/institucion` → `red_salud.nombre/diresa`
+  (capturados una sola vez al crear el caso). Documentado como `_nota`
+  en el manifiesto, junto al ítem 3 bloqueado (ver abajo).
+- `unidades_edad: ["ANIOS","MESES"]` (ítem 10 del PDF) — A37.0 era una
+  de las 8 fichas pendientes de la Fase F3 (`PENDIENTES.md` ítem F).
+- `detalle_domicilio` (Tipo de zona/vía, Nombre de vía, Nro., Mz./Lote,
+  Tiempo de residencia, ítem 22) — el mecanismo ya existía (construido
+  con P35.0); A37.0 era una de las 2 fichas confirmadas contra el PDF
+  desde `add_detalle_domicilio_persona.php` pero nunca lo había
+  declarado.
+- `pueblo_etnico` y `referencia_localizar` (núcleo) dejan de omitirse
+  -- el PDF sí los pide (ítems 15 y 22).
+- Nueva sección "Datos del paciente (adicionales)" (orden 2): Puérpera
+  (BOOLEANO, ítem 20), Lugar de trabajo o estudio (TEXTO, ítem 21), y
+  el bloque condicional "¿Es menor de edad?" + Nombre/Teléfono/N.° Doc.
+  de madre o tutor (ítems 23-25, mismo patrón `depende_de`/
+  `valor_activador` que ya usa B05) -- se omiten los `nombre_tutor`/
+  `celular_tutor` incondicionales del núcleo para que no convivan con
+  la versión condicional.
+- **Ocupación (ítem 17) promovida a núcleo** (decisión del usuario:
+  "no deseo que se hardcodee ficha por ficha un campo que puede
+  aparecer en varias"), no solo agregada como `campo_def` de A37.0:
+  - `persona.ocupacion VARCHAR(120)` nueva
+    (`sql/migraciones/add_ocupacion_persona.php`, ubicada después de
+    `pueblo_etnico`; `sql/01_esquema_actual.sql` recongelado).
+  - `NUCLEO_OMITIBLES` (`cargar_fichas.php`) suma `'ocupacion'`;
+    `datos-paciente-nucleo.php` gana un campo declarativo
+    `data-nucleo-campo="ocupacion"` en la fila de Etnia/Pueblo étnico,
+    reemplazando el bloque `b05-elem` que antes resolvía por ETIQUETA.
+  - `CasosController` (`crear`/`editar`/`actualizar`/
+    `valoresFijosPorDefecto`/`sanearCamposNucleo`) y
+    `Caso::conDetalle()` la leen/escriben igual que `pueblo_etnico`;
+    `ver.php` la muestra si tiene valor.
+  - `campo_def` ad-hoc eliminados: `b05_ocupacion` (B05) y
+    `y07_ocupacion` (Y07, solo la persona agredida -- el de la persona
+    AGRESORA, `y07_ocupacion_agresor`, sigue como `campo_def` propio,
+    es otra persona). Las 3 fichas resultantes que muestran Ocupación
+    (A37.0, B05, Y07) no la omiten; **O95 se deja intacta a
+    propósito**: su "Ocupación" del Anexo 2 sigue siendo su propio
+    `campo_def`, condicionada a `o95_tipo_de_ficha=ANEXO_2` (un caso
+    que el mecanismo opt-out no modela, mezclar los dos hubiera hecho
+    que Ocupación se viera también en Anexo 1) -- O95 solo agrega
+    `'ocupacion'` a `nucleo_omitidos` para no duplicarla. Y59.0
+    tampoco se toca (su Ocupación es un SELECT de catálogo cerrado, un
+    dato distinto a un TEXTO libre) -- mismo tratamiento, solo omite.
+    Las 21 fichas restantes agregan `'ocupacion'` a `nucleo_omitidos`
+    para no cambiar de aspecto.
+
+**Bloqueado, documentado en el manifiesto (`_nota` de la sección):**
+ítem 3 de la Secc. I, "Micro red" -- el sistema no modela ese nivel
+jerárquico (`red_salud` solo tiene `nombre`/`diresa`, sin una tabla de
+microrredes). No resuelto: haría falta agregar la jerarquía completa,
+fuera de alcance de un cotejo de campos.
+
+**Verificado con casos reales vía `CasosController`** (`scratch/
+test_a37_cotejo_paso4.php`, `test_a37_negativo.php`,
+`test_a37_actualizar.php`, `test_a37_editar_ver.php`,
+`test_render_regresion.php`, todos gitignored): crear → editar → ver
+→ actualizar con valores en las 2 secciones nuevas, `detalle_domicilio`,
+`unidades_edad` y Ocupación -- todo persiste, se prefila y se muestra
+correctamente; casos borrados al terminar, 0 filas residuales.
+**Prueba negativa:** un segundo caso forzó por POST los 3 campos del
+bloque "madre o tutor" sin marcar "¿Es menor de edad?" -- el servidor
+los descartó (`campoVisiblePorDependencia`), solo persistió el booleano
+en `0`. Render de "Nueva ficha" para A36/B05/O95/A37.0 confirma cero
+regresión: A36 sigue sin mostrar Ocupación, B05 la muestra una sola vez
+(antes eran 2 mecanismos casi duplicados), O95 la sigue mostrando solo
+en Anexo 2. `cargar_fichas.php --apply` (24/24), `verificar_fichas.php`
+(24/24 OK), `verificar_claves.php` (208/208, 0 faltantes) y
+`verificar_render.php` (sin huérfanos nuevos; A80/B26/B55 siguen con
+los mismos huérfanos preexistentes, ajenos a este cotejo) OK.
+
+**Segunda ronda, mismo día (2026-08-06) -- cotejo de "Cuadro clínico"
+en adelante (III-IX del PDF), pedido explícito del usuario tras
+detectar el bug de la fecha:**
+
+- **"Antibióticos recibidos" (ítem 30, Tratamiento):** faltaba la
+  columna "Nombre antibiótico" -- v1.0 la modelaba al revés, con el
+  nombre fijo en la fila ("Antibiótico 1/2/3") sin forma real de
+  escribirlo. Filas renombradas a "1"/"2"/"3" (genéricas), columna
+  nueva agregada primero.
+- **"Otros (especificar)" (ítem 38, Complicaciones):** el PDF trae una
+  línea en blanco explícita debajo de la tabla de complicaciones para
+  especificar "Otros" -- faltaba, agregado como `campo_def` TEXTO
+  nuevo justo después de "Otros" (SI_NO_FECHA).
+- **"Contactos por lugar" (ítem 62, Contactos directos):** faltaban las
+  columnas "Nombre del lugar" y "Dirección" -- confirmado contra el
+  PDF y, de forma cruzada, contra las propias notas `_corregido` de
+  B01 y B26 (que aclaran que ESAS dos fichas NO llevan el detalle de
+  vacunación/antibióticos de Tos ferina, prueba indirecta de que ese
+  detalle sí es específico de A37.0 y de que a A37.0 le faltaban
+  nombre/dirección, que sí son comunes a las tres).
+
+**Encontrado pero NO implementado, por baja confianza o por tocar
+código compartido -- queda pendiente, no bloquea el cierre:**
+
+- Ítem 28 (Cuadro clínico), fila "Otros:" de la tabla de signos y
+  síntomas: a diferencia del ítem 38, la extracción del PDF no muestra
+  una línea en blanco explícita para especificar -- no se agregó nada
+  por no tener evidencia clara, a diferencia del caso de arriba.
+- Ítems 52-53 (Antecedentes vacunales): "Fecha de última dosis" y
+  "EE.SS donde se vacunó" como resumen aparte de la lista de dosis
+  (`caso_vacuna`) -- sin precedente claro de cómo lo resuelven otras
+  fichas con checklist de vacunas (A33/A35 no tienen un resumen
+  parecido), no se implementó por baja confianza.
+- Ítem 71: "N.° de celular" del investigador -- el partial compartido
+  `investigador.php` (usado sin condición por las 24 fichas) no tiene
+  ningún campo de celular hoy. Es un hueco real pero de código
+  compartido -- no tocado sin preguntar primero (regla del cotejo).
+- Ítems 66-67, Secc. X "Personal de salud que llena la ficha" (Nombre,
+  Cargo) -- posición entre "Clasificación final" (`campo_def` propio de
+  A37.0) y el bloque fijo "Investigador" (shell compartido, ya cubre
+  parcialmente 69-70). No implementado: sin precedente de otra ficha
+  con esta sección exacta en esa posición, y el orden de secciones del
+  shell (`$numeroSeccion`) es frágil (ver el propio bug de esta
+  sesión) como para modificarlo sin más contexto.
+- Cosmético, no pedido por el usuario: "Puérpera" (BOOLEANO sin
+  dependientes) cae bajo el encabezado genérico "Signos y síntomas" al
+  final de la tarjeta "Datos del paciente (adicionales)", separado
+  visualmente del resto de sus campos -- mismo bug preexistente que
+  [[auditoria_ficha_por_ficha_pdf]] ya documentaba (hoy solo corregido
+  para P35.0 vía `$esP350`). No corregido acá por no haber sido pedido.
+
+**Verificado de nuevo tras esta segunda ronda:** caso de prueba real
+con valores en las 3 columnas/campos nuevos (Nombre antibiótico,
+Nombre del lugar + Dirección, Otros especificar) -- persiste
+correctamente, caso borrado sin residuo. Los 3 verificadores en verde
+(A37.0: 8/8 secciones, 61/61 campos, sin huérfanos).
+
+**Pendiente para cerrar A37.0 por completo:** los 4 puntos "encontrado
+pero no implementado" de arriba, más terminar de confirmar item por
+ítem el resto de "Laboratorio" (VIII) y "Clasificación final" (IX)
+-- ya coinciden con el PDF por lo revisado hasta ahora, pero sin el
+mismo nivel de detalle que III-VII en esta ronda.
+
+**Tercera ronda, mismo día (2026-08-06) -- corrección de "Cuadro
+clínico" según jerarquía dada por el usuario (Sí/No/Ign., "Otros"
+síntomas sin especificar, tabla de antibióticos siempre visible):**
+
+- **Sí/No/Ign. → Sí/No + fecha:** el usuario aclaró que A37.0 no debe
+  ofrecer "Ignorado" en sus campos SI_NO_FECHA (Tos paroxística,
+  Estridor, Vómitos, etc.), solo Sí/No con la fecha condicionada a
+  Sí -- que es justo lo que el tipo SI_NO_FECHA ya hace, salvo por la
+  tercera opción "Ign." que se agrega siempre salvo para B05
+  (`$permitirIgnorado` en `si-no-fecha.php`). Se agregó A37.0 a esa
+  misma exclusión (ya existente, ver B05) en vez de inventar un
+  mecanismo nuevo.
+- **"Otros síntomas (especificar)" (ítem 28, Cuadro clínico):** el
+  usuario confirmó explícitamente en su jerarquía que "Otros" sí
+  necesita "Especificar" + "Fecha inicio" -- resuelve la duda de baja
+  confianza de la ronda anterior. Agregado como `campo_def` TEXTO
+  nuevo (`a37_0_otros_sintomas_especificar`) justo después de "Otros
+  síntomas" (SI_NO_FECHA), sin `depende_de` (mismo criterio que
+  "Otros (especificar)" de Complicaciones: SI_NO_FECHA no expone su
+  sub-valor `marcado` al motor de dependencias por nombre plano).
+- **"Antibióticos recibidos" ahora depende de "¿Paciente recibió
+  antibiótico?":** el usuario mostró la tabla de antibióticos como
+  rama condicional de "Sí" en su jerarquía -- se agregó
+  `depende_de`/`valor_activador` a la MATRIZ (primer caso de MATRIZ
+  con dependencia en el manifiesto; confirmado por lectura de código
+  que el mecanismo `.dep-wrap` es genérico por tipo, no exclusivo de
+  BOOLEANO/SELECT). Efecto colateral esperado y verificado: al
+  convertirse en "padre" de una dependencia, "¿Paciente recibió
+  antibiótico?" pasa de checkbox a `<select>` Sí/No -- comportamiento
+  ya existente y documentado para cualquier BOOLEANO que sea padre de
+  otro campo (ver `$esBooleanoJuntoASuCampo` en
+  `secciones-clinicas.php`), no algo nuevo introducido acá.
+- **Duración "tos persistente en ≥1 año" -- sin cambio:** el usuario
+  pidió que ese dato solo aplique si el paciente tiene ≥1 año. Se
+  decidió NO construir un mecanismo de visibilidad dinámica por edad
+  calculada (no hay precedente de eso en la app, y el motor
+  `depende_de` solo lee valores de otros campos del formulario, no
+  edad derivada). En su lugar se dejó como ya estaba: la propia
+  etiqueta ("Duración en días: tos persistente en ≥1 año") ya declara
+  la condición de aplicabilidad en texto, igual que ya se hace en
+  "Antecedentes vacunales" para esta misma ficha ("¿La madre fue
+  vacunada... (si el caso es <1 año)", "¿La gestante recibió Tdap? (si
+  el caso es gestante)") -- ninguno de esos campos está ocultado
+  dinámicamente tampoco, todos confían en que quien llena la ficha
+  respeta la condición indicada en el texto.
+
+**Bug compartido encontrado durante la verificación de "¿Paciente
+recibió antibiótico?" (no corregido, es código compartido por las 24
+fichas, no tocado sin preguntar):** cuando un BOOLEANO se convierte en
+`<select>` por ser padre de una dependencia (ver arriba), el `<select>`
+no tiene `required` y su opción en blanco tiene `value=""`. En
+`CasosController::validarCamposDinamicos()`, el guardado de BOOLEANO es
+`$marcado = isset($_POST[$nombreCampo]) ? '1' : '0';` -- pero un
+`<select>` real SIEMPRE envía su `name` aunque quede en "Seleccionar…"
+(value=""), así que `isset()` da `true` para ese caso también, y el
+campo se guarda como `'1'` (Sí) en vez de quedar vacío/sin responder.
+Confirmado con una prueba real: caso creado con
+`campo_<id_antibiotico>=''` (select sin tocar) guardó `'1'` como valor
+del padre, lo que a su vez hizo que la matriz de antibióticos (que
+debía quedar oculta/descartada) se guardara con los datos forzados por
+POST. Mismo riesgo ya existente en "¿Es menor de edad?" (también
+padre de dependencia en A37.0) desde la ronda anterior, ahora con un
+segundo caso real que lo confirma. No es explotable por un usuario
+normal sin tocar el DOM/POST a mano (en un flujo normal de navegador
+sin JS manipulado, el campo dependiente no llega con datos si nunca
+fue visible), pero si el propio campo "¿Paciente recibió antibiótico?"
+se deja sin responder, se guarda "Sí" en vez de vacío -- un problema de
+calidad de dato real, independiente de la matriz.
+
+**Verificado tras esta tercera ronda:** los 3 verificadores en verde
+(A37.0: 8/8 secciones, 62/62 campos, sin huérfanos nuevos); render
+real confirma "Ign." ausente en A37.0 y presente sin cambios en A36
+(control); caso de prueba real confirma que la matriz de antibióticos
+queda oculta/descartada cuando el padre no se envía en absoluto (`isset`
+falso); caso de prueba real separado confirma el bug de arriba cuando
+el padre SÍ se envía vacío. Casos de prueba borrados sin residuo.
+
+**Cuarta ronda, mismo día (2026-08-06) -- corrección de "Otros
+síntomas (especificar)":** el usuario señaló (con captura) que el
+campo de texto que agregué en la segunda ronda estaba mal: aparecía
+siempre visible y suelto, cuando debía depender de marcar "Sí" en
+"Otros síntomas" y aparecer junto a su fecha (mismo control que ya
+habilita esa fecha). El motivo de fondo: SI_NO_FECHA guarda
+`marcado`/`fecha` como sub-claves de un solo `campo_<id>[]`, así que un
+`campo_def` TEXTO aparte nunca podía estar realmente ligado a ese Sí/No
+sin inventar un mecanismo de dependencia nuevo (el `depende_de` normal
+lee por nombre plano, no por sub-clave).
+
+**Solución (reutilizable, no hardcodeada a A37.0):** se agregó
+`"especificar": true` como config opcional de SI_NO_FECHA -- mismo
+patrón que `"decimales": true` en NUMERO (`cargar_fichas.php`,
+serializado en `campo_def.config`). `campos/si-no-fecha.php` ahora lee
+esa config y, si está activa, agrega un input de texto
+`campo_<id>[especificar]` dentro del mismo bloque `.fecha-dep` que la
+fecha (mismo Sí/No que ya lo mostraba/ocultaba, sin JS nuevo). Se quitó
+el `campo_def` TEXTO suelto tanto de "Otros síntomas" (Cuadro clínico)
+como de "Otros" (Complicaciones) -- ese segundo caso tenía exactamente
+el mismo defecto y no había sido señalado todavía, se corrigió por
+consistencia dentro de la misma ronda.
+
+**Verificado:** los 3 verificadores en verde (A37.0: 8/8 secciones,
+60/60 campos); render real confirma que ambos inputs "especificar"
+están dentro de los 600 caracteres del input de fecha de su mismo
+campo (mismo bloque `.fecha-dep`) y que un SI_NO_FECHA de control sin
+`especificar` (Estridor) no lo muestra; caso de prueba real confirma
+que "Sí" + fecha + especificar persisten juntos en el mismo JSON.
+Caso de prueba borrado sin residuo.
+
+**Quinta ronda, mismo día (2026-08-06) -- columna "Parámetro /
+Evaluado" sobrante en "Antibióticos recibidos":** el usuario señaló
+(con captura) que la primera columna de la tabla de antibióticos
+("Parámetro / Evaluado", mostrando "1"/"2"/"3") ocupaba espacio sin
+aportar nada útil -- pidió reducirla u ocultarla. Se revisó el resto
+del manifiesto: de las 25 MATRIZ existentes en las 24 fichas,
+`a37_0_antibioticos_recibidos` es la ÚNICA cuyas `filas` son
+puramente numéricas (todas las demás tienen etiquetas descriptivas
+reales: partes del cuerpo, síntomas, enfermedades indicadoras, etc.),
+así que ocultar la columna a nivel de ficha específica hubiera dejado
+sin esa información útil a las demás -- se implementó como heurística
+genérica en `matriz.php`: si TODAS las `filas` de una matriz son
+dígitos puros, la columna "Parámetro / Evaluado" (encabezado y celdas)
+se omite entera, coincidiendo además con el propio PDF (ítem 30: 3
+filas en blanco sin columna de numeración). Ninguna otra matriz
+existente cambia de comportamiento (confirmado con A80, que sí
+conserva sus 8 columnas "Parámetro / Evaluado").
+
+**Verificado:** los 4 verificadores (fichas/claves/render + este
+chequeo de render específico) sin cambios respecto a antes (mismos 3
+huérfanos preexistentes, nada nuevo); render real de A37.0 confirma
+que "Nombre antibiótico" es ahora la primera columna visible de
+"Antibióticos recibidos" y que "Parámetro / Evaluado" solo aparece una
+vez en toda la ficha (para "Contactos por lugar", que sí tiene filas
+descriptivas); render real de A80 (control) confirma sus 8 matrices
+con la columna intacta.
+
+**Sexta ronda, mismo día (2026-08-06) -- dependencias de "Complicaciones
+y hospitalización":** el usuario dio la jerarquía completa de la
+sección IV del PDF (Complicaciones ya estaba correcta) con las
+dependencias explícitas: "Hospitalización"=Sí debe mostrar 9 campos
+(Historia clínica, Establecimiento, Fecha hosp., Días hosp., Dx
+ingreso, Fecha alta, Dx egreso, Comorbilidad, Otras infecciones);
+"¿Presenta alguna comorbilidad?"=Sí debe mostrar su Especificar (ya
+existía, sin cambio); "¿Se diagnosticaron otras infecciones..?"=Sí
+debe mostrar Especificar + Fecha de diagnóstico (antes sueltos, sin
+depende_de -- corregido); "Defunción"=Sí debe mostrar Fecha de
+defunción + Causa básica (antes sueltos -- corregido).
+
+Se agregó `depende_de`/`valor_activador` a los 12 campos que lo
+necesitaban. Cadena de 2 niveles verificada explícitamente (p.ej.
+"Otras infecciones (especificar)" depende de su propio Sí/No, que a su
+vez depende de Hospitalización): el motor existente la soporta sin
+cambios de código -- `evaluarDependencias()` (ficha.js) re-evalúa en
+varias pasadas y limpia el valor del padre oculto antes de que el
+nieto lo lea; server-side, `campoVisiblePorDependencia()` ve el valor
+ya limpiado del padre porque `CasosController::validarCamposDinamicos()`
+procesa los campos en orden (padre siempre antes que hijo, por
+`orden` del manifiesto). "Hospitalización" y "Defunción" pasan a
+`<select>` Sí/No al volverse padres de dependencia (mismo
+comportamiento ya documentado para "¿Es menor de edad?"/"¿Paciente
+recibió antibiótico?", no algo nuevo).
+
+**Verificado:** los 3 verificadores en verde (60/60 campos, mismos 3
+huérfanos preexistentes); render real confirma las 14 relaciones
+padre-hijo exactas (comparando el id de campo_def real detectado en el
+HTML contra el esperado, no solo presencia de texto); prueba de
+guardado real con Hospitalización/Defunción sin marcar pero forzando
+por POST los 6 campos dependientes (incluida la cadena de 2 niveles)
+confirma que NINGUNO se persiste (0 filas en `caso_valor`). Caso de
+prueba borrado sin residuo.
+
+**Séptima ronda, mismo día (2026-08-06) -- "Antecedentes vacunales":**
+el usuario dio la jerarquía completa de la Secc. V con 2 gates que NO
+dependen de otro campo del formulario, sino de datos ya existentes del
+paciente: "Vacunación materna Tdap" solo aplica si el paciente es
+menor de 1 año (edad calculada, no un campo propio de A37.0), y
+"Recibió Tdap" solo si la paciente es gestante (`persona.gestante`,
+campo núcleo, no un `campo_def` de esta ficha). Ninguno de los 2 se
+puede resolver con el `depende_de` estándar (que solo lee OTRO
+`campo_def` de la misma ficha) -- se resolvió reusando/extendiendo 2
+mecanismos ya existentes en `ficha.js`, en vez de inventar uno nuevo:
+
+- `calcularEdad()` (ya auto-marcaba "¿Es menor de edad?" según el año
+  calculado) ahora ADEMÁS des-oculta `#wrapTdapMadreA370` si
+  edad < 1 año.
+- `actualizarGestante()` (ya des-ocultaba "Lugar probable de parto" de
+  B05 según `persona.gestante`) ahora ADEMÁS des-oculta
+  `#wrapTdapGestanteA370` con el mismo criterio -- cuarto uso de un
+  mecanismo que ya tenía 3 usos previos (B05 y el propio A37.0 antes de
+  hoy no lo usaba).
+
+Los 2 wraps arrancan `hidden` en el HTML servido (mismo patrón que
+`#campoSemanasGestacion`/`#campoTrimestreGestacion`: JS los corrige de
+inmediato al cargar, no hace falta calcular el estado inicial en PHP).
+Es un gate de UI, no una regla de negocio dura -- igual que
+`#wrapLugarPartoB05`, no se valida server-side (documentado en la
+`_nota` de la sección). Dentro de cada wrap, los campos que sí
+dependen de OTRO campo (Fecha de vacunación depende de "¿La madre...?";
+Semana de gestación y Fecha de vacunación dependen de "¿La
+gestante...?") sí usan `depende_de` estándar, anidado dentro del wrap.
+
+Se simplificaron las etiquetas quitando el paréntesis redundante
+("... (si el caso es <1 año)" / "... (si el caso es gestante)") ya que
+ahora el gate es real, no solo textual.
+
+Se agregó **"Fecha de última dosis"** (ítem 52 del PDF), siempre
+visible, sin depender de nada -- el usuario la incluyó explícita en su
+jerarquía. Se dejó fuera a propósito el ítem 53 "EE.SS donde se
+vacunó", que el usuario no incluyó en su resumen.
+
+**No implementado, queda para confirmar antes de tocarlo (afecta
+código compartido por las 24 fichas, `caso_vacuna`):** las 2 reglas de
+"VALIDACIONES" que el usuario listó sobre las dosis de `caso_vacuna`
+("deben ser secuenciales 1ª→2ª→3ª" y "si existe Fecha de última dosis,
+debe existir al menos una dosis registrada") -- son reglas de negocio
+nuevas sobre una tabla/mecanismo compartido, no una gating de
+visibilidad como el resto de esta ronda. No se implementaron sin
+preguntar primero (regla del cotejo).
+
+**Verificado:** los 3 verificadores en verde (61/61 campos, mismos 3
+huérfanos preexistentes); render real confirma que ambos wraps
+arrancan `hidden`, que "Fecha de última dosis" queda fuera de
+cualquier wrap (antes de ambos), y que los campos dependientes anidados
+(Fecha de vacunación madre; Semana + Fecha de vacunación gestante)
+están correctamente envueltos dentro de su wrap padre con su propio
+`dep-wrap` interno -- sin tags HTML desbalanceados (chequeado con
+`DOMDocument`, cero errores "Unexpected end tag", control contra A36
+sin cambios). 3 pruebas de guardado real: (1) bloque "gestante" forzado
+sin enviar el campo padre -- descartado correctamente (0 filas); (2)
+bebé de 6 meses con "madre vacunada"=Sí + fecha -- persiste
+correctamente (camino feliz); confirmado además que "¿La gestante
+recibió Tdap?" se suma a la lista de campos afectados por el bug ya
+documentado de `isset()`-en-blanco (ver más arriba, "Bug compartido
+encontrado"), sin sorpresa, mismo patrón ya conocido. Casos de prueba
+borrados sin residuo.
+
+**Octava ronda, mismo día (2026-08-06) -- "Dosis recibidas" (Pentavalente/DPT) pasa de caso_vacuna a checklist:**
+el usuario señaló que el ítem 51 (Pentavalente 1ª/2ª/3ª, DPT 1er/2do
+refuerzo) debía ser selección múltiple (checkboxes), igual que el
+"Dosis recibidas" de toxoide tetánico ya implementado en A35/A33
+(`a35_dosis_1d..5d`/`a33_dosis_1a..5a`) -- corrige la decisión original
+de la primera ronda de este cotejo, que había modelado esto vía
+`caso_vacuna` (la tabla genérica de vacunas aplicadas, pensada para
+listas abiertas, no para un checklist cerrado de 5 ítems fijos).
+
+Se agregaron 5 `campo_def` BOOLEANO nuevos
+(`a37_0_pentavalente_1ra/2da/3ra`, `a37_0_dpt_1er_refuerzo/2do_refuerzo`),
+agrupados visualmente en 2 filas horizontales con su propio
+encabezado ("Pentavalente" / "DPT") -- mismo mecanismo de hook-por-clave
+que ya usa el grupo "Dosis recibidas" de A35/A33 en
+`secciones-clinicas.php`, extendido para abrir 2 sub-grupos en vez de
+uno solo (cada vacuna tiene su propia numeración). `tablas_hijas.caso_vacuna`
+pasó de `true` a `false` para A37.0 (ya no hace falta, coincide con
+A35/A33 que también lo tienen en `false`).
+
+**No implementada la regla "al menos una dosis marcada habilita Fecha
+de última dosis":** revisado el precedente A35 (ya cotejada, cerrada) y
+tampoco enforce esa misma regla para su propia "Fecha última dosis" --
+se dejó sin implementar por consistencia con lo ya aceptado en una
+ficha cerrada, en vez de construir una validación nueva (el mecanismo
+`depende_de` no soporta "OR de varios campos" de forma nativa, hubiera
+requerido lógica a medida). Queda pendiente confirmar con el usuario si
+de verdad quiere esa regla aunque A35 no la tenga.
+
+**Verificado:** los 3 verificadores en verde (66/66 campos, mismos 3
+huérfanos preexistentes); `enfermedad.usa_vacunas` en BD confirmado en
+0; render real confirma que los 5 checkboxes son controles reales
+(no `<select>`, no banished a "Signos y síntomas"), en el orden
+Pentavalente → DPT → Fecha de última dosis, sin tags HTML
+desbalanceados (`DOMDocument`, cero errores), y que A35 (control) sigue
+mostrando su propio "Dosis recibidas" sin cambios. Prueba de guardado
+real reproduciendo el ejemplo exacto del usuario (Pentavalente 1ª+2ª
+marcadas, 3ª no; DPT 1er marcado, 2do no; con fecha) confirma que
+persiste exactamente así. Caso de prueba borrado sin residuo.
+
+**Novena ronda, mismo día (2026-08-06) -- "Lugar probable de infección
+y exposición" (Secc. VI):** el usuario dio la jerarquía de la Secc. VI
+completa. Hallazgo de fondo: el ítem 59 del PDF (¿viajó en los últimos
+21 días?) faltaba por completo -- nunca se había cotejado. Además, las
+tablas `caso_viaje`/`caso_contacto` de A37.0 vivían siempre visibles en
+la tarjeta fija "4. Antecedentes epidemiológicos" (fuera de cualquier
+sección del manifiesto), sin ninguna pregunta Sí/No que las gatee --
+justo lo que el usuario señaló que faltaba.
+
+Se agregó `a37_0_viajo_en_los_ultimos_21_dias` (BOOLEANO, nuevo) y se le
+dio `depende_de` a `a37_0_algun_miembro_de_la_familia...` (antes suelto)
+hacia `a37_0_contacto_con_casos_probables...`=Sí. Las 2 tablas se
+movieron de la tarjeta fija a "Lugar probable de infección", gateadas
+con el MISMO mecanismo que ya usan B05\/P35.0 para su propia tabla de
+viajes (wrap `.dep-wrap` a medida, `data-depende-de`\/`data-valor-activador`
+apuntando al campo real, estado inicial calculado en PHP) -- A37.0 se
+agregó a la lista de exclusión de la tarjeta fija en
+`nueva/index.php`\/`editar.php` (mismo trato que A80\/B05\/B26\/P35.0).
+
+Hallazgo colateral durante la implementación: ninguno de los 2 campos
+nuevos pasaba por el loop genérico donde vive el hook -- al ser
+BOOLEANO sin depende_de REAL de otro campo_def (mi wrap a medida no
+cuenta como tal para el motor), ambos caían al grupo baneado "Signos y
+síntomas" y el hook nunca se ejecutaba. Corregido agregándolos a
+`$clavesBooleanoJuntoASuCampo` (mismo fix ya aplicado a
+Pentavalente\/DPT en la ronda anterior).
+
+Columnas de la tabla de viajes: el PDF pide País\/Departamento\/Fecha de
+salida\/Fecha de retorno. No existe columna "departamento" en
+`caso_viaje` -- se reusó la columna "localidad" ya existente (misma que
+usa P35.0 como "Localidad/ciudad"), solo cambiando la etiqueta visible
+a "Departamento" cuando la ficha activa es A37.0 (`viajes.php`, config
+vía `columnas_tablas_hija.caso_viaje`). No se creó columna nueva en la
+BD.
+
+**Verificado:** los 3 verificadores en verde (67/67 campos, mismos 3
+huérfanos preexistentes); render real confirma que la tarjeta fija
+"Antecedentes epidemiológicos" queda oculta para A37.0 (sin
+`usa_contactos`\/`usa_viajes` visibles ahí), que ambos wraps nuevos
+arrancan ocultos con el atributo `hidden`, que la columna reusada
+muestra "Departamento" (no "Localidad/ciudad") dentro del bloque de
+A37.0, sin tags HTML desbalanceados; controles A35 y B01 sin cambios.
+2 pruebas de guardado real: camino feliz (Viajó=Sí + 1 viaje,
+Contacto=Sí + Algún familiar=Sí + 1 contacto) persiste todo
+correctamente; camino negativo (Contacto=No con "Algún familiar"
+forzado por POST) descarta correctamente el campo_def (su propio
+`depende_de` ya probado en rondas anteriores) -- la tabla
+`caso_contacto` en sí sigue sin enforcement server-side, mismo gate de
+UI que ya tiene `wrapLugarPartoB05` (no es una regresión, es el mismo
+nivel de garantía que el resto de estas tablas hijas en toda la app).
+Casos de prueba borrados sin residuo.
+
+**Corrección post-implementación (mismo día):** el usuario probó en
+navegador real y reportó que marcar los checks NO revelaba las tablas.
+Causa raíz: `evaluarDependencias()` (el motor genérico `.dep-wrap`) solo
+alterna el atributo `hidden`, nunca el `style="display:none"` inline
+con el que el servidor renderiza el wrap oculto al inicio -- exactamente
+el mismo bug histórico que ya existía y se corrigió para B05 (ver
+[[bug_clave_obsoleta_viajes_b05]]), que por eso necesita una función JS
+dedicada (`actualizarBloqueViajesB05()`/`actualizarBloqueViajesP350()`)
+que además del `hidden` limpia `style.display` a mano y auto-agrega una
+fila en blanco la primera vez. Faltaba construir el equivalente para
+A37.0 -- se agregaron `actualizarBloqueViajesA370()` y
+`actualizarBloqueContactosA370()` en `ficha.js`, mismo patrón exacto,
+con sus propios listeners de `change` sobre los 2 campos gatillo y
+enganchadas al listener compartido de `quitar-fila`.
+
+**Cómo se verificó esta vez (a diferencia de las rondas anteriores, que
+solo comprobaban el render inicial por PHP):** se levantó una sesión de
+navegador real con Playwright (Chromium), inyectando una cookie
+PHPSESSID válida generada a mano (mismo usuario ADMIN de siempre, sin
+necesitar la contraseña real) para poder cargar `/casos/nuevo` como
+usuario autenticado. Se confirmó, con clics reales sobre los checkbox y
+el segmentado Sí/No/Desc.: (1) el bloque de viajes arranca oculto, se
+revela al marcar "¿Viajó...?", y vuelve a ocultarse al desmarcarlo; (2)
+el bloque de contactos permanece oculto hasta que "¿Contacto con casos
+probables...?" se pone en Sí (lo que revela el checkbox "¿Algún
+miembro...?", antes oculto por su propio `depende_de`) y luego se
+marca, revelando la lista de contactos. Screenshot de la interacción
+real adjunto a la sesión, con "Departamento"/"Fecha de ingreso"/"Fecha
+de salida" mostrando las etiquetas correctas. Sesión de Playwright y
+archivo de sesión PHP temporal borrados al terminar.
+
+**Décima ronda, mismo día (2026-08-07) -- "Contactos por lugar" (ítem
+62, VII. Contactos directos):** el usuario mostró una captura del
+render en el navegador -- la MATRIZ genérica (6 filas fijas Casa/Nido-
+guardería/Colegio/Centro de trabajo/Establecimiento de
+salud/Otro × 8 columnas, con scroll horizontal) quedaba casi toda vacía
+y preguntó si convenía reutilizar el componente equivalente ya resuelto
+en B26 ("Contactos por lugar" propia, lista dinámica "+ Agregar
+lugar"). Análisis: el archivo de B26 (`lugar-probable-infeccion-b26.php`)
+no es reusable tal cual -- está hardcodeado a B26 en cada capa (clave
+excluida a mano del loop genérico, card propia incondicional fuera del
+motor de secciones, nombres de campo `b26_lugar_*[]` literales en el
+controller) y su ficha en el PDF tiene solo 4 columnas de datos contra
+las 8 de A37.0. Pero el PATRÓN sí aplica -- se confirmó releyendo la
+pág. 2 del PDF (tabla VII, ítem 62) que A37.0 trae la misma
+tabla-checklist de filas fijas por tipo de lugar que B26 ya tradujo a
+lista dinámica, así que no es una desviación de diseño, es precedente
+directo.
+
+Implementado calcando la arquitectura de B26 (no su archivo): dentro de
+`secciones-clinicas.php`, un nuevo `elseif` por clave
+(`a37_0_contactos_por_lugar`) reemplaza el render genérico de
+`campos/matriz.php` por una lista `.subrows`/`<template>`/
+`.agregar-fila` con 9 campos por fila (Tipo de lugar -- select con las
+6 opciones reales de A37.0, sin "Escuela Militar"/"Universidad-
+Instituto" que sí tiene B26; Nombre del lugar; Dirección; y 6 conteos:
+Total, Con síntomas, Esquema de vacunación completo/incompleto,
+Recibieron vacunación, Recibieron antibióticos). El campo_def sigue
+declarado como MATRIZ en el manifiesto (igual que
+`b26_contactos_por_lugar`, sin cambios ahí) -- solo es ancla de
+almacenamiento; nuevo bloque especial por clave en
+`CasosController::validarCamposDinamicos()` reensambla
+`a370_lugar_tipo[]`/`nombre[]`/`direccion[]`/`total[]`/
+`con_sintomas[]`/`esquema_completo[]`/`esquema_incompleto[]`/
+`recibieron_vacunacion[]`/`recibieron_antibioticos[]` a JSON (formato
+lista, sin necesidad de compatibilidad con el formato viejo: se
+confirmó por SQL que `caso_valor` no tenía ninguna fila para este
+campo_def antes de este cambio). Sumada la clave a
+`CLAVES_MECANISMO_NO_ESTANDAR` en `verificar_render.php` para que no
+aparezca como huérfana.
+
+A diferencia de los wraps de viajes/contactos de la ronda anterior,
+este campo NO está condicionado por ningún Sí/No (el PDF lo trae
+siempre visible en la sección VII, sin gate) -- así que no hace falta
+ninguna función JS dedicada: el alta/baja de filas ya la resuelve el
+mecanismo 100% genérico de `filas-dinamicas.js`
+(`data-plantilla`/`data-lista`, el mismo que ya usan B26 y las tablas
+de viajes/contactos), sin tocar `ficha.js`.
+
+Verificado: (1) `verificar_fichas.php`/`verificar_claves.php`/
+`verificar_render.php` -- limpios, mismos 3 huérfanos preexistentes
+(A80/B26/B55), la clave nueva aparece como "no estándar (OK)"; (2)
+render de "Nueva ficha" vía `CasosController::nuevo()` en CLI --
+confirma los 9 `name=` nuevos, la plantilla y el botón "Agregar lugar",
+y confirma que la tabla genérica de 8 columnas ya no aparece; (3)
+guardado real de punta a punta vía `CasosController::crear()` con un
+POST simulado (2 filas, Casa y Colegio) -- confirma el JSON guardado en
+`caso_valor` con los 9 campos por fila, y que `CasosController::editar()`
+recarga esos mismos valores en el HTML; casos de prueba borrados sin
+residuo.
+
+**Corrección post-implementación (mismo día):** el usuario reportó en
+navegador real que "Nombre del lugar" aparecía bloqueado con "— No
+aplica —" sin importar la opción elegida en "Tipo de lugar". Causa: se
+copió el HTML de B26 (`sel-lugar-tipo-b26`/`inp-lugar-nombre-b26`) pero
+no su listener de `change` en `ficha.js` (línea ~3049) que alterna
+`disabled`/placeholder en vivo -- sin él, cada fila nueva se queda
+congelada en el estado inicial que renderizó el servidor (CASA por
+defecto en el `<template>`), sin reaccionar a lo que el usuario elija
+después. Mismo patrón exacto que
+[[wrap_a_medida_necesita_js_dedicado]], pero para un widget distinto
+(un `<select>` que altera OTROS campos de su misma fila, no un wrap que
+se oculta/revela) -- confirma que la regla es más amplia: **cualquier
+comportamiento condicionado por JS que se copia de un patrón existente
+hay que copiarlo completo (HTML + JS), nunca solo el HTML**.
+
+Aprovechando el reporte, el usuario además redefinió la regla de
+negocio (distinta de B26): "Casa" deshabilita AMBOS "Nombre del lugar"
+Y "Dirección" (no solo el nombre) -- la dirección de residencia ya se
+captura en "Datos personales" y una casa no tiene nombre propio; el
+resto de opciones (incluida "Otro") habilita ambos, así seleccionar
+"Otro" dejá disponible "Nombre del lugar" para especificar el lugar
+nuevo (no hace falta un campo "especificar" aparte). Corregido: el
+render PHP inicial ahora deshabilita ambos campos para Casa, y se
+agregó el listener de `change` para `.sel-lugar-tipo-a370` en
+`ficha.js` (mismo bloque que B26, extendido a 2 campos en vez de 1).
+
+Verificado con Playwright real (clics + `selectOption`, no solo lectura
+de HTML): fila nueva arranca en Casa con ambos campos deshabilitados y
+"— No aplica —"; cambiar a Colegio habilita ambos con los placeholders
+correctos; cambiar a Otro los mantiene habilitados; volver a Casa los
+deshabilita y limpia el valor. Screenshot de la fila renderizada
+revisado visualmente. Sesión de Playwright y archivo de sesión PHP
+temporal borrados al terminar.
+
+**Undécima ronda, mismo día (2026-08-07) -- VIII. Laboratorio (ítems
+62-64 del PDF, pág. 2):** el usuario dio la jerarquía (lista dinámica
+"+ Agregar prueba", cada fila con Tipo de muestra/Tipo de
+prueba/Fecha de toma/Fecha de resultado/Resultado/Agente identificado)
+y el resumen condicional (Agente identificado visible SOLO si
+Resultado=Positivo). A diferencia de "Contactos por lugar", esto NO
+necesitaba un widget nuevo: `caso_muestra`/`muestras.php` ya es el
+mecanismo genérico compartido por 12 fichas con `usa_muestras=1`
+(PETICION_HC_Y_LABORATORIO.md), con 2 capacidades declarativas ya
+construidas que encajaban casi perfecto:
+- **Capacidad de filtro de catálogo por columna** (`opciones.tipo_muestra`/
+  `opciones.tipo_prueba`, ya declaradas para A37.0 desde antes de este
+  cotejo: HNF/ASP_NF, CULT/PCR -- coincidían exactamente con "Hisopado
+  nasofaríngeo"/"Aspirado nasofaríngeo" y "PCR-RT"/"Cultivo" del PDF,
+  ya existentes en `catalogo_item` compartido).
+- **Capacidad 5** (`depende_de_columna`, PETICION_HC_Y_LABORATORIO.md
+  Parte 2): visibilidad de una columna condicionada al valor de OTRA
+  columna de la misma fila, ya usada por B05 -- exactamente lo que pide
+  "Agente identificado solo si Resultado=Positivo". El JS genérico
+  (`evaluarDependenciasMuestra()`, ficha.js ~1616) ya cubre cualquier
+  ficha que declare esto; cero cambios de JS.
+
+2 huecos reales que sí requirieron código nuevo, ambos genéricos
+(ninguno hardcodea A37.0 en `muestras.php`/`CasosController.php`):
+1. **"Resultado" no tenía Contaminado/No viable** -- el catálogo
+   compartido (catalogo_item id 3) solo trae Positivo/Negativo/
+   Indeterminado, usado por las 12 fichas con `usa_muestras=1`. Agregar
+   esos 2 códigos ahí habría cambiado el desplegable de las OTRAS 11
+   fichas (varias ya cotejadas) sin que lo pidieran. Se resolvió sin
+   tocar `catalogo_item`: nueva constante
+   `CasosController::OPCIONES_RESULTADO_EXTRA` (CONTAM/NOVIABLE) que se
+   MEZCLA (no reemplaza) al catálogo compartido, solo para los códigos
+   que la ficha liste en `opciones.resultado` -- opt-in, cero fichas
+   afectadas salvo A37.0 (que además excluye "Indeterminado", filtrando
+   el catálogo compartido a solo POS/NEG vía el mismo mecanismo que ya
+   usaban tipo_muestra/tipo_prueba, extendido ahora a resultado).
+2. **"Agente identificado" no existía como select** -- `agente_aislado`
+   (única ficha que lo usaba: A80, ya cotejada) es SIEMPRE texto libre
+   hoy (nombre de cepa). Convertirlo a select por defecto habría roto
+   A80. Se agregó select opt-in (mismo criterio que "Resultado" arriba,
+   pero a la inversa: A80 no declara nada y sigue en texto libre) con 4
+   opciones hardcodeadas en `muestras.php`
+   (`$opcionesAgenteDefecto`, mismo patrón que `$opcionesGenotipoDefecto`
+   para genotipo -- no hay catálogo compartido de "agentes" entre
+   fichas, así que vive local al partial igual que genotipo), filtradas
+   por `opciones.agente_aislado` (B_PERTUSSIS/B_PARAPERTUSSIS/
+   B_HOLMESII/BORDETELLA_SP para A37.0). También se envolvió con
+   `data-depende-columna`/`data-valores-activadores` (capacidad 5, no
+   lo tenía antes porque nadie lo necesitaba). Label condicional
+   ("Agente identificado" para A37.0, "Agente aislado" para las demás)
+   mismo patrón ya usado por "Fecha de obtención"/"Fecha de toma".
+
+**Reposición de "Clasificación final" (hallazgo del propio usuario):**
+el usuario notó que la sección seguiría siendo Laboratorio "antes que
+la clasificación del caso" -- en el manifiesto, "Clasificación final"
+es la ÚLTIMA sección (orden: 8), pero la tarjeta fija "Laboratorio" de
+`nueva/index.php`/`editar.php` se renderiza DESPUÉS de TODO
+`secciones-clinicas.php` (todas las secciones del manifiesto,
+incluida Clasificación final) -- así que sin corrección, Clasificación
+final terminaba ANTES de Laboratorio, al revés de lo que pide el PDF
+(VIII antes que IX). Mismo problema ya resuelto para P35.0
+(PENDIENTES.md ítem Z.8, `clasificacion-caso-p350.php`): se calcó el
+patrón exacto -- nuevo partial `clasificacion-caso-a370.php`, la clave
+`a37_0_clasificacion_final` y el nombre de sección "Clasificación
+final" se suman a los mapas de exclusión de `secciones-clinicas.php`
+(`$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA`/`$SECCIONES_CON_PARTIAL_A_MEDIDA`)
+para que desaparezca de su posición genérica, y se re-inserta con
+`require` justo después de "Laboratorio" en ambos archivos (mismo
+punto exacto donde ya se re-inserta la de P35.0).
+
+Verificado: (1) triple verificador limpio, sin huérfanos nuevos; (2)
+render de "Nueva ficha" -- confirma las 6 columnas de Laboratorio con
+las opciones correctas, y que "Agente identificado" arranca oculto
+(`display:none`) en una fila nueva sin Resultado; (3) diff de render de
+A80 aislando SOLO el cambio de `muestras.php` (git show HEAD del
+archivo viejo vs el nuevo, mismos datos de BD) -- único cambio es un
+`style=""` vacío sin efecto, agente_aislado sigue en texto libre, sin
+`data-depende-columna` (A80 no lo declara); (4) guardado real de punta
+a punta vía `CasosController::crear()` con 2 filas (PCR positivo con
+B. pertussis, Cultivo contaminado) -- confirma el `resultado=CONTAM`
+guardado en `caso_muestra`, y que `CasosController::editar()` recarga
+los `<select>` con el valor correcto seleccionado; (5) interacción real
+con Playwright -- cambiar Resultado entre Negativo/Positivo/Contaminado
+alterna correctamente el `display` de "Agente identificado"; (6)
+screenshot confirmando visualmente el orden correcto "10. Laboratorio"
+→ "11. Clasificación final" → "12. Investigador". Casos de prueba y
+artefactos de Playwright borrados sin residuo.

@@ -105,7 +105,7 @@ if ($puedeElegirEstablecimiento) {
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33'], true) ? 'hidden' : '' ?>>
+          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0'], true) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
@@ -115,6 +115,7 @@ if ($puedeElegirEstablecimiento) {
           <?php require __DIR__ . '/../partials/notificacion-fechas-p350.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a35.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a33.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-a370.php'; ?>
         </div>
       </div>
 
@@ -236,10 +237,15 @@ if ($puedeElegirEstablecimiento) {
       // "Antecedentes de la madre" (secciones-clinicas.php) -- no siempre
       // visible acá, mismo trato que B05 con su propio booleano de viaje.
       $isP350 = ($enfermedad['cie10'] ?? '') === 'P35.0';
-      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350;
-      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350;
-      $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350;
-      $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350;
+      // A37.0 (2026-08-06): "¿Viajó...?" y "¿Algún miembro de la
+      // familia...?" gatean sus propias tablas caso_viaje/caso_contacto
+      // dentro de "Lugar probable de infección" (secciones-clinicas.php) --
+      // mismo trato que B05/P35.0 arriba, no siempre visibles acá.
+      $isA370 = ($enfermedad['cie10'] ?? '') === 'A37.0';
+      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
+      $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
+      $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       // Roles con columnas_sujeto que NO tienen sección propia en el
       // manifiesto (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2): los que sí
       // tienen sección ya se anclan solos dentro de secciones-clinicas.php
@@ -299,6 +305,10 @@ if ($puedeElegirEstablecimiento) {
 // excreción viral" -- acá adentro (no como tag PHP aparte) para no sumar
 // una línea de espacio en blanco al HTML de las otras 23 fichas.
 if ($isP350) require __DIR__ . '/../partials/clasificacion-caso-p350.php';
+
+// clasificacion-caso-a370.php (2026-08-07): mismo motivo que P35.0 arriba
+// -- "Clasificación final" reposicionada después de Laboratorio.
+if ($isA370) require __DIR__ . '/../partials/clasificacion-caso-a370.php';
 
 // Bloques condicionales de tabla hija (capacidad 6): segundo(s) conjunto(s)
 // de filas de caso_muestra, visibles solo cuando la Clasificación del caso

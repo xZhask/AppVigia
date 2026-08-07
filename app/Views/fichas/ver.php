@@ -136,6 +136,9 @@ $accionEtiquetas = [
           <?php if (!empty($caso['tiempo_residencia'])): ?>
             <div class="field"><label class="fl">Tiempo de residencia</label><div class="control" style="background:var(--paper)"><?= e($caso['tiempo_residencia']) ?></div></div>
           <?php endif; ?>
+          <?php if (!empty($caso['ocupacion'])): ?>
+            <div class="field"><label class="fl">Ocupación</label><div class="control" style="background:var(--paper)"><?= e($caso['ocupacion']) ?></div></div>
+          <?php endif; ?>
           <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
             <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e(($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') . (($caso['etnia'] ?? '') === 'OTRO' && !empty($caso['etnia_otra']) ? ' (' . $caso['etnia_otra'] . ')' : '')) ?></div></div>
             <?php if (!empty($caso['pueblo_etnico'])): ?>

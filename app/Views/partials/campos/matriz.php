@@ -85,6 +85,14 @@ if (empty($columnas) || empty($columnasRadio)) {
 } else {
     $modo = 'hibrido';
 }
+
+// Si TODAS las filas son solo un número (p.ej. A37.0 "Antibióticos
+// recibidos": "1"/"2"/"3", filas repetibles sin etiqueta propia -- el PDF
+// tampoco trae esa columna, son 3 renglones en blanco), la columna
+// "Parámetro / Evaluado" no aporta nada y solo ocupa espacio: se omite
+// entera. El resto de matrices (A80, B01/B26 "Contactos por lugar", etc.)
+// sí tienen filas descriptivas y conservan la columna sin cambios.
+$filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_match('/^\d+$/', trim((string) $f)));
 ?>
 <div class="field wide grupo-si-no-field">
   <label class="fl"><?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?></label>
@@ -92,7 +100,9 @@ if (empty($columnas) || empty($columnasRadio)) {
     <table style="width: 100%; border-collapse: collapse; min-width: 480px;">
       <thead>
         <tr>
+          <?php if (!$filasSonSoloIndice): ?>
           <th style="font-size: 10.5px; text-transform: uppercase; color: var(--faint); padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left;">Parámetro / Evaluado</th>
+          <?php endif; ?>
           <?php foreach ($columnas as $col): ?>
             <th style="font-size: 10.5px; text-transform: uppercase; color: var(--faint); padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: center; min-width: 90px;"><?= e($col) ?></th>
           <?php endforeach; ?>
@@ -110,7 +120,9 @@ if (empty($columnas) || empty($columnasRadio)) {
           $filaEsSi = $colSiIdx !== null && (string) $valFilaRadio === (string) $columnas[$colSiIdx];
         ?>
           <tr class="grupo-si-no-row">
+            <?php if (!$filasSonSoloIndice): ?>
             <td style="font-size: 12px; font-weight: 500; color: var(--ink); padding: 8px 12px; border-bottom: 1px solid var(--line-2);"><?= e($fila) ?></td>
+            <?php endif; ?>
             <?php foreach ($columnas as $cIdx => $col): ?>
               <td style="padding: 4px 8px; border-bottom: 1px solid var(--line-2); text-align: center;">
                 <?php if (isset($columnasRadio[$cIdx])):
