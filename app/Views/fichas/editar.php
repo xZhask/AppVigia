@@ -85,6 +85,7 @@ $es = $estados[$caso['estado']];
           <?php require __DIR__ . '/../partials/notificacion-fechas-a35.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a33.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a370.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-b01.php'; ?>
         </div>
       </div>
 
@@ -165,6 +166,9 @@ $es = $estados[$caso['estado']];
 
       <!-- 3. III. Lugar probable de infección (B26 Parotiditis) -->
       <?php require __DIR__ . '/../partials/lugar-probable-infeccion-b26.php'; ?>
+
+      <!-- 3. III. Lugar probable de infección (B01 Varicela) -->
+      <?php require __DIR__ . '/../partials/lugar-probable-infeccion-b01.php'; ?>
 
       <!-- 4. IV. Cuadro clínico (B26 Parotiditis) -->
       <?php require __DIR__ . '/../partials/cuadro-clinico-b26.php'; ?>
@@ -256,6 +260,10 @@ if ($isP350) require __DIR__ . '/../partials/clasificacion-caso-p350.php';
 
 // clasificacion-caso-a370.php (2026-08-07): ver nueva/index.php.
 if ($isA370) require __DIR__ . '/../partials/clasificacion-caso-a370.php';
+
+// observaciones-b01.php (2026-08-09): ver nueva/index.php.
+$isB01 = ($enfermedad['cie10'] ?? '') === 'B01';
+if ($isB01) require __DIR__ . '/../partials/observaciones-b01.php';
 
 // Bloques condicionales de tabla hija (capacidad 6): ver nueva/index.php
 // para la explicación completa. Un solo bloque PHP -- ver el mismo

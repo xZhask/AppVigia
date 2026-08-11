@@ -117,12 +117,26 @@ $valCausaMuerte = $campoCausaMuerte['val'];
   <div class="section-body">
 
     <!-- Fecha de inicio de síntomas -->
+    <?php // Sin `required` HTML a propósito (2026-08-10, bug reportado
+    // 2026-08-04): este input comparte name="fecha_inicio_sintomas" con el
+    // campo genérico de secciones-clinicas.php (que tampoco tiene
+    // `required` nativo, solo el asterisco visual + validación server-side
+    // en CasosController::crear()/actualizar()) para postear al mismo
+    // caso.fecha_inicio_sintomas -- name compartido a propósito. Estando
+    // este bloque `hidden` cuando B26 no es la ficha activa, un `required`
+    // nativo hacía que el navegador bloqueara "Registrar ficha" en
+    // CUALQUIER otra ficha con "An invalid form control ... is not
+    // focusable.", sin ningún error visible en pantalla. La validación
+    // server-side ya exige el campo para B26 igual (no está en
+    // $sinFechaInicioSintomasObligatoria), así que quitar el `required`
+    // nativo no relaja nada, solo evita el bloqueo fantasma. ?>
     <div class="fields halves" style="margin-bottom:18px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
-        <div class="control mono">
-          <input type="date" id="fechaInicioSintomasB26" name="fecha_inicio_sintomas" value="<?= e($valFechaInicioSintomas) ?>" max="<?= date('Y-m-d') ?>" required>
+        <div class="control mono <?= $errorFechaInicioSintomas ? 'err' : '' ?>">
+          <input type="date" id="fechaInicioSintomasB26" name="fecha_inicio_sintomas" value="<?= e($valFechaInicioSintomas) ?>" max="<?= date('Y-m-d') ?>">
         </div>
+        <?php if ($errorFechaInicioSintomas): ?><span class="hint err"><?= e($errorFechaInicioSintomas) ?></span><?php endif; ?>
       </div>
     </div>
 

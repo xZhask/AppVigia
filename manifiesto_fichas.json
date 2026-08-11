@@ -986,18 +986,25 @@
                 "caso_contacto": false,
                 "caso_muestra": true,
                 "caso_viaje": false,
-                "caso_vacuna": true
+                "caso_vacuna": false
             },
+            "_nota_vacunas": "2026-08-09: caso_vacuna desactivada -- el PDF (pág. 3, secc. V) solo pide 3 campos fijos para UNA vacuna (Vacunación contra Varicela Sí\/No, N.° de dosis, Fecha), no la tabla genérica multi-vacuna\/multi-catálogo que se veía antes (mismo listado extenso de 'vacuna_minsa' que usan las fichas con esquema de vacunación completo). Ver sección 'Antecedentes de vacunación' más abajo.",
+            "_nota_laboratorio": "2026-08-09: columnas_tablas_hija.caso_muestra ahora declara 'columnas' explícito (antes faltaba, por eso la cadena de fechas de envío del PDF -- secc. VI -- nunca aparecía: sin 'columnas' la tabla cae al set mínimo por defecto, que no las incluye). 'tipo_prueba' se quitó de la lista (2026-08-09, decisión explícita del usuario): el PDF no trae esa columna, así que ni se muestra ni se pide -- ya no está ni en 'columnas' ni en 'opciones'.",
             "columnas_tablas_hija": {
                 "caso_muestra": {
+                    "columnas": [
+                        "tipo_muestra",
+                        "fecha_toma",
+                        "fecha_envio_eess_red",
+                        "fecha_envio_red_lrr",
+                        "fecha_envio_lrr_ins",
+                        "fecha_result",
+                        "resultado"
+                    ],
                     "opciones": {
                         "tipo_muestra": [
                             "VESICULA",
                             "SUERO"
-                        ],
-                        "tipo_prueba": [
-                            "PCR",
-                            "ELISA"
                         ]
                     }
                 }
@@ -1009,8 +1016,134 @@
             ],
             "secciones": [
                 {
-                    "nombre": "Cuadro clínico",
+                    "nombre": "Datos de notificación e investigación del caso",
                     "orden": 1,
+                    "_nota": "El PDF (Secc. I, ítems 1/3/4: GERESA/DIRESA/DIRIS, EESS, Inst. Adm.) no se modela como campo_def -- son núcleo del sistema, derivados de caso.establecimiento_id (mismo criterio que A37.0/A35/A33). Ítem 2 'SE' ya es el badge calculado 'SE de la ficha'. Ítems 5-6 (Tipo de captación/Lugar) son el componente genérico reutilizado notificacion-captacion.php, SIN 'Clasificación en la captación' (el PDF no la trae, ver el mismo criterio de B26). La cabecera trae 'Fecha de Hospitalización' como una de sus 5 fechas, pero por decisión explícita del usuario (2026-08-08) NO se duplica ni se mueve: la fecha de hospitalización que manda sigue viviendo en 'Hospitalización y egreso' (b01_fecha_de_hospitalizacion, ítem 32, gateada por Hospitalización=Sí).",
+                    "campos": [
+                        {
+                            "clave": "b01_codigo_de_registro_n",
+                            "etiqueta": "Código de registro N.°",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "b01_fecha_de_investigacion_visita_domiciliaria",
+                            "etiqueta": "Fecha de investigación (visita domiciliaria)",
+                            "tipo": "FECHA",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "b01_fecha_de_notificacion_ee_ss_a_red_microred",
+                            "etiqueta": "Fecha de notificación EE.SS a Red/Microred",
+                            "tipo": "FECHA",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "b01_fecha_de_notificacion_red_microred_a_direccion_de_sa",
+                            "etiqueta": "Fecha de notificación Red/Microred a Dirección de Salud",
+                            "tipo": "FECHA",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "b01_fecha_de_notificacion_de_direccion_de_salud_a_cdc",
+                            "etiqueta": "Fecha de notificación de Dirección de Salud a CDC",
+                            "tipo": "FECHA",
+                            "orden": 5
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Lugar probable de infección",
+                    "orden": 2,
+                    "_nota": "Movida de orden 6 a orden 2 (2026-08-08): el PDF (pág. 3) la trae como sección III, justo después de Datos del paciente y antes de Cuadro clínico -- el manifiesto original la había puesto al final por error. Se agregan además los 5 campos de 'Ubicación probable de infección' (Dirección/Departamento/Provincia/Distrito/Localidad) que el PDF sí trae y que v1.0 había omitido. Igual que 'Lugar probable de infección' de B26 (ver su propia _nota), se renderiza con un partial a medida (lugar-probable-infeccion-b01.php) resuelto por clave (\\$campoB01(...)['name']) desde el arranque -- NO con name= literal, ver PENDIENTES.md ítem 14 (tercera ronda) sobre el bug que ese hack causó en B26.",
+                    "campos": [
+                        {
+                            "clave": "b01_inf_direccion",
+                            "etiqueta": "Dirección (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "b01_inf_departamento_id",
+                            "etiqueta": "Departamento (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "b01_inf_provincia_id",
+                            "etiqueta": "Provincia (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "b01_inf_distrito_id",
+                            "etiqueta": "Distrito (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "b01_inf_localidad",
+                            "etiqueta": "Localidad (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "b01_en_las_ultimas_2_a_3_semanas_estuvo_en_contacto_con",
+                            "etiqueta": "¿En las últimas 2 a 3 semanas estuvo en contacto con otro caso de varicela?",
+                            "tipo": "SELECT",
+                            "orden": 6,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Ignorado"
+                            ]
+                        },
+                        {
+                            "clave": "b01_contactos_por_lugar",
+                            "etiqueta": "Contactos por lugar",
+                            "tipo": "MATRIZ",
+                            "orden": 7,
+                            "filas": [
+                                "Casa",
+                                "Nido\/guardería",
+                                "Colegio",
+                                "Universidad\/Instituto",
+                                "Centro de trabajo",
+                                "Establecimiento de Salud",
+                                "Otros"
+                            ],
+                            "columnas": [
+                                "Nombre del lugar",
+                                "Dirección",
+                                "N.° de contactos sanos",
+                                "N.° de contactos enfermos"
+                            ],
+                            "_corregido": "v1.0 traía por error las columnas de Tos ferina (esquema de vacunación, antibióticos); el PDF (pág. 3) solo pide nombre\/dirección\/sanos\/enfermos. Se renderiza como lista dinámica (mismo patrón que B26\/A37.0), no como matriz fija de checkboxes."
+                        },
+                        {
+                            "clave": "b01_tuvo_contacto_con_gestante",
+                            "etiqueta": "¿Tuvo contacto con gestante?",
+                            "tipo": "BOOLEANO",
+                            "orden": 8
+                        },
+                        {
+                            "clave": "b01_fecha_de_contacto_con_gestante",
+                            "etiqueta": "Fecha de contacto con gestante",
+                            "tipo": "FECHA",
+                            "orden": 9
+                        },
+                        {
+                            "clave": "b01_semanas_de_gestacion_contacto",
+                            "etiqueta": "Semanas de gestación (contacto)",
+                            "tipo": "NUMERO",
+                            "orden": 10
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Cuadro clínico",
+                    "orden": 3,
+                    "_nota": "2026-08-09: fusiona lo que antes eran 4 secciones separadas (Cuadro clínico, Complicaciones, Factores de riesgo, Hospitalización y egreso) en una sola tarjeta -- el PDF (pág. 3) las trae todas bajo 'IV. CUADRO CLÍNICO'. Se agregaron las dependencias condicionales que faltaban (Hospitalización=Sí, Complicaciones/Factores de riesgo=Otras, Condición de egreso=Referido/Fallecido); antes los 8 campos dependientes se mostraban siempre, sin condicionar nada. Todo vía depende_de\/valor_activador genérico (mismo mecanismo ya usado en A36\/A95\/B05), sin partial a medida -- a diferencia de B26, acá no hace falta.",
                     "campos": [
                         {
                             "clave": "b01_fecha_de_inicio_de_erupcion_dermica",
@@ -1048,18 +1181,12 @@
                             "etiqueta": "N.° de días de duración",
                             "tipo": "NUMERO",
                             "orden": 5
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Complicaciones",
-                    "orden": 2,
-                    "campos": [
+                        },
                         {
                             "clave": "b01_complicaciones",
                             "etiqueta": "Complicaciones",
                             "tipo": "MULTISELECT",
-                            "orden": 1,
+                            "orden": 6,
                             "opciones": [
                                 "Sobreinfección de piel y partes blandas",
                                 "Neurológicas",
@@ -1072,19 +1199,45 @@
                             "clave": "b01_otras_complicaciones_especificar",
                             "etiqueta": "Otras complicaciones (especificar)",
                             "tipo": "TEXTO",
-                            "orden": 2
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Factores de riesgo",
-                    "orden": 3,
-                    "campos": [
+                            "orden": 7,
+                            "depende_de": "Complicaciones",
+                            "valor_activador": "OTRAS"
+                        },
+                        {
+                            "clave": "b01_hospitalizacion",
+                            "etiqueta": "Hospitalización",
+                            "tipo": "BOOLEANO",
+                            "orden": 8
+                        },
+                        {
+                            "clave": "b01_establecimiento",
+                            "etiqueta": "Establecimiento",
+                            "tipo": "TEXTO",
+                            "orden": 9,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "b01_fecha_de_hospitalizacion",
+                            "etiqueta": "Fecha de hospitalización",
+                            "tipo": "FECHA",
+                            "orden": 10,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "b01_n_de_dias",
+                            "etiqueta": "N.° de días",
+                            "tipo": "NUMERO",
+                            "orden": 11,
+                            "depende_de": "Hospitalización",
+                            "valor_activador": "1"
+                        },
                         {
                             "clave": "b01_factores_de_riesgo",
                             "etiqueta": "Factores de riesgo",
                             "tipo": "MULTISELECT",
-                            "orden": 1,
+                            "orden": 12,
                             "opciones": [
                                 "Inmunosupresión",
                                 "Asma",
@@ -1101,43 +1254,15 @@
                             "clave": "b01_otros_factores_de_riesgo_especificar",
                             "etiqueta": "Otros factores de riesgo (especificar)",
                             "tipo": "TEXTO",
-                            "orden": 2
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Hospitalización y egreso",
-                    "orden": 4,
-                    "campos": [
-                        {
-                            "clave": "b01_hospitalizacion",
-                            "etiqueta": "Hospitalización",
-                            "tipo": "BOOLEANO",
-                            "orden": 1
-                        },
-                        {
-                            "clave": "b01_establecimiento",
-                            "etiqueta": "Establecimiento",
-                            "tipo": "TEXTO",
-                            "orden": 2
-                        },
-                        {
-                            "clave": "b01_fecha_de_hospitalizacion",
-                            "etiqueta": "Fecha de hospitalización",
-                            "tipo": "FECHA",
-                            "orden": 3
-                        },
-                        {
-                            "clave": "b01_n_de_dias",
-                            "etiqueta": "N.° de días",
-                            "tipo": "NUMERO",
-                            "orden": 4
+                            "orden": 13,
+                            "depende_de": "Factores de riesgo",
+                            "valor_activador": "OTRAS"
                         },
                         {
                             "clave": "b01_condicion_de_egreso",
                             "etiqueta": "Condición de egreso",
                             "tipo": "SELECT",
-                            "orden": 5,
+                            "orden": 14,
                             "opciones": [
                                 "Alta médica",
                                 "Alta voluntaria",
@@ -1146,79 +1271,71 @@
                             ]
                         },
                         {
-                            "clave": "b01_fecha_de_egreso",
-                            "etiqueta": "Fecha de egreso",
-                            "tipo": "FECHA",
-                            "orden": 6
-                        },
-                        {
                             "clave": "b01_referido_a",
                             "etiqueta": "Referido a",
                             "tipo": "TEXTO",
-                            "orden": 7
+                            "orden": 15,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "REFERIDO"
+                        },
+                        {
+                            "clave": "b01_fecha_de_egreso",
+                            "etiqueta": "Fecha de egreso",
+                            "tipo": "FECHA",
+                            "orden": 16,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "FALLECIDO",
+                            "_nota": "El PDF (jerarquía dada por el usuario, 2026-08-09) solo trae esta fecha bajo la rama 'Fallecido' -- no bajo Alta médica\/Alta voluntaria\/Referido."
                         },
                         {
                             "clave": "b01_causa_de_muerte",
                             "etiqueta": "Causa de muerte",
                             "tipo": "TEXTO",
-                            "orden": 8
+                            "orden": 17,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "FALLECIDO"
                         }
                     ]
                 },
                 {
-                    "nombre": "Lugar probable de infección",
-                    "orden": 5,
+                    "nombre": "Antecedentes de vacunación (considerar solo vacuna antivaricela)",
+                    "orden": 4,
+                    "_nota": "2026-08-09: el PDF (pág. 3, secc. V) trae solo 3 campos fijos para la vacuna antivaricela, no la tabla dinámica multi-vacuna genérica (caso_vacuna, desactivada arriba) -- render genérico estándar, sin partial a medida.",
                     "campos": [
                         {
-                            "clave": "b01_en_las_ultimas_2_a_3_semanas_estuvo_en_contacto_con",
-                            "etiqueta": "¿En las últimas 2 a 3 semanas estuvo en contacto con otro caso de varicela?",
-                            "tipo": "SELECT",
-                            "orden": 1,
-                            "opciones": [
-                                "Sí",
-                                "No",
-                                "Ignorado"
-                            ]
-                        },
-                        {
-                            "clave": "b01_contactos_por_lugar",
-                            "etiqueta": "Contactos por lugar",
-                            "tipo": "MATRIZ",
-                            "orden": 2,
-                            "filas": [
-                                "Casa",
-                                "Nido\/guardería",
-                                "Colegio",
-                                "Universidad\/Instituto",
-                                "Centro de trabajo",
-                                "Establecimiento de Salud",
-                                "Otros"
-                            ],
-                            "columnas": [
-                                "Nombre del lugar",
-                                "Dirección",
-                                "N.° de contactos sanos",
-                                "N.° de contactos enfermos"
-                            ],
-                            "_corregido": "v1.0 traía por error las columnas de Tos ferina (esquema de vacunación, antibióticos); el PDF (pág. 3) solo pide nombre\/dirección\/sanos\/enfermos"
-                        },
-                        {
-                            "clave": "b01_tuvo_contacto_con_gestante",
-                            "etiqueta": "¿Tuvo contacto con gestante?",
+                            "clave": "b01_vacunacion_contra_varicela",
+                            "etiqueta": "Vacunación contra Varicela",
                             "tipo": "BOOLEANO",
-                            "orden": 3
+                            "orden": 1
                         },
                         {
-                            "clave": "b01_fecha_de_contacto_con_gestante",
-                            "etiqueta": "Fecha de contacto con gestante",
-                            "tipo": "FECHA",
-                            "orden": 4
-                        },
-                        {
-                            "clave": "b01_semanas_de_gestacion_contacto",
-                            "etiqueta": "Semanas de gestación (contacto)",
+                            "clave": "b01_n_de_dosis_recibida",
+                            "etiqueta": "N.° de dosis recibida",
                             "tipo": "NUMERO",
-                            "orden": 5
+                            "orden": 2,
+                            "depende_de": "Vacunación contra Varicela",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "b01_fecha_de_vacunacion",
+                            "etiqueta": "Fecha de vacunación",
+                            "tipo": "FECHA",
+                            "orden": 3,
+                            "depende_de": "Vacunación contra Varicela",
+                            "valor_activador": "1"
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Observaciones",
+                    "orden": 5,
+                    "_nota": "2026-08-09: 'VII. OBSERVACIONES' del PDF (pág. 3) es un único cuadro de texto libre, después de Laboratorio (VI) y antes de Investigador (VIII). Reposicionada fuera del loop genérico -- mismo patrón que clasificacion-caso-a370.php/p350.php -- para que aparezca después de la tarjeta fija de Laboratorio, no en su orden de manifiesto (5, que caería antes).",
+                    "campos": [
+                        {
+                            "clave": "b01_observaciones",
+                            "etiqueta": "Observaciones",
+                            "tipo": "TEXTAREA",
+                            "orden": 1
                         }
                     ]
                 }
@@ -1446,12 +1563,43 @@
                 {
                     "nombre": "Lugar probable de infección",
                     "orden": 5,
+                    "_nota_bug_2026_08_08": "b26_inf_direccion/departamento_id/provincia_id/distrito_id/localidad y b26_fecha_contacto_gestante NO existían como campo_def (auditoría 'SQL a mano sin verificación'); lugar-probable-infeccion-b26.php los posteaba con name= literal y CasosController.php los guardaba bajo esa clave literal como si fuera campo_def_id (INT), lo que rompía CasoValor::guardarTodos() para *cualquier* ficha (esos inputs ocultos se posteaban siempre, no solo en B26) -- ver commit de la corrección. Se agregan aquí como campo_def reales, resueltos por clave (\\$campoB26(...)['name']) igual que el resto de este partial.",
                     "campos": [
+                        {
+                            "clave": "b26_inf_direccion",
+                            "etiqueta": "Dirección (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "b26_inf_departamento_id",
+                            "etiqueta": "Departamento (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "b26_inf_provincia_id",
+                            "etiqueta": "Provincia (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "b26_inf_distrito_id",
+                            "etiqueta": "Distrito (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "b26_inf_localidad",
+                            "etiqueta": "Localidad (lugar probable de infección)",
+                            "tipo": "TEXTO",
+                            "orden": 5
+                        },
                         {
                             "clave": "b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con",
                             "etiqueta": "¿En las últimas 2 a 4 semanas estuvo en contacto con otro caso de parotiditis?",
                             "tipo": "SELECT",
-                            "orden": 1,
+                            "orden": 6,
                             "opciones": [
                                 "Sí",
                                 "No",
@@ -1462,7 +1610,7 @@
                             "clave": "b26_contactos_por_lugar",
                             "etiqueta": "Contactos por lugar",
                             "tipo": "MATRIZ",
-                            "orden": 2,
+                            "orden": 7,
                             "filas": [
                                 "Nido\/guardería",
                                 "Casa",
@@ -1485,19 +1633,62 @@
                             "clave": "b26_tuvo_contacto_con_gestante",
                             "etiqueta": "¿Tuvo contacto con gestante?",
                             "tipo": "BOOLEANO",
-                            "orden": 3
+                            "orden": 8
+                        },
+                        {
+                            "clave": "b26_fecha_contacto_gestante",
+                            "etiqueta": "Fecha del contacto con gestante",
+                            "tipo": "FECHA",
+                            "orden": 9
                         },
                         {
                             "clave": "b26_trimestre_de_gestacion_contacto",
                             "etiqueta": "Trimestre de gestación (contacto)",
                             "tipo": "SELECT",
-                            "orden": 4,
+                            "orden": 10,
                             "opciones": [
                                 "I",
                                 "II",
                                 "III"
                             ],
                             "_corregido": "v1.0 lo tenía como NUMERO; el PDF (pág. 4) pide trimestre (I\/II\/III), no un número de semanas como en Varicela"
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Antecedentes de vacunación (SPR) y observaciones",
+                    "orden": 6,
+                    "_nota": "Igual que 'Lugar probable de infección' arriba: b26_vacunacion_spr/dosis_spr/fecha_ultima_dosis_spr/eess_vacunacion_spr/observaciones no existían como campo_def; antecedentes-vacunacion-b26.php los posteaba con name= literal, causando el mismo choque contra CasoValor::guardarTodos() para cualquier ficha. Se agregan como campo_def reales.",
+                    "campos": [
+                        {
+                            "clave": "b26_vacunacion_spr",
+                            "etiqueta": "Vacunación con SPR",
+                            "tipo": "BOOLEANO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "b26_dosis_spr",
+                            "etiqueta": "N.° de dosis recibida",
+                            "tipo": "NUMERO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "b26_fecha_ultima_dosis_spr",
+                            "etiqueta": "Fecha de última dosis",
+                            "tipo": "FECHA",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "b26_eess_vacunacion_spr",
+                            "etiqueta": "EE.SS. donde se vacunó",
+                            "tipo": "TEXTO",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "b26_observaciones",
+                            "etiqueta": "Observaciones",
+                            "tipo": "TEXTAREA",
+                            "orden": 5
                         }
                     ]
                 }

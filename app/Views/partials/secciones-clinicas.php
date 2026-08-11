@@ -120,6 +120,24 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // que caería ANTES de la tarjeta fija de Laboratorio.
         'a37_0_clasificacion_final',
     ],
+    'B01' => [
+        // notificacion-fechas-b01.php (2026-08-08). Ojo: b01_fecha_de_hospitalizacion
+        // NO está acá a propósito -- por decisión explícita del usuario
+        // sigue viviendo solo en "Hospitalización y egreso" (ítem 32),
+        // aunque el PDF también la mencione en la cabecera.
+        'b01_codigo_de_registro_n', 'b01_fecha_de_investigacion_visita_domiciliaria', 'b01_fecha_de_notificacion_ee_ss_a_red_microred',
+        'b01_fecha_de_notificacion_red_microred_a_direccion_de_sa', 'b01_fecha_de_notificacion_de_direccion_de_salud_a_cdc',
+        // lugar-probable-infeccion-b01.php (2026-08-08): movida de orden 6
+        // a orden 2 del manifiesto (el PDF la trae justo después de Datos
+        // del paciente) + los 5 campos de "Ubicación probable de infección"
+        // que v1.0 había omitido.
+        'b01_inf_direccion', 'b01_inf_departamento_id', 'b01_inf_provincia_id', 'b01_inf_distrito_id', 'b01_inf_localidad',
+        'b01_en_las_ultimas_2_a_3_semanas_estuvo_en_contacto_con', 'b01_contactos_por_lugar',
+        'b01_tuvo_contacto_con_gestante', 'b01_fecha_de_contacto_con_gestante', 'b01_semanas_de_gestacion_contacto',
+        // observaciones-b01.php (2026-08-09): reposicionada después de
+        // Laboratorio (mismo patrón que clasificacion-caso-a370.php).
+        'b01_observaciones',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -135,6 +153,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'A35' => ['Datos de notificación e investigación del caso'],
     'A33' => ['Datos de notificación e investigación del caso'],
     'A37.0' => ['Datos de notificación e investigación del caso', 'Clasificación final'],
+    'B01' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Observaciones'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
@@ -714,8 +733,19 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // $secciones[0] tras filtrar la de notificación), el genérico
     // aterrizaría ahí por error. A37.0 ya trae su propia
     // "Fecha de inicio de síntomas" (ítem 26) dentro de su Cuadro clínico
-    // real -- ver mismo motivo en CasosController::crear()/actualizar(). ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0'], true)): ?>
+    // real -- ver mismo motivo en CasosController::crear()/actualizar().
+    // B01 (2026-08-10, corrección de una decisión anterior): el usuario
+    // primero pidió solo quitarle el asterisco de obligatorio (2026-08-09),
+    // después revisó de nuevo y pidió ocultarlo del todo -- Varicela no lo
+    // requiere en absoluto, no solo "no obligatorio". Se suma a la misma
+    // lista de P35.0/A35/A37.0 en vez de mantener la rama "visible pero
+    // opcional" ($fechaInicioSintomasOpcional, eliminada). En
+    // CasosController.php no hace falta tocar nada:
+    // $sinFechaInicioSintomasObligatoria ya incluía 'B01' y ya evitaba el
+    // fallback de extraerFechaInicioSintomas() para estos 4 CIE-10 -- con
+    // el campo oculto (nunca llega en $_POST), sigue guardando NULL sin
+    // error, igual que P35.0/A35/A37.0. ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>

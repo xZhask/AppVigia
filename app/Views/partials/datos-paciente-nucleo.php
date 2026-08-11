@@ -335,8 +335,13 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   </div>
 </div>
 
-<!-- 4. ¿Gestante? + Semanas de gestación (General) / Trimestre de gestación (Solo B26) -->
-<?php $esB26Gest = (($enfermedad['cie10'] ?? '') === 'B26'); ?>
+<!-- 4. ¿Gestante? + Semanas de gestación (General) / Trimestre de gestación (B26/B01) -->
+<?php
+// B26 (cotejo 2026-07-30) y B01 (cotejo 2026-08-08, ítem 20 del PDF) piden
+// "Trimestre de gestación" (I/II/III) en vez de "Semanas de gestación"
+// para la gestante propia del caso.
+$esTrimestreGestacion = in_array($enfermedad['cie10'] ?? '', ['B26', 'B01'], true);
+?>
 <div class="fields thirds" data-nucleo-campo="gestante" style="margin-top:14px" <?= $nucleoOmite('gestante') ? 'hidden style="display:none;"' : '' ?>>
   <div class="field" id="campoGestante" hidden>
     <label class="fl">¿Gestante?</label>
@@ -348,11 +353,11 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
       </select>
     </div>
   </div>
-  <div class="field" id="campoSemanasGestacion" <?= $esB26Gest ? 'hidden style="display:none;"' : 'hidden' ?>>
+  <div class="field" id="campoSemanasGestacion" <?= $esTrimestreGestacion ? 'hidden style="display:none;"' : 'hidden' ?>>
     <label class="fl">Semanas de gestación</label>
     <div class="control mono"><input type="number" min="0" max="45" id="semanasGestacion" name="semanas_gestacion" value="<?= e($valoresFijos['semanas_gestacion'] ?? '') ?>"></div>
   </div>
-  <div class="field" id="campoTrimestreGestacion" <?= (!$esB26Gest) ? 'hidden style="display:none;"' : 'hidden' ?>>
+  <div class="field" id="campoTrimestreGestacion" <?= (!$esTrimestreGestacion) ? 'hidden style="display:none;"' : 'hidden' ?>>
     <label class="fl">Trimestre de gestación</label>
     <div class="control">
       <select id="trimestreGestacionSel" name="trimestre_gestacion" data-nosearch="true">

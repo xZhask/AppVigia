@@ -1,9 +1,12 @@
 <?php
 /**
  * Sección núcleo "Investigador" (cierre de las fichas MINSA):
- * quién llenó la ficha, cargo, profesión y fecha de investigación. Se autocompleta con
- * el usuario en sesión y la fecha de hoy, pero queda editable porque a veces
- * quien digita no es quien investigó.
+ * quién llenó la ficha, cargo, profesión, teléfono/email y fecha de
+ * investigación. Se autocompleta con el usuario en sesión (nombre, email) y
+ * la fecha de hoy, pero queda editable porque a veces quien digita no es
+ * quien investigó. Teléfono/Email se muestran para todas las fichas (varias
+ * PDF los piden, ej. B01 ítems 40-41) aunque no todas los exijan -- mismo
+ * criterio que "Fecha de investigación", que tampoco todas piden.
  */
 
 $valProf = $valoresFijos['investigador_profesion'] ?? '';
@@ -48,6 +51,20 @@ $valProfOtra = $esOtroProf && $valProf !== 'Otro' ? $valProf : ($valoresFijos['i
     <label class="fl">Fecha de investigación</label>
     <div class="control mono">
       <input type="date" name="fecha_investigacion" value="<?= e($valoresFijos['fecha_investigacion'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="fl">Teléfono</label>
+    <div class="control mono">
+      <input type="text" name="investigador_telefono" value="<?= e($valoresFijos['investigador_telefono'] ?? '') ?>" placeholder="N.° de teléfono…" maxlength="20">
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="fl">Email</label>
+    <div class="control">
+      <input type="email" name="investigador_email" value="<?= e($valoresFijos['investigador_email'] ?? '') ?>" placeholder="nombre@dirsapol.gob.pe" maxlength="150">
     </div>
   </div>
 </div>

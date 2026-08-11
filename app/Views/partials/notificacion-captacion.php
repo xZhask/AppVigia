@@ -7,9 +7,12 @@
  * Variable esperada: $valoresFijos con tipo_captacion, lugar_captacion,
  * clasificacion_captacion.
  */
-$esB26Capt = (($enfermedad['cie10'] ?? null) === 'B26');
+// Fichas cuyo PDF no trae "Clasificación en la captación" junto a
+// Tipo/Lugar de captación (B26: cotejo 2026-07-30; B01: cotejo 2026-08-08,
+// pág. 3 del PDF -- solo trae ítems 5 y 6, Tipo de captación y Lugar).
+$ocultaClasifCaptacion = in_array($enfermedad['cie10'] ?? null, ['B26', 'B01'], true);
 ?>
-<div class="b26-capt-grid <?= $esB26Capt ? 'fields halves' : 'fields thirds' ?>" style="margin-top:14px">
+<div class="capt-grid <?= $ocultaClasifCaptacion ? 'fields halves' : 'fields thirds' ?>" style="margin-top:14px">
   <div class="field">
     <label class="fl">Tipo de captación</label>
     <div class="control">
@@ -30,7 +33,7 @@ $esB26Capt = (($enfermedad['cie10'] ?? null) === 'B26');
       </select>
     </div>
   </div>
-  <div class="field b26-hide" <?= $esB26Capt ? 'hidden style="display:none;"' : '' ?>>
+  <div class="field clasif-captacion-hide" <?= $ocultaClasifCaptacion ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Clasificación en la captación</label>
     <div class="control">
       <select name="clasificacion_captacion" data-nosearch="true">

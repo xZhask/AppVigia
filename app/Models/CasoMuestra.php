@@ -13,6 +13,10 @@ class CasoMuestra extends Model
      * ya validada: cada elemento es ['tipo_muestra','tipo_prueba',
      * 'recibio_antibiotico','resultado','fecha_toma','fecha_result'].
      * `recibio_antibiotico` es opcional (NULL si la ficha no lo pide).
+     * `fecha_envio_eess_red`/`fecha_envio_red_lrr`/`fecha_envio_lrr_ins`
+     * (2026-08-09, B01): cadena de 3 fechas de envío EE.SS -> Red/Microred ->
+     * LRR -> INS, distinta de `fecha_envio_ins` (una sola fecha genérica que
+     * ya usan otras fichas) -- opcionales, NULL si la ficha no las declara.
      * Debe ejecutarse dentro de la transacción abierta por el llamador.
      */
     public static function reemplazarTodos(int $casoId, array $filas): void
@@ -23,13 +27,15 @@ class CasoMuestra extends Model
         $consulta = $pdo->prepare(
             'INSERT INTO caso_muestra (
                 caso_id, contexto, tipo_muestra, tipo_prueba, recibio_antibiotico, resultado,
-                fecha_toma, fecha_result, fecha_envio_ins, agente_aislado, observaciones,
+                fecha_toma, fecha_envio_eess_red, fecha_envio_red_lrr, fecha_envio_lrr_ins,
+                fecha_result, fecha_envio_ins, agente_aislado, observaciones,
                 numero_muestra, fecha_recepcion_ins, resultado_pcr, fecha_result_pcr,
                 genotipo, resultado_igm, fecha_result_igm, resultado_igg, fecha_result_igg,
                 titulacion
              ) VALUES (
                 :caso, :contexto, :tipo_muestra, :tipo_prueba, :recibio_antibiotico, :resultado,
-                :fecha_toma, :fecha_result, :fecha_envio_ins, :agente_aislado, :observaciones,
+                :fecha_toma, :fecha_envio_eess_red, :fecha_envio_red_lrr, :fecha_envio_lrr_ins,
+                :fecha_result, :fecha_envio_ins, :agente_aislado, :observaciones,
                 :numero_muestra, :fecha_recepcion_ins, :resultado_pcr, :fecha_result_pcr,
                 :genotipo, :resultado_igm, :fecha_result_igm, :resultado_igg, :fecha_result_igg,
                 :titulacion
@@ -38,27 +44,30 @@ class CasoMuestra extends Model
 
         foreach ($filas as $fila) {
             $consulta->execute([
-                'caso'                => $casoId,
-                'contexto'            => $fila['contexto'] ?? null,
-                'tipo_muestra'        => $fila['tipo_muestra'] ?? '',
-                'tipo_prueba'         => $fila['tipo_prueba'] ?? '',
-                'recibio_antibiotico' => $fila['recibio_antibiotico'] ?? null,
-                'resultado'           => $fila['resultado'] ?? '',
-                'fecha_toma'          => $fila['fecha_toma'] ?? null,
-                'fecha_result'        => $fila['fecha_result'] ?? null,
-                'fecha_envio_ins'     => $fila['fecha_envio_ins'] ?? null,
-                'agente_aislado'      => $fila['agente_aislado'] ?? null,
-                'observaciones'       => $fila['observaciones'] ?? null,
-                'numero_muestra'      => $fila['numero_muestra'] ?? 1,
-                'fecha_recepcion_ins' => $fila['fecha_recepcion_ins'] ?? null,
-                'resultado_pcr'       => $fila['resultado_pcr'] ?? null,
-                'fecha_result_pcr'    => $fila['fecha_result_pcr'] ?? null,
-                'genotipo'            => $fila['genotipo'] ?? null,
-                'resultado_igm'       => $fila['resultado_igm'] ?? null,
-                'fecha_result_igm'    => $fila['fecha_result_igm'] ?? null,
-                'resultado_igg'       => $fila['resultado_igg'] ?? null,
-                'fecha_result_igg'    => $fila['fecha_result_igg'] ?? null,
-                'titulacion'          => $fila['titulacion'] ?? null,
+                'caso'                  => $casoId,
+                'contexto'              => $fila['contexto'] ?? null,
+                'tipo_muestra'          => $fila['tipo_muestra'] ?? '',
+                'tipo_prueba'           => $fila['tipo_prueba'] ?? '',
+                'recibio_antibiotico'   => $fila['recibio_antibiotico'] ?? null,
+                'resultado'             => $fila['resultado'] ?? '',
+                'fecha_toma'            => $fila['fecha_toma'] ?? null,
+                'fecha_envio_eess_red'  => $fila['fecha_envio_eess_red'] ?? null,
+                'fecha_envio_red_lrr'   => $fila['fecha_envio_red_lrr'] ?? null,
+                'fecha_envio_lrr_ins'   => $fila['fecha_envio_lrr_ins'] ?? null,
+                'fecha_result'          => $fila['fecha_result'] ?? null,
+                'fecha_envio_ins'       => $fila['fecha_envio_ins'] ?? null,
+                'agente_aislado'        => $fila['agente_aislado'] ?? null,
+                'observaciones'         => $fila['observaciones'] ?? null,
+                'numero_muestra'        => $fila['numero_muestra'] ?? 1,
+                'fecha_recepcion_ins'   => $fila['fecha_recepcion_ins'] ?? null,
+                'resultado_pcr'         => $fila['resultado_pcr'] ?? null,
+                'fecha_result_pcr'      => $fila['fecha_result_pcr'] ?? null,
+                'genotipo'              => $fila['genotipo'] ?? null,
+                'resultado_igm'         => $fila['resultado_igm'] ?? null,
+                'fecha_result_igm'      => $fila['fecha_result_igm'] ?? null,
+                'resultado_igg'         => $fila['resultado_igg'] ?? null,
+                'fecha_result_igg'      => $fila['fecha_result_igg'] ?? null,
+                'titulacion'            => $fila['titulacion'] ?? null,
             ]);
         }
     }

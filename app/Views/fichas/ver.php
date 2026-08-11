@@ -293,7 +293,7 @@ $accionEtiquetas = [
     <?php endif; ?>
 
     <!-- Investigador -->
-    <?php if ($caso['investigador_nombre'] || $caso['investigador_cargo'] || ($caso['investigador_profesion'] ?? '') || $caso['fecha_investigacion']): ?>
+    <?php if ($caso['investigador_nombre'] || $caso['investigador_cargo'] || ($caso['investigador_profesion'] ?? '') || ($caso['investigador_telefono'] ?? '') || ($caso['investigador_email'] ?? '') || $caso['fecha_investigacion']): ?>
     <div class="card section">
       <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Investigador</h3></div>
       <div class="section-body">
@@ -302,6 +302,8 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Cargo</label><div class="control" style="background:var(--paper)"><?= e($caso['investigador_cargo'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Profesión</label><div class="control" style="background:var(--paper)"><?= e(($caso['investigador_profesion'] ?? '') ?: '—') ?></div></div>
           <div class="field"><label class="fl">Fecha de investigación</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_investigacion']) ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Teléfono</label><div class="control mono" style="background:var(--paper)"><?= e(($caso['investigador_telefono'] ?? '') ?: '—') ?></div></div>
+          <div class="field"><label class="fl">Email</label><div class="control" style="background:var(--paper)"><?= e(($caso['investigador_email'] ?? '') ?: '—') ?></div></div>
         </div>
       </div>
     </div>

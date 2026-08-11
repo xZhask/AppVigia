@@ -4259,3 +4259,657 @@ alterna correctamente el `display` de "Agente identificado"; (6)
 screenshot confirmando visualmente el orden correcto "10. Laboratorio"
 → "11. Clasificación final" → "12. Investigador". Casos de prueba y
 artefactos de Playwright borrados sin residuo.
+
+## 14. Cotejo de Varicela con complicaciones (B01) — en curso, retomar desde acá
+
+Ficha activa desde 2026-08-08, PDF pág. 3 (una sola página, ficha
+completa). Sigue el mismo flujo de PLANTILLA_COTEJO_FICHA.md que A37.0
+(ítem 13).
+
+**Primera ronda, mismo día -- sección "Notificación":** el usuario dio
+2 correcciones directas, sin pausar en tabla de cotejo intermedia
+(precedente ya establecido, ver [[feedback_avanzar_sin_pausar_por_seccion]]):
+
+1. **"Clasificación en la captación" no debe mostrarse.** El PDF (pág.
+   3, ítem 5-6) solo trae "Tipo de captación (vigilancia)"/"Lugar", sin
+   una tercera clasificación -- mismo caso que B26 (cotejo
+   2026-07-30). `notificacion-captacion.php` ya tenía el mecanismo
+   exacto para esto (`$esB26Capt`, oculta el campo + cambia el grid de
+   thirds a halves); se generalizó a `$ocultaClasifCaptacion =
+   in_array($cie10, ['B26', 'B01'], true)` en vez de duplicar el
+   bloque. Se aprovechó para renombrar las clases inertes
+   `b26-capt-grid`/`b26-hide` → `capt-grid`/`clasif-captacion-hide`
+   (sin CSS asociado, cero riesgo, ya no mentían sobre a qué ficha
+   aplican).
+
+2. **Cadena de fechas de notificación dentro de "Notificación" (mismo
+   componente reutilizado que otras fichas).** Nuevo
+   `notificacion-fechas-b01.php` (calca exacto de
+   `notificacion-fechas-a370.php`) con 5 campos nuevos en una sección
+   "Datos de notificación e investigación del caso" (orden 1, empuja
+   Cuadro clínico→2, Complicaciones→3, Factores de riesgo→4,
+   Hospitalización y egreso→5, Lugar probable de infección→6):
+   Código de registro N.°, Fecha de investigación (visita
+   domiciliaria), Fecha de notificación EE.SS a Red/Microred, Fecha de
+   notificación Red/Microred a Dirección de Salud, Fecha de
+   notificación de Dirección de Salud a CDC.
+
+**Decisión explícita del usuario (pausada antes de implementar):** la
+cabecera del PDF también trae "Fecha de Hospitalización" como una de
+sus 5 fechas, pero `b01_fecha_de_hospitalizacion` YA existe en
+"Hospitalización y egreso" (ítem 32, gateada por Hospitalización=Sí).
+Se preguntó explícitamente (no se asumió) si duplicar/mover ese campo
+a la cabecera o dejarlo -- el usuario respondió: **no duplicar ni
+mover, la fecha de "Hospitalización y egreso" es la que manda.** La
+cabecera de B01 por eso tiene 5 fechas (no 6): salta directo de
+"Código de registro" a "Fecha de investigación", sin su propia "Fecha
+de Hospitalización".
+
+Verificado: (1) triple verificador limpio (220 claves, 0 huérfanos
+nuevos, mismos 3 preexistentes de siempre); (2) render CLI de
+B01/B26/A37.0 confirmando que "Clasificación en la captación" solo se
+oculta en B01/B26 (A37.0 sin cambio, confirmado también con
+`git diff` del partial); (3) confirmado que "Fecha de hospitalización"
+aparece UNA sola vez dentro del HTML de B01 (la de "Hospitalización y
+egreso", `min="1900-01-01"`) -- la otra ocurrencia detectada por texto
+es la tarjeta oculta de B26 (`id="fechaHospitalizacionB26"`), siempre
+presente en el DOM sin importar la ficha activa, no una duplicación
+real de B01; (4) screenshot de Playwright confirmando visualmente
+Tipo/Lugar de captación sin la tercera columna, y la cadena de 5
+fechas justo debajo. Sin residuo de artefactos de prueba.
+
+**Qué falta:** el resto de la ficha (Lugar probable de infección
+detallado, Cuadro clínico, Complicaciones, Factores de riesgo,
+Hospitalización y egreso, Antecedentes de vacunación, Laboratorio,
+Observaciones, Investigador) -- todo pendiente de cotejo detallado
+contra la pág. 3 del PDF.
+
+**Segunda ronda, mismo día -- "Datos del paciente":** el usuario
+verificó la sección y reportó un único detalle: al marcar Gestante=Sí,
+se desplegaba "Semanas de gestación", pero el PDF de B01 (ítem 20) pide
+"Trimestre de gestación: I ( ) II ( ) III ( )", igual que B26. El
+mecanismo YA existía en `datos-paciente-nucleo.php`
+(`#campoSemanasGestacion`/`#campoTrimestreGestacion`, con un flag
+`$esB26Gest` que solo prendía para B26) -- se generalizó a
+`$esTrimestreGestacion = in_array($cie10, ['B26', 'B01'])`, mismo
+criterio que la generalización de "Clasificación en la captación" de
+la primera ronda. El lado JS necesitó el mismo cambio: `actualizarGestante()`
+en `ficha.js` tenía su propio `esB26` local (comparando el texto del
+`<select>` de enfermedad activa) que decidía cuál de los dos campos
+mostrar en vivo -- se generalizó a `esTrimestreGestacion` con el mismo
+criterio (B26 o B01).
+
+Verificado: (1) triple verificador limpio, sin cambios de conteo (este
+detalle no toca manifiesto/campo_def, es núcleo); (2) Playwright real
+-- cargar B01 directo, marcar Sexo=Femenino y Gestante=Sí, confirma que
+"Semanas de gestación" queda oculto y "Trimestre de gestación" visible
+(computed style, no solo el atributo `hidden`); screenshot del bloque
+confirma visualmente el `<select>` de Trimestre con sus 3 opciones. No
+se confirmó la ruta de cambio de ficha por el selector en caliente
+porque esa ruta ya NO es AJAX desde 2026-08-03 (`window.location.href`,
+recarga completa, ver el comentario de `ficha.js` línea ~699) -- cambiar
+de ficha limpia todo el formulario por diseño, así que la única ruta
+real relevante es la carga directa (ya probada). Sin residuo de
+artefactos de prueba.
+
+**Tercera ronda, mismo día -- bug crítico descubierto de paso, corregido
+antes de seguir con "Lugar probable de infección":** al preparar la
+sección de B01 (que necesitaba copiar el bloque "Ubicación del probable
+contagio" de B26), se encontró que ESE bloque de B26 estaba roto de
+raíz y rompía el guardado de **cualquier ficha, no solo B26/B01**.
+
+Causa: `lugar-probable-infeccion-b26.php` y
+`antecedentes-vacunacion-b26.php` se incluyen sin condición en
+`nueva/index.php`/`editar.php` (mismo patrón que
+`notificacion-fechas-*.php`), así que sus 11 campos
+(`b26_inf_direccion`, `b26_inf_departamento_id`, `b26_inf_provincia_id`,
+`b26_inf_distrito_id`, `b26_inf_localidad`, `b26_fecha_contacto_gestante`,
+`b26_vacunacion_spr`, `b26_dosis_spr`, `b26_fecha_ultima_dosis_spr`,
+`b26_eess_vacunacion_spr`, `b26_observaciones`) viajan en el `$_POST` de
+**cualquier** "Registrar ficha", sea cual sea la enfermedad activa. Estos
+11 nunca tuvieron `campo_def` real (auditoría "SQL a mano sin
+verificación" de fases anteriores) -- `CasosController::validarCamposDinamicos()`
+los guardaba con un hack (`$paraGuardar[$claveLiteral] = ...`) que metía
+el string de la clave directo en `campo_def_id` (columna `INT NOT NULL`
+con FK a `campo_def`). Con la BD en `STRICT_TRANS_TABLES`, eso lanza
+`PDOException` (`Incorrect integer value: 'b26_inf_direccion' for
+column campo_def_id`) en **todo** submit, sin excepción -- el
+`catch (Throwable $e)` de `CasosController` lo atrapa, hace rollback y
+muestra "No se pudo registrar la ficha por un error interno", así que
+nunca se veía el error real en pantalla, solo en `php_errors.log`.
+Confirmado con un POST real contra la app corriendo (no una prueba
+aislada): un registro de A97 (Dengue, ficha sin relación con B26)
+fallaba exactamente así. El archivo data del 31 jul 2026 (cierre de
+B26), así que **ninguna ficha, de ninguna enfermedad, se pudo registrar
+desde esa fecha** -- las rondas de verificación de este proyecto
+probaron visibilidad/toggling de campos con Playwright, no un submit
+final hasta guardar en BD, así que quedó sin detectar hasta ahora.
+
+Corrección (mismo mecanismo que ya funcionaba para
+`b26_contactos_por_lugar` en el mismo archivo, o para
+`a35_distrito_probable_infeccion`): se dieron de alta los 11 como
+`campo_def` reales (manifiesto → `cargar_fichas.php --apply --cie10=B26`,
+sección "Lugar probable de infección" +6, sección nueva "Antecedentes
+de vacunación (SPR) y observaciones" +5), y los dos partials se
+reescribieron para resolverlos por clave (`$campoB26('b26_inf_direccion')['name']`,
+igual que ya hacían `$campoContactoCaso`/`$campoContactoGestante`/
+`$campoTrimestreGestanteContacto` en el mismo archivo) en vez de
+`name=` literal. Con eso el hack de `CasosController.php:1118-1123` se
+volvió innecesario y se borró: los 11 pasan por el mecanismo genérico
+normal (`campo_<id>`), igual que cualquier otro campo TEXTO/FECHA/
+NUMERO/BOOLEANO/TEXTAREA.
+
+Verificado: (1) triple verificador limpio -- 231 claves (+11), 0
+faltantes, mismos 3 huérfanos preexistentes de siempre (A80, B26
+`fecha_de_inicio_de_sintomas`, B55), y los 11 nuevos NO aparecen como
+"mecanismo no estándar" (confirma que ya renderizan por `campo_<id>`
+estándar); (2) el MISMO POST real que reproducía el crash en A97 ahora
+devuelve "Ficha registrada" y crea el caso; (3) un registro real de B26
+con los 11 campos llenos (dirección, departamento/provincia/distrito,
+localidad, fecha de contacto con gestante, vacunación SPR completa,
+observaciones) persistió correctamente en `caso_valor` y, al recargar
+`/casos/{id}/editar`, los 11 valores volvieron a aparecer pre-llenados
+(incluyendo el `<select>` de departamento con la opción real
+seleccionada) -- confirma que el ciclo completo guardar→recargar
+funciona, no solo el guardado. Los 2 casos de prueba (F-00085, F-00087)
+y sus personas se borraron de la BD real al terminar. Sin residuo de
+sesiones/artefactos temporales.
+
+**Nota:** el bug conocido y ya documentado de BOOLEANO con `isset()`
+(ver [[bug_booleano_select_isset_vacio]]) sigue existiendo tal cual en
+`b26_tuvo_contacto_con_gestante` y ahora también en el nuevo
+`b26_vacunacion_spr` (ambos son radios SI/NO bajo el mismo mecanismo
+genérico) -- no se tocó a propósito, es el mismo alcance ya diferido
+que afecta a las 24 fichas, no algo nuevo introducido por esta
+corrección.
+
+**Cuarta ronda, mismo día -- "Lugar probable de infección" movida e
+implementada:** con el bug de B26 ya corregido, se implementó lo que el
+usuario pidió al inicio de esta sesión: mover la sección al lugar
+correcto (justo después de "Datos del persona", antes de "Cuadro
+clínico" -- el PDF la trae como sección III) y agregar los campos que
+faltaban, siguiendo la jerarquía y dependencias que dio el usuario.
+
+1. **Manifiesto:** la sección "Lugar probable de infección" de B01 pasó
+   de orden 6 a orden 2 (empuja Cuadro clínico→3, Complicaciones→4,
+   Factores de riesgo→5, Hospitalización y egreso→6); se agregaron 5
+   `campo_def` nuevos que el PDF trae y v1.0 había omitido:
+   `b01_inf_direccion`, `b01_inf_departamento_id`,
+   `b01_inf_provincia_id`, `b01_inf_distrito_id`, `b01_inf_localidad`
+   (TEXTO todos, mismo criterio que sus equivalentes de B26 recién
+   corregidos -- campo_def real desde el arranque, resueltos por clave,
+   NO name= literal).
+
+2. **Nuevo partial `lugar-probable-infeccion-b01.php`** (calco de
+   `lugar-probable-infeccion-b26.php`, con 2 diferencias pedidas por el
+   usuario):
+   - "Contactos por lugar" pasa de MATRIZ fija (checklist de 7 filas)
+     a lista dinámica "+ Agregar lugar" -- mismo patrón ya usado en
+     B26/A37.0. Opciones: Casa, Nido/guardería, Colegio,
+     Universidad/Instituto, Centro de trabajo, Establecimiento de
+     Salud, Otros (especificar, reutilizando el campo "Nombre del
+     lugar" como en B26/A37.0, no un campo aparte).
+   - **"Casa" deshabilita Nombre del lugar Y Dirección** (no solo
+     Nombre como B26) -- el usuario redefinió esta regla para A37.0
+     durante esta misma sesión ("esa dirección ya se consideró en
+     datos personales") y aplica igual acá por el mismo motivo.
+   - "¿Tuvo contacto con gestante?" es Sí/No (sin Ignorado, a
+     diferencia de B26) y pide **Semanas de gestación**, no Trimestre
+     -- coherente con la Segunda ronda de esta misma ficha.
+   - `b01_contactos_por_lugar` se guarda con el mismo mecanismo
+     correcto que `b26_contactos_por_lugar` (JSON en un campo_def
+     MATRIZ real vía CasosController, `$campoId` real del foreach, no
+     el hack de clave literal que causó el bug de la tercera ronda).
+
+3. **JS (`ficha.js`):** nueva `actualizarLugarInfeccionB01()` (calco de
+   `actualizarLugarInfeccionB26()`, ver
+   [[wrap_a_medida_necesita_js_dedicado]]) para mostrar/ocultar la
+   tarjeta según la ficha activa y sus dos bloques condicionales
+   (Contacto con caso=Sí, Contacto con gestante=Sí); nuevo listener
+   `.sel-lugar-tipo-b01` (calco del de A37.0, no el de B26) para el
+   toggle de Casa.
+
+4. **Hallazgo intermedio corregido en el camino:** agregar la sección
+   a `$SECCIONES_CON_PARTIAL_A_MEDIDA['B01']` por NOMBRE no bastaba --
+   `secciones-clinicas.php` solo la excluye del render genérico si
+   TODOS sus campos también están en `$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA['B01']`
+   (si falta uno, la sección completa se queda en el render genérico
+   "por las dudas"). Sin ese detalle la sección se dibujaba DOS veces
+   (la tarjeta a medida + la genérica dentro de `#secciones-clinicas`,
+   en su antigua posición). Se agregaron los 10 claves de la sección a
+   esa lista.
+
+Verificado: (1) triple verificador limpio -- 241 claves (+10 sobre la
+ronda anterior), 0 faltantes, mismos 3 huérfanos preexistentes, 7
+mecanismos no estándar (+1, `b01_contactos_por_lugar`); (2) Playwright
+real confirmando: exactamente 1 `<h3>Lugar probable de infección</h3>`
+visible (no 2), exactamente 1 "Ubicación probable de infección"
+visible, orden de Y en pantalla "Datos del persona" < "Lugar probable
+de infección" < "Cuadro clínico"; Casa deshabilita Nombre+Dirección,
+Colegio los rehabilita; Contacto con gestante solo tiene 2 radios
+(Sí/No, sin Ignorado) y su detalle muestra "Semanas de gestación"; (3)
+un registro real end-to-end (POST directo, no por click de UI -- ver
+nota de metodología abajo) con los 5 campos de ubicación + una fila de
+"Colegio Prueba" en Contactos por lugar + contacto con gestante
+completo, confirmando que TODO persiste en `caso_valor` con los
+valores correctos y que `/casos/{id}/editar` los vuelve a pre-llenar
+(incluido el `<select>` de departamento con "Amazonas" seleccionado).
+Caso de prueba borrado de la BD real al terminar.
+
+**Nota de metodología:** el submit final se verificó por POST directo
+(mismo mecanismo ya usado para el bug de la tercera ronda), no por
+click real de botón en Playwright -- el intento de click real chocó
+con que la página tiene más de un `<form>` (el de "Registrar ficha" y
+el de "Cerrar sesión" del sidebar) y una llamada de depuración con
+`document.querySelector('form').requestSubmit()` sin querer envió el
+de logout y cerró la sesión de prueba a mitad de la ronda. Todo el
+comportamiento interactivo (toggles, secciones, orden visual) sí se
+verificó con clics reales; solo el submit final se verificó por POST
+directo una vez identificados los `name="campo_<id>"` reales de la
+página cargada por Playwright.
+
+**Qué falta ahora (actualiza la lista de la Primera ronda):** Cuadro
+clínico, Complicaciones, Factores de riesgo, Hospitalización y egreso,
+Antecedentes de vacunación (solo antivaricela), Laboratorio,
+Observaciones, Investigador. "Lugar probable de infección" queda
+cerrada.
+
+**Quinta ronda, mismo día -- "IV. Cuadro clínico" fusionado y con
+dependencias:** el usuario reportó que la sección ya existía pero
+"parcialmente completa en distintas secciones del formulario web": el
+PDF trae "Cuadro clínico", "Complicaciones", "Factores de riesgo" y
+"Hospitalización y egreso" como UNA sola sección (IV), pero el
+manifiesto las tenía repartidas en 4 tarjetas separadas, y ninguno de
+los 8 campos condicionales (Otras complicaciones/Establecimiento/Fecha
+hospitalización/N.° de días/Otros factores de riesgo/Referido a/Fecha
+de egreso/Causa de muerte) tenía `depende_de` -- se mostraban siempre,
+sin condicionar nada.
+
+1. **Manifiesto:** las 4 secciones se fusionaron en una sola "Cuadro
+   clínico" (orden 3), con los 17 campos reordenados según la
+   jerarquía del usuario y `depende_de`\/`valor_activador` agregado a
+   los 8 campos condicionales -- mismo mecanismo genérico ya usado en
+   A36\/A95\/B05 (`depende_de` resuelve por ETIQUETA, ver
+   [[depende_de_resuelve_por_etiqueta]]; confirmado único dentro de
+   B01 antes de declarar cada uno). Los valores de `valor_activador`
+   para MULTISELECT\/SELECT son el código en mayúsculas que
+   `cargar_fichas.php` genera de la opción (`OTRAS`, `REFERIDO`,
+   `FALLECIDO`), no el texto visible -- confirmado contra
+   `catalogo_item` antes de escribirlos.
+2. **Sin partial a medida:** a diferencia de B26 (que sí necesitó
+   `cuadro-clinico-b26.php` por interacciones más complejas), acá
+   bastó el render genérico de `secciones-clinicas.php` -- los 17
+   campos son casos estándar de `depende_de` que el motor ya soporta.
+   Único detalle no obvio: `b01_hospitalizacion` (BOOLEANO con hijos
+   reales) queda automáticamente "junto a su campo" gracias a
+   `$idsPadre` (su propio id aparece como `depende_de` de otros 3
+   campos) -- no hizo falta agregarlo a
+   `$clavesBooleanoJuntoASuCampo`, esa lista es solo para BOOLEANO que
+   gatillan un wrap a medida (hook por clave, no `depende_de` real).
+3. **Nota del PDF:** "Fecha de egreso" solo aparece bajo la rama
+   "Fallecido" en la jerarquía que dio el usuario -- NO se muestra para
+   Alta médica\/Alta voluntaria\/Referido, aunque en otras fichas ese
+   mismo campo suele ser de uso general. Se siguió la jerarquía dada,
+   no la costumbre de otras fichas.
+
+Verificado: (1) triple verificador limpio, 241 claves (sin cambio, se
+reordenaron campos existentes), mismos 3 huérfanos preexistentes; (2)
+Playwright real confirmando exactamente 1 `<h3>Cuadro clínico</h3>`
+visible (ya no 3 tarjetas separadas de "Complicaciones"\/"Factores de
+riesgo"\/"Hospitalización y egreso"), y las 6 transiciones de estado:
+Complicaciones=Otras, Hospitalización=Sí (revela los 3), Factores de
+riesgo=Otras, Condición de egreso=Referido (solo Referido a),
+=Fallecido (Fecha de egreso + Causa de muerte, oculta Referido a),
+=Alta médica (oculta los 3); (3) un registro real end-to-end con
+Condición de egreso=Fallecido, incluyendo un intento deliberado de
+colar un valor en "Referido a" (que no debería aplicar) -- confirmado
+que el servidor lo descarta solo por la validación de dependencia
+(`campoVisiblePorDependencia()`), sin que se guarde nada, y que
+`/casos/{id}/editar` recarga exactamente los campos que correspondían.
+Caso de prueba borrado de la BD real al terminar. Ojo: al buscar
+campos por etiqueta en Playwright, "Hospitalización"\/"Fecha de
+hospitalización"\/"Referido a"\/"Fecha de egreso"\/"Causa de muerte"
+también existen (ocultos) en la tarjeta propia de B26 -- hay que
+filtrar por visible antes de tomar el primer resultado, o se termina
+interactuando con el campo equivocado sin ningún error visible.
+
+**Sexta ronda, mismo día -- "Fecha de inicio de síntomas" deja de ser
+obligatoria en B01:** el usuario señaló que este campo núcleo (no es
+`campo_def`, es `caso.fecha_inicio_sintomas`, compartido por las 24
+fichas) aparece en todas, pero algunas no lo requieren -- para B01 no
+es obligatorio. A diferencia del mecanismo ya existente para
+P35.0\/A35\/A37.0 (que OCULTAN el campo por completo porque tienen su
+propio equivalente que lo duplicaría), acá el usuario NO pidió
+ocultarlo -- Varicela no tiene un campo que sea realmente lo mismo
+("Fecha de inicio de erupción dérmica" es la fecha de la erupción, no
+necesariamente la del primer síntoma) -- solo que deje de ser
+obligatorio. Se agregó 'B01' al array `$sinFechaInicioSintomasObligatoria`
+que ya existía en `CasosController::crear()` y `actualizar()` (control
+de la obligatoriedad + evita que `extraerFechaInicioSintomas()`
+intente autocompletarlo con la fecha equivocada), y se agregó un
+`$fechaInicioSintomasOpcional` nuevo en `secciones-clinicas.php` que
+solo oculta el asterisco `*` para B01 -- el campo se sigue mostrando,
+a diferencia de los otros 3.
+
+Verificado: (1) triple verificador limpio (sin cambios de conteo, es
+núcleo); (2) Playwright real confirmando que B01 muestra el label SIN
+asterisco y A97 (control de regresión) lo sigue mostrando CON
+asterisco; (3) un registro real de B01 con el campo completamente
+vacío en el POST, guardado exitosamente con
+`caso.fecha_inicio_sintomas = NULL`, sin error. Caso de prueba borrado
+de la BD real al terminar.
+
+**Séptima ronda, mismo día -- "V. Antecedentes de vacunación" (solo
+antivaricela):** el usuario mostró el recorte del PDF (3 campos fijos:
+"35. Vacunación contra Varicela Sí/No", "36. N.° de dosis recibida",
+"37. Fecha de vacunación") y señaló que el formulario web mostraba en
+su lugar el widget genérico de `caso_vacuna` (tabla dinámica
+"+ Agregar antecedente vacunal" con un `<select>` de TODO el catálogo
+`vacuna_minsa` -- decenas de vacunas del esquema regular, no solo
+Varicela).
+
+1. **Manifiesto:** `tablas_hijas.caso_vacuna` de B01 pasó de `true` a
+   `false` (esto SÍ sincroniza `enfermedad.usa_vacunas` vía
+   `cargar_fichas.php:782` -- confirmado que la nota vieja de A36 sobre
+   "el cargador no sincroniza usa_\* " ya no aplica, al menos para
+   `usa_vacunas`). Nueva sección "Antecedentes de vacunación
+   (considerar solo vacuna antivaricela)" (orden 4) con 3 `campo_def`:
+   `b01_vacunacion_contra_varicela` (BOOLEANO), `b01_n_de_dosis_recibida`
+   (NUMERO) y `b01_fecha_de_vacunacion` (FECHA), estos 2 últimos con
+   `depende_de: "Vacunación contra Varicela"` / `valor_activador: "1"`
+   -- mismo criterio que Hospitalización en el ítem anterior, sin
+   confirmación explícita del PDF pero consistente con el patrón
+   Sí/No-revela-detalle usado en las 24 fichas.
+2. **Sin partial a medida:** render 100% genérico, igual que "Cuadro
+   clínico" de la ronda anterior.
+
+Verificado: (1) triple verificador limpio, 241 claves (sin cambio, son
+campos nuevos resueltos por el loop genérico, no por `$campo()`
+literal); (2) Playwright real confirmando que el botón "Agregar
+antecedente vacunal" y el `<select>` genérico de vacunas YA NO
+aparecen visibles para B01, que la nueva tarjeta "Antecedentes de
+vacunación" sí aparece con sus 3 campos, y que Vacunación=Sí revela
+N.° de dosis/Fecha (ocultos por defecto); (3) un registro real
+confirmando que los 3 valores se guardan en `caso_valor` y que
+`caso_vacuna` (la tabla genérica) recibe 0 filas -- ya no se usa para
+B01. Caso de prueba borrado de la BD real al terminar.
+
+**Octava ronda, mismo día -- "VI. Laboratorio" (caso_muestra):
+cadena de fechas de envío nueva y confirmación de que "Tipo de prueba"
+nunca fue obligatorio:** el usuario mostró el recorte del PDF (7
+columnas: Tipo de muestra, Fecha de obtención de 1 muestra, Fecha
+envío EE.SS/Red-Microred, Fecha envío Red/Microred a LRR, Fecha envío
+LRR a INS, Fecha emisión resultado INS, Resultado) y señaló que
+"tiene unas fechas que aún no aparecen en el formulario" y que
+"tampoco es requerido el campo tipo de prueba".
+
+1. **Las 3 fechas de envío intermedias no existían en ningún lado** --
+   ni en `caso_muestra` (tabla), ni en `muestras.php` (widget
+   compartido por 12 fichas), ni en `filasMuestras()`. Solo existía
+   una `fecha_envio_ins` genérica (una sola fecha, sin desglosar
+   tramo), insuficiente para la cadena de 3 pasos que pide B01. Se
+   agregaron 3 columnas nuevas a `caso_muestra`
+   (`fecha_envio_eess_red`, `fecha_envio_red_lrr`,
+   `fecha_envio_lrr_ins`, todas DATE NULL, migración aplicada a mano),
+   se actualizó `CasoMuestra::reemplazarTodos()` (INSERT explícito),
+   se agregaron los 3 bloques de campo al widget compartido
+   `muestras.php` (opt-in vía `columnas_tablas_hija.caso_muestra.columnas`,
+   mismo patrón que `agente_aislado`/`resultado_pcr`/etc. -- ningún
+   cambio visible para las otras 11 fichas que usan este archivo,
+   confirmado con A37.0), y se agregó la lectura\/validación\/guardado
+   en `CasosController::filasMuestras()`. También se relabeló
+   `fecha_toma` → "Fecha de obtención" (mismo texto que A80\/P35.0,
+   `$esFechaObtencion` generalizado a B01) y `fecha_result` → "Fecha
+   emisión resultado INS" (nuevo `$esFechaEmisionResultadoIns`,
+   exclusivo de B01, no pisa la etiqueta "Fecha resultado Fiocruz" de
+   A80).
+2. **Causa real de que las fechas "aún no aparecían":** B01 nunca
+   había declarado `columnas_tablas_hija.caso_muestra.columnas`
+   explícito (solo `opciones`, para filtrar el catálogo) -- sin
+   `columnas`, la tabla cae al set mínimo por defecto
+   (`COLUMNAS_HIJA_DEFECTO['muestra']`), que ni siquiera traía las
+   fechas de envío genéricas, solo tipo_muestra\/tipo_prueba\/resultado\/
+   fecha_toma\/fecha_result. Se agregó `cargar_fichas.php`:
+   `COLUMNAS_TABLA_HIJA_VALIDAS['caso_muestra']` (whitelist del
+   validador del manifiesto) con las 3 columnas nuevas, y se declaró
+   la lista completa de columnas de B01 en el manifiesto.
+3. **"Tipo de prueba" nunca fue obligatorio, en ningún punto del
+   sistema** -- confirmado leyendo `filasMuestras()`: ninguna columna
+   de `caso_muestra` se valida como "requerida" (solo se valida el
+   FORMATO de fecha si viene llena, y tipo_muestra\/tipo_prueba\/resultado
+   se comparan contra su catálogo, sin bloquear si vienen vacíos). Se
+   mantuvo visible (el catálogo PCR\/ELISA ya configurado para B01
+   sigue teniendo sentido clínico aunque el PDF no le dé columna
+   propia) -- no había nada que "corregir", el comentario del usuario
+   quedó documentado en el manifiesto para que quede explícito.
+
+Verificado: (1) triple verificador limpio (241 claves, sin cambio --
+estos son cambios de tabla hija, no campo_def; mismos 3 huérfanos
+preexistentes); (2) Playwright real mostrando las 8 etiquetas exactas
+del PDF en una fila de muestra nueva de B01 (Tipo de muestra, Tipo de
+prueba, Resultado, Fecha de obtención, Fecha envío EE.SS Red/Microred,
+Fecha envío Red/Microred a LRR, Fecha envío LRR a INS, Fecha emisión
+resultado INS); (3) un registro real con Tipo de prueba y Resultado
+deliberadamente vacíos (confirmando que no bloquean el guardado) y las
+3 fechas nuevas llenas, guardado y recargado correctamente en
+`/casos/{id}/editar`; (4) confirmado sin regresión en A37.0 (mismo
+archivo compartido `muestras.php`): sus propias etiquetas
+("Agente identificado", "Fecha de toma", "Fecha de resultado") siguen
+igual, cero apariciones de las etiquetas nuevas de B01. Caso de prueba
+borrado de la BD real al terminar.
+
+**Novena ronda, mismo día -- "Tipo de prueba" fuera del todo +
+"VII. Observaciones":** el usuario aclaró que "Tipo de prueba" no
+debe ser NI visible NI requerida (no solo "no requerida" como se
+había confirmado en la ronda anterior), y pidió agregar la sección
+"Observaciones" (un solo cuadro de texto libre, VII del PDF) justo
+después de Laboratorio.
+
+1. Se quitó `'tipo_prueba'` de `columnas_tablas_hija.caso_muestra.columnas`
+   de B01 (y su `opciones.tipo_prueba`, que ya no tiene efecto sin la
+   columna) -- el campo ya no se renderiza en absoluto para B01. Nada
+   más cambió en `muestras.php`/`filasMuestras()` (el mecanismo ya
+   soportaba columnas opcionales, solo hacía falta la declaración).
+2. Nuevo campo_def `b01_observaciones` (TEXTAREA) en una sección
+   "Observaciones" propia (orden 5 en el manifiesto), reposicionada
+   fuera del loop genérico con un partial nuevo
+   `observaciones-b01.php` -- calco exacto de
+   `clasificacion-caso-a370.php`/`clasificacion-caso-p350.php` (mismo
+   motivo: el PDF trae VI. Laboratorio antes que VII. Observaciones,
+   pero Laboratorio es una tarjeta fija que cae después del loop
+   genérico). Incluido en `nueva/index.php`/`editar.php` justo después
+   de la tarjeta de Laboratorio, con un `$isB01` nuevo (mismo patrón
+   que `$isA370`/`$isP350`).
+
+Verificado: (1) triple verificador limpio (241 claves -- nota abajo
+sobre por qué el conteo no subió pese al campo nuevo); (2) carga real
+de B01 confirmando 0 apariciones de "Tipo de prueba" en todo el HTML,
+y la tarjeta "Observaciones" apareciendo como sección N.° 6, entre
+Laboratorio (5) e Investigador (7); (3) un registro real con
+Observaciones lleno, guardado y recargado correctamente en
+`/casos/{id}/editar`. Caso de prueba borrado de la BD real al
+terminar.
+
+**Nota (no corregida, alcance fuera de esta ronda):** `verificar_claves.php`
+solo audita literales `$campo('...')` para archivos en su lista
+`$AMBIENTE_SEGURO` (hoy: solo los 10 partials de O95) -- los partials
+reposicionados tipo `clasificacion-caso-a370.php`/`clasificacion-caso-p350.php`
+y ahora `observaciones-b01.php`, que también usan `$campo('...')`
+literal (el ambiente, no `$resolvedorPara`), quedan fuera de ese
+conteo. No es un hueco nuevo de esta ronda -- ya existía para los
+otros dos; se documenta acá por si alguna vez se decide ampliar
+`$AMBIENTE_SEGURO` a esa familia de partials.
+
+**Décima ronda, mismo día -- "Clasificación del caso" (chips) sin
+relación con "Resultado" de Laboratorio:** el usuario notó que los
+chips genéricos (Sospechoso/Probable/Confirmado/Descartado, al pie del
+formulario) no tenían ninguna relación con los valores que puede tomar
+"Resultado" en la tabla de Laboratorio (Positivo/Negativo/Indeterminado,
+catálogo 3 compartido) y pidió sincronizarlos, igual que ya existe para
+O95 (causa de muerte) / P35.0, A35, A33 (clasificación propia) / B05
+(clasificación propia). B01 es distinto de esos 5 precedentes: no tiene
+NINGÚN campo de clasificación propio en el PDF (el diagnóstico es
+clínico; el ítem VI aclara que Laboratorio "SOLO se indica en casos
+complicados que no se tenga certeza del diagnóstico clínico") -- la
+única fuente posible es la columna "Resultado" de la tabla de muestras,
+que además es de **varias filas** (no un solo `<select>` como en los
+otros 5 casos).
+
+Implementado en `public/js/ficha.js` (`sincronizarClasificacionB01()`,
+justo después del bloque de A33): al cambiar cualquier
+`select[name="muestra_resultado[]"]` en una página B01 (gate por
+`#cieTag`), si alguna fila está en Positivo -> marca "Confirmado"; si
+ninguna está en Positivo pero alguna está en Negativo -> marca
+"Descartado"; Indeterminado o filas vacías no mueven el chip (el caso
+sigue diagnosticado solo por clínica, a elección manual del usuario).
+A diferencia de A35/A33, **no** se restringió
+`enfermedad.opciones_clasificacion` para B01 -- las 4 opciones
+genéricas siguen siendo válidas, porque el diagnóstico clínico por sí
+solo puede justificar Sospechoso/Probable sin ningún dato de
+laboratorio. El chip sigue siendo editable a mano en cualquier momento
+(mismo patrón que los demás: solo fuerza el valor si el radio
+correspondiente no estaba ya marcado, no bloquea el control).
+
+Verificado con Playwright real (sesión autenticada, sin tocar la BD):
+(1) fila añadida vía "+ Agregar fila" (la tabla arranca vacía en
+"Nueva ficha", no había ningún `select` de Resultado hasta hacer clic);
+(2) Resultado=Positivo -> chip pasa a Confirmado; (3) Resultado=Negativo
+-> chip pasa a Descartado; (4) Resultado=Indeterminado -> el chip NO se
+mueve (sigue en Descartado); (5) clic manual en "Probable" -> el chip
+respeta la elección manual del usuario; (6) con 2 filas, Negativo en la
+primera y luego Positivo en la segunda -> Confirmado gana (Positivo
+tiene prioridad sobre Negativo sin importar el orden/fila). `node
+--check public/js/ficha.js` limpio. Sesión de prueba borrada al
+terminar (no se creó ningún caso real, solo interacción de UI).
+
+**Ajuste, mismo día -- Indeterminado/Pendiente alineado a "Probable":**
+el usuario preguntó si Indeterminado o Pendiente (select en blanco,
+etiqueta "Pendiente") podían alinearse con el chip Probable. Se
+reordenó la prioridad en `sincronizarClasificacionB01()`: Positivo
+(Confirmado) sigue siendo la más alta; ahora, si ninguna fila es
+Positiva pero alguna es Indeterminada o está en blanco/Pendiente, el
+caso queda en Probable; recién si TODAS las filas cargadas son
+Negativas (sin ninguna Indeterminada/Pendiente de por medio) se marca
+Descartado -- una sola fila Indeterminada o pendiente entre varias
+basta para que el caso no se pueda Descartar limpiamente.
+
+Verificado con Playwright (misma sesión de prueba, sin crear ningún
+caso real): Indeterminado solo -> Probable; Pendiente (blanco)
+explícito tras haber tenido otro valor -> Probable; con 2 filas,
+Negativo+Pendiente -> Probable, Negativo+Negativo -> Descartado,
+Negativo+Indeterminado -> Probable (vuelve a subir desde Descartado),
+Negativo+Positivo -> Confirmado (sigue ganando sobre todo). `node
+--check` limpio. Sesión de prueba borrada al terminar.
+
+**Undécima ronda, mismo día -- "Investigador": Teléfono y Email
+agregados (núcleo, las 24 fichas):** el usuario preguntó qué otros
+datos se podían manejar en "Investigador", notando que el PDF de B01
+(ítems 40-41) pide Teléfono y Email, que la sección núcleo compartida
+(`investigador.php`, `caso.investigador_*`) no capturaba en ningún
+lado del sistema (se revisó `caso`, `campo_def` de las 24 fichas: no
+existían). Se decidió mostrarlos para la mayoría (las 24 fichas por
+igual, sin flag de visibilidad por ficha) en vez de solo B01 -- mismo
+criterio que "Fecha de investigación", que tampoco todas las fichas
+piden pero se mantiene visible siempre por simplicidad.
+
+1. 2 columnas núcleo nuevas en `caso` (migración a mano):
+   `investigador_telefono VARCHAR(20) NULL`,
+   `investigador_email VARCHAR(150) NULL` (después de
+   `investigador_cargo`).
+2. `investigador.php`: 2 campos nuevos (`<input type="text" maxlength="20">`
+   para Teléfono, `<input type="email" maxlength="150">` para Email,
+   mismo estilo que los demás campos núcleo del partial). Email se
+   autocompleta con `Auth::usuario()['email']` en "Nueva ficha" (mismo
+   criterio que Nombre, que ya se autocompletaba) -- Teléfono no tiene
+   de dónde autocompletarse (`usuario` no tiene columna teléfono),
+   queda en blanco.
+3. `CasosController.php`: `investigador_telefono`/`investigador_email`
+   agregados en los 5 puntos donde ya vivían
+   `investigador_nombre`/`_cargo`/`_profesion`/`fecha_investigacion`
+   (lectura de POST en `crear()` y `actualizar()`, valor por defecto
+   de `editar()` GET, valor por defecto de `nuevo()` GET, y el bloque
+   final `sanearCamposNucleo()` que arma el array para
+   `Caso::crear()`/`actualizar()` -- inserción dinámica por claves de
+   array, sin whitelist aparte, así que bastaba con agregarlos ahí).
+4. `fichas/ver.php`: 2 campos nuevos en la tarjeta "Investigador"
+   (modo lectura) + agregados a la condición que decide si la tarjeta
+   se muestra.
+
+Verificado con un registro real de extremo a extremo (Playwright para
+confirmar que los 2 campos existen y el email se autocompleta; curl
+para el POST real -- el intento con Playwright `.click()` en el botón
+de submit no disparó ninguna petición de red, mismo síntoma ya
+documentado en
+[[playwright_disponible_para_verificacion]], así que se probó por
+curl directo en su lugar): caso creado con Teléfono/Email llenos,
+confirmado en BD, confirmado que `/casos/{id}/editar` los precarga y
+que `/casos/{id}` (modo lectura) los muestra. Caso y persona de prueba
+borrados de la BD real al terminar. Triple verificador
+(`verificar_fichas.php`/`verificar_claves.php`/`verificar_render.php`)
+sin cambios (este ajuste no toca `campo_def`/manifiesto, son columnas
+núcleo).
+
+**Duodécima ronda, mismo día -- "Fecha de inicio de síntomas" pasa de
+"opcional visible" a oculta del todo:** el usuario revisó de nuevo y
+corrigió la decisión de la Sexta ronda (2026-08-09): B01 no debe
+mostrar el campo genérico en absoluto, no solo dejar de exigirlo.
+
+1. `secciones-clinicas.php`: 'B01' se sumó a la lista de exclusión que
+   ya tenían A80/B05/O95/P35.0/A35/A37.0 (el `if
+   (!in_array(...))` que envuelve todo el bloque del campo genérico),
+   en vez de la rama "visible pero opcional". Se eliminó la variable
+   `$fechaInicioSintomasOpcional` (ya sin uso, B01 nunca vuelve a
+   entrar a ese bloque).
+2. `CasosController.php` (`crear()`/`actualizar()`): NO hizo falta
+   ningún cambio funcional -- `$sinFechaInicioSintomasObligatoria` ya
+   incluía `'B01'` desde la Sexta ronda, y ese mismo flag ya evitaba
+   el fallback de `extraerFechaInicioSintomas()` para P35.0/A35/A37.0/B01;
+   con el campo ahora oculto (nunca llega en `$_POST`), el
+   comportamiento ya existente sigue guardando `NULL` sin error, igual
+   que los otros 3. Solo se actualizaron los comentarios (2 lugares)
+   para no dejar la explicación vieja ("el campo SÍ se sigue
+   mostrando") contradiciendo el código.
+
+Verificado con Playwright + curl real: (1) el HTML de "Nueva ficha"
+B01 ya NO tiene el input genérico visible (`input[name="fecha_inicio_sintomas"]`
+solo aparece 1 vez, el de la tarjeta ambiente oculta de B26
+-- `id="fechaInicioSintomasB26"`, `visible:false`, bug preexistente
+y ajeno, ver [[bug_b26_fecha_inicio_sintomas_bloquea_submit]]); (2)
+control con A97 (ficha no tocada): sigue mostrando el campo genérico
+visible, sin cambios; (3) registro real de B01 sin enviar el campo
+-> guardado con `fecha_inicio_sintomas` vacío, sin error. Caso y
+persona de prueba borrados. Triple verificador sin cambios.
+
+**Decimotercera ronda, mismo día -- corregido el bug de submit
+bloqueado (reportado 2026-08-04, `[[bug_b26_fecha_inicio_sintomas_bloquea_submit]]`):**
+al notar que ocultar el campo en B01 dejaba visible el problema (B01
+queda con CERO inputs válidos de `name="fecha_inicio_sintomas"`, solo
+el oculto+`required` de `cuadro-clinico-b26.php`), se preguntó al
+usuario si corregirlo ahora; confirmó que sí.
+
+**Fix:** se quitó el atributo `required` nativo del
+`<input id="fechaInicioSintomasB26" name="fecha_inicio_sintomas">`
+en `cuadro-clinico-b26.php` (línea 124) -- el ÚNICO lugar de todo el
+sistema donde ese `name` compartido tenía `required` HTML; el campo
+genérico de `secciones-clinicas.php` nunca lo tuvo (solo el asterisco
+visual + `$errorFechaInicioSintomas` server-side). Se aprovechó para
+agregarle el mismo tratamiento de error que ya tiene el genérico
+(`class="err"` + `<span class="hint err">`, usando la misma variable
+`$errorFechaInicioSintomas` que ya llega a la vista, antes sin usar en
+este partial) -- B26 no pierde la exigencia real: sigue sin estar en
+`$sinFechaInicioSintomasObligatoria`, así que el servidor lo sigue
+exigiendo igual que antes, solo que ahora el error se muestra
+correctamente en vez de que el navegador bloquee el submit en
+silencio.
+
+Verificado con Playwright + curl real: (1) click real en "Registrar
+ficha" de B01 -- ANTES no disparaba ninguna petición de red (mismo
+síntoma documentado en la memoria del bug); DESPUÉS del fix sí dispara
+el POST, sin errores de consola ("An invalid form control... is not
+focusable." ya no aparece); (2) control B26 (ficha ya revisada, ver
+[[feedback_avisar_cambios_fichas_revisadas]] -- se avisó y el usuario
+aprobó antes de tocar el archivo): registro real por curl con
+`fecha_inicio_sintomas` lleno -> se sigue guardando correctamente en
+`caso.fecha_inicio_sintomas`, sin regresión. Casos de prueba borrados.
+Triple verificador sin cambios (B26 sigue con su único huérfano
+preexistente, `b26_fecha_de_inicio_de_sintomas`, sin variación).

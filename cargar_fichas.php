@@ -121,7 +121,12 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
     // automáticamente en CasosController::filasMuestras() (cuenta repeticiones
     // de tipo_muestra dentro del propio POST), no una columna que una ficha
     // declare para pintar/ocultar -- no hay <select> ni <input> para ella.
-    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones', 'resultado_pcr', 'fecha_result_pcr', 'genotipo', 'resultado_igm', 'fecha_result_igm', 'resultado_igg', 'fecha_result_igg', 'titulacion'],
+    // 'fecha_envio_eess_red'/'fecha_envio_red_lrr'/'fecha_envio_lrr_ins'
+    // (2026-08-09, B01): cadena de 3 fechas de envío EE.SS -> Red/Microred ->
+    // LRR -> INS del PDF (pág. 3, secc. VI) -- distinta de 'fecha_envio_ins'
+    // (una sola fecha genérica que ya usan otras fichas para el mismo
+    // concepto, sin desglosar el tramo).
+    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_envio_eess_red', 'fecha_envio_red_lrr', 'fecha_envio_lrr_ins', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones', 'resultado_pcr', 'fecha_result_pcr', 'genotipo', 'resultado_igm', 'fecha_result_igm', 'resultado_igg', 'fecha_result_igg', 'titulacion'],
 ];
 
 // Campos del núcleo compartido de "Datos del paciente" (columnas fijas de

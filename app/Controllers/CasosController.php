@@ -177,6 +177,8 @@ class CasosController extends Controller
             'investigador_cargo'     => trim($_POST['investigador_cargo'] ?? ''),
             'investigador_profesion' => trim($_POST['investigador_profesion_sel'] ?? '') === 'Otro' ? trim($_POST['investigador_profesion_otra'] ?? '') : trim($_POST['investigador_profesion_sel'] ?? ''),
             'investigador_profesion_otra' => trim($_POST['investigador_profesion_otra'] ?? ''),
+            'investigador_telefono'  => trim($_POST['investigador_telefono'] ?? ''),
+            'investigador_email'     => trim($_POST['investigador_email'] ?? ''),
             'fecha_investigacion'    => trim($_POST['fecha_investigacion'] ?? ''),
         ];
 
@@ -240,7 +242,13 @@ class CasosController extends Controller
         // y, peor, extraerFechaInicioSintomas() tomaría la primera FECHA
         // enviada (probablemente "Fecha de conocimiento local del caso" de
         // la cabecera de notificación), no la fecha de síntomas real.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0'], true);
+        // B01 (2026-08-10): igual que los 3 anteriores, el campo está oculto
+        // del todo en secciones-clinicas.php -- Varicela no lo requiere en
+        // absoluto (no solo "no obligatorio", decisión revisada el
+        // 2026-08-09 y corregida al día siguiente por el usuario). No hace
+        // falta ninguna otra rama acá: al no llegar en $_POST, sigue
+        // guardando NULL sin error, mismo camino que P35.0/A35/A37.0.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -576,6 +584,8 @@ class CasosController extends Controller
             'investigador_nombre'    => (string) ($caso['investigador_nombre'] ?? ''),
             'investigador_cargo'     => (string) ($caso['investigador_cargo'] ?? ''),
             'investigador_profesion' => (string) ($caso['investigador_profesion'] ?? ''),
+            'investigador_telefono'  => (string) ($caso['investigador_telefono'] ?? ''),
+            'investigador_email'     => (string) ($caso['investigador_email'] ?? ''),
             'fecha_investigacion'    => (string) ($caso['fecha_investigacion'] ?? ''),
         ];
 
@@ -668,6 +678,8 @@ class CasosController extends Controller
             'investigador_cargo'     => trim($_POST['investigador_cargo'] ?? ''),
             'investigador_profesion' => trim($_POST['investigador_profesion_sel'] ?? '') === 'Otro' ? trim($_POST['investigador_profesion_otra'] ?? '') : trim($_POST['investigador_profesion_sel'] ?? ''),
             'investigador_profesion_otra' => trim($_POST['investigador_profesion_otra'] ?? ''),
+            'investigador_telefono'  => trim($_POST['investigador_telefono'] ?? ''),
+            'investigador_email'     => trim($_POST['investigador_email'] ?? ''),
             'fecha_investigacion'    => trim($_POST['fecha_investigacion'] ?? ''),
         ];
 
@@ -702,7 +714,13 @@ class CasosController extends Controller
         // estándar de "fecha de inicio de síntomas" -- no se muestra ni
         // se exige. A37.0 sí lo tiene, pero dentro de su propio Cuadro
         // clínico -- ver el motivo completo en crear().
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0'], true);
+        // B01 (2026-08-10): igual que los 3 anteriores, el campo está oculto
+        // del todo en secciones-clinicas.php -- Varicela no lo requiere en
+        // absoluto (no solo "no obligatorio", decisión revisada el
+        // 2026-08-09 y corregida al día siguiente por el usuario). No hace
+        // falta ninguna otra rama acá: al no llegar en $_POST, sigue
+        // guardando NULL sin error, mismo camino que P35.0/A35/A37.0.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -938,7 +956,7 @@ class CasosController extends Controller
         $paraGuardar = [];
 
         foreach ($campos as $campoId => $campo) {
-            // Peticion 2, Fase 5: estos 5 son casos especiales que escapan el
+            // Peticion 2, Fase 5: estos son casos especiales que escapan el
             // motor de tipos (arman o combinan valores de $_POST con nombres
             // literales, no campo_NNNN) y se identifican por clave, no por
             // ID -- cargar_fichas.php regenera el ID en cada recarga, la
@@ -946,8 +964,16 @@ class CasosController extends Controller
             // MAPA_IDS_CAMPOS.md y FASE2_RESOLVEDOR_POR_CLAVE.md para el
             // porque de cada clave (b26_contactos_por_lugar existia; los
             // otros no persistian antes de esta fase; a37_0_contactos_por_lugar
-            // se sumó 2026-08-07 calcando el mismo patrón de B26 -- ver
-            // secciones-clinicas.php).
+            // se sumó 2026-08-07 y b01_contactos_por_lugar 2026-08-08,
+            // ambos calcando el mismo patrón de B26 -- ver
+            // secciones-clinicas.php / lugar-probable-infeccion-b01.php).
+            // OJO: esto es distinto del bug corregido el mismo día en
+            // b26_inf_direccion y compañía (ver PENDIENTES.md ítem 14,
+            // tercera ronda) -- ahí el problema era que esos campos NO
+            // tenían campo_def real y se guardaban con la clave string
+            // literal como si fuera campo_def_id. Acá $campoId SÍ es el
+            // id real (viene del foreach de $campos), solo cambia de
+            // dónde se lee el valor en $_POST.
             if ($campo['clave'] === 'b26_contactos_por_lugar' && isset($_POST['b26_lugar_tipo']) && is_array($_POST['b26_lugar_tipo'])) {
                 $matrizLugares = [];
                 foreach ($_POST['b26_lugar_tipo'] as $idx => $tipo) {
@@ -961,6 +987,21 @@ class CasosController extends Controller
                 }
                 $paraGuardar[$campoId] = json_encode($matrizLugares, JSON_UNESCAPED_UNICODE);
                 $valoresCampos[$campoId] = $matrizLugares;
+                continue;
+            }
+            if ($campo['clave'] === 'b01_contactos_por_lugar' && isset($_POST['b01_lugar_tipo']) && is_array($_POST['b01_lugar_tipo'])) {
+                $matrizLugaresB01 = [];
+                foreach ($_POST['b01_lugar_tipo'] as $idx => $tipo) {
+                    $matrizLugaresB01[] = [
+                        'tipo'      => trim((string) $tipo),
+                        'nombre'    => trim((string) ($_POST['b01_lugar_nombre'][$idx] ?? '')),
+                        'direccion' => trim((string) ($_POST['b01_lugar_direccion'][$idx] ?? '')),
+                        'sanos'     => trim((string) ($_POST['b01_lugar_sanos'][$idx] ?? '')),
+                        'enfermos'  => trim((string) ($_POST['b01_lugar_enfermos'][$idx] ?? '')),
+                    ];
+                }
+                $paraGuardar[$campoId] = json_encode($matrizLugaresB01, JSON_UNESCAPED_UNICODE);
+                $valoresCampos[$campoId] = $matrizLugaresB01;
                 continue;
             }
             if ($campo['clave'] === 'a37_0_contactos_por_lugar' && isset($_POST['a370_lugar_tipo']) && is_array($_POST['a370_lugar_tipo'])) {
@@ -1115,13 +1156,6 @@ class CasosController extends Controller
             }
         }
 
-        foreach (['b26_inf_direccion', 'b26_inf_departamento_id', 'b26_inf_provincia_id', 'b26_inf_distrito_id', 'b26_inf_localidad', 'b26_fecha_contacto_gestante', 'b26_vacunacion_spr', 'b26_dosis_spr', 'b26_fecha_ultima_dosis_spr', 'b26_eess_vacunacion_spr', 'b26_observaciones'] as $cCustom) {
-            if (isset($_POST[$cCustom])) {
-                $paraGuardar[$cCustom] = trim((string) $_POST[$cCustom]);
-                $valoresCampos[$cCustom] = trim((string) $_POST[$cCustom]);
-            }
-        }
-
         return [$valoresCampos, $erroresCampos, $paraGuardar];
     }
 
@@ -1192,6 +1226,8 @@ class CasosController extends Controller
             'investigador_cargo'     => '',
             'investigador_profesion' => '',
             'investigador_profesion_otra' => '',
+            'investigador_telefono'  => '',
+            'investigador_email'     => Auth::usuario()['email'] ?? '',
             'fecha_investigacion'    => $hoyIso,
         ];
     }
@@ -1339,6 +1375,8 @@ class CasosController extends Controller
                 'investigador_nombre'     => $valoresFijos['investigador_nombre'] !== '' ? $valoresFijos['investigador_nombre'] : null,
                 'investigador_cargo'      => $valoresFijos['investigador_cargo'] !== '' ? $valoresFijos['investigador_cargo'] : null,
                 'investigador_profesion'  => $valoresFijos['investigador_profesion'] !== '' ? $valoresFijos['investigador_profesion'] : null,
+                'investigador_telefono'   => $valoresFijos['investigador_telefono'] !== '' ? $valoresFijos['investigador_telefono'] : null,
+                'investigador_email'      => $valoresFijos['investigador_email'] !== '' ? $valoresFijos['investigador_email'] : null,
                 'fecha_investigacion'     => $valoresFijos['fecha_investigacion'] !== '' ? fechaIsoValida($valoresFijos['fecha_investigacion']) : null,
             ],
         ];
@@ -1956,6 +1994,9 @@ class CasosController extends Controller
         $recibioAntibiotico = $_POST['muestra_recibio_antibiotico'] ?? [];
         $resultados = $_POST['muestra_resultado'] ?? [];
         $fechasToma = $_POST['muestra_fecha_toma'] ?? [];
+        $fechasEnvioEessRed = $_POST['muestra_fecha_envio_eess_red'] ?? [];
+        $fechasEnvioRedLrr = $_POST['muestra_fecha_envio_red_lrr'] ?? [];
+        $fechasEnvioLrrIns = $_POST['muestra_fecha_envio_lrr_ins'] ?? [];
         $fechasEnvioIns = $_POST['muestra_fecha_envio_ins'] ?? [];
         $fechasResultado = $_POST['muestra_fecha_result'] ?? [];
         $agentesAislados = $_POST['muestra_agente_aislado'] ?? [];
@@ -1994,6 +2035,9 @@ class CasosController extends Controller
             $tipoPrueba = trim((string) ($tiposPrueba[$i] ?? ''));
             $resultado = trim((string) ($resultados[$i] ?? ''));
             $tomaTxt = trim((string) ($fechasToma[$i] ?? ''));
+            $envioEessRedTxt = trim((string) ($fechasEnvioEessRed[$i] ?? ''));
+            $envioRedLrrTxt = trim((string) ($fechasEnvioRedLrr[$i] ?? ''));
+            $envioLrrInsTxt = trim((string) ($fechasEnvioLrrIns[$i] ?? ''));
             $envioInsTxt = trim((string) ($fechasEnvioIns[$i] ?? ''));
             $recepInsTxt = trim((string) ($fechasRecepcionIns[$i] ?? ''));
             $resultTxt = trim((string) ($fechasResultado[$i] ?? ''));
@@ -2009,7 +2053,7 @@ class CasosController extends Controller
             $resIggTxt = trim((string) ($fechasResultIgg[$i] ?? ''));
             $titulacionTxt = trim((string) ($titulaciones[$i] ?? ''));
 
-            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '' && $titulacionTxt === '') {
+            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $envioEessRedTxt === '' && $envioRedLrrTxt === '' && $envioLrrInsTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '' && $titulacionTxt === '') {
                 continue;
             }
 
@@ -2022,6 +2066,30 @@ class CasosController extends Controller
                 if (!$tomaIso) {
                     $errores[$i]['fecha_toma'] = self::ERROR_FECHA_INVALIDA;
                     $tomaIso = $tomaTxt;
+                }
+            }
+            $envioEessRedIso = null;
+            if ($envioEessRedTxt !== '') {
+                $envioEessRedIso = fechaIsoValida($envioEessRedTxt);
+                if (!$envioEessRedIso) {
+                    $errores[$i]['fecha_envio_eess_red'] = self::ERROR_FECHA_INVALIDA;
+                    $envioEessRedIso = $envioEessRedTxt;
+                }
+            }
+            $envioRedLrrIso = null;
+            if ($envioRedLrrTxt !== '') {
+                $envioRedLrrIso = fechaIsoValida($envioRedLrrTxt);
+                if (!$envioRedLrrIso) {
+                    $errores[$i]['fecha_envio_red_lrr'] = self::ERROR_FECHA_INVALIDA;
+                    $envioRedLrrIso = $envioRedLrrTxt;
+                }
+            }
+            $envioLrrInsIso = null;
+            if ($envioLrrInsTxt !== '') {
+                $envioLrrInsIso = fechaIsoValida($envioLrrInsTxt);
+                if (!$envioLrrInsIso) {
+                    $errores[$i]['fecha_envio_lrr_ins'] = self::ERROR_FECHA_INVALIDA;
+                    $envioLrrInsIso = $envioLrrInsTxt;
                 }
             }
             $envioInsIso = null;
@@ -2049,6 +2117,9 @@ class CasosController extends Controller
                 'recibio_antibiotico' => in_array($antibiotico, ['0', '1'], true) ? (int) $antibiotico : null,
                 'resultado'           => in_array($resultado, $validosResultado, true) ? $resultado : ($resIgm ?: ($resPcr ?: ($resIgg ?: null))),
                 'fecha_toma'          => $tomaIso,
+                'fecha_envio_eess_red' => $envioEessRedIso,
+                'fecha_envio_red_lrr' => $envioRedLrrIso,
+                'fecha_envio_lrr_ins' => $envioLrrInsIso,
                 'fecha_envio_ins'     => $envioInsIso,
                 'fecha_result'        => $resultIso ?: ($resIgmTxt ? fechaIsoValida($resIgmTxt) : ($resPcrTxt ? fechaIsoValida($resPcrTxt) : ($resIggTxt ? fechaIsoValida($resIggTxt) : null))),
                 'agente_aislado'      => $agenteTxt !== '' ? $agenteTxt : null,

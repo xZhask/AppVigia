@@ -1,34 +1,34 @@
 <?php
 /**
- * III. LUGAR PROBABLE DE INFECCIÓN - Exclusivo para Parotiditis con complicaciones (B26)
- * 
- * Registros dinámicos con botón "+ Agregar lugar"
+ * III. LUGAR PROBABLE DE INFECCIÓN - Exclusivo para Varicela con complicaciones (B01)
+ *
+ * Registros dinámicos con botón "+ Agregar lugar" (mismo patrón que
+ * lugar-probable-infeccion-b26.php, con 2 diferencias del PDF de B01:
+ * - "Casa" deshabilita Nombre del lugar Y Dirección (no solo Nombre como
+ *   B26) -- mismo criterio ya aplicado en a37_0_contactos_por_lugar
+ *   (esa dirección ya se capturó en Datos del paciente).
+ * - "¿Tuvo contacto con gestante?" es Sí/No (sin Ignorado) y pide
+ *   Semanas de gestación, no Trimestre.
  */
 
-$esB26Card = (($enfermedad['cie10'] ?? null) === 'B26');
+$esB01Card = (($enfermedad['cie10'] ?? null) === 'B01');
 
-// Este partial se incluye sin condición aunque B26 no sea la ficha activa
-// (mismo motivo que notificacion-fechas-b26.php): $campoB26 resuelve
-// siempre contra la B26 real, no contra $enfermedad.
-//
-// Petición 2, cotejo B05/O95 (2026-07-30): esto asignaba $campo (el
-// resolvedor AMBIENTE), no una variable propia -- pisaba $campo para el
-// resto de la misma carga de página, incluido secciones-clinicas.php,
-// que se incluye después. Ver el comentario equivalente y más largo en
-// notificacion-fechas-o95.php.
-$campoB26 = $resolvedorPara('B26');
+// Este partial se incluye sin condición aunque B01 no sea la ficha activa
+// (mismo motivo que notificacion-fechas-b01.php): $campoB01 resuelve
+// siempre contra la B01 real, no contra $enfermedad.
+$campoB01 = $resolvedorPara('B01');
 
-$campoContactoCaso = $campoB26('b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con');
-$campoContactosPorLugar = $campoB26('b26_contactos_por_lugar');
-$campoContactoGestante = $campoB26('b26_tuvo_contacto_con_gestante');
-$campoFechaContactoGestante = $campoB26('b26_fecha_contacto_gestante');
-$campoTrimestreGestanteContacto = $campoB26('b26_trimestre_de_gestacion_contacto');
+$campoContactoCaso = $campoB01('b01_en_las_ultimas_2_a_3_semanas_estuvo_en_contacto_con');
+$campoContactosPorLugar = $campoB01('b01_contactos_por_lugar');
+$campoContactoGestante = $campoB01('b01_tuvo_contacto_con_gestante');
+$campoFechaContactoGestante = $campoB01('b01_fecha_de_contacto_con_gestante');
+$campoSemanasGestacionContacto = $campoB01('b01_semanas_de_gestacion_contacto');
 
-$campoInfDireccion = $campoB26('b26_inf_direccion');
-$campoInfDepartamento = $campoB26('b26_inf_departamento_id');
-$campoInfProvincia = $campoB26('b26_inf_provincia_id');
-$campoInfDistrito = $campoB26('b26_inf_distrito_id');
-$campoInfLocalidad = $campoB26('b26_inf_localidad');
+$campoInfDireccion = $campoB01('b01_inf_direccion');
+$campoInfDepartamento = $campoB01('b01_inf_departamento_id');
+$campoInfProvincia = $campoB01('b01_inf_provincia_id');
+$campoInfDistrito = $campoB01('b01_inf_distrito_id');
+$campoInfLocalidad = $campoB01('b01_inf_localidad');
 
 // Extraer valores existentes
 $valDirInf = $campoInfDireccion['val'];
@@ -37,7 +37,7 @@ $valProvInf = $campoInfProvincia['val'];
 $valDistInf = $campoInfDistrito['val'];
 $valLocInf = $campoInfLocalidad['val'];
 
-// ¿En las últimas 2 a 4 semanas estuvo en contacto con otro caso de parotiditis?
+// ¿En las últimas 2 a 3 semanas estuvo en contacto con otro caso de varicela?
 $rawContactoCaso = $campoContactoCaso['val'];
 if (is_array($rawContactoCaso)) {
     $valContactoCaso = $rawContactoCaso['valor'] ?? '';
@@ -70,7 +70,7 @@ if (!empty($matrizContactos)) {
     }
 }
 
-// ¿Tuvo contacto con gestante?
+// ¿Tuvo contacto con gestante? (Sí/No, sin Ignorado)
 $rawContactoGestante = $campoContactoGestante['val'];
 if (is_array($rawContactoGestante)) {
     $valContactoGestante = $rawContactoGestante['valor'] ?? '';
@@ -81,24 +81,23 @@ if ($valContactoGestante === '1') $valContactoGestante = 'SI';
 if ($valContactoGestante === '0') $valContactoGestante = 'NO';
 
 $valFechaContactoGestante = $campoFechaContactoGestante['val'];
-$valTrimestreGestanteContacto = $campoTrimestreGestanteContacto['val'];
+$valSemanasGestacionContacto = $campoSemanasGestacionContacto['val'];
 
 // Closure para renderizar cada fila dinámica de lugar
-$filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '', 'direccion' => '', 'sanos' => '', 'enfermos' => '']): void {
+$filaLugarContactoB01 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '', 'direccion' => '', 'sanos' => '', 'enfermos' => '']): void {
     $tipo = $f['tipo'] ?? 'COLEGIO';
     $esCasa = ($tipo === 'CASA');
 ?>
-  <div class="subrow row-lugar-b26" style="margin-bottom:12px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02))">
+  <div class="subrow row-lugar-b01" style="margin-bottom:12px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--card-bg, rgba(255,255,255,0.02))">
     <div style="flex:1">
       <div class="fields halves" style="margin-bottom:10px">
         <div class="field">
           <label class="fl">Tipo de lugar</label>
           <div class="control">
-            <select name="b26_lugar_tipo[]" class="sel-lugar-tipo-b26" data-nosearch="true">
+            <select name="b01_lugar_tipo[]" class="sel-lugar-tipo-b01" data-nosearch="true">
               <option value="CASA" <?= seleccionado($tipo, 'CASA') ?>>Casa</option>
               <option value="NIDO_GUARDERIA" <?= seleccionado($tipo, 'NIDO_GUARDERIA') ?>>Nido / guardería</option>
               <option value="COLEGIO" <?= seleccionado($tipo, 'COLEGIO') ?>>Colegio</option>
-              <option value="ESCUELA_MILITAR" <?= seleccionado($tipo, 'ESCUELA_MILITAR') ?>>Escuela Militar / policial</option>
               <option value="UNIVERSIDAD_INSTITUTO" <?= seleccionado($tipo, 'UNIVERSIDAD_INSTITUTO') ?>>Universidad / Instituto</option>
               <option value="CENTRO_TRABAJO" <?= seleccionado($tipo, 'CENTRO_TRABAJO') ?>>Centro de trabajo</option>
               <option value="ESTABLECIMIENTO_SALUD" <?= seleccionado($tipo, 'ESTABLECIMIENTO_SALUD') ?>>Establecimiento de Salud</option>
@@ -109,7 +108,7 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
         <div class="field">
           <label class="fl">Nombre del lugar</label>
           <div class="control">
-            <input type="text" name="b26_lugar_nombre[]" value="<?= e($f['nombre']) ?>" placeholder="<?= $esCasa ? '— No aplica —' : 'Nombre del lugar…' ?>" class="inp-lugar-nombre-b26" <?= $esCasa ? 'disabled' : '' ?>>
+            <input type="text" name="b01_lugar_nombre[]" value="<?= e($f['nombre']) ?>" placeholder="<?= $esCasa ? '— No aplica —' : 'Nombre del lugar…' ?>" class="inp-lugar-nombre-b01" <?= $esCasa ? 'disabled' : '' ?>>
           </div>
         </div>
       </div>
@@ -117,19 +116,19 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
         <div class="field">
           <label class="fl">Dirección</label>
           <div class="control">
-            <input type="text" name="b26_lugar_direccion[]" value="<?= e($f['direccion']) ?>" placeholder="Dirección del lugar…" class="inp-lugar-direccion-b26">
+            <input type="text" name="b01_lugar_direccion[]" value="<?= e($f['direccion']) ?>" placeholder="<?= $esCasa ? '— No aplica —' : 'Dirección del lugar…' ?>" class="inp-lugar-direccion-b01" <?= $esCasa ? 'disabled' : '' ?>>
           </div>
         </div>
         <div class="field">
           <label class="fl">N.° Contactos sanos</label>
           <div class="control mono">
-            <input type="number" min="0" step="1" name="b26_lugar_sanos[]" value="<?= e($f['sanos']) ?>" placeholder="0" class="inp-lugar-sanos-b26 mono" style="text-align:center">
+            <input type="number" min="0" step="1" name="b01_lugar_sanos[]" value="<?= e($f['sanos']) ?>" placeholder="0" class="inp-lugar-sanos-b01 mono" style="text-align:center">
           </div>
         </div>
         <div class="field">
           <label class="fl">N.° Contactos enfermos</label>
           <div class="control mono">
-            <input type="number" min="0" step="1" name="b26_lugar_enfermos[]" value="<?= e($f['enfermos']) ?>" placeholder="0" class="inp-lugar-enfermos-b26 mono" style="text-align:center">
+            <input type="number" min="0" step="1" name="b01_lugar_enfermos[]" value="<?= e($f['enfermos']) ?>" placeholder="0" class="inp-lugar-enfermos-b01 mono" style="text-align:center">
           </div>
         </div>
       </div>
@@ -140,16 +139,16 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
   </div>
 <?php }; ?>
 
-<div class="card section b26-lugar-infeccion-card" id="cardLugarProbableInfeccionB26" <?= $esB26Card ? '' : 'hidden style="display:none;"' ?>>
+<div class="card section b01-lugar-infeccion-card" id="cardLugarProbableInfeccionB01" <?= $esB01Card ? '' : 'hidden style="display:none;"' ?>>
   <div class="section-head">
     <span class="section-num">3</span>
     <h3>Lugar probable de infección</h3>
   </div>
   <div class="section-body">
-    
-    <!-- Dirección, Ubigeo y Localidad -->
-    <div class="eyebrow" style="margin-bottom:12px">Ubicación del probable contagio</div>
-    
+
+    <!-- 1. Dirección, Ubigeo y Localidad -->
+    <div class="eyebrow" style="margin-bottom:12px">Ubicación probable de infección</div>
+
     <div class="fields" style="margin-bottom:14px">
       <div class="field wide">
         <label class="fl">Dirección</label>
@@ -161,7 +160,7 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
 
     <div style="margin-bottom:14px">
       <?php
-        $prefijo = 'b26-inf-ubigeo';
+        $prefijo = 'b01-inf-ubigeo';
         $nombreCampoDepartamento = $campoInfDepartamento['name'];
         $nombreCampoProvincia = $campoInfProvincia['name'];
         $nombreCampoDistrito = $campoInfDistrito['name'];
@@ -184,23 +183,23 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
 
     <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
 
-    <!-- 2. ¿En las últimas 2 a 4 semanas estuvo en contacto con otro caso de parotiditis? -->
+    <!-- 2. ¿En las últimas 2 a 3 semanas estuvo en contacto con otro caso de varicela? -->
     <div class="field" style="margin-bottom:18px">
       <label class="fl" style="font-weight:600;font-size:14px;color:var(--text-main);margin-bottom:8px">
-        ¿En las últimas 2 a 4 semanas estuvo en contacto con otro caso de parotiditis?
+        ¿En las últimas 2 a 3 semanas estuvo en contacto con otro caso de varicela?
       </label>
       <div class="control" style="margin-top:6px">
-        <div style="display:flex;gap:20px;align-items:center" id="wrapContactoCasoB26">
+        <div style="display:flex;gap:20px;align-items:center" id="wrapContactoCasoB01">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="SI" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'SI') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="SI" class="radio-contacto-caso-b01" <?= ($valContactoCaso === 'SI') ? 'checked' : '' ?>>
             <span>Sí</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="NO" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'NO') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="NO" class="radio-contacto-caso-b01" <?= ($valContactoCaso === 'NO') ? 'checked' : '' ?>>
             <span>No</span>
           </label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="IGNORADO" class="radio-contacto-caso-b26" <?= ($valContactoCaso === 'IGNORADO') ? 'checked' : '' ?>>
+            <input type="radio" name="<?= $campoContactoCaso['name'] ?>" value="IGNORADO" class="radio-contacto-caso-b01" <?= ($valContactoCaso === 'IGNORADO') ? 'checked' : '' ?>>
             <span>Ignorado</span>
           </label>
         </div>
@@ -208,22 +207,22 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
     </div>
 
     <!-- Bloque Condicional: Se muestra solo si Contacto con otro caso == SI -->
-    <div id="wrapDetalleContactosB26" <?= ($valContactoCaso === 'SI') ? '' : 'hidden style="display:none;"' ?>>
-      
-      <!-- 3. Lista Dinámica "Contactos por lugar" -->
+    <div id="wrapDetalleContactosB01" <?= ($valContactoCaso === 'SI') ? '' : 'hidden style="display:none;"' ?>>
+
+      <!-- 3. Lista Dinámica "Lugares de contacto" -->
       <div class="eyebrow" style="margin-top:20px;margin-bottom:10px">Contactos por lugar</div>
-      
-      <div class="subrows" data-lista="b26-lugar-contactos" id="listaLugarContactosB26">
+
+      <div class="subrows" data-lista="b01-lugar-contactos" id="listaLugarContactosB01">
         <?php foreach ($filasLugaresDynamic as $filaLugar): ?>
-          <?php $filaLugarContactoB26($filaLugar); ?>
+          <?php $filaLugarContactoB01($filaLugar); ?>
         <?php endforeach; ?>
       </div>
 
-      <template id="plantilla-b26-lugar-contactos">
-        <?php $filaLugarContactoB26(); ?>
+      <template id="plantilla-b01-lugar-contactos">
+        <?php $filaLugarContactoB01(); ?>
       </template>
 
-      <button type="button" class="btn btn-ghost agregar-fila" data-plantilla="plantilla-b26-lugar-contactos" data-lista="b26-lugar-contactos" style="margin-top:10px;margin-bottom:24px">
+      <button type="button" class="btn btn-ghost agregar-fila" data-plantilla="plantilla-b01-lugar-contactos" data-lista="b01-lugar-contactos" style="margin-top:10px;margin-bottom:24px">
         <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         Agregar lugar
       </button>
@@ -234,25 +233,21 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
           ¿Este caso tuvo contacto con gestante?
         </label>
         <div class="control" style="margin-top:6px">
-          <div style="display:flex;gap:20px;align-items:center" id="wrapContactoGestanteB26">
+          <div style="display:flex;gap:20px;align-items:center" id="wrapContactoGestanteB01">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="<?= $campoContactoGestante['name'] ?>" value="SI" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'SI') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoContactoGestante['name'] ?>" value="SI" class="radio-contacto-gestante-b01" <?= ($valContactoGestante === 'SI') ? 'checked' : '' ?>>
               <span>Sí</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="<?= $campoContactoGestante['name'] ?>" value="NO" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'NO') ? 'checked' : '' ?>>
+              <input type="radio" name="<?= $campoContactoGestante['name'] ?>" value="NO" class="radio-contacto-gestante-b01" <?= ($valContactoGestante === 'NO') ? 'checked' : '' ?>>
               <span>No</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;font-size:14px">
-              <input type="radio" name="<?= $campoContactoGestante['name'] ?>" value="IGNORADO" class="radio-contacto-gestante-b26" <?= ($valContactoGestante === 'IGNORADO') ? 'checked' : '' ?>>
-              <span>Ignorado</span>
             </label>
           </div>
         </div>
       </div>
 
       <!-- Subcampos condicionales de Contacto con gestante == SI -->
-      <div class="fields halves" id="wrapGestanteDetalleB26" style="margin-top:12px" <?= ($valContactoGestante === 'SI') ? '' : 'hidden style="display:none;"' ?>>
+      <div class="fields halves" id="wrapGestanteDetalleB01" style="margin-top:12px" <?= ($valContactoGestante === 'SI') ? '' : 'hidden style="display:none;"' ?>>
         <div class="field">
           <label class="fl">Fecha del contacto con gestante</label>
           <div class="control mono">
@@ -260,14 +255,9 @@ $filaLugarContactoB26 = function (array $f = ['tipo' => 'COLEGIO', 'nombre' => '
           </div>
         </div>
         <div class="field">
-          <label class="fl">Trimestre de gestación en que sucedió el contacto</label>
-          <div class="control">
-            <select name="<?= $campoTrimestreGestanteContacto['name'] ?>" data-nosearch="true">
-              <option value="">Seleccionar…</option>
-              <option value="I" <?= seleccionado($valTrimestreGestanteContacto, 'I') ?>>I Trimestre</option>
-              <option value="II" <?= seleccionado($valTrimestreGestanteContacto, 'II') ?>>II Trimestre</option>
-              <option value="III" <?= seleccionado($valTrimestreGestanteContacto, 'III') ?>>III Trimestre</option>
-            </select>
+          <label class="fl">Semanas de gestación (contacto)</label>
+          <div class="control mono">
+            <input type="number" min="1" max="42" step="1" name="<?= $campoSemanasGestacionContacto['name'] ?>" value="<?= e($valSemanasGestacionContacto) ?>" placeholder="Semanas…" style="text-align:center">
           </div>
         </div>
       </div>

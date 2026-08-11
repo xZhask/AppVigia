@@ -546,7 +546,7 @@
   font-family:"IBM Plex Serif",serif;font-weight:500;font-size:27px;
   letter-spacing:-.01em;margin:0 0 6px;color:var(--ink);
 }
-.auth-form .lead{color:var(--muted);font-size:14px;margin:0 0 28px;line-height:1.55}
+.auth-form p.lead{color:var(--muted);font-size:14px;margin:0 0 28px;line-height:1.55}
 .auth-field{margin-bottom:18px}
 .auth-field .control{padding:11px 13px}
 .pw-wrap{position:relative}

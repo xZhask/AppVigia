@@ -291,6 +291,55 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- B01: "Resultado" de Laboratorio (por fila) -> "clasificacion" genérico ----------
+  // A diferencia de P35.0/A35/A33 arriba, B01 no tiene un campo de
+  // clasificación propio en el PDF -- el diagnóstico es clínico y el
+  // Laboratorio "SOLO se indica en casos complicados que no se tenga certeza
+  // del diagnóstico clínico" (ítem VI). Cuando sí se carga un resultado, debe
+  // reflejarse en el chip genérico: cualquier fila en Positivo confirma el
+  // caso (máxima prioridad); si ninguna está en Positivo pero alguna está
+  // Indeterminada o Pendiente (select en blanco), el caso queda Probable --
+  // hay indicio de laboratorio pero sin resultado concluyente, no alcanza
+  // para Confirmar ni para Descartar; recién si TODAS las filas cargadas son
+  // Negativas (sin ninguna Indeterminada/Pendiente de por medio) se marca
+  // Descartado. Fuente son varias filas (tabla de muestras), no un solo
+  // select como en O95/P35.0/A35/A33/B05. El chip sigue editable a mano en
+  // cualquier momento -- por eso NO se restringe
+  // enfermedad.opciones_clasificacion para B01 como sí se hizo para A35/A33
+  // (acá las 4 opciones genéricas siguen siendo válidas).
+  function sincronizarClasificacionB01() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('B01') === -1) return;
+
+    var selectsResultado = Array.from(document.querySelectorAll('select[name="muestra_resultado[]"]'));
+    if (!selectsResultado.length) return;
+
+    var valores = selectsResultado.map(function (s) { return s.value; });
+    var valorGenerico = null;
+    if (valores.indexOf('POS') !== -1) {
+      valorGenerico = 'CONFIRMADO';
+    } else if (valores.indexOf('IND') !== -1 || valores.indexOf('') !== -1) {
+      valorGenerico = 'PROBABLE';
+    } else if (valores.indexOf('NEG') !== -1) {
+      valorGenerico = 'DESCARTADO';
+    }
+    if (!valorGenerico) return;
+
+    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + valorGenerico + '"]');
+    if (radioGenerico && !radioGenerico.checked) {
+      radioGenerico.checked = true;
+      evaluarDependencias();
+    }
+  }
+
+  sincronizarClasificacionB01();
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'muestra_resultado[]') {
+      sincronizarClasificacionB01();
+    }
+  });
+
   // ---------- A35: "No recuerda día" cambia Fecha de inicio de lesión a mm/aaaa ----------
   // Ítem 1 del PDF de A35 (pág. 23): "NO RECUERDA DIA ( )" junto a "FECHA DE
   // INICIO DE LESION" -- el día exacto no siempre se recuerda, así que el
@@ -398,15 +447,19 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!esFemenino && gestanteSel) gestanteSel.value = '';
 
     var esGestante = esFemenino && gestanteSel && gestanteSel.value === '1';
-    var esB26 = (textoEnfermedad.indexOf('B26') !== -1 || textoCie.indexOf('B26') !== -1);
+    // Fichas cuyo PDF pide "Trimestre de gestación" (I/II/III) en vez de
+    // "Semanas de gestación" para la gestante propia del caso (B26: cotejo
+    // 2026-07-30; B01: cotejo 2026-08-08, ítem 20 del PDF).
+    var esTrimestreGestacion = (textoEnfermedad.indexOf('B26') !== -1 || textoCie.indexOf('B26') !== -1 ||
+      textoEnfermedad.indexOf('B01') !== -1 || textoCie.indexOf('B01') !== -1);
 
     if (campoSemanas) {
-      campoSemanas.hidden = !esGestante || esB26;
-      campoSemanas.style.display = (!esGestante || esB26) ? 'none' : '';
+      campoSemanas.hidden = !esGestante || esTrimestreGestacion;
+      campoSemanas.style.display = (!esGestante || esTrimestreGestacion) ? 'none' : '';
     }
     if (campoTrimestre) {
-      campoTrimestre.hidden = !esGestante || !esB26;
-      campoTrimestre.style.display = (!esGestante || !esB26) ? 'none' : '';
+      campoTrimestre.hidden = !esGestante || !esTrimestreGestacion;
+      campoTrimestre.style.display = (!esGestante || !esTrimestreGestacion) ? 'none' : '';
     }
 
     var wrapPartoB05 = document.getElementById('wrapLugarPartoB05');
@@ -502,6 +555,52 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
   actualizarLugarInfeccionB26();
+
+  function actualizarLugarInfeccionB01(forcedCie10) {
+    var card = document.getElementById('cardLugarProbableInfeccionB01');
+    if (!card) return;
+
+    var esB01 = false;
+    if (typeof forcedCie10 === 'string' && forcedCie10 !== '') {
+      esB01 = (forcedCie10 === 'B01' || forcedCie10.indexOf('B01') !== -1);
+    } else {
+      var enfermedadSelB01 = document.getElementById('diseaseSel');
+      var opcionEnfermedadB01 = enfermedadSelB01 && enfermedadSelB01.selectedOptions && enfermedadSelB01.selectedOptions[0];
+      var valEnfB01 = enfermedadSelB01 ? (enfermedadSelB01.value || '') : '';
+      var cieOptB01 = opcionEnfermedadB01 ? (opcionEnfermedadB01.dataset.cie10 || '') : '';
+      var textoEnfermedadB01 = opcionEnfermedadB01 ? (opcionEnfermedadB01.text || '') : '';
+      var tagCieB01 = document.getElementById('cieTag');
+      var textoCieB01 = tagCieB01 ? (tagCieB01.textContent || '') : '';
+
+      esB01 = (cieOptB01 === 'B01' || textoEnfermedadB01.indexOf('B01') !== -1 || textoCieB01.indexOf('B01') !== -1 || valEnfB01 === '8');
+    }
+
+    card.hidden = !esB01;
+    card.style.display = esB01 ? '' : 'none';
+
+    if (!esB01) return;
+
+    var radContactoB01 = document.querySelector('input[name="' + campoPorClave('b01_en_las_ultimas_2_a_3_semanas_estuvo_en_contacto_con') + '"]:checked');
+    var valContactoB01 = radContactoB01 ? radContactoB01.value : '';
+    var wrapDetalleB01 = document.getElementById('wrapDetalleContactosB01');
+    var esSiContactoB01 = (valContactoB01 === 'SI');
+
+    if (wrapDetalleB01) {
+      wrapDetalleB01.hidden = !esSiContactoB01;
+      wrapDetalleB01.style.display = esSiContactoB01 ? '' : 'none';
+    }
+
+    var radGestanteB01 = document.querySelector('input[name="' + campoPorClave('b01_tuvo_contacto_con_gestante') + '"]:checked');
+    var valGestanteB01 = radGestanteB01 ? radGestanteB01.value : '';
+    var wrapGestanteDetalleB01 = document.getElementById('wrapGestanteDetalleB01');
+    var esSiGestanteB01 = esSiContactoB01 && (valGestanteB01 === 'SI');
+
+    if (wrapGestanteDetalleB01) {
+      wrapGestanteDetalleB01.hidden = !esSiGestanteB01;
+      wrapGestanteDetalleB01.style.display = esSiGestanteB01 ? '' : 'none';
+    }
+  }
+  actualizarLugarInfeccionB01();
 
   function actualizarCuadroClinicoB26(forcedCie10) {
     var card = document.getElementById('cardCuadroClinicoB26');
@@ -3038,6 +3137,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.target.name === campoPorClave('b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con') || e.target.name === campoPorClave('b26_tuvo_contacto_con_gestante') || e.target.classList.contains('radio-contacto-caso-b26') || e.target.classList.contains('radio-contacto-gestante-b26')) {
       actualizarLugarInfeccionB26();
     }
+    if (e.target.name === campoPorClave('b01_en_las_ultimas_2_a_3_semanas_estuvo_en_contacto_con') || e.target.name === campoPorClave('b01_tuvo_contacto_con_gestante') || e.target.classList.contains('radio-contacto-caso-b01') || e.target.classList.contains('radio-contacto-gestante-b01')) {
+      actualizarLugarInfeccionB01();
+    }
     if (e.target.name === campoPorClave('b26_presento_inflamacion_de_glandulas_parotidas') || e.target.name === campoPorClave('b26_hospitalizacion') || e.target.name === campoPorClave('b26_condicion_de_egreso') ||
         e.target.classList.contains('chk-complicacion-b26') || e.target.classList.contains('radio-parotidas-b26') ||
         e.target.classList.contains('radio-hospitalizacion-b26') || e.target.classList.contains('radio-egreso-b26')) {
@@ -3078,6 +3180,26 @@ document.addEventListener('DOMContentLoaded', function () {
           inpDireccionA370.disabled = esCasaA370;
           inpDireccionA370.placeholder = esCasaA370 ? '— No aplica —' : 'Dirección del lugar…';
           if (esCasaA370) inpDireccionA370.value = '';
+        }
+      }
+    }
+    // B01 "Contactos por lugar": mismo criterio que A37.0 (no el de B26) --
+    // "Casa" deshabilita Nombre del lugar Y Dirección.
+    if (e.target.classList.contains('sel-lugar-tipo-b01')) {
+      var rowB01 = e.target.closest('.row-lugar-b01');
+      if (rowB01) {
+        var esCasaB01 = (e.target.value === 'CASA');
+        var inpNombreB01 = rowB01.querySelector('.inp-lugar-nombre-b01');
+        var inpDireccionB01 = rowB01.querySelector('.inp-lugar-direccion-b01');
+        if (inpNombreB01) {
+          inpNombreB01.disabled = esCasaB01;
+          inpNombreB01.placeholder = esCasaB01 ? '— No aplica —' : 'Nombre del lugar…';
+          if (esCasaB01) inpNombreB01.value = '';
+        }
+        if (inpDireccionB01) {
+          inpDireccionB01.disabled = esCasaB01;
+          inpDireccionB01.placeholder = esCasaB01 ? '— No aplica —' : 'Dirección del lugar…';
+          if (esCasaB01) inpDireccionB01.value = '';
         }
       }
     }

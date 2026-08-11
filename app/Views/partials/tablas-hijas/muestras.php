@@ -2,7 +2,11 @@
 /**
  * Fila dinámica de muestras de laboratorio del caso (caso_muestra). Variables
  * esperadas: $filasMuestras (array de ['tipo_muestra','tipo_prueba',
- * 'recibio_antibiotico','resultado','fecha_toma','fecha_result']),
+ * 'recibio_antibiotico','resultado','fecha_toma','fecha_result']; opcionales
+ * por columna declarada: 'fecha_envio_eess_red','fecha_envio_red_lrr',
+ * 'fecha_envio_lrr_ins' -- cadena EE.SS -> Red/Microred -> LRR -> INS de B01,
+ * 2026-08-09, distinta de la 'fecha_envio_ins' genérica que ya usan otras
+ * fichas),
  * $opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado (catalogo_item),
  * $opcionesMuestraExtra (overrides declarativos por columna: tipo_muestra,
  * tipo_prueba, resultado_igm, resultado_igg, resultado_pcr, genotipo),
@@ -17,11 +21,17 @@ $muestra = fn(string $col) => in_array($col, $columnasMuestra, true);
 $esPfa = isset($enfermedad['cie10']) && $enfermedad['cie10'] === 'A80';
 $cie10Actual = $enfermedad['cie10'] ?? '';
 $esB05 = ($cie10Actual === 'B05');
-// "Fecha de obtención" (en vez de "Fecha de toma"): A80 y P35.0 usan esa
-// palabra en el PDF para la misma columna fecha_toma. "Fecha resultado
-// Fiocruz" ($esPfa más abajo) sigue siendo específico de A80 -- el PDF de
-// P35.0 no menciona Fiocruz.
-$esFechaObtencion = in_array($cie10Actual, ['A80', 'P35.0'], true);
+// "Fecha de obtención" (en vez de "Fecha de toma"): A80, P35.0 y B01 usan
+// esa palabra en el PDF para la misma columna fecha_toma (B01, 2026-08-09:
+// "Fecha de obtención de 1 muestra"). "Fecha resultado Fiocruz" ($esPfa más
+// abajo) sigue siendo específico de A80 -- el PDF de P35.0 no menciona
+// Fiocruz.
+$esFechaObtencion = in_array($cie10Actual, ['A80', 'P35.0', 'B01'], true);
+// "Fecha emisión resultado INS" (en vez de "Fecha de resultado"): B01
+// (2026-08-09) es la primera en pedir esta etiqueta exacta para fecha_result
+// -- el PDF (pág. 3, secc. VI) la conecta con la cadena EE.SS -> Red/Microred
+// -> LRR -> INS de abajo, no es un resultado local genérico.
+$esFechaEmisionResultadoIns = ($cie10Actual === 'B01');
 
 // opcionesMuestraExtra/textoLibreMuestra: overrides declarativos por ficha
 // sobre resultado_igm/resultado_igg/resultado_pcr/genotipo/titulacion
@@ -81,8 +91,11 @@ $opcionesAgente = !empty($opcionesMuestraExtra['agente_aislado'])
     ? array_intersect_key($opcionesAgenteDefecto, array_flip($opcionesMuestraExtra['agente_aislado']))
     : [];
 
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esB05, $cie10Actual, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $opcionesAgente, $dependeDeColumnaMuestra, $attrsDependencia): void {
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_eess_red' => '', 'fecha_envio_red_lrr' => '', 'fecha_envio_lrr_ins' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esFechaEmisionResultadoIns, $esB05, $cie10Actual, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $opcionesAgente, $dependeDeColumnaMuestra, $attrsDependencia): void {
     $errorToma = $error['fecha_toma'] ?? null;
+    $errorEnvioEessRed = $error['fecha_envio_eess_red'] ?? null;
+    $errorEnvioRedLrr = $error['fecha_envio_red_lrr'] ?? null;
+    $errorEnvioLrrIns = $error['fecha_envio_lrr_ins'] ?? null;
     $errorEnvio = $error['fecha_envio_ins'] ?? null;
     $errorResult = $error['fecha_result'] ?? null;
 
@@ -180,6 +193,27 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
           <?php if ($errorToma): ?><span class="hint err"><?= e($errorToma) ?></span><?php endif; ?>
         </div>
         <?php endif; ?>
+        <?php if ($muestra('fecha_envio_eess_red')): ?>
+        <div class="field">
+          <label class="fl">Fecha envío EE.SS, Red/Microred</label>
+          <div class="control mono <?= $errorEnvioEessRed ? 'err' : '' ?>"><input type="date" name="muestra_fecha_envio_eess_red[]" value="<?= e($fila['fecha_envio_eess_red'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+          <?php if ($errorEnvioEessRed): ?><span class="hint err"><?= e($errorEnvioEessRed) ?></span><?php endif; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('fecha_envio_red_lrr')): ?>
+        <div class="field">
+          <label class="fl">Fecha envío Red/Microred a LRR</label>
+          <div class="control mono <?= $errorEnvioRedLrr ? 'err' : '' ?>"><input type="date" name="muestra_fecha_envio_red_lrr[]" value="<?= e($fila['fecha_envio_red_lrr'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+          <?php if ($errorEnvioRedLrr): ?><span class="hint err"><?= e($errorEnvioRedLrr) ?></span><?php endif; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('fecha_envio_lrr_ins')): ?>
+        <div class="field">
+          <label class="fl">Fecha envío LRR a INS</label>
+          <div class="control mono <?= $errorEnvioLrrIns ? 'err' : '' ?>"><input type="date" name="muestra_fecha_envio_lrr_ins[]" value="<?= e($fila['fecha_envio_lrr_ins'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
+          <?php if ($errorEnvioLrrIns): ?><span class="hint err"><?= e($errorEnvioLrrIns) ?></span><?php endif; ?>
+        </div>
+        <?php endif; ?>
         <?php if ($muestra('fecha_envio_ins')): ?>
         <div class="field">
           <label class="fl">Fecha de envío a INS</label>
@@ -189,7 +223,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <?php endif; ?>
         <?php if ($muestra('fecha_result')): ?>
         <div class="field">
-          <label class="fl"><?= $esPfa ? 'Fecha resultado Fiocruz' : 'Fecha de resultado' ?></label>
+          <label class="fl"><?= $esFechaEmisionResultadoIns ? 'Fecha emisión resultado INS' : ($esPfa ? 'Fecha resultado Fiocruz' : 'Fecha de resultado') ?></label>
           <div class="control mono <?= $errorResult ? 'err' : '' ?>"><input type="date" name="muestra_fecha_result[]" value="<?= e($fila['fecha_result'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
           <?php if ($errorResult): ?><span class="hint err"><?= e($errorResult) ?></span><?php endif; ?>
         </div>
