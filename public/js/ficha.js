@@ -291,6 +291,64 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- A97: "Clasificación" propia (3 variantes) -> "clasificacion" genérico ----------
+  // A97 (Dengue/chikungunya/zika/arbovirosis/fiebre amarilla, pág. 49 del PDF)
+  // reemplazó su SELECT combinado de 24 opciones por 3 campos propios
+  // gateados según "Enfermedad / evento a notificar" (a97_enfermedad_evento):
+  // a97_clasificacion (Probable/Confirmado/Descartado, Dengue x3 +
+  // Chikungunya x2), a97_clasificacion_zika (Sospechoso/Confirmado/
+  // Descartado) y a97_clasificacion_fiebre_amarilla (Síndrome
+  // febril/Probable/Confirmado/Descartado) -- solo uno está visible
+  // (.dep-wrap sin `hidden`) a la vez. A diferencia de A35/A33,
+  // enfermedad.opciones_clasificacion NO se restringe acá: A97 es la única
+  // ficha que legítimamente necesita los 4 valores genéricos a la vez
+  // (Sospechoso para Zika, Probable para el resto). "Síndrome febril" no
+  // tiene equivalente genérico directo -- cae a SOSPECHOSO, mismo criterio
+  // que "Infección congénita" en sincronizarClasificacionP350().
+  function sincronizarClasificacionA97() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('A97') === -1) return;
+
+    var clavesPropias = ['a97_clasificacion', 'a97_clasificacion_zika', 'a97_clasificacion_fiebre_amarilla'];
+    var selectPropio = clavesPropias
+      .map(function (clave) { return document.querySelector('[name="' + campoPorClave(clave) + '"]'); })
+      .filter(function (sel) {
+        if (!sel) return false;
+        var wrap = sel.closest('.dep-wrap');
+        return !wrap || !wrap.hidden;
+      })[0];
+    if (!selectPropio || !selectPropio.value) return;
+
+    var EQUIVALENTES_CLASIFICACION_A97 = {
+      PROBABLE: 'PROBABLE',
+      CONFIRMADO: 'CONFIRMADO',
+      DESCARTADO: 'DESCARTADO',
+      SOSPECHOSO: 'SOSPECHOSO',
+      SINDROME_FEBRIL: 'SOSPECHOSO'
+    };
+    var valorGenerico = EQUIVALENTES_CLASIFICACION_A97[selectPropio.value];
+    if (!valorGenerico) return;
+
+    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + valorGenerico + '"]');
+    if (radioGenerico && !radioGenerico.checked) {
+      radioGenerico.checked = true;
+      evaluarDependencias();
+    }
+  }
+
+  sincronizarClasificacionA97();
+  document.addEventListener('change', function (e) {
+    var nombresPropiosA97 = [
+      campoPorClave('a97_clasificacion'),
+      campoPorClave('a97_clasificacion_zika'),
+      campoPorClave('a97_clasificacion_fiebre_amarilla')
+    ];
+    if (e.target && nombresPropiosA97.indexOf(e.target.name) !== -1) {
+      sincronizarClasificacionA97();
+    }
+  });
+
   // ---------- B01: "Resultado" de Laboratorio (por fila) -> "clasificacion" genérico ----------
   // A diferencia de P35.0/A35/A33 arriba, B01 no tiene un campo de
   // clasificación propio en el PDF -- el diagnóstico es clínico y el

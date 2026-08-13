@@ -138,6 +138,15 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // Laboratorio (mismo patrón que clasificacion-caso-a370.php).
         'b01_observaciones',
     ],
+    'A97' => [
+        // notificacion-fechas-a97.php (2026-08-12): "Enfermedad / evento a
+        // notificar" se mueve a la tarjeta fija "1. Notificación", en el
+        // lugar donde otras fichas traen Tipo/Lugar/Clasificación en la
+        // captación (pedido del usuario) -- el campo sigue siendo el mismo
+        // campo_def del que dependen a97_clasificacion/_zika/
+        // _fiebre_amarilla/_especificar en la sección "Clasificación".
+        'a97_enfermedad_evento',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -154,6 +163,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'A33' => ['Datos de notificación e investigación del caso'],
     'A37.0' => ['Datos de notificación e investigación del caso', 'Clasificación final'],
     'B01' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Observaciones'],
+    'A97' => ['Enfermedad / evento a notificar'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {

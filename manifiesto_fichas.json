@@ -41,23 +41,47 @@
                             "TEJIDO"
                         ],
                         "tipo_prueba": [
-                            "PCR",
                             "ELISA",
-                            "AG"
+                            "AISL_VIRAL",
+                            "PCR",
+                            "OTROS",
+                            "INMUNOHISTOQUIMICA"
                         ]
                     }
                 }
             },
-            "_observaciones_tablas_hija": "La BD tiene hoy usa_muestras=0, usa_viajes=0, usa_vacunas=0 para esta ficha (el stub previo no las usaba). El cargador debe activarlas junto con la recarga: el PDF trae examenes de laboratorio (seccion VI), un antecedente de viaje\/lugar de estadia en las ultimas 2 semanas (seccion IV, repetible) y antecedente de vacuna antiamarilica (pregunta 33-34).",
+            "_observaciones_tablas_hija": "Activadas en la recarga de A97 (Enfermedad/evento a notificar, 2026-08-12): el stub previo a esta ficha las tenía en 0. El PDF trae examenes de laboratorio (seccion VI), un antecedente de viaje\/lugar de estadia en las ultimas 2 semanas (seccion IV, repetible) y antecedente de vacuna antiamarilica (pregunta 33-34).",
+            "_nota_tipo_prueba": "El PDF (ítem 41, VI. Exámenes de laboratorio) lista 8 pruebas nombradas (ELISA NS1-Dengue, Aislamiento viral, qRT-PCR Suero, qRT-PCR Orina, ELISA IgM 1.ª/2.ª muestra, Otros, Muestra de tejido para inmunohistoquímica). catalogo_item.id=5 (\"tipo_prueba\") es COMPARTIDO por las 11 fichas con caso_muestra=1, y 3 de ellas (B01, B24, P35.0) no declaran filtro propio -- agregar nombres específicos de dengue ahí los filtraría hacia esas fichas también. Decisión (con el usuario): reusar ELISA\/AISL_VIRAL\/PCR ya existentes + 2 códigos genéricos nuevos (OTROS, INMUNOHISTOQUIMICA, ver sql\/migraciones\/add_catalogo_item_otros_inmunohistoquimica.php). \"qRT-PCR Suero\" vs \"Orina\" y \"ELISA IgM 1.ª\" vs \"2.ª muestra\" se distinguen por las columnas propias de cada fila (Tipo de muestra, Fecha de toma), no por el código de prueba.",
             "nucleo_omitidos": [
                 "referencia_localizar",
-                "pueblo_etnico",
-                "ocupacion"
+                "pueblo_etnico"
             ],
             "secciones": [
                 {
-                    "nombre": "Subsistema de vigilancia",
+                    "nombre": "Enfermedad / evento a notificar",
                     "orden": 1,
+                    "campos": [
+                        {
+                            "clave": "a97_enfermedad_evento",
+                            "etiqueta": "Enfermedad / evento a notificar",
+                            "tipo": "SELECT",
+                            "orden": 1,
+                            "opciones": [
+                                "Dengue sin signos de alarma",
+                                "Dengue con signos de alarma",
+                                "Dengue grave",
+                                "Chikungunya",
+                                "Chikungunya grave",
+                                "Zika",
+                                "Otras arbovirosis",
+                                "Fiebre amarilla"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Subsistema de vigilancia",
+                    "orden": 2,
                     "campos": [
                         {
                             "clave": "a97_subsistema_de_vigilancia",
@@ -74,7 +98,7 @@
                 },
                 {
                     "nombre": "Antecedentes epidemiológicos",
-                    "orden": 2,
+                    "orden": 3,
                     "campos": [
                         {
                             "clave": "a97_caso_autoctono",
@@ -104,7 +128,9 @@
                             "clave": "a97_ano_dengue_anterior",
                             "etiqueta": "Año (dengue anterior)",
                             "tipo": "NUMERO",
-                            "orden": 5
+                            "orden": 5,
+                            "depende_de": "¿Tuvo dengue anteriormente?",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a97_tiene_comorbilidad",
@@ -116,13 +142,15 @@
                             "clave": "a97_comorbilidad_cual",
                             "etiqueta": "Comorbilidad (cuál)",
                             "tipo": "TEXTO",
-                            "orden": 7
+                            "orden": 7,
+                            "depende_de": "¿Tiene comorbilidad?",
+                            "valor_activador": "1"
                         }
                     ]
                 },
                 {
                     "nombre": "Cuadro clínico",
-                    "orden": 3,
+                    "orden": 4,
                     "campos": [
                         {
                             "clave": "a97_fecha_de_inicio_de_sintomas",
@@ -220,7 +248,7 @@
                 },
                 {
                     "nombre": "Evolución de casos graves y egreso",
-                    "orden": 4,
+                    "orden": 5,
                     "_nota": "Solo para casos hospitalizados.",
                     "campos": [
                         {
@@ -233,43 +261,56 @@
                             "clave": "a97_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
-                            "orden": 2
+                            "orden": 2,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a97_fallecio",
                             "etiqueta": "Falleció",
                             "tipo": "BOOLEANO",
-                            "orden": 3
+                            "orden": 3,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a97_fecha_de_defuncion",
                             "etiqueta": "Fecha de defunción",
                             "tipo": "FECHA",
-                            "orden": 4
+                            "orden": 4,
+                            "depende_de": "Falleció",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a97_fue_referido",
                             "etiqueta": "Fue referido",
                             "tipo": "BOOLEANO",
-                            "orden": 5
+                            "orden": 5,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a97_fecha_de_referencia",
                             "etiqueta": "Fecha de referencia",
                             "tipo": "FECHA",
-                            "orden": 6
+                            "orden": 6,
+                            "depende_de": "Fue referido",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a97_hospital_c_s",
                             "etiqueta": "Hospital \/ C.S.",
                             "tipo": "TEXTO",
-                            "orden": 7
+                            "orden": 7,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         }
                     ]
                 },
                 {
                     "nombre": "Clasificación",
-                    "orden": 5,
+                    "orden": 6,
+                    "_nota": "El PDF (pág. 49) modela la clasificación como una grilla de 3 formas distintas según la enfermedad marcada en 'Enfermedad / evento a notificar' -- ya no un SELECT combinado de 24 opciones. Grupo A (Dengue x3, Chikungunya x2) usa Probable/Confirmado/Descartado; Zika usa Sospechoso/Confirmado/Descartado; Fiebre amarilla usa 4 valores planos (Síndrome febril/Probable/Confirmado/Descartado); Otras arbovirosis no trae checkboxes de severidad en el PDF, solo la línea de especificar.",
                     "campos": [
                         {
                             "clave": "a97_clasificacion",
@@ -277,44 +318,53 @@
                             "tipo": "SELECT",
                             "orden": 1,
                             "opciones": [
-                                "Dengue sin signos de alarma - Probable",
-                                "Dengue sin signos de alarma - Confirmado",
-                                "Dengue sin signos de alarma - Descartado",
-                                "Dengue con signos de alarma - Probable",
-                                "Dengue con signos de alarma - Confirmado",
-                                "Dengue con signos de alarma - Descartado",
-                                "Dengue grave - Probable",
-                                "Dengue grave - Confirmado",
-                                "Dengue grave - Descartado",
-                                "Chikungunya - Probable",
-                                "Chikungunya - Confirmado",
-                                "Chikungunya - Descartado",
-                                "Chikungunya grave - Probable",
-                                "Chikungunya grave - Confirmado",
-                                "Chikungunya grave - Descartado",
-                                "Zika - Sospechoso",
-                                "Zika - Confirmado",
-                                "Zika - Descartado",
-                                "Otras arbovirosis - Probable",
-                                "Otras arbovirosis - Confirmado",
-                                "Otras arbovirosis - Descartado",
-                                "Fiebre amarilla (síndrome febril) - Probable",
-                                "Fiebre amarilla (síndrome febril) - Confirmado",
-                                "Fiebre amarilla (síndrome febril) - Descartado"
+                                "Probable",
+                                "Confirmado",
+                                "Descartado"
                             ],
-                            "_nota": "El PDF modela esto como 8 clasificaciones paralelas (una por enfermedad del panel); se simplifica a una sola SELECT combinada, igual que se hizo con Chagas."
+                            "depende_de": "Enfermedad / evento a notificar",
+                            "valor_activador": "DENGUE_SIN_SIGNOS_DE_ALARMA,DENGUE_CON_SIGNOS_DE_ALARMA,DENGUE_GRAVE,CHIKUNGUNYA,CHIKUNGUNYA_GRAVE"
+                        },
+                        {
+                            "clave": "a97_clasificacion_zika",
+                            "etiqueta": "Clasificación (Zika)",
+                            "tipo": "SELECT",
+                            "orden": 2,
+                            "opciones": [
+                                "Sospechoso",
+                                "Confirmado",
+                                "Descartado"
+                            ],
+                            "depende_de": "Enfermedad / evento a notificar",
+                            "valor_activador": "ZIKA"
+                        },
+                        {
+                            "clave": "a97_clasificacion_fiebre_amarilla",
+                            "etiqueta": "Clasificación (Fiebre amarilla)",
+                            "tipo": "SELECT",
+                            "orden": 3,
+                            "opciones": [
+                                "Síndrome febril",
+                                "Probable",
+                                "Confirmado",
+                                "Descartado"
+                            ],
+                            "depende_de": "Enfermedad / evento a notificar",
+                            "valor_activador": "FIEBRE_AMARILLA"
                         },
                         {
                             "clave": "a97_otras_arbovirosis_especificar",
                             "etiqueta": "Otras arbovirosis (especificar)",
                             "tipo": "TEXTO",
-                            "orden": 2
+                            "orden": 4,
+                            "depende_de": "Enfermedad / evento a notificar",
+                            "valor_activador": "OTRAS_ARBOVIROSIS"
                         }
                     ]
                 },
                 {
                     "nombre": "Observaciones",
-                    "orden": 6,
+                    "orden": 7,
                     "campos": [
                         {
                             "clave": "a97_observaciones",
