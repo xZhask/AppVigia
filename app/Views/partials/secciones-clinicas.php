@@ -146,6 +146,14 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // campo_def del que dependen a97_clasificacion/_zika/
         // _fiebre_amarilla/_especificar en la sección "Clasificación".
         'a97_enfermedad_evento',
+        // notificacion-fechas-a97.php (2026-08-13): "Subsistema de
+        // vigilancia" (ítem I del PDF, pág. 49) se mueve a la misma tarjeta
+        // fija, junto con "Fecha de investigación" (ítem 1 de "II. Datos
+        // generales") -- pedido del usuario. GERESA/DIRESA/Red/EESS/
+        // Institución (ítems 2-5) no se capturan como campo_def: son datos
+        // del establecimiento ya elegido, mismo criterio que A37.0.
+        'a97_subsistema_de_vigilancia',
+        'a97_fecha_de_investigacion',
     ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
@@ -163,7 +171,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'A33' => ['Datos de notificación e investigación del caso'],
     'A37.0' => ['Datos de notificación e investigación del caso', 'Clasificación final'],
     'B01' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Observaciones'],
-    'A97' => ['Enfermedad / evento a notificar'],
+    'A97' => ['Enfermedad / evento a notificar', 'Subsistema de vigilancia'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
@@ -754,8 +762,16 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // $sinFechaInicioSintomasObligatoria ya incluía 'B01' y ya evitaba el
     // fallback de extraerFechaInicioSintomas() para estos 4 CIE-10 -- con
     // el campo oculto (nunca llega en $_POST), sigue guardando NULL sin
-    // error, igual que P35.0/A35/A37.0. ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01'], true)): ?>
+    // error, igual que P35.0/A35/A37.0.
+    // A97 (2026-08-14, pedido del usuario: quitar el duplicado con "Cuadro
+    // clínico") SÍ necesita tocar CasosController.php a diferencia de B01:
+    // "Subsistema de vigilancia" (que va ANTES de "Cuadro clínico" en el
+    // manifiesto) ahora trae su propio campo FECHA (a97_fecha_de_investigacion,
+    // agregado 2026-08-13) -- si A97 solo se ocultara acá sin sumarse a
+    // $sinFechaInicioSintomasObligatoria, extraerFechaInicioSintomas()
+    // (que toma el primer campo FECHA en orden de sección/campo) agarraría
+    // esa fecha de investigación por error, no la fecha de síntomas real. ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>

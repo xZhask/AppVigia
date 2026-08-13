@@ -12,7 +12,10 @@ class CasoViaje extends Model
      * Reemplaza todas las filas de viajes de un caso. $filas ya validada:
      * cada elemento es ['pais','localidad','fecha_salida','fecha_retorno'] (fechas ISO o null).
      * `pais` se usa como "lugar visitado" libre (nacional o internacional);
-     * no se normaliza contra distrito_id en esta fase.
+     * `distrito_id` (opt-in vía columnas_tablas_hija.caso_viaje, ver A97,
+     * pág. 49 del PDF) sí normaliza contra el ubigeo real cuando la ficha lo
+     * pide -- las demás fichas que no lo declaran simplemente no lo mandan
+     * (queda NULL, mismo comportamiento que antes).
      * Debe ejecutarse dentro de la transacción abierta por el llamador.
      */
     public static function reemplazarTodos(int $casoId, array $filas): void
@@ -21,8 +24,8 @@ class CasoViaje extends Model
         $pdo->prepare('DELETE FROM caso_viaje WHERE caso_id = :caso')->execute(['caso' => $casoId]);
 
         $consulta = $pdo->prepare(
-            'INSERT INTO caso_viaje (caso_id, pais, localidad, fecha_salida, fecha_retorno, semana_gestacion, transporte_ida, transporte_retorno)
-             VALUES (:caso, :pais, :localidad, :fecha_salida, :fecha_retorno, :semana_gestacion, :transporte_ida, :transporte_retorno)'
+            'INSERT INTO caso_viaje (caso_id, pais, localidad, distrito_id, direccion, fecha_salida, fecha_retorno, semana_gestacion, transporte_ida, transporte_retorno)
+             VALUES (:caso, :pais, :localidad, :distrito_id, :direccion, :fecha_salida, :fecha_retorno, :semana_gestacion, :transporte_ida, :transporte_retorno)'
         );
 
         foreach ($filas as $fila) {
@@ -30,6 +33,8 @@ class CasoViaje extends Model
                 'caso'               => $casoId,
                 'pais'               => $fila['pais'],
                 'localidad'          => $fila['localidad'] ?? null,
+                'distrito_id'        => $fila['distrito_id'] ?? null,
+                'direccion'          => $fila['direccion'] ?? null,
                 'fecha_salida'       => $fila['fecha_salida'],
                 'fecha_retorno'      => $fila['fecha_retorno'],
                 'semana_gestacion'   => $fila['semana_gestacion'] ?? null,

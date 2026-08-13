@@ -112,7 +112,10 @@ const TIPOS_VALIDOS = ['TEXTO', 'NUMERO', 'FECHA', 'BOOLEANO', 'SELECT', 'MULTIS
 const COLUMNAS_TABLA_HIJA_VALIDAS = [
     'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h'],
     'caso_vacuna'   => ['dosis', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
-    'caso_viaje'    => ['pais', 'localidad', 'fecha_salida', 'fecha_retorno', 'semana_gestacion', 'transporte_ida', 'transporte_retorno'],
+    // 'distrito_id'/'direccion' (2026-08-13, A97, pág. 49 ítems 23-27): la
+    // columna distrito_id ya existía en caso_viaje sin usarse -- ambas se
+    // vuelven declarativas junto con las demás en vez de asumirse por defecto.
+    'caso_viaje'    => ['pais', 'localidad', 'distrito_id', 'direccion', 'fecha_salida', 'fecha_retorno', 'semana_gestacion', 'transporte_ida', 'transporte_retorno'],
     // Las últimas 7 (resultado_pcr..fecha_result_igg) eran de serología de
     // B05, pintadas a mano en muestras.php dentro de un if ($esB05) --
     // PENDIENTES.md ítem C: se vuelven declarativas igual que el resto,
@@ -272,7 +275,12 @@ function validarManifiesto(array $manifiesto): void
                     }
                 }
                 if (!empty($campo['depende_de'])) {
-                    if (empty($campo['valor_activador'])) {
+                    // No usar empty(): "0" es un valor_activador legítimo
+                    // (ej. BOOLEANO en "No") y empty("0") === true en PHP lo
+                    // rechazaría como si faltara (A97, ítems 29/30 del PDF:
+                    // "Caso importado nacional/internacional" solo aplican
+                    // si "Caso autóctono" = No).
+                    if (!isset($campo['valor_activador']) || $campo['valor_activador'] === '') {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"depende_de\" sin \"valor_activador\".");
                     }
                     if (!isset($etiquetasFicha[$campo['depende_de']])) {
@@ -285,7 +293,9 @@ function validarManifiesto(array $manifiesto): void
             }
             if (!empty($seccion['depende_de'])) {
                 $nombreSeccion = $seccion['nombre'] ?? '(sin nombre)';
-                if (empty($seccion['valor_activador'])) {
+                // Mismo motivo que el chequeo equivalente de campo, arriba:
+                // no usar empty(), "0" es un valor_activador legítimo.
+                if (!isset($seccion['valor_activador']) || $seccion['valor_activador'] === '') {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / sección \"{$nombreSeccion}\" trae \"depende_de\" sin \"valor_activador\".");
                 }
                 if (!isset($etiquetasFicha[$seccion['depende_de']])) {

@@ -3,7 +3,8 @@
  * Fila dinámica de viajes del caso (caso_viaje). Variable esperada:
  * $filasViajes (array de ['pais','fecha_salida','fecha_retorno']).
  * `pais` se usa como "lugar visitado" libre (nacional o internacional);
- * no se normaliza contra distrito_id en esta fase.
+ * no se normaliza contra distrito_id salvo que la ficha pida esa columna
+ * (ver "distrito_id" más abajo).
  *
  * $columnasViaje (PETICION_P35_RUBEOLA_CONGENITA.md Fase 5.1 + ítem Z.2):
  * "pais"/"fecha_salida"/"fecha_retorno" se muestran siempre (identidad
@@ -13,15 +14,24 @@
  * muestran salvo que la ficha declare columnas_tablas_hija.caso_viaje
  * sin incluirlas -- P35.0 no las pide en su PDF, las demás 7 fichas (que
  * no declaran esta clave) siguen viéndolas vía COLUMNAS_HIJA_DEFECTO.
+ * "distrito_id"/"direccion" (A97, pág. 49, ítem 21 "¿Dónde estuvo en las
+ * últimas dos semanas?") son opt-in, igual que "localidad": Departamento/
+ * Provincia/Distrito real (mismo selector encadenado que
+ * lugar-infeccion.php, un prefijo único por fila) + dirección libre.
  */
 $erroresViajes = $erroresViajes ?? [];
 $columnasViaje = $columnasViaje ?? ['pais', 'fecha_salida', 'fecha_retorno', 'transporte_ida', 'transporte_retorno'];
 $mostrarColViaje = fn(string $col) => in_array($col, $columnasViaje, true);
 $etiquetaPais = $mostrarColViaje('localidad') ? 'País' : 'Lugar visitado (país o ciudad)';
 $esA370Viaje = (($enfermedad['cie10'] ?? '') === 'A37.0');
-$filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''], ?array $error = null) use ($mostrarColViaje, $etiquetaPais, $esA370Viaje): void {
+$filaViaje = function (
+    array $fila = ['pais' => '', 'localidad' => '', 'distrito_id' => '', 'direccion' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''],
+    ?array $error = null,
+    ?int $indice = null
+) use ($mostrarColViaje, $etiquetaPais, $esA370Viaje): void {
     $errorSalida = $error['fecha_salida'] ?? null;
     $errorRetorno = $error['fecha_retorno'] ?? null;
+    $prefijoUbigeo = $indice !== null ? 'viaje-ubigeo-' . $indice : 'viaje-ubigeo-nueva';
     ?>
   <div class="subrow">
     <div class="fields" style="flex:1; display:flex; flex-wrap:wrap; gap:12px">
@@ -39,6 +49,29 @@ $filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_sa
       <div class="field" style="flex:1; min-width:160px">
         <label class="fl"><?= $esA370Viaje ? 'Departamento' : 'Localidad/ciudad' ?></label>
         <div class="control"><input type="text" name="viaje_localidad[]" value="<?= e($fila['localidad'] ?? '') ?>" placeholder="<?= $esA370Viaje ? 'Departamento…' : 'Localidad o ciudad…' ?>"></div>
+      </div>
+      <?php endif; ?>
+      <?php if ($mostrarColViaje('distrito_id')): ?>
+      <!-- Departamento/Provincia/Distrito real (A97: ítems 23-25 del PDF) -->
+      <div class="field wide" style="flex-basis:100%">
+        <?php
+        (function (string $prefijo, ?string $distritoId): void {
+            $nombreCampoDepartamento = 'viaje_departamento_id[]';
+            $nombreCampoProvincia = 'viaje_provincia_id[]';
+            $nombreCampoDistrito = 'viaje_distrito_id[]';
+            $distritoRequerido = false;
+            $errorDistrito = null;
+            extract(contextoUbigeo($distritoId));
+            require __DIR__ . '/../selector-ubigeo.php';
+        })($prefijoUbigeo, $fila['distrito_id'] ?? null);
+        ?>
+      </div>
+      <?php endif; ?>
+      <?php if ($mostrarColViaje('direccion')): ?>
+      <!-- Dirección (A97: ítem 27 del PDF) -->
+      <div class="field" style="flex:2; min-width:200px">
+        <label class="fl">Dirección</label>
+        <div class="control"><input type="text" name="viaje_direccion[]" value="<?= e($fila['direccion'] ?? '') ?>" placeholder="Dirección…"></div>
       </div>
       <?php endif; ?>
       <!-- 2. Fecha de ingreso -->
@@ -98,7 +131,7 @@ $filaViaje = function (array $fila = ['pais' => '', 'localidad' => '', 'fecha_sa
 <?php };
 ?>
 <div class="subrows" data-lista="viajes">
-  <?php foreach ($filasViajes as $i => $fila): $filaViaje($fila, $erroresViajes[$i] ?? null); endforeach; ?>
+  <?php foreach ($filasViajes as $i => $fila): $filaViaje($fila, $erroresViajes[$i] ?? null, $i); endforeach; ?>
 </div>
 <template id="plantilla-viajes"><?php $filaViaje(); ?></template>
 <button type="button" class="btn btn-ghost agregar-fila" data-plantilla="plantilla-viajes" data-lista="viajes" style="margin-top:12px">

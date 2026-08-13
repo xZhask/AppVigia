@@ -248,7 +248,12 @@ class CasosController extends Controller
         // 2026-08-09 y corregida al día siguiente por el usuario). No hace
         // falta ninguna otra rama acá: al no llegar en $_POST, sigue
         // guardando NULL sin error, mismo camino que P35.0/A35/A37.0.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01'], true);
+        // A97 (2026-08-14): ver el comentario largo en secciones-clinicas.php
+        // -- "Subsistema de vigilancia" trae su propio campo FECHA antes que
+        // "Cuadro clínico" en el manifiesto, así que el fallback de
+        // extraerFechaInicioSintomas() (primer campo FECHA en orden) agarraría
+        // esa fecha por error si A97 no estuviera en esta lista.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -720,7 +725,12 @@ class CasosController extends Controller
         // 2026-08-09 y corregida al día siguiente por el usuario). No hace
         // falta ninguna otra rama acá: al no llegar en $_POST, sigue
         // guardando NULL sin error, mismo camino que P35.0/A35/A37.0.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01'], true);
+        // A97 (2026-08-14): ver el comentario largo en secciones-clinicas.php
+        // -- "Subsistema de vigilancia" trae su propio campo FECHA antes que
+        // "Cuadro clínico" en el manifiesto, así que el fallback de
+        // extraerFechaInicioSintomas() (primer campo FECHA en orden) agarraría
+        // esa fecha por error si A97 no estuviera en esta lista.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -1863,6 +1873,8 @@ class CasosController extends Controller
     {
         $lugares = $_POST['viaje_pais'] ?? [];
         $localidades = $_POST['viaje_localidad'] ?? [];
+        $distritos = $_POST['viaje_distrito_id'] ?? [];
+        $direcciones = $_POST['viaje_direccion'] ?? [];
         $salidas = $_POST['viaje_fecha_salida'] ?? [];
         $retornos = $_POST['viaje_fecha_retorno'] ?? [];
         $transportesIda = $_POST['viaje_transporte_ida'] ?? [];
@@ -1874,13 +1886,15 @@ class CasosController extends Controller
         foreach ($lugares as $i => $lugar) {
             $lugar = trim((string) $lugar);
             $localidad = trim((string) ($localidades[$i] ?? ''));
+            $distritoId = trim((string) ($distritos[$i] ?? ''));
+            $direccion = trim((string) ($direcciones[$i] ?? ''));
             $salidaTxt = trim((string) ($salidas[$i] ?? ''));
             $retornoTxt = trim((string) ($retornos[$i] ?? ''));
             $transIda = trim((string) ($transportesIda[$i] ?? ''));
             $transRetorno = trim((string) ($transportesRetorno[$i] ?? ''));
             $semanaGestacionTxt = trim((string) ($semanasGestacion[$i] ?? ''));
 
-            if ($lugar === '' && $localidad === '' && $salidaTxt === '' && $retornoTxt === '' && $transIda === '' && $transRetorno === '' && $semanaGestacionTxt === '') {
+            if ($lugar === '' && $localidad === '' && $distritoId === '' && $direccion === '' && $salidaTxt === '' && $retornoTxt === '' && $transIda === '' && $transRetorno === '' && $semanaGestacionTxt === '') {
                 continue;
             }
 
@@ -1907,6 +1921,8 @@ class CasosController extends Controller
             $filas[] = [
                 'pais'               => $lugar !== '' ? $lugar : null,
                 'localidad'          => $localidad !== '' ? $localidad : null,
+                'distrito_id'        => $distritoId !== '' ? $distritoId : null,
+                'direccion'          => $direccion !== '' ? $direccion : null,
                 'fecha_salida'       => $salidaIso,
                 'fecha_retorno'      => $retornoIso,
                 'semana_gestacion'   => $semanaGestacionTxt !== '' ? (int) $semanaGestacionTxt : null,
