@@ -349,6 +349,34 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- A97: fechas de toma de muestra encadenadas a Fecha de inicio de síntomas ----------
+  // Dependencias del usuario (2026-08-14): "Fecha de toma primera muestra"
+  // no puede ser anterior a "Fecha de inicio de síntomas", y "Fecha de toma
+  // segunda muestra" no puede ser anterior a la primera. Mismo mecanismo que
+  // actualizarCuadroClinicoB26() (min dinámico en cascada) -- único
+  // precedente de validación cruzada de fechas en el sistema, siempre solo
+  // del lado del cliente (atributo min); no hay ningún ejemplo de
+  // validación cruzada de fechas del lado del servidor en CasosController.
+  function sincronizarFechasMuestraA97() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('A97') === -1) return;
+
+    var inpInicio = document.querySelector('input[name="' + campoPorClave('a97_fecha_de_inicio_de_sintomas') + '"]');
+    var inp1ra = document.querySelector('input[name="' + campoPorClave('a97_fecha_de_toma_primera_muestra') + '"]');
+    var inp2da = document.querySelector('input[name="' + campoPorClave('a97_fecha_de_toma_segunda_muestra') + '"]');
+    if (!inp1ra && !inp2da) return;
+
+    var valInicio = inpInicio ? inpInicio.value : '';
+    if (inp1ra) inp1ra.min = valInicio || '1900-01-01';
+
+    var val1ra = inp1ra ? inp1ra.value : '';
+    if (inp2da) inp2da.min = val1ra || valInicio || '1900-01-01';
+  }
+  sincronizarFechasMuestraA97();
+  document.addEventListener('input', sincronizarFechasMuestraA97);
+  document.addEventListener('change', sincronizarFechasMuestraA97);
+
   // ---------- B01: "Resultado" de Laboratorio (por fila) -> "clasificacion" genérico ----------
   // A diferencia de P35.0/A35/A33 arriba, B01 no tiene un campo de
   // clasificación propio en el PDF -- el diagnóstico es clínico y el
@@ -1347,7 +1375,25 @@ document.addEventListener('DOMContentLoaded', function () {
           // data-gated-por-si: solo se habilitan cuando esta fila quedó
           // en SI, igual que .fecha-dep/.otros-especificar-dep arriba.
           var celdasGateadas = fila.querySelectorAll('[data-gated-por-si]');
-          if (inputSeleccionado.value === 'SI' || inputSeleccionado.value === 'SÍ') {
+          // A97 "Pruebas de laboratorio": filas sin columna "SI"/"SÍ" pero
+          // con una columna "negativa" explícita (No realizado) habilitan
+          // sus celdas gateadas con cualquier opción SALVO esa; sin ninguna
+          // de las dos, cualquier selección habilita (fallback anterior).
+          // Mismo criterio que campos/matriz.php (PHP), acá del lado del
+          // cliente para que el toggle sea instantáneo sin recargar.
+          var tieneOpcionSi = !!fila.querySelector('input[type="radio"][value="SI"], input[type="radio"][value="SÍ"]');
+          var inputNegativo = !tieneOpcionSi
+            ? fila.querySelector('input[type="radio"][value="NO REALIZADO"], input[type="radio"][value="NO_REALIZADO"]')
+            : null;
+          var esActivador;
+          if (tieneOpcionSi) {
+            esActivador = (inputSeleccionado.value === 'SI' || inputSeleccionado.value === 'SÍ');
+          } else if (inputNegativo) {
+            esActivador = (inputSeleccionado.value !== 'NO REALIZADO' && inputSeleccionado.value !== 'NO_REALIZADO');
+          } else {
+            esActivador = true;
+          }
+          if (esActivador) {
             fila.classList.add('is-si');
             var labelText = fila.querySelector('.row-label');
             if (labelText) {

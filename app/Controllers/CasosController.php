@@ -965,6 +965,16 @@ class CasosController extends Controller
         $erroresCampos = [];
         $paraGuardar = [];
 
+        // A97 "Otros: especificar prueba" (2026-08-14, pedido del usuario):
+        // solo debe guardarse si la fila "Otros" de a97_pruebas_de_laboratorio
+        // (MATRIZ) quedó en Positivo/Negativo -- depende_de/campoVisiblePorDependencia()
+        // solo sabe leer el valor COMPLETO de un campo, no una fila puntual
+        // de un MATRIZ, así que se captura a mano acá (la MATRIZ se procesa
+        // primero en el mismo foreach, orden 1 vs 2 de "Laboratorio";
+        // ORDER BY de CampoDef::porEnfermedad lo garantiza) y se aplica más
+        // abajo, sin confiar en que el cliente ya lo haya ocultado/limpiado.
+        $valorOtrosLabA97Post = '';
+
         foreach ($campos as $campoId => $campo) {
             // Peticion 2, Fase 5: estos son casos especiales que escapan el
             // motor de tipos (arman o combinan valores de $_POST con nombres
@@ -1103,6 +1113,26 @@ class CasosController extends Controller
                 $marcado = isset($_POST[$nombreCampo]) ? '1' : '0';
                 $valoresCampos[$campoId] = $marcado;
                 $paraGuardar[$campoId] = $marcado;
+                continue;
+            }
+
+            if ($campo['clave'] === 'a97_pruebas_de_laboratorio') {
+                $configLabA97 = json_decode((string) ($campo['config'] ?? '{}'), true);
+                $idxOtrosLabA97 = array_search('Otros', $configLabA97['filas'] ?? [], true);
+                if ($idxOtrosLabA97 !== false) {
+                    $valorOtrosLabA97Post = trim((string) ($_POST[$nombreCampo][$idxOtrosLabA97]['_radio'] ?? ''));
+                }
+                // Sin "continue": el resto del bloque MATRIZ genérico de
+                // abajo procesa este mismo campo normalmente.
+            }
+
+            if ($campo['clave'] === 'a97_otros_prueba_especificar') {
+                $activadoOtrosLabA97 = in_array($valorOtrosLabA97Post, ['POSITIVO', 'NEGATIVO'], true);
+                $valOtrosEspecificar = $activadoOtrosLabA97 ? trim((string) ($_POST[$nombreCampo] ?? '')) : '';
+                $valoresCampos[$campoId] = $valOtrosEspecificar;
+                if ($valOtrosEspecificar !== '') {
+                    $paraGuardar[$campoId] = $valOtrosEspecificar;
+                }
                 continue;
             }
 

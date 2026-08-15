@@ -28,27 +28,11 @@
             "pdf_paginas": "49 (Anexo N.° 01)",
             "tablas_hijas": {
                 "caso_contacto": false,
-                "caso_muestra": true,
+                "caso_muestra": false,
                 "caso_viaje": true,
-                "caso_vacuna": true
+                "caso_vacuna": false
             },
             "columnas_tablas_hija": {
-                "caso_muestra": {
-                    "opciones": {
-                        "tipo_muestra": [
-                            "SUERO",
-                            "ORINA",
-                            "TEJIDO"
-                        ],
-                        "tipo_prueba": [
-                            "ELISA",
-                            "AISL_VIRAL",
-                            "PCR",
-                            "OTROS",
-                            "INMUNOHISTOQUIMICA"
-                        ]
-                    }
-                },
                 "caso_viaje": [
                     "pais",
                     "distrito_id",
@@ -58,8 +42,8 @@
                     "fecha_retorno"
                 ]
             },
-            "_observaciones_tablas_hija": "Activadas en la recarga de A97 (Enfermedad/evento a notificar, 2026-08-12): el stub previo a esta ficha las tenía en 0. El PDF trae examenes de laboratorio (seccion VI), un antecedente de viaje\/lugar de estadia en las ultimas 2 semanas (seccion IV, repetible) y antecedente de vacuna antiamarilica (pregunta 33-34).",
-            "_nota_tipo_prueba": "El PDF (ítem 41, VI. Exámenes de laboratorio) lista 8 pruebas nombradas (ELISA NS1-Dengue, Aislamiento viral, qRT-PCR Suero, qRT-PCR Orina, ELISA IgM 1.ª/2.ª muestra, Otros, Muestra de tejido para inmunohistoquímica). catalogo_item.id=5 (\"tipo_prueba\") es COMPARTIDO por las 11 fichas con caso_muestra=1, y 3 de ellas (B01, B24, P35.0) no declaran filtro propio -- agregar nombres específicos de dengue ahí los filtraría hacia esas fichas también. Decisión (con el usuario): reusar ELISA\/AISL_VIRAL\/PCR ya existentes + 2 códigos genéricos nuevos (OTROS, INMUNOHISTOQUIMICA, ver sql\/migraciones\/add_catalogo_item_otros_inmunohistoquimica.php). \"qRT-PCR Suero\" vs \"Orina\" y \"ELISA IgM 1.ª\" vs \"2.ª muestra\" se distinguen por las columnas propias de cada fila (Tipo de muestra, Fecha de toma), no por el código de prueba.",
+            "_observaciones_tablas_hija": "Activadas en la recarga de A97 (Enfermedad/evento a notificar, 2026-08-12): el stub previo a esta ficha las tenía en 0. El PDF trae examenes de laboratorio (seccion VI) y un antecedente de viaje\/lugar de estadia en las ultimas 2 semanas (seccion IV, repetible). caso_vacuna se activó por error en esa misma recarga (interpretando la pregunta 33-34 \"Recibió vacuna antiamarílica\/Año de vacunación\" como si pidiera una tabla repetible) -- corregido 2026-08-14 (hallazgo del usuario): esas 2 preguntas ya eran campo_def simples en \"Antecedentes epidemiológicos\" desde el inicio, el PDF no trae ninguna tabla de vacunas para A97 (a diferencia de B26\/A37.0). caso_vacuna -> false.",
+            "_nota_laboratorio": "2026-08-14 (pedido del usuario, jerarquía/dependencias explícitas): caso_muestra (tabla genérica repetible, con el filtro de tipo_prueba de _nota_tipo_prueba original) se DESACTIVÓ para A97 y se reemplazó por una sección 'Laboratorio' propia (campo_def) con las 8 pruebas nombradas del PDF (ítem 41) como filas fijas de un MATRIZ -- así queda en su posición real (después de 'Cuadro clínico', antes de 'Evolución de casos graves y egreso', igual que en el PDF V->VI->VII) en vez de en la tarjeta genérica de Laboratorio, que siempre se renderiza al final. Ver a97_pruebas_de_laboratorio más abajo.",
             "nucleo_omitidos": [
                 "referencia_localizar",
                 "pueblo_etnico",
@@ -82,15 +66,16 @@
                             "tipo": "SELECT",
                             "orden": 1,
                             "opciones": [
-                                "Dengue sin signos de alarma",
-                                "Dengue con signos de alarma",
-                                "Dengue grave",
-                                "Chikungunya",
-                                "Chikungunya grave",
-                                "Zika",
+                                "Dengue sin signos de alarma (CIE-10: A97.0)",
+                                "Dengue con signos de alarma (CIE-10: A97.1)",
+                                "Dengue grave (CIE-10: A97.2)",
+                                "Chikungunya (CIE-10: A92.0)",
+                                "Chikungunya grave (CIE-10: A92.5)",
+                                "Zika (CIE-10: U06.9)",
                                 "Otras arbovirosis",
-                                "Fiebre amarilla"
-                            ]
+                                "Fiebre amarilla (CIE-10: A95)"
+                            ],
+                            "_nota_cie10": "2026-08-14 (pedido del usuario, mismo patrón que b05_enfermedad_notificada: \"Sarampión (CIE-10: B05)\"): códigos tomados del encabezado del propio PDF de A97 (pág. 49, \"CIE 10: dengue sin signos (A97.0) dengue con signos de alarma(A97.1) dengue grave(A97.2) Chikungunya(A92.0) Chikungunya Grave(A92.5) Zika (U06.9)\"). Fiebre amarilla no viene en ese encabezado -- se usó A95, el mismo CIE10 que ya tiene su propia ficha en este sistema (fila 6, \"Fiebre amarilla\"). \"Otras arbovirosis\" se dejó SIN código, igual que \"Otras febriles eruptivas\" en b05_enfermedad_notificada (catch-all sin CIE10 específico verificable). IMPORTANTE: cambiar estas etiquetas cambia el valor interno (slug) que dependen a97_clasificacion\/_zika\/_fiebre_amarilla\/a97_otras_arbovirosis_especificar -- sus valor_activador se actualizaron en la misma pasada, ver esos campos más abajo."
                         }
                     ]
                 },
@@ -124,66 +109,82 @@
                         {
                             "clave": "a97_caso_autoctono",
                             "etiqueta": "Caso autóctono",
-                            "tipo": "BOOLEANO",
-                            "orden": 1
+                            "tipo": "SELECT",
+                            "orden": 1,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Desconocido"
+                            ]
                         },
                         {
-                            "clave": "a97_caso_importado_nacional",
-                            "etiqueta": "Caso importado nacional",
-                            "tipo": "BOOLEANO",
+                            "clave": "a97_caso_importado",
+                            "etiqueta": "Caso importado",
+                            "tipo": "SELECT",
                             "orden": 2,
+                            "opciones": [
+                                "Nacional",
+                                "Internacional"
+                            ],
                             "depende_de": "Caso autóctono",
-                            "valor_activador": "0"
-                        },
-                        {
-                            "clave": "a97_caso_importado_internacional",
-                            "etiqueta": "Caso importado internacional",
-                            "tipo": "BOOLEANO",
-                            "orden": 3,
-                            "depende_de": "Caso autóctono",
-                            "valor_activador": "0"
+                            "valor_activador": "NO"
                         },
                         {
                             "clave": "a97_tuvo_dengue_anteriormente",
                             "etiqueta": "¿Tuvo dengue anteriormente?",
-                            "tipo": "BOOLEANO",
-                            "orden": 4
+                            "tipo": "SELECT",
+                            "orden": 3,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Desconocido"
+                            ]
                         },
                         {
                             "clave": "a97_ano_dengue_anterior",
                             "etiqueta": "Año (dengue anterior)",
                             "tipo": "NUMERO",
-                            "orden": 5,
+                            "orden": 4,
                             "depende_de": "¿Tuvo dengue anteriormente?",
-                            "valor_activador": "1"
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a97_recibio_vacuna_antiamarilica",
                             "etiqueta": "Recibió vacuna antiamarílica",
-                            "tipo": "BOOLEANO",
-                            "orden": 6
+                            "tipo": "SELECT",
+                            "orden": 5,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Desconocido"
+                            ]
                         },
                         {
                             "clave": "a97_ano_vacunacion",
                             "etiqueta": "Año de vacunación",
                             "tipo": "NUMERO",
-                            "orden": 7,
+                            "orden": 6,
                             "depende_de": "Recibió vacuna antiamarílica",
-                            "valor_activador": "1"
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "a97_tiene_comorbilidad",
                             "etiqueta": "¿Tiene comorbilidad?",
-                            "tipo": "BOOLEANO",
-                            "orden": 8
+                            "tipo": "SELECT",
+                            "orden": 7,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Desconocido"
+                            ]
                         },
                         {
                             "clave": "a97_comorbilidad_cual",
                             "etiqueta": "Comorbilidad (cuál)",
                             "tipo": "TEXTO",
-                            "orden": 9,
+                            "orden": 8,
                             "depende_de": "¿Tiene comorbilidad?",
-                            "valor_activador": "1"
+                            "valor_activador": "SI"
                         }
                     ]
                 },
@@ -198,13 +199,31 @@
                             "orden": 1
                         },
                         {
+                            "clave": "a97_fecha_de_toma_primera_muestra",
+                            "etiqueta": "Fecha de toma primera muestra",
+                            "tipo": "FECHA",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a97_fecha_de_toma_segunda_muestra",
+                            "etiqueta": "Fecha de toma segunda muestra",
+                            "tipo": "FECHA",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a97_temperatura_c",
+                            "etiqueta": "Temperatura (°C)",
+                            "tipo": "NUMERO",
+                            "decimales": true,
+                            "orden": 4
+                        },
+                        {
                             "clave": "a97_signos_y_sintomas_frecuentes",
                             "etiqueta": "Signos y síntomas frecuentes",
                             "tipo": "MULTISELECT",
-                            "orden": 2,
+                            "orden": 5,
                             "opciones": [
-                                "Artralgias (manos)",
-                                "Artralgias (pies)",
+                                "Artralgias",
                                 "Mialgias",
                                 "Cefalea",
                                 "Dolor ocular o retroocular",
@@ -216,17 +235,30 @@
                             ]
                         },
                         {
-                            "clave": "a97_temperatura_c",
-                            "etiqueta": "Temperatura (°C)",
-                            "tipo": "NUMERO",
-                            "decimales": true,
-                            "orden": 3
+                            "clave": "a97_artralgias_localizacion",
+                            "etiqueta": "Localización de artralgias",
+                            "tipo": "MULTISELECT",
+                            "orden": 6,
+                            "opciones": [
+                                "Manos",
+                                "Pies"
+                            ],
+                            "depende_de": "Signos y síntomas frecuentes",
+                            "valor_activador": "ARTRALGIAS"
+                        },
+                        {
+                            "clave": "a97_otros_sintomas_especificar",
+                            "etiqueta": "Otros síntomas (especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 7,
+                            "depende_de": "Signos y síntomas frecuentes",
+                            "valor_activador": "OTROS"
                         },
                         {
                             "clave": "a97_signos_de_alarma",
                             "etiqueta": "Signos de alarma",
                             "tipo": "MULTISELECT",
-                            "orden": 4,
+                            "orden": 8,
                             "opciones": [
                                 "Dolor abdominal intenso y continuo",
                                 "Dolor torácico o disnea",
@@ -244,7 +276,7 @@
                             "clave": "a97_signos_de_gravedad",
                             "etiqueta": "Signos de gravedad",
                             "tipo": "MULTISELECT",
-                            "orden": 5,
+                            "orden": 9,
                             "opciones": [
                                 "Pulso débil e indetectable",
                                 "Extremidades frías o cianóticas",
@@ -257,37 +289,78 @@
                             "clave": "a97_compromiso_grave_de_organos_especificar",
                             "etiqueta": "Compromiso grave de órganos (especificar)",
                             "tipo": "TEXTO",
-                            "orden": 6
+                            "orden": 10,
+                            "depende_de": "Signos de gravedad",
+                            "valor_activador": "COMPROMISO_GRAVE_DE_ORGANOS"
                         },
                         {
                             "clave": "a97_sangrado_grave_especificar",
                             "etiqueta": "Sangrado grave (especificar)",
                             "tipo": "TEXTO",
-                            "orden": 7
+                            "orden": 11,
+                            "depende_de": "Signos de gravedad",
+                            "valor_activador": "SANGRADO_GRAVE"
                         },
                         {
                             "clave": "a97_escala_de_glasgow_apertura_ocular",
                             "etiqueta": "Escala de Glasgow: apertura ocular",
                             "tipo": "NUMERO",
-                            "orden": 8
+                            "orden": 12
                         },
                         {
                             "clave": "a97_escala_de_glasgow_respuesta_motora",
                             "etiqueta": "Escala de Glasgow: respuesta motora",
                             "tipo": "NUMERO",
-                            "orden": 9
+                            "orden": 13
                         },
                         {
                             "clave": "a97_escala_de_glasgow_respuesta_verbal",
                             "etiqueta": "Escala de Glasgow: respuesta verbal",
                             "tipo": "NUMERO",
-                            "orden": 10
+                            "orden": 14
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Laboratorio",
+                    "orden": 5,
+                    "_nota": "Ítem 41 del PDF (VI. Exámenes de laboratorio): 8 pruebas nombradas con Resultado (Positivo/Negativo) y Fecha de resultado propios cada una. Reemplaza la tabla genérica caso_muestra (ver _nota_laboratorio arriba) para poder quedar en su posición real del PDF (V->VI->VII) en vez de en la tarjeta fija de Laboratorio, que se renderiza siempre al final.",
+                    "campos": [
+                        {
+                            "clave": "a97_pruebas_de_laboratorio",
+                            "etiqueta": "Pruebas de laboratorio",
+                            "tipo": "MATRIZ",
+                            "orden": 1,
+                            "filas": [
+                                "ELISA NS1-Dengue",
+                                "Aislamiento viral",
+                                "qRT-PCR Suero",
+                                "qRT-PCR Orina",
+                                "ELISA IgM (1.ª muestra)",
+                                "ELISA IgM (2.ª muestra)",
+                                "Otros",
+                                "Muestra de tejido para inmunohistoquímica"
+                            ],
+                            "columnas": [
+                                "NO REALIZADO",
+                                "POSITIVO",
+                                "NEGATIVO",
+                                "Fecha de resultado"
+                            ],
+                            "_nota_gate": "matriz.php gatea 'Fecha de resultado' por fila: habilitada solo con Positivo\/Negativo, deshabilitada con 'No realizado' o sin marcar (fallback nuevo del motor para MATRIZ con una columna \"negativa\" explícita que no sea \"SI\" -- ver comentario en campos\/matriz.php -- cero impacto en los demás MATRIZ del sistema, todos auditados). 2026-08-14 (pedido del usuario, tras ver que Positivo\/Negativo sin tercera opción no permitía declarar explícitamente que una prueba no se realizó)."
+                        },
+                        {
+                            "clave": "a97_otros_prueba_especificar",
+                            "etiqueta": "Otros: especificar prueba",
+                            "tipo": "TEXTO",
+                            "orden": 2,
+                            "_nota": "PDF ítem 41.g \"Otros:.....\". Simplificación consciente: no gateado a que la fila 'Otros' tenga resultado -- el motor depende_de no soporta hoy leer una fila específica de un MATRIZ como padre (sólo MULTISELECT\/SELECT\/BOOLEANO de valor plano). Queda siempre visible, justo debajo de la tabla."
                         }
                     ]
                 },
                 {
                     "nombre": "Evolución de casos graves y egreso",
-                    "orden": 5,
+                    "orden": 6,
                     "_nota": "Solo para casos hospitalizados.",
                     "campos": [
                         {
@@ -348,7 +421,7 @@
                 },
                 {
                     "nombre": "Clasificación",
-                    "orden": 6,
+                    "orden": 7,
                     "_nota": "El PDF (pág. 49) modela la clasificación como una grilla de 3 formas distintas según la enfermedad marcada en 'Enfermedad / evento a notificar' -- ya no un SELECT combinado de 24 opciones. Grupo A (Dengue x3, Chikungunya x2) usa Probable/Confirmado/Descartado; Zika usa Sospechoso/Confirmado/Descartado; Fiebre amarilla usa 4 valores planos (Síndrome febril/Probable/Confirmado/Descartado); Otras arbovirosis no trae checkboxes de severidad en el PDF, solo la línea de especificar.",
                     "campos": [
                         {
@@ -362,7 +435,7 @@
                                 "Descartado"
                             ],
                             "depende_de": "Enfermedad / evento a notificar",
-                            "valor_activador": "DENGUE_SIN_SIGNOS_DE_ALARMA,DENGUE_CON_SIGNOS_DE_ALARMA,DENGUE_GRAVE,CHIKUNGUNYA,CHIKUNGUNYA_GRAVE"
+                            "valor_activador": "DENGUE_SIN_SIGNOS_DE_ALARMA_CIE_10_A97_0,DENGUE_CON_SIGNOS_DE_ALARMA_CIE_10_A97_1,DENGUE_GRAVE_CIE_10_A97_2,CHIKUNGUNYA_CIE_10_A92_0,CHIKUNGUNYA_GRAVE_CIE_10_A92_5"
                         },
                         {
                             "clave": "a97_clasificacion_zika",
@@ -375,7 +448,7 @@
                                 "Descartado"
                             ],
                             "depende_de": "Enfermedad / evento a notificar",
-                            "valor_activador": "ZIKA"
+                            "valor_activador": "ZIKA_CIE_10_U06_9"
                         },
                         {
                             "clave": "a97_clasificacion_fiebre_amarilla",
@@ -389,7 +462,7 @@
                                 "Descartado"
                             ],
                             "depende_de": "Enfermedad / evento a notificar",
-                            "valor_activador": "FIEBRE_AMARILLA"
+                            "valor_activador": "FIEBRE_AMARILLA_CIE_10_A95"
                         },
                         {
                             "clave": "a97_otras_arbovirosis_especificar",
@@ -403,7 +476,7 @@
                 },
                 {
                     "nombre": "Observaciones",
-                    "orden": 7,
+                    "orden": 8,
                     "campos": [
                         {
                             "clave": "a97_observaciones",

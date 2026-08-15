@@ -247,8 +247,15 @@ if ($puedeElegirEstablecimiento) {
       // dentro de "Lugar probable de infección" (secciones-clinicas.php) --
       // mismo trato que B05/P35.0 arriba, no siempre visibles acá.
       $isA370 = ($enfermedad['cie10'] ?? '') === 'A37.0';
+      // A97 (2026-08-14): ítem 21 del PDF ("¿Dónde estuvo en las últimas dos
+      // semanas...?") es la tabla de viajes SIN gate -- va justo al inicio
+      // de "Antecedentes epidemiológicos" (antes de "Caso autóctono"), no al
+      // final en esta tarjeta genérica. Mismo trato que B05/P35.0/A37.0
+      // arriba, pero sin booleano disparador: se renderiza siempre, dentro
+      // de secciones-clinicas.php.
+      $isA97 = ($enfermedad['cie10'] ?? '') === 'A97';
       $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
-      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       // Roles con columnas_sujeto que NO tienen sección propia en el

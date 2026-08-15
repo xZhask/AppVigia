@@ -60,6 +60,25 @@ foreach ($columnasRadio as $cIdx => $_) {
     }
 }
 
+// Mismo concepto que $colSiIdx pero al revés: en vez de UNA columna que
+// habilita (SI) y todas las demás deshabilitan, esta es la ÚNICA columna
+// que deshabilita y todas las demás habilitan. Para radios que no son
+// binarios SI/NO sino un resultado con un estado neutro explícito (A97
+// "Pruebas de laboratorio", 2026-08-14: No realizado/Positivo/Negativo --
+// ni Positivo ni Negativo se llaman "SI", pero ambos deben habilitar
+// "Fecha de resultado"; solo "No realizado" la deshabilita). Solo se busca
+// si no hay columna "SI" (ambos gates son mutuamente excluyentes por
+// campo).
+$colNegativoIdx = null;
+if ($colSiIdx === null) {
+    foreach ($columnasRadio as $cIdx => $_) {
+        if (in_array(mb_strtoupper(trim((string) $columnas[$cIdx])), ['NO REALIZADO', 'NO_REALIZADO'], true)) {
+            $colNegativoIdx = $cIdx;
+            break;
+        }
+    }
+}
+
 // Tres modos por CAMPO:
 //  - 'radio':   todas las columnas son exclusivas -> idéntico a como
 //               funcionaba siempre (A80: Localización de la parálisis,
@@ -117,7 +136,17 @@ $filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_m
           } elseif ($modo === 'hibrido') {
               $valFilaRadio = $valores[$fIdx]['_radio'] ?? '';
           }
+          // Si el campo declara una columna "negativa" explícita (No
+          // realizado) y esta fila todavía no tiene valor guardado, esa es
+          // su selección por defecto (2026-08-14, pedido del usuario): una
+          // fila sin marcar ya no se confunde con "no se llenó todavía" --
+          // si el usuario no la toca, se guarda explícitamente como "no
+          // realizada" al enviar el formulario.
+          if ($valFilaRadio === '' && $colNegativoIdx !== null) {
+              $valFilaRadio = (string) $columnas[$colNegativoIdx];
+          }
           $filaEsSi = $colSiIdx !== null && (string) $valFilaRadio === (string) $columnas[$colSiIdx];
+          $filaEsNegativo = $colNegativoIdx !== null && (string) $valFilaRadio === (string) $columnas[$colNegativoIdx];
         ?>
           <tr class="grupo-si-no-row">
             <?php if (!$filasSonSoloIndice): ?>
@@ -138,9 +167,27 @@ $filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_m
                 <?php else:
                   $esFechaCelda = $esFecha((string) $col) || $filaEsFecha;
                   $gateSi = $colSiIdx !== null;
-                  $deshabilitada = $gateSi && !$filaEsSi;
+                  $gateNegativo = $colNegativoIdx !== null;
+                  // A97 "Pruebas de laboratorio" (2026-08-14): matrices con
+                  // radio no-binario (No realizado/Positivo/Negativo) gatean
+                  // la(s) columna(s) libre(s) -- "Fecha de resultado" --
+                  // habilitadas con CUALQUIER opción salvo la "negativa"
+                  // explícita (colNegativoIdx) o sin marcar. Fallback final
+                  // (columnasRadio sin "SI" ni "No realizado"): cualquier
+                  // selección habilita, igual que antes. Auditado contra los
+                  // 6 campos MATRIZ con columnas radio que ya existían (A80
+                  // x5: 100% radio, sin columnas libres, no corre; P35.0 x4:
+                  // siempre tiene columna "SI", sigue ese camino sin cambio)
+                  // -- cero impacto en las 23 fichas restantes.
+                  $gateCualquierRadio = !$gateSi && !$gateNegativo && !empty($columnasRadio);
+                  $deshabilitada = $gateSi
+                      ? !$filaEsSi
+                      : ($gateNegativo
+                          ? ($filaEsNegativo || (string) $valFilaRadio === '')
+                          : ($gateCualquierRadio && (string) $valFilaRadio === ''));
+                  $tieneGate = $gateSi || $gateNegativo || $gateCualquierRadio;
                 ?>
-                  <input type="<?= $esFechaCelda ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaCelda ? '' : '—' ?>" <?= $esFechaCelda ? 'max="' . date('Y-m-d') . '"' : '' ?> <?= $gateSi ? 'data-gated-por-si="1"' : '' ?> <?= $deshabilitada ? 'disabled' : '' ?> style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;<?= $deshabilitada ? ' opacity:.55; cursor:not-allowed;' : '' ?>">
+                  <input type="<?= $esFechaCelda ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaCelda ? '' : '—' ?>" <?= $esFechaCelda ? 'max="' . date('Y-m-d') . '"' : '' ?> <?= $tieneGate ? 'data-gated-por-si="1"' : '' ?> <?= $deshabilitada ? 'disabled' : '' ?> style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;<?= $deshabilitada ? ' opacity:.55; cursor:not-allowed;' : '' ?>">
                 <?php endif; ?>
               </td>
             <?php endforeach; ?>

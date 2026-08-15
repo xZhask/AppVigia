@@ -268,7 +268,29 @@ $campoHospitalizadoA35 = (($enfermedad['cie10'] ?? '') === 'A35')
     ? $campo('a35_hospitalizado')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto): void {
+// A97 "Otros: especificar prueba" (2026-08-14, pedido del usuario): solo
+// debe verse si la fila "Otros" de a97_pruebas_de_laboratorio (MATRIZ)
+// quedó en Positivo/Negativo -- mismo motivo que $campoFechaUltSeg arriba
+// (depende_de/.dep-wrap genéricos solo saben leer el valor COMPLETO de un
+// campo, no una fila puntual de un MATRIZ). Se arma el name real del
+// radio de esa fila ("campo_<id>[<idx>][_radio]") y se usa como
+// data-depende-de de un .dep-wrap a mano -- evaluarDependencias() de
+// ficha.js ya sabe leer cualquier name literal por selector CSS, sin JS
+// nuevo. El índice de "Otros" se busca en el config real (no se
+// hardcodea la posición 6) por si el orden de filas cambia más adelante.
+$nombreRadioOtrosLabA97 = '';
+$valorOtrosLabA97 = '';
+if (($enfermedad['cie10'] ?? '') === 'A97') {
+    $campoLabA97 = $campo('a97_pruebas_de_laboratorio');
+    $configLabA97 = json_decode((string) ($campoLabA97['campo']['config'] ?? '{}'), true);
+    $idxOtrosLabA97 = array_search('Otros', $configLabA97['filas'] ?? [], true);
+    if ($idxOtrosLabA97 !== false) {
+        $nombreRadioOtrosLabA97 = $campoLabA97['name'] . '[' . $idxOtrosLabA97 . '][_radio]';
+        $valorOtrosLabA97 = is_array($campoLabA97['val']) ? ($campoLabA97['val'][$idxOtrosLabA97]['_radio'] ?? '') : '';
+    }
+}
+
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $nombreRadioOtrosLabA97, $valorOtrosLabA97, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto): void {
     $campos = CampoDef::porSeccion($seccionId);
     // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
     // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
@@ -382,6 +404,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if ($tieneDependencia):
                 $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);
                 ?><div class="dep-wrap" data-depende-de="campo_<?= (int) $campo['depende_de'] ?>" data-valor-activador="<?= e($campo['valor_activador']) ?>" <?= $oculto ? 'hidden' : '' ?>><?php
+            endif;
+            $abreWrapOtrosLabA97 = ($campo['clave'] ?? '') === 'a97_otros_prueba_especificar' && $nombreRadioOtrosLabA97 !== '';
+            if ($abreWrapOtrosLabA97):
+                $ocultoOtrosLabA97 = !in_array($valorOtrosLabA97, ['POSITIVO', 'NEGATIVO'], true);
+                ?><div class="dep-wrap" data-depende-de="<?= e($nombreRadioOtrosLabA97) ?>" data-valor-activador="POSITIVO,NEGATIVO" <?= $ocultoOtrosLabA97 ? 'hidden' : '' ?>><?php
             endif;
             if ($campo['tipo'] === 'BOOLEANO' && in_array($campo['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true)): ?>
               <div class="field">
@@ -511,6 +538,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 }
             endif;
             if ($tieneDependencia): ?></div><?php endif;
+            if ($abreWrapOtrosLabA97): ?></div><?php endif;
             if (in_array($campo['clave'] ?? '', ['a33_fecha_de_alta', 'a35_fecha_de_alta'], true)) {
                 ?></div><?php // cierra el .dep-wrap de Hospitalizado=Sí abierto arriba
             }
@@ -786,6 +814,21 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
       <?php if (($enfermedad['cie10'] ?? '') === 'O95' && trim($secciones[0]['nombre'] ?? '') === 'Datos del fallecimiento (Anexo 1)'): ?>
         <?php require __DIR__ . '/datos-fallecimiento-o95.php'; ?>
       <?php else: ?>
+        <?php // A97 (2026-08-14, ítem 21 del PDF pág. 49): "¿Dónde estuvo en
+        // las últimas dos semanas (14 días) antes de enfermar?" es la tabla
+        // de viajes, SIN booleano disparador (a diferencia de B05/P35.0/
+        // A37.0) -- va siempre visible, justo antes de "Caso autóctono"
+        // (ítem 28), que es $secciones[0] tras filtrar "Enfermedad/evento" y
+        // "Subsistema de vigilancia" (ambas cubiertas por
+        // notificacion-fechas-a97.php). Excluida de la tarjeta genérica
+        // "Antecedentes epidemiológicos" en nueva/index.php/editar.php
+        // ($mostrarViajes && !$isA97) para no duplicarla ahí abajo. ?>
+        <?php if (($enfermedad['cie10'] ?? '') === 'A97' && trim($secciones[0]['nombre'] ?? '') === 'Antecedentes epidemiológicos'): ?>
+          <div style="margin-bottom: 20px;">
+            <div class="eyebrow" style="margin-bottom:10px">¿Dónde estuvo en las últimas dos semanas (14 días) antes de enfermar?</div>
+            <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+          </div>
+        <?php endif; ?>
         <?php $renderizarCampos((int) $secciones[0]['id']); ?>
       <?php endif; ?>
     <?php else: ?>
