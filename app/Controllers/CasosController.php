@@ -168,6 +168,7 @@ class CasosController extends Controller
             'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
             'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
+            'fur'                => trim($_POST['fur'] ?? ''),
             'semanas_gestacion'  => trim($_POST['semanas_gestacion'] ?? ''),
             'trimestre_gestacion'=> $_POST['trimestre_gestacion'] ?? '',
             'tipo_captacion'         => $_POST['tipo_captacion'] ?? '',
@@ -581,6 +582,7 @@ class CasosController extends Controller
             'nombre_tutor'       => (string) ($caso['nombre_tutor'] ?? ''),
             'celular_tutor'      => (string) ($caso['celular_tutor'] ?? ''),
             'gestante'           => $caso['gestante'] !== null ? (string) $caso['gestante'] : '',
+            'fur'                => (string) ($caso['fur'] ?? ''),
             'semanas_gestacion'  => (string) ($caso['semanas_gestacion'] ?? ''),
             'trimestre_gestacion'=> (string) ($caso['trimestre_gestacion'] ?? ''),
             'tipo_captacion'         => (string) ($caso['tipo_captacion'] ?? ''),
@@ -674,6 +676,7 @@ class CasosController extends Controller
             'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
             'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
+            'fur'                => trim($_POST['fur'] ?? ''),
             'semanas_gestacion'  => trim($_POST['semanas_gestacion'] ?? ''),
             'trimestre_gestacion'=> $_POST['trimestre_gestacion'] ?? '',
             'tipo_captacion'         => $_POST['tipo_captacion'] ?? '',
@@ -1257,6 +1260,7 @@ class CasosController extends Controller
             'nombre_tutor'       => '',
             'celular_tutor'      => '',
             'gestante'           => '',
+            'fur'                => '',
             'semanas_gestacion'  => '',
             'trimestre_gestacion'=> '',
             'tipo_captacion'         => '',
@@ -1364,11 +1368,17 @@ class CasosController extends Controller
             ? $valoresFijos['n_historia_clinica'] : null;
 
         $gestante = null;
+        $fur = null;
         $semanasGestacion = null;
         $trimestreGestacion = null;
         if ($valoresFijos['sexo'] === 'F' && in_array($valoresFijos['gestante'], ['0', '1'], true)) {
             $gestante = (int) $valoresFijos['gestante'];
             if ($gestante === 1) {
+                // FUR (A44, ítem 4 del PDF): junto a Gestante/Edad gestacional,
+                // mismo criterio de "solo si gestante=Sí" que semanas/trimestre.
+                if (($valoresFijos['fur'] ?? '') !== '') {
+                    $fur = fechaIsoValida($valoresFijos['fur']);
+                }
                 if (is_numeric($valoresFijos['semanas_gestacion'])) {
                     $semanasGestacion = (int) $valoresFijos['semanas_gestacion'];
                 }
@@ -1403,6 +1413,7 @@ class CasosController extends Controller
                 'nombre_tutor'       => $valoresFijos['nombre_tutor'] !== '' ? $valoresFijos['nombre_tutor'] : null,
                 'celular_tutor'      => $valoresFijos['celular_tutor'] !== '' ? $valoresFijos['celular_tutor'] : null,
                 'gestante'           => $gestante,
+                'fur'                => $fur,
                 'semanas_gestacion'  => $semanasGestacion,
                 'trimestre_gestacion'=> $trimestreGestacion,
             ],
@@ -1907,6 +1918,7 @@ class CasosController extends Controller
         $direcciones = $_POST['viaje_direccion'] ?? [];
         $salidas = $_POST['viaje_fecha_salida'] ?? [];
         $retornos = $_POST['viaje_fecha_retorno'] ?? [];
+        $tiemposPermanencia = $_POST['viaje_tiempo_permanencia'] ?? [];
         $transportesIda = $_POST['viaje_transporte_ida'] ?? [];
         $transportesRetorno = $_POST['viaje_transporte_retorno'] ?? [];
         $semanasGestacion = $_POST['viaje_semana_gestacion'] ?? [];
@@ -1920,11 +1932,12 @@ class CasosController extends Controller
             $direccion = trim((string) ($direcciones[$i] ?? ''));
             $salidaTxt = trim((string) ($salidas[$i] ?? ''));
             $retornoTxt = trim((string) ($retornos[$i] ?? ''));
+            $tiempoPermanencia = trim((string) ($tiemposPermanencia[$i] ?? ''));
             $transIda = trim((string) ($transportesIda[$i] ?? ''));
             $transRetorno = trim((string) ($transportesRetorno[$i] ?? ''));
             $semanaGestacionTxt = trim((string) ($semanasGestacion[$i] ?? ''));
 
-            if ($lugar === '' && $localidad === '' && $distritoId === '' && $direccion === '' && $salidaTxt === '' && $retornoTxt === '' && $transIda === '' && $transRetorno === '' && $semanaGestacionTxt === '') {
+            if ($lugar === '' && $localidad === '' && $distritoId === '' && $direccion === '' && $salidaTxt === '' && $retornoTxt === '' && $tiempoPermanencia === '' && $transIda === '' && $transRetorno === '' && $semanaGestacionTxt === '') {
                 continue;
             }
 
@@ -1955,6 +1968,7 @@ class CasosController extends Controller
                 'direccion'          => $direccion !== '' ? $direccion : null,
                 'fecha_salida'       => $salidaIso,
                 'fecha_retorno'      => $retornoIso,
+                'tiempo_permanencia' => $tiempoPermanencia !== '' ? $tiempoPermanencia : null,
                 'semana_gestacion'   => $semanaGestacionTxt !== '' ? (int) $semanaGestacionTxt : null,
                 'transporte_ida'     => $transIda !== '' ? $transIda : null,
                 'transporte_retorno' => $transRetorno !== '' ? $transRetorno : null,

@@ -3104,19 +3104,30 @@
                             "PCR"
                         ]
                     }
-                }
+                },
+                "caso_viaje": [
+                    "pais",
+                    "fecha_salida",
+                    "tiempo_permanencia"
+                ]
             },
             "nucleo_omitidos": [
                 "referencia_localizar",
                 "pueblo_etnico",
-                "ocupacion"
+                "celular",
+                "etnia",
+                "nombre_tutor",
+                "celular_tutor"
             ],
             "nucleo_incluidos": [
                 "n_historia_clinica"
             ],
+            "detalle_domicilio": [
+                "TIEMPO_RESIDENCIA"
+            ],
             "secciones": [
                 {
-                    "nombre": "Antecedente epidemiológico",
+                    "nombre": "Inicio de la enfermedad",
                     "orden": 1,
                     "campos": [
                         {
@@ -3130,6 +3141,24 @@
                             "etiqueta": "Fecha de ingreso al estudio o diagnóstico",
                             "tipo": "FECHA",
                             "orden": 2
+                        },
+                        {
+                            "clave": "a44_tiempo_de_enfermedad_dias",
+                            "etiqueta": "Tiempo de enfermedad (días)",
+                            "tipo": "NUMERO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a44_forma_de_inicio",
+                            "etiqueta": "Forma de inicio",
+                            "tipo": "TEXTO",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "a44_curso",
+                            "etiqueta": "Curso",
+                            "tipo": "TEXTO",
+                            "orden": 5
                         }
                     ]
                 },
@@ -3283,43 +3312,55 @@
                         {
                             "clave": "a44_palidez",
                             "etiqueta": "Palidez",
+                            "tipo": "BOOLEANO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_grado_de_palidez",
+                            "etiqueta": "Grado de palidez",
                             "tipo": "SELECT",
-                            "orden": 1,
+                            "orden": 2,
                             "opciones": [
                                 "Leve",
                                 "Moderada",
                                 "Severa"
-                            ]
+                            ],
+                            "depende_de": "Palidez",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a44_petequias",
                             "etiqueta": "Petequias",
                             "tipo": "BOOLEANO",
-                            "orden": 2
+                            "orden": 3
                         },
                         {
                             "clave": "a44_localizacion_de_petequias",
                             "etiqueta": "Localización de petequias",
                             "tipo": "TEXTO",
-                            "orden": 3
+                            "orden": 4,
+                            "depende_de": "Petequias",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a44_equimosis",
                             "etiqueta": "Equimosis",
                             "tipo": "BOOLEANO",
-                            "orden": 4
+                            "orden": 5
                         },
                         {
                             "clave": "a44_localizacion_de_equimosis",
                             "etiqueta": "Localización de equimosis",
                             "tipo": "TEXTO",
-                            "orden": 5
+                            "orden": 6,
+                            "depende_de": "Equimosis",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a44_lesiones_eruptivas",
                             "etiqueta": "Lesiones eruptivas",
                             "tipo": "MATRIZ",
-                            "orden": 6,
+                            "orden": 7,
                             "filas": [
                                 "Miliares",
                                 "Mulares",
@@ -3353,6 +3394,14 @@
                                 "Lumbosacro",
                                 "Otro"
                             ]
+                        },
+                        {
+                            "clave": "a44_edema_otro_especificar",
+                            "etiqueta": "Edema, otro (especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 2,
+                            "depende_de": "Edema, localización",
+                            "valor_activador": "OTRO"
                         }
                     ]
                 },
@@ -3407,9 +3456,9 @@
                         {
                             "clave": "a44_antibioticos_usados",
                             "etiqueta": "Antibióticos usados",
-                            "tipo": "MULTISELECT",
+                            "tipo": "MATRIZ",
                             "orden": 4,
-                            "opciones": [
+                            "filas": [
                                 "Penicilina",
                                 "Cloranfenicol",
                                 "Rifampicina",
@@ -3418,6 +3467,10 @@
                                 "Cotrimoxazol",
                                 "Ceftriaxona",
                                 "Otros"
+                            ],
+                            "columnas": [
+                                "SI",
+                                "DOSIS"
                             ]
                         }
                     ]
@@ -3436,13 +3489,17 @@
                             "clave": "a44_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
-                            "orden": 2
+                            "orden": 2,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a44_dias_de_hospitalizacion",
                             "etiqueta": "Días de hospitalización",
                             "tipo": "NUMERO",
-                            "orden": 3
+                            "orden": 3,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a44_condicion_de_alta",

@@ -115,7 +115,10 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
     // 'distrito_id'/'direccion' (2026-08-13, A97, pág. 49 ítems 23-27): la
     // columna distrito_id ya existía en caso_viaje sin usarse -- ambas se
     // vuelven declarativas junto con las demás en vez de asumirse por defecto.
-    'caso_viaje'    => ['pais', 'localidad', 'distrito_id', 'direccion', 'fecha_salida', 'fecha_retorno', 'semana_gestacion', 'transporte_ida', 'transporte_retorno'],
+    // 'tiempo_permanencia' (2026-08-18, A44, pág. 42 del PDF): texto libre,
+    // reemplaza al par fecha_salida/fecha_retorno + transporte cuando la
+    // ficha solo pide "Fecha de viaje / Lugar / Tiempo de permanencia".
+    'caso_viaje'    => ['pais', 'localidad', 'distrito_id', 'direccion', 'fecha_salida', 'fecha_retorno', 'tiempo_permanencia', 'semana_gestacion', 'transporte_ida', 'transporte_retorno'],
     // Las últimas 7 (resultado_pcr..fecha_result_igg) eran de serología de
     // B05, pintadas a mano en muestras.php dentro de un if ($esB05) --
     // PENDIENTES.md ítem C: se vuelven declarativas igual que el resto,

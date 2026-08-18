@@ -1,5 +1,11 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- NOTA 2026-08-18 (cotejo A44, Enfermedad de Carrion): ALTER TABLE manual
+-- (no via mysqldump completo) para reflejar sql/migraciones/add_fur_persona.php
+-- -- persona.fur (date, tras 'gestante'), item 4 del PDF de A44 -- y
+-- sql/migraciones/add_tiempo_permanencia_caso_viaje.php -- caso_viaje.tiempo_permanencia
+-- (varchar, tras fecha_retorno), tabla de viajes del item 3. Resto del
+-- archivo sigue siendo el dump del 2026-08-15 descrito abajo.
 -- Regenerado el 2026-08-15 con mysqldump desde la base de datos real, tras
 -- la sesion de trabajo de A97 (Dengue/chikungunya/zika/otras arbovirosis)
 -- 2026-08-12 al 2026-08-15. NO hubo cambios de esquema (ALTER TABLE) en esta
@@ -322,6 +328,7 @@ CREATE TABLE `caso_viaje` (
   `distrito_id` char(6) DEFAULT NULL,
   `fecha_salida` date DEFAULT NULL,
   `fecha_retorno` date DEFAULT NULL,
+  `tiempo_permanencia` varchar(60) DEFAULT NULL,
   `semana_gestacion` smallint(6) DEFAULT NULL,
   `transporte_ida` varchar(40) DEFAULT NULL,
   `transporte_retorno` varchar(40) DEFAULT NULL,
@@ -529,6 +536,7 @@ CREATE TABLE `persona` (
   `pueblo_etnico` enum('Quechua','Aymara','Jaqaru','Uro','Asháninka','Awajún','Shipibo-Konibo','Yánesha','Kukama Kukamiria','Achuar','Bora','Matsés','Ese Eja','Harakbut','Afroperuano','No aplica','Chino-peruano','Japonés-peruano','Otro') DEFAULT NULL,
   `ocupacion` varchar(120) DEFAULT NULL,
   `gestante` tinyint(1) DEFAULT NULL,
+  `fur` date DEFAULT NULL,
   `semanas_gestacion` smallint(6) DEFAULT NULL,
   `trimestre_gestacion` varchar(10) DEFAULT NULL,
   `condicion` enum('EFECTIVO','DERECHOHABIENTE','PARTICULAR') NOT NULL DEFAULT 'PARTICULAR',

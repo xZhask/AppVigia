@@ -11,7 +11,9 @@ foreach ($opciones as $op) {
 }
 $cie10Actual = $enfermedad['cie10'] ?? ($GLOBALS['enfermedad']['cie10'] ?? '');
 $esComplicacionesB05 = ($cie10Actual === 'B05' && trim($campo['etiqueta']) === 'Complicaciones');
-$permitirIgnorado = ($cie10Actual !== 'B05' || $esComplicacionesB05);
+// A44 (cotejo 2026-08-18, pág. 42 del PDF): "Orientación" solo trae Sí/No
+// por ítem -- ( ) ( ), sin una tercera columna de Ignorado/Desconocido.
+$permitirIgnorado = ($cie10Actual !== 'B05' || $esComplicacionesB05) && $cie10Actual !== 'A44';
 $etiquetaIgnorado = ($cie10Actual === 'B05') ? 'Desc.' : 'Ign.';
 $anchoSeg = $permitirIgnorado ? '190px' : '130px';
 ?>

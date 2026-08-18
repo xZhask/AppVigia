@@ -323,8 +323,15 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !$esBooleanoJuntoASuCampo($c));
     $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || $esBooleanoJuntoASuCampo($c));
 
+    // A44 (cotejo 2026-08-18): "Estado general / Estado de nutrición / Estado
+    // de hidratación" (pág. 42 del PDF, misma fila) caían 2+1 en el grid de
+    // 2 columnas por defecto de esta plantilla genérica -- se pide "thirds"
+    // (3 columnas) solo para ese trío puntual, sin tocar el layout genérico
+    // de las demás 23 fichas.
+    $esFilaEstadosA44 = (($enfermedad['cie10'] ?? '') === 'A44') && in_array('a44_estado_general', array_column($camposOtros, 'clave'), true);
+
     if (!empty($camposOtros)): ?>
-        <div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
+        <div class="fields<?= $esFilaEstadosA44 ? ' thirds' : '' ?>" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
           <?php
           $tipoAnterior = null;
           foreach ($camposOtros as $campo):
@@ -799,7 +806,13 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // $sinFechaInicioSintomasObligatoria, extraerFechaInicioSintomas()
     // (que toma el primer campo FECHA en orden de sección/campo) agarraría
     // esa fecha de investigación por error, no la fecha de síntomas real. ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97'], true)): ?>
+    <?php // A44 (cotejo 2026-08-18): el PDF no trae "Fecha de inicio de síntomas"
+    // como campo propio -- se oculta igual que A80/B05/O95, con
+    // extraerFechaInicioSintomas() derivándola de a44_fecha_de_inicio_de_enfermedad
+    // (primer campo FECHA de la ficha, orden 1 de "Inicio de la enfermedad")
+    // en vez de dejarla realmente opcional (CasosController.php no suma
+    // 'A44' a $sinFechaInicioSintomasObligatoria). ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
@@ -830,6 +843,19 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
           </div>
         <?php endif; ?>
         <?php $renderizarCampos((int) $secciones[0]['id']); ?>
+        <?php // A44 (cotejo 2026-08-18, pedido del usuario): "Viaje a localidades
+        // o comunidades vecinas" (pág. 42 del PDF) va dentro de esta misma
+        // tarjeta "Inicio de la enfermedad" ($secciones[0]), después de sus
+        // propios campos y antes de "Síntomas" -- no en la tarjeta genérica
+        // "Antecedentes epidemiológicos" del final. Excluida de ahí en
+        // nueva/index.php/editar.php ($mostrarViajes && !$isA44), mismo
+        // trato que A97 arriba. ?>
+        <?php if (($enfermedad['cie10'] ?? '') === 'A44' && trim($secciones[0]['nombre'] ?? '') === 'Inicio de la enfermedad'): ?>
+          <div style="margin-top: 20px;">
+            <div class="eyebrow" style="margin-bottom:10px">Viaje a localidades o comunidades vecinas</div>
+            <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+          </div>
+        <?php endif; ?>
       <?php endif; ?>
     <?php else: ?>
       <p style="color:var(--muted);font-size:13px;margin:0">

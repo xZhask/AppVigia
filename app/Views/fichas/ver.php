@@ -149,7 +149,7 @@ $accionEtiquetas = [
             <div class="field wide"><label class="fl">Madre / Tutor / Responsable</label><div class="control" style="background:var(--paper)"><?= e($caso['nombre_tutor'] ?: '—') ?><?= !empty($caso['celular_tutor']) ? ' · N.° Celular: ' . e($caso['celular_tutor']) : '' ?></div></div>
           <?php endif; ?>
           <?php if ($caso['gestante']): ?>
-            <div class="field"><label class="fl">Gestante</label><div class="control" style="background:var(--paper)">Sí<?= !empty($caso['trimestre_gestacion']) ? ' · Trimestre ' . e($caso['trimestre_gestacion']) : ($caso['semanas_gestacion'] ? ' · ' . (int) $caso['semanas_gestacion'] . ' semanas' : '') ?></div></div>
+            <div class="field"><label class="fl">Gestante</label><div class="control" style="background:var(--paper)">Sí<?= !empty($caso['trimestre_gestacion']) ? ' · Trimestre ' . e($caso['trimestre_gestacion']) : ($caso['semanas_gestacion'] ? ' · ' . (int) $caso['semanas_gestacion'] . ' semanas' : '') ?><?= !empty($caso['fur']) ? ' · FUR: ' . e(date('d/m/Y', strtotime($caso['fur']))) : '' ?></div></div>
           <?php endif; ?>
         </div>
         <?php if (($caso['condicion'] ?? 'PARTICULAR') !== 'PARTICULAR'): ?>
@@ -216,7 +216,12 @@ $accionEtiquetas = [
           <div class="subrow"><div class="fields thirds" style="flex:1">
             <div class="field"><label class="fl">Lugar visitado</label><div class="control" style="background:var(--paper)"><?= e($vj['pais'] ?? '—') ?></div></div>
             <div class="field"><label class="fl">Fecha de salida</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vj['fecha_salida']) ?: '—') ?></div></div>
+            <?php if (!empty($vj['fecha_retorno'])): ?>
             <div class="field"><label class="fl">Fecha de retorno</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vj['fecha_retorno']) ?: '—') ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($vj['tiempo_permanencia'])): ?>
+            <div class="field"><label class="fl">Tiempo de permanencia</label><div class="control" style="background:var(--paper)"><?= e($vj['tiempo_permanencia']) ?></div></div>
+            <?php endif; ?>
             <?php if (!empty($vj['semana_gestacion'])): ?>
             <div class="field"><label class="fl">Semana de gestación</label><div class="control mono" style="background:var(--paper)"><?= e($vj['semana_gestacion']) ?></div></div>
             <?php endif; ?>

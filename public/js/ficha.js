@@ -514,12 +514,14 @@ document.addEventListener('DOMContentLoaded', function () {
     
     var campoSemanas = document.getElementById('campoSemanasGestacion');
     var campoTrimestre = document.getElementById('campoTrimestreGestacion');
+    var campoFurA44 = document.getElementById('campoFurA44');
 
     if (textoEnfermedad.indexOf('A80') !== -1 || textoCie.indexOf('A80') !== -1 || textoEnfermedad.indexOf('O95') !== -1 || textoCie.indexOf('O95') !== -1) {
       campoGestante.hidden = true;
       campoGestante.style.display = 'none';
       if (campoSemanas) { campoSemanas.hidden = true; campoSemanas.style.display = 'none'; }
       if (campoTrimestre) { campoTrimestre.hidden = true; campoTrimestre.style.display = 'none'; }
+      if (campoFurA44) { campoFurA44.hidden = true; campoFurA44.style.display = 'none'; }
       if (gestanteSel) gestanteSel.value = '';
       return;
     }
@@ -546,6 +548,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (campoTrimestre) {
       campoTrimestre.hidden = !esGestante || !esTrimestreGestacion;
       campoTrimestre.style.display = (!esGestante || !esTrimestreGestacion) ? 'none' : '';
+    }
+    // A44 (cotejo 2026-08-18, ítem 4 del PDF): "FUR" solo si gestante=Sí,
+    // igual que Semanas/Trimestre -- adicional a Semanas de gestación, no
+    // la reemplaza.
+    var esFurA44 = (textoEnfermedad.indexOf('A44') !== -1 || textoCie.indexOf('A44') !== -1);
+    if (campoFurA44) {
+      campoFurA44.hidden = !esGestante || !esFurA44;
+      campoFurA44.style.display = (!esGestante || !esFurA44) ? 'none' : '';
+      if (!esGestante) {
+        var furInp = document.getElementById('furA44');
+        if (furInp) furInp.value = '';
+      }
     }
 
     var wrapPartoB05 = document.getElementById('wrapLugarPartoB05');

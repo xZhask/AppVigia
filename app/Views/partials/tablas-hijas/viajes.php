@@ -24,11 +24,18 @@ $columnasViaje = $columnasViaje ?? ['pais', 'fecha_salida', 'fecha_retorno', 'tr
 $mostrarColViaje = fn(string $col) => in_array($col, $columnasViaje, true);
 $etiquetaPais = $mostrarColViaje('localidad') ? 'País' : 'Lugar visitado (país o ciudad)';
 $esA370Viaje = (($enfermedad['cie10'] ?? '') === 'A37.0');
+// A44 (cotejo 2026-08-18, pág. 42 del PDF): "Viaje a localidades o
+// comunidades vecinas" solo trae Fecha de viaje/Lugar/Tiempo de
+// permanencia -- una sola fecha, no el par fecha_salida/fecha_retorno de
+// las demás fichas (columnas_tablas_hija.caso_viaje de A44 omite
+// 'fecha_retorno', ver $mostrarColViaje('fecha_retorno') más abajo).
+$esA44Viaje = (($enfermedad['cie10'] ?? '') === 'A44');
+$etiquetaFechaSalida = $esA44Viaje ? 'Fecha de viaje' : 'Fecha de ingreso';
 $filaViaje = function (
-    array $fila = ['pais' => '', 'localidad' => '', 'distrito_id' => '', 'direccion' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'semana_gestacion' => ''],
+    array $fila = ['pais' => '', 'localidad' => '', 'distrito_id' => '', 'direccion' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'tiempo_permanencia' => '', 'semana_gestacion' => ''],
     ?array $error = null,
     ?int $indice = null
-) use ($mostrarColViaje, $etiquetaPais, $esA370Viaje): void {
+) use ($mostrarColViaje, $etiquetaPais, $esA370Viaje, $etiquetaFechaSalida): void {
     $errorSalida = $error['fecha_salida'] ?? null;
     $errorRetorno = $error['fecha_retorno'] ?? null;
     $prefijoUbigeo = $indice !== null ? 'viaje-ubigeo-' . $indice : 'viaje-ubigeo-nueva';
@@ -74,9 +81,9 @@ $filaViaje = function (
         <div class="control"><input type="text" name="viaje_direccion[]" value="<?= e($fila['direccion'] ?? '') ?>" placeholder="Dirección…"></div>
       </div>
       <?php endif; ?>
-      <!-- 2. Fecha de ingreso -->
+      <!-- 2. Fecha de ingreso / Fecha de viaje (A44) -->
       <div class="field" style="flex:1; min-width:130px">
-        <label class="fl">Fecha de ingreso</label>
+        <label class="fl"><?= e($etiquetaFechaSalida) ?></label>
         <div class="control mono <?= $errorSalida ? 'err' : '' ?>"><input type="date" name="viaje_fecha_salida[]" value="<?= e($fila['fecha_salida'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         <?php if ($errorSalida): ?><span class="hint err"><?= e($errorSalida) ?></span><?php endif; ?>
       </div>
@@ -95,12 +102,21 @@ $filaViaje = function (
         </div>
       </div>
       <?php endif; ?>
+      <?php if ($mostrarColViaje('fecha_retorno')): ?>
       <!-- 4. Fecha de salida -->
       <div class="field" style="flex:1; min-width:130px">
         <label class="fl">Fecha de salida</label>
         <div class="control mono <?= $errorRetorno ? 'err' : '' ?>"><input type="date" name="viaje_fecha_retorno[]" value="<?= e($fila['fecha_retorno'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         <?php if ($errorRetorno): ?><span class="hint err"><?= e($errorRetorno) ?></span><?php endif; ?>
       </div>
+      <?php endif; ?>
+      <?php if ($mostrarColViaje('tiempo_permanencia')): ?>
+      <!-- Tiempo de permanencia (A44, pág. 42 del PDF: texto libre, ej. "3 días") -->
+      <div class="field" style="flex:1; min-width:130px">
+        <label class="fl">Tiempo de permanencia</label>
+        <div class="control"><input type="text" name="viaje_tiempo_permanencia[]" value="<?= e($fila['tiempo_permanencia'] ?? '') ?>" placeholder="Ej. 3 días…"></div>
+      </div>
+      <?php endif; ?>
       <?php if ($mostrarColViaje('semana_gestacion')): ?>
       <!-- Semana de gestación (columna extra, propia de fichas que la declaren) -->
       <div class="field" style="flex:1; min-width:130px">

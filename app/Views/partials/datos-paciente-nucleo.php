@@ -335,12 +335,16 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
   </div>
 </div>
 
-<!-- 4. ¿Gestante? + Semanas de gestación (General) / Trimestre de gestación (B26/B01) -->
+<!-- 4. ¿Gestante? + FUR (A44) + Semanas de gestación (General) / Trimestre de gestación (B26/B01) -->
 <?php
 // B26 (cotejo 2026-07-30) y B01 (cotejo 2026-08-08, ítem 20 del PDF) piden
 // "Trimestre de gestación" (I/II/III) en vez de "Semanas de gestación"
 // para la gestante propia del caso.
 $esTrimestreGestacion = in_array($enfermedad['cie10'] ?? '', ['B26', 'B01'], true);
+// A44 (cotejo 2026-08-18, ítem 4 del PDF): junto a Gestante y Edad
+// gestacional (= semanas_gestacion), el PDF también pide "FUR" (fecha de
+// última regla) -- adicional, no reemplaza a semanas_gestacion.
+$pideFur = (($enfermedad['cie10'] ?? '') === 'A44');
 ?>
 <div class="fields thirds" data-nucleo-campo="gestante" style="margin-top:14px" <?= $nucleoOmite('gestante') ? 'hidden style="display:none;"' : '' ?>>
   <div class="field" id="campoGestante" hidden>
@@ -352,6 +356,10 @@ $esTrimestreGestacion = in_array($enfermedad['cie10'] ?? '', ['B26', 'B01'], tru
         <option value="0" <?= seleccionado($valoresFijos['gestante'] ?? '', '0') ?>>No</option>
       </select>
     </div>
+  </div>
+  <div class="field" id="campoFurA44" <?= (!$pideFur) ? 'hidden style="display:none;"' : 'hidden' ?>>
+    <label class="fl">FUR</label>
+    <div class="control mono"><input type="date" id="furA44" name="fur" value="<?= e($valoresFijos['fur'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
   </div>
   <div class="field" id="campoSemanasGestacion" <?= $esTrimestreGestacion ? 'hidden style="display:none;"' : 'hidden' ?>>
     <label class="fl">Semanas de gestación</label>

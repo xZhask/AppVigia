@@ -65,7 +65,10 @@ $es = $estados[$caso['estado']];
               <span class="hint">No editable: crea una nueva ficha si cambió de establecimiento</span>
             </div>
             <div class="field">
-              <label class="fl">Fecha de notificación <span class="req">*</span></label>
+              <!-- A44 (pág. 42, cotejo 2026-08-18): el PDF pide "FECHA ENCUESTA", no
+                   "Fecha de notificación" -- mismo campo núcleo (fecha_notif), solo
+                   cambia la etiqueta para esta ficha. -->
+              <label class="fl"><?= (($enfermedad['cie10'] ?? null) === 'A44') ? 'Fecha de encuesta' : 'Fecha de notificación' ?> <span class="req">*</span></label>
               <div class="control mono <?= isset($erroresFijos['fecha_notif']) ? 'err' : '' ?>">
                 <input type="date" name="fecha_notif" value="<?= e($valoresFijos['fecha_notif']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
               </div>
@@ -74,7 +77,7 @@ $es = $estados[$caso['estado']];
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97'], true) ? 'hidden' : '' ?>>
+          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44'], true) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
@@ -203,8 +206,12 @@ $es = $estados[$caso['estado']];
       // arriba, pero sin booleano disparador: se renderiza siempre, dentro
       // de secciones-clinicas.php.
       $isA97 = ($enfermedad['cie10'] ?? '') === 'A97';
+      // A44 (cotejo 2026-08-18): "Viaje a localidades o comunidades vecinas"
+      // (pág. 42 del PDF) reposicionada dentro de "Inicio de la enfermedad"
+      // (secciones-clinicas.php), mismo trato que A97 arriba.
+      $isA44 = ($enfermedad['cie10'] ?? '') === 'A44';
       $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
-      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       // Roles con columnas_sujeto que NO tienen sección propia en el
