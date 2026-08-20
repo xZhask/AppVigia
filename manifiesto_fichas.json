@@ -2815,8 +2815,44 @@
             ],
             "secciones": [
                 {
-                    "nombre": "Antecedentes epidemiológicos",
+                    "nombre": "Fechas de notificación",
                     "orden": 1,
+                    "campos": [
+                        {
+                            "clave": "b57_codigo",
+                            "etiqueta": "Código",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "b57_fecha_conocimiento_local",
+                            "etiqueta": "Fecha de conocimiento local",
+                            "tipo": "FECHA",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "b57_fecha_de_investigacion",
+                            "etiqueta": "Fecha de investigación",
+                            "tipo": "FECHA",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "b57_fecha_conocimiento_disa",
+                            "etiqueta": "Fecha de conocimiento DISA",
+                            "tipo": "FECHA",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "b57_fecha_conocimiento_nacional",
+                            "etiqueta": "Fecha de conocimiento nacional",
+                            "tipo": "FECHA",
+                            "orden": 5
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Antecedentes epidemiológicos",
+                    "orden": 2,
                     "campos": [
                         {
                             "clave": "b57_fecha_probable_de_contagio",
@@ -2918,7 +2954,7 @@
                 },
                 {
                     "nombre": "Cuadro clínico",
-                    "orden": 2,
+                    "orden": 3,
                     "campos": [
                         {
                             "clave": "b57_condicion",
@@ -2977,7 +3013,7 @@
                 },
                 {
                     "nombre": "Hospitalización",
-                    "orden": 3,
+                    "orden": 4,
                     "campos": [
                         {
                             "clave": "b57_hospitalizado",
@@ -3035,7 +3071,7 @@
                 },
                 {
                     "nombre": "Tratamiento",
-                    "orden": 4,
+                    "orden": 5,
                     "campos": [
                         {
                             "clave": "b57_recibio_tratamiento",
@@ -3047,7 +3083,7 @@
                 },
                 {
                     "nombre": "Clasificación final",
-                    "orden": 5,
+                    "orden": 6,
                     "campos": [
                         {
                             "clave": "b57_clasificacion_final",
@@ -3087,24 +3123,11 @@
             "pdf_paginas": "42-44",
             "tablas_hijas": {
                 "caso_contacto": false,
-                "caso_muestra": true,
+                "caso_muestra": false,
                 "caso_viaje": true,
                 "caso_vacuna": false
             },
             "columnas_tablas_hija": {
-                "caso_muestra": {
-                    "opciones": {
-                        "tipo_muestra": [
-                            "SANGRE",
-                            "SUERO"
-                        ],
-                        "tipo_prueba": [
-                            "FROTIS_SANGUINEO",
-                            "CULT",
-                            "PCR"
-                        ]
-                    }
-                },
                 "caso_viaje": [
                     "pais",
                     "fecha_salida",

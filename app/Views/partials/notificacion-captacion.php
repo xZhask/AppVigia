@@ -9,8 +9,31 @@
  */
 // Fichas cuyo PDF no trae "Clasificación en la captación" junto a
 // Tipo/Lugar de captación (B26: cotejo 2026-07-30; B01: cotejo 2026-08-08,
-// pág. 3 del PDF -- solo trae ítems 5 y 6, Tipo de captación y Lugar).
-$ocultaClasifCaptacion = in_array($enfermedad['cie10'] ?? null, ['B26', 'B01'], true);
+// pág. 3 del PDF -- solo trae ítems 5 y 6, Tipo de captación y Lugar; B57:
+// cotejo 2026-08-20, pág. 40 -- tampoco trae "Lugar de captación").
+$ocultaClasifCaptacion = in_array($enfermedad['cie10'] ?? null, ['B26', 'B01', 'B57'], true);
+// B57 (cotejo 2026-08-20, pág. 40 del PDF): "Notificación Regular [ ] /
+// Búsqueda Activa [ ]" mapea 1 a 1 con las 2 opciones que ya trae "Tipo de
+// captación" (Pasiva=Regular, Activa=Búsqueda Activa) -- se conserva ese
+// campo, pero "Lugar de captación" no tiene equivalente en el PDF.
+$esB57Captacion = (($enfermedad['cie10'] ?? null) === 'B57');
+
+// b57_codigo (cotejo 2026-08-20, pedido del usuario): "CÓDIGO" del
+// encabezado del PDF (pág. 40, junto a las 4 fechas de conocimiento) se
+// pinta en el espacio que deja libre "Lugar de captación" -- mismo criterio
+// de envolver en función que notificacion-fechas-a97.php, para no pisar la
+// variable $campo del llamador (el resolvedor AMBIENTE de campos-por-clave.php).
+$campoCodigoB57 = $esB57Captacion ? $resolvedorPara('B57')('b57_codigo') : null;
+$pintarCodigoB57 = function () use ($campoCodigoB57): void {
+    if (!$campoCodigoB57 || !$campoCodigoB57['id']) {
+        return;
+    }
+    $campo = $campoCodigoB57['campo'];
+    $valor = $campoCodigoB57['val'];
+    $error = $campoCodigoB57['err'];
+    $opciones = $campoCodigoB57['opciones'];
+    require __DIR__ . '/campo-dinamico.php';
+};
 ?>
 <div class="capt-grid <?= $ocultaClasifCaptacion ? 'fields halves' : 'fields thirds' ?>" style="margin-top:14px">
   <div class="field">
@@ -23,6 +46,9 @@ $ocultaClasifCaptacion = in_array($enfermedad['cie10'] ?? null, ['B26', 'B01'], 
       </select>
     </div>
   </div>
+  <?php if ($esB57Captacion): ?>
+    <?php $pintarCodigoB57(); ?>
+  <?php else: ?>
   <div class="field">
     <label class="fl">Lugar de captación</label>
     <div class="control">
@@ -33,6 +59,7 @@ $ocultaClasifCaptacion = in_array($enfermedad['cie10'] ?? null, ['B26', 'B01'], 
       </select>
     </div>
   </div>
+  <?php endif; ?>
   <div class="field clasif-captacion-hide" <?= $ocultaClasifCaptacion ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Clasificación en la captación</label>
     <div class="control">

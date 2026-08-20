@@ -155,6 +155,24 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         'a97_subsistema_de_vigilancia',
         'a97_fecha_de_investigacion',
     ],
+    'B57' => [
+        // notificacion-fechas-b57.php (cotejo 2026-08-20, pág. 40 del PDF):
+        // "Fecha conocimiento local/Fecha investigación/Fecha conocimiento
+        // DISA/Fecha conocimiento nacional" (encabezado de la ficha) se
+        // pintan en la tarjeta fija "1. Notificación", mismo criterio que
+        // A97 arriba -- DISA/Nombre del establecimiento/UTES-UBAS-ZONADIS-RED
+        // no se capturan como campo_def porque ya son datos del
+        // establecimiento elegido (mismo criterio que A37.0/A97).
+        // "Código" (2026-08-20, pedido del usuario): se pinta junto a "Tipo
+        // de captación", en el espacio que deja libre "Lugar de captación"
+        // (oculto para B57, ver notificacion-captacion.php) -- no en
+        // notificacion-fechas-b57.php como las 4 fechas.
+        'b57_codigo',
+        'b57_fecha_conocimiento_local',
+        'b57_fecha_de_investigacion',
+        'b57_fecha_conocimiento_disa',
+        'b57_fecha_conocimiento_nacional',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -172,6 +190,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'A37.0' => ['Datos de notificación e investigación del caso', 'Clasificación final'],
     'B01' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Observaciones'],
     'A97' => ['Enfermedad / evento a notificar', 'Subsistema de vigilancia'],
+    'B57' => ['Fechas de notificación'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
@@ -358,7 +377,12 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // $idsPadre no puede detectar porque no es un depende_de real) -- sin
     // esto, ambos caían al grupo baneado "Signos y síntomas" y el hook de
     // más abajo nunca se ejecutaba (el campo nunca pasaba por este loop).
-    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a', 'a37_0_pentavalente_1ra', 'a37_0_pentavalente_2da', 'a37_0_pentavalente_3ra', 'a37_0_dpt_1er_refuerzo', 'a37_0_dpt_2do_refuerzo', 'a37_0_viajo_en_los_ultimos_21_dias', 'a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_'];
+    // a44_inyeccion_conjuntival (cotejo 2026-08-20, pedido del usuario): sin
+    // esto cae al checklist de chips "Signos y síntomas" del final porque no
+    // tiene ningún campo hijo que lo marque como "padre" en $idsPadre --
+    // pero el usuario la quiere junto a Conjuntivas pálidas/Escleróticas
+    // ictéricas (mismo control Sí/No), no mezclada con los síntomas reales.
+    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a', 'a37_0_pentavalente_1ra', 'a37_0_pentavalente_2da', 'a37_0_pentavalente_3ra', 'a37_0_dpt_1er_refuerzo', 'a37_0_dpt_2do_refuerzo', 'a37_0_viajo_en_los_ultimos_21_dias', 'a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_', 'a44_inyeccion_conjuntival'];
     $esBooleanoJuntoASuCampo = fn($c) => in_array($c['id'], $idsPadre) || in_array($c['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true);
     $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !$esBooleanoJuntoASuCampo($c));
     $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || $esBooleanoJuntoASuCampo($c));
@@ -377,7 +401,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // cualquier otro depende_de) -- evaluarDependencias() de ficha.js ya lo
     // muestra/oculta sin JS nuevo, porque el radio usa el mismo
     // name="campo_<id>" y los mismos valores '1'/'0' que un BOOLEANO normal.
-    $renderBooleanoPillA44 = function (array $campo, $valor, ?string $error, array $campoHijo, bool $wide = true): void {
+    // $campoHijo es null para BOOLEANO sin campo dependiente (Inyección
+    // conjuntival, cotejo 2026-08-20: mismo control Sí/No que Conjuntivas
+    // pálidas/Escleróticas ictéricas, pero sin severidad debajo) -- se omite
+    // el .dep-wrap entero en ese caso, no uno vacío.
+    $renderBooleanoPillA44 = function (array $campo, $valor, ?string $error, ?array $campoHijo, bool $wide = true): void {
         $nombreCampo = 'campo_' . $campo['id'];
         $esSi = (string) $valor === '1';
         $esNo = (string) $valor === '0';
@@ -400,6 +428,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 </label>
               </div>
             </div>
+            <?php if ($campoHijo !== null): ?>
             <div class="dep-wrap" data-depende-de="<?= e($nombreCampo) ?>" data-valor-activador="1" style="margin-top:10px; padding-left:6px; padding-right:6px; width:100%;" <?= !$esSi ? 'hidden' : '' ?>>
               <?php
               $campoDinamico = $campoHijo['campo'];
@@ -415,6 +444,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
               })();
               ?>
             </div>
+            <?php endif; ?>
           </div>
           <?php if ($error): ?><span class="hint err" style="margin-top:8px; display:block;"><?= e($error) ?></span><?php endif; ?>
         </div>
@@ -530,11 +560,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $ocultoOtrosLabA97 = !in_array($valorOtrosLabA97, ['POSITIVO', 'NEGATIVO'], true);
                 ?><div class="dep-wrap" data-depende-de="<?= e($nombreRadioOtrosLabA97) ?>" data-valor-activador="POSITIVO,NEGATIVO" <?= $ocultoOtrosLabA97 ? 'hidden' : '' ?>><?php
             endif;
-            if ($campo['tipo'] === 'BOOLEANO' && in_array($campo['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true)): ?>
-              <div class="field">
-                <?php require __DIR__ . '/campos/booleano.php'; ?>
-              </div>
-            <?php elseif (in_array($campo['clave'] ?? '', ['a44_palidez', 'a44_petequias', 'a44_equimosis', 'a44_conjuntivas_palidas', 'a44_escleroticas_ictericas'], true)):
+            if (in_array($campo['clave'] ?? '', ['a44_palidez', 'a44_petequias', 'a44_equimosis', 'a44_conjuntivas_palidas', 'a44_escleroticas_ictericas', 'a44_inyeccion_conjuntival'], true)):
                 // Petequias/Equimosis van en 2 columnas, una junto a la otra
                 // (pedido del usuario) -- Palidez se queda "wide" (fila
                 // propia, como en la captura de referencia). Como no hay
@@ -545,16 +571,25 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 // pálidas/Escleróticas ictéricas (Cabeza, 2026-08-19) son el
                 // mismo patrón Sí/No -> severidad debajo, pero no se pidió
                 // emparejarlas en columnas -- se quedan "wide" por defecto.
+                // Inyección conjuntival (2026-08-20) es el mismo control
+                // Sí/No pero sin campo hijo -- $campoHijoA44 resuelve null
+                // para ella, $renderBooleanoPillA44 ya sabe omitir el
+                // .dep-wrap en ese caso.
                 $campoHijoA44 = [
                     'a44_palidez' => $campoGradoPalidezA44,
                     'a44_petequias' => $campoLocPetequiasA44,
                     'a44_equimosis' => $campoLocEquimosisA44,
                     'a44_conjuntivas_palidas' => $campoGradoPalidezConjuntivalA44,
                     'a44_escleroticas_ictericas' => $campoGradoIctericiaEscleralA44,
+                    'a44_inyeccion_conjuntival' => null,
                 ][$campo['clave']];
                 $anchoCompletoA44 = !in_array($campo['clave'], ['a44_petequias', 'a44_equimosis'], true);
                 $renderBooleanoPillA44($campo, $valor, $error, $campoHijoA44, $anchoCompletoA44);
-            elseif ($campo['tipo'] === 'BOOLEANO'): ?>
+            elseif ($campo['tipo'] === 'BOOLEANO' && in_array($campo['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true)): ?>
+              <div class="field">
+                <?php require __DIR__ . '/campos/booleano.php'; ?>
+              </div>
+            <?php elseif ($campo['tipo'] === 'BOOLEANO'): ?>
               <div class="field">
                 <label class="fl"><?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?></label>
                 <div class="control">

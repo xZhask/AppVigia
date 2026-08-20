@@ -90,6 +90,7 @@ $es = $estados[$caso['estado']];
           <?php require __DIR__ . '/../partials/notificacion-fechas-a370.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b01.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a97.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-b57.php'; ?>
         </div>
       </div>
 
