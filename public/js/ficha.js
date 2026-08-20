@@ -1375,8 +1375,25 @@ document.addEventListener('DOMContentLoaded', function () {
       var esSiNoFecha = grupo.classList.contains('si-no-fecha-field');
       
       function actualizarEstadoFila(fila, inputSeleccionado) {
-        var labels = fila.querySelectorAll('.seg-label');
-        labels.forEach(function(l) { l.classList.remove('on'); });
+        // Se limpia el 'on' solo de los radios que comparten el MISMO name
+        // que el que cambió -- no de toda la fila. En A80 (radio 100%, un
+        // .seg por columna) todas las columnas de una fila comparten un
+        // único name, así que esto sigue limpiando las 4-5 igual que
+        // siempre. Pero una fila de MATRIZ con "grupos_columnas" (A44
+        // "Ganglios linfáticos": Móviles y Dolorosos, 2026-08-19) trae 2
+        // preguntas Sí/No INDEPENDIENTES con names distintos
+        // (_radio_moviles/_radio_dolorosos) en la misma fila -- limpiar por
+        // fila entera borraba la selección de la otra pregunta sin que el
+        // usuario la tocara (bug real, hallado con Playwright: clic en
+        // Dolorosos apagaba visualmente la marca ya puesta en Móviles).
+        var nombreCambiado = inputSeleccionado ? inputSeleccionado.name : null;
+        var labels = nombreCambiado
+          ? fila.querySelectorAll('input[type="radio"][name="' + CSS.escape(nombreCambiado) + '"]')
+          : fila.querySelectorAll('.seg-label input[type="radio"]');
+        labels.forEach(function(input) {
+          var lbl = input.closest('.seg-label');
+          if (lbl) lbl.classList.remove('on');
+        });
         if (inputSeleccionado) {
           inputSeleccionado.closest('.seg-label').classList.add('on');
           fila.classList.remove('pendiente');
@@ -1829,14 +1846,18 @@ document.addEventListener('DOMContentLoaded', function () {
   // queda cubierta sin tocar este archivo. Mismo idioma que
   // evaluarDependencias() (depende_de/valor_activador de campo_def), pero
   // resuelto DENTRO de una fila de tabla hija en vez de contra el documento
-  // entero.
+  // entero. data-prefijo-lista (2026-08-19, A44 "Evolución clínica"):
+  // opcional, default "muestra" -- permite reusar el mismo mecanismo con
+  // otro prefijo de nombre de campo (evolucion_<columna>[]) sin chocar con
+  // el de caso_muestra.
   function evaluarDependenciasMuestra() {
     document.querySelectorAll('[data-depende-columna]').forEach(function(campo) {
       var subrow = campo.closest('.subrow');
       if (!subrow) return;
       var columna = campo.getAttribute('data-depende-columna');
+      var prefijo = campo.getAttribute('data-prefijo-lista') || 'muestra';
       var activadores = (campo.getAttribute('data-valores-activadores') || '').split(',').map(function(s) { return s.trim(); });
-      var disparador = subrow.querySelector('[name="muestra_' + columna + '[]"]');
+      var disparador = subrow.querySelector('[name="' + prefijo + '_' + columna + '[]"]');
       var valorActual = disparador ? disparador.value : '';
       campo.style.display = activadores.indexOf(valorActual) !== -1 ? '' : 'none';
     });

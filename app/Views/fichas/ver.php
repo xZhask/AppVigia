@@ -297,6 +297,71 @@ $accionEtiquetas = [
     <?php $numeroSeccion++; ?>
     <?php endif; ?>
 
+    <!-- A44: Evolución clínica -->
+    <?php if (!empty($evoluciones)): ?>
+    <div class="card section">
+      <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Evolución clínica</h3></div>
+      <div class="section-body">
+        <?php foreach ($evoluciones as $ev): ?>
+          <div class="subrow" style="border:1px solid var(--line-2); border-radius:10px; padding:14px; margin-bottom:14px; width:100%">
+            <div class="fields thirds" style="flex:1">
+              <div class="field"><label class="fl">Fecha</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($ev['fecha']) ?: '—') ?></div></div>
+              <div class="field"><label class="fl">Temperatura</label><div class="control mono" style="background:var(--paper)"><?= e($ev['temperatura'] ?? '—') ?></div></div>
+              <div class="field"><label class="fl">Hemoglobina</label><div class="control mono" style="background:var(--paper)"><?= e($ev['hemoglobina'] ?? '—') ?></div></div>
+              <div class="field"><label class="fl">Hematocrito</label><div class="control mono" style="background:var(--paper)"><?= e($ev['hematocrito'] ?? '—') ?></div></div>
+              <div class="field"><label class="fl">Transfusiones (U)</label><div class="control mono" style="background:var(--paper)"><?= e($ev['transfusiones'] ?? '—') ?></div></div>
+              <div class="field"><label class="fl">Frotis</label><div class="control" style="background:var(--paper)"><?= e($ev['frotis'] ?? '—') ?></div></div>
+            </div>
+            <?php if (!empty($ev['hemocultivo_muestra_tomada'])): ?>
+            <div class="eyebrow" style="margin:14px 0 8px">Hemocultivo</div>
+            <div class="fields thirds" style="flex:1">
+              <div class="field"><label class="fl">Fecha de toma</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($ev['hemocultivo_fecha_toma'] ?? null) ?: '—') ?></div></div>
+              <div class="field"><label class="fl">Resultado</label><div class="control" style="background:var(--paper)"><?= e($ev['hemocultivo_resultado'] ?? 'Pendiente') ?></div></div>
+              <div class="field"><label class="fl">Fecha de resultado</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($ev['hemocultivo_fecha_resultado'] ?? null) ?: '—') ?></div></div>
+            </div>
+            <?php endif; ?>
+            <?php
+              $atbEtiquetasVer = ['penicilina' => 'Penicilina', 'cloranfenicol' => 'Cloranfenicol', 'rifampicina' => 'Rifampicina', 'ciprofloxacina' => 'Ciprofloxacina', 'eritromicina' => 'Eritromicina', 'cotrimoxazol' => 'Cotrimoxazol', 'ceftriaxona' => 'Ceftriaxona', 'otros' => 'Otros'];
+              $atbUsadosVer = array_filter($atbEtiquetasVer, fn($etq, $slug) => !empty($ev["atb_{$slug}_usado"]), ARRAY_FILTER_USE_BOTH);
+            ?>
+            <?php if (!empty($atbUsadosVer)): ?>
+            <div class="eyebrow" style="margin:14px 0 8px">Antibióticos usados</div>
+            <div class="fields thirds" style="flex:1">
+              <?php foreach ($atbUsadosVer as $slug => $etq): ?>
+                <div class="field"><label class="fl"><?= $slug === 'otros' ? e($ev['atb_otros_especificar'] ?: 'Otros') : e($etq) ?></label><div class="control" style="background:var(--paper)"><?= e($ev["atb_{$slug}_dosis"] ?? '—') ?></div></div>
+              <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php $numeroSeccion++; ?>
+    <?php endif; ?>
+
+    <!-- A44: Exámenes auxiliares -->
+    <?php if (!empty($examenesAuxiliares)): ?>
+    <div class="card section">
+      <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Exámenes auxiliares</h3></div>
+      <div class="section-body">
+        <?php foreach ($examenesAuxiliares as $exa): ?>
+          <div class="subrow" style="border:1px solid var(--line-2); border-radius:10px; padding:14px; margin-bottom:14px; width:100%">
+            <div class="fields thirds" style="flex:1">
+              <div class="field"><label class="fl">Fecha</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($exa['fecha']) ?: '—') ?></div></div>
+              <?php
+                $etiquetasExamenVer = ['grupo_sanguineo' => 'Grupo sanguíneo', 'plaquetas' => 'Plaquetas', 'hematies' => 'Hematíes', 'tgo' => 'TGO', 'tgp' => 'TGP', 'fosfatasa_alcalina' => 'Fosfatasa alcalina', 'bilirrubina_directa' => 'Bilirrubina directa', 'bilirrubina_indirecta' => 'Bilirrubina indirecta', 'bilirrubina_total' => 'Bilirrubina total', 'urea' => 'Urea', 'glucosa' => 'Glucosa', 'creatinina' => 'Creatinina', 'leucocitos_totales' => 'Leucocitos totales', 'segmentados' => 'Segmentados', 'abastonados' => 'Abastonados', 'linfocitos' => 'Linfocitos', 'monocitos' => 'Monocitos', 'eosinofilos' => 'Eosinófilos', 'basofilos' => 'Basófilos', 'blastos' => 'Blastos', 'aglutinacion_tifico_o' => 'Aglutinación: Tífico "O"', 'aglutinacion_tifico_h' => 'Aglutinación: Tífico "H"', 'paratifico_a' => 'Paratífico A', 'paratifico_b' => 'Paratífico B', 'brucellas' => 'Brucellas'];
+              ?>
+              <?php foreach ($etiquetasExamenVer as $colExa => $etqExa): if (empty($exa[$colExa])) continue; ?>
+              <div class="field"><label class="fl"><?= e($etqExa) ?></label><div class="control" style="background:var(--paper)"><?= e($exa[$colExa]) ?></div></div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php $numeroSeccion++; ?>
+    <?php endif; ?>
+
     <!-- Investigador -->
     <?php if ($caso['investigador_nombre'] || $caso['investigador_cargo'] || ($caso['investigador_profesion'] ?? '') || ($caso['investigador_telefono'] ?? '') || ($caso['investigador_email'] ?? '') || $caso['fecha_investigacion']): ?>
     <div class="card section">

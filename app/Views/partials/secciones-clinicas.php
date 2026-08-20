@@ -267,6 +267,14 @@ $campoHospitalizadoA33 = (($enfermedad['cie10'] ?? '') === 'A33')
 $campoHospitalizadoA35 = (($enfermedad['cie10'] ?? '') === 'A35')
     ? $campo('a35_hospitalizado')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+// A44 "Diagnósticos" (2026-08-19): mismo motivo que A33/A35 arriba -- el
+// grupo "Diagnóstico de alta" (eyebrow + 3 campos) necesita un dep-wrap
+// propio alrededor de TODO el grupo (no solo de cada campo suelto, que ya
+// se ocultan individualmente vía su depende_de de campo_def) para que el
+// título del grupo también desaparezca cuando Hospitalizado != Sí.
+$campoHospitalizadoA44 = (($enfermedad['cie10'] ?? '') === 'A44')
+    ? $campo('a44_hospitalizado')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
 // A97 "Otros: especificar prueba" (2026-08-14, pedido del usuario): solo
 // debe verse si la fila "Otros" de a97_pruebas_de_laboratorio (MATRIZ)
@@ -290,7 +298,39 @@ if (($enfermedad['cie10'] ?? '') === 'A97') {
     }
 }
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $nombreRadioOtrosLabA97, $valorOtrosLabA97, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto): void {
+// A44 "Piel" (2026-08-18, pedido del usuario): Palidez/Petequias/Equimosis
+// pasan del <select> Sí/No genérico (rama BOOLEANO de más abajo, la que
+// usan también a33_hospitalizado/a35_hospitalizado/etc.) al mismo look de
+// radios Sí/No segmentados que ya usan GRUPO_SI_NO/SI_NO_FECHA (A37.0,
+// B26...), con su campo dependiente (Grado de palidez/Localización)
+// apareciendo justo debajo dentro de la misma tarjeta -- no como .field
+// hermano en el grid, que es donde caía hoy (a un costado, no debajo).
+// Se resuelven acá (mismo motivo que $campoFechaUltSeg) porque hace falta
+// el campo HIJO completo antes de llegar a la posición del padre en el
+// loop. depende_de/valor_activador de los 3 hijos no cambian (siguen
+// siendo "1", el mismo valor que ya guarda un BOOLEANO) -- CasosController
+// y campoVisiblePorDependencia() no necesitan tocarse.
+$campoGradoPalidezA44 = (($enfermedad['cie10'] ?? '') === 'A44')
+    ? $campo('a44_grado_de_palidez')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+$campoLocPetequiasA44 = (($enfermedad['cie10'] ?? '') === 'A44')
+    ? $campo('a44_localizacion_de_petequias')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+$campoLocEquimosisA44 = (($enfermedad['cie10'] ?? '') === 'A44')
+    ? $campo('a44_localizacion_de_equimosis')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+
+// A44 "Cabeza" (2026-08-19, cotejo jerarquía Signos y examen físico): mismo
+// patrón exacto que Palidez/Petequias/Equimosis -- Sí/No con severidad
+// revelada justo debajo, ver $renderBooleanoPillA44 más abajo.
+$campoGradoPalidezConjuntivalA44 = (($enfermedad['cie10'] ?? '') === 'A44')
+    ? $campo('a44_grado_palidez_conjuntival')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+$campoGradoIctericiaEscleralA44 = (($enfermedad['cie10'] ?? '') === 'A44')
+    ? $campo('a44_grado_ictericia_escleral')
+    : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
+
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $campoHospitalizadoA44, $nombreRadioOtrosLabA97, $valorOtrosLabA97, $campoGradoPalidezA44, $campoLocPetequiasA44, $campoLocEquimosisA44, $campoGradoPalidezConjuntivalA44, $campoGradoIctericiaEscleralA44, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto): void {
     $campos = CampoDef::porSeccion($seccionId);
     // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
     // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
@@ -330,6 +370,57 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // de las demás 23 fichas.
     $esFilaEstadosA44 = (($enfermedad['cie10'] ?? '') === 'A44') && in_array('a44_estado_general', array_column($camposOtros, 'clave'), true);
 
+    // A44 "Piel": arma el radio Sí/No segmentado (mismo .seg/.seg-label que
+    // GRUPO_SI_NO/SI_NO_FECHA, ver campos-dinamicos.css) con el campo hijo
+    // (SELECT o TEXTO, ya resuelto en $campoHijo) anidado justo debajo, en
+    // un .dep-wrap estándar (data-depende-de="campo_<id>", igual que
+    // cualquier otro depende_de) -- evaluarDependencias() de ficha.js ya lo
+    // muestra/oculta sin JS nuevo, porque el radio usa el mismo
+    // name="campo_<id>" y los mismos valores '1'/'0' que un BOOLEANO normal.
+    $renderBooleanoPillA44 = function (array $campo, $valor, ?string $error, array $campoHijo, bool $wide = true): void {
+        $nombreCampo = 'campo_' . $campo['id'];
+        $esSi = (string) $valor === '1';
+        $esNo = (string) $valor === '0';
+        $respondido = $esSi || $esNo;
+        ?>
+        <div class="field <?= $wide ? 'wide ' : '' ?>grupo-si-no-field" style="margin-top:6px; margin-bottom:8px;">
+          <div class="grupo-si-no-row <?= $esSi ? 'is-si' : '' ?> <?= $respondido ? 'respondido' : 'pendiente' ?>" tabindex="-1" style="display:flex; flex-direction:column; justify-content:center; border-bottom:1px solid var(--line-2); min-height:40px; padding:6px 0; transition: border-left 0.15s; border-left: <?= $esSi ? '3px solid var(--accent)' : '3px solid transparent' ?>;">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+              <span class="row-label" style="font-size: 13.5px; color: <?= $esSi ? 'var(--ink)' : ($respondido ? 'var(--ink-2)' : 'var(--ink)') ?>; font-weight: <?= $esSi ? '500' : 'normal' ?>; flex:1; padding-left:6px;">
+                <?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?>
+              </span>
+              <div class="seg" style="width: 130px; flex-shrink:0;">
+                <label class="seg-label <?= $esSi ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="Sí">
+                  <input type="radio" name="<?= e($nombreCampo) ?>" value="1" class="sr-only" <?= $esSi ? 'checked' : '' ?>>
+                  Sí
+                </label>
+                <label class="seg-label <?= $esNo ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer;" title="No">
+                  <input type="radio" name="<?= e($nombreCampo) ?>" value="0" class="sr-only" <?= $esNo ? 'checked' : '' ?>>
+                  No
+                </label>
+              </div>
+            </div>
+            <div class="dep-wrap" data-depende-de="<?= e($nombreCampo) ?>" data-valor-activador="1" style="margin-top:10px; padding-left:6px; padding-right:6px; width:100%;" <?= !$esSi ? 'hidden' : '' ?>>
+              <?php
+              $campoDinamico = $campoHijo['campo'];
+              $valorDinamico = $campoHijo['val'];
+              $errorDinamico = $campoHijo['err'];
+              $opcionesDinamico = $campoHijo['opciones'];
+              (function () use ($campoDinamico, $valorDinamico, $errorDinamico, $opcionesDinamico) {
+                  $campo = $campoDinamico;
+                  $valor = $valorDinamico;
+                  $error = $errorDinamico;
+                  $opciones = $opcionesDinamico;
+                  require __DIR__ . '/campo-dinamico.php';
+              })();
+              ?>
+            </div>
+          </div>
+          <?php if ($error): ?><span class="hint err" style="margin-top:8px; display:block;"><?= e($error) ?></span><?php endif; ?>
+        </div>
+        <?php
+    };
+
     if (!empty($camposOtros)): ?>
         <div class="fields<?= $esFilaEstadosA44 ? ' thirds' : '' ?>" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
           <?php
@@ -337,6 +428,9 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
           foreach ($camposOtros as $campo):
             if (($campo['clave'] ?? '') === 'b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos') {
                 continue;
+            }
+            if (in_array($campo['clave'] ?? '', ['a44_grado_de_palidez', 'a44_localizacion_de_petequias', 'a44_localizacion_de_equimosis', 'a44_grado_palidez_conjuntival', 'a44_grado_ictericia_escleral'], true)) {
+                continue; // se renderiza anidado dentro de su padre, ver $renderBooleanoPillA44
             }
             $campo['obligatorio'] = (int) $campo['obligatorio'];
             $valor = $valoresCampos[$campo['id']] ?? ($campo['tipo'] === 'MULTISELECT' ? [] : '');
@@ -363,6 +457,25 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             }
             if (($campo['clave'] ?? '') === 'a37_0_dpt_1er_refuerzo') {
                 ?></div><div class="eyebrow" style="margin-bottom:10px">DPT</div><div class="fields" style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px"><?php
+            }
+            // A44 "Diagnósticos" (2026-08-19): 2 grupos de 3 campos TEXTO
+            // sueltos se confundían a la vista sin separación -- mismo
+            // patrón de "Dosis recibidas"/"Pentavalente"/"DPT" de arriba
+            // (cierra el .fields abierto, pinta un .eyebrow, abre uno
+            // nuevo). "Diagnóstico de alta" solo se ve si Hospitalizado=Sí
+            // (depende_de de cada uno de sus 3 campos, sin cambios acá).
+            if (($campo['clave'] ?? '') === 'a44_diagnostico_consulta_externa_1') {
+                ?></div><div class="eyebrow" style="margin-bottom:10px">Diagnóstico de consulta externa o ingreso</div><div class="fields thirds" style="margin-bottom:16px"><?php
+            }
+            if (($campo['clave'] ?? '') === 'a44_diagnostico_alta_1') {
+                // El título del grupo también debe ocultarse junto con sus
+                // 3 campos -- no solo cada campo por separado (esos ya se
+                // ocultan vía su depende_de de campo_def genérico, ver más
+                // abajo) -- así que todo el bloque (eyebrow + fields) va
+                // dentro de un dep-wrap propio, mismo mecanismo que el
+                // grupo "Condición de alta" de A33/A35 (líneas ~490-493).
+                $ocultoDiagnosticoAltaA44 = (string) ($campoHospitalizadoA44['val'] ?? '') !== '1';
+                ?></div><div class="dep-wrap" data-depende-de="<?= e($campoHospitalizadoA44['name']) ?>" data-valor-activador="1" <?= $ocultoDiagnosticoAltaA44 ? 'hidden' : '' ?>><div class="eyebrow" style="margin-bottom:10px">Diagnóstico de alta (solo si fue hospitalizado)</div><div class="fields thirds" style="margin-bottom:16px"><?php
             }
             // A35.12: "Distrito" (excluido arriba del loop genérico vía
             // $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA) se reemplaza acá, justo
@@ -421,7 +534,27 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
               <div class="field">
                 <?php require __DIR__ . '/campos/booleano.php'; ?>
               </div>
-            <?php elseif ($campo['tipo'] === 'BOOLEANO'): ?>
+            <?php elseif (in_array($campo['clave'] ?? '', ['a44_palidez', 'a44_petequias', 'a44_equimosis', 'a44_conjuntivas_palidas', 'a44_escleroticas_ictericas'], true)):
+                // Petequias/Equimosis van en 2 columnas, una junto a la otra
+                // (pedido del usuario) -- Palidez se queda "wide" (fila
+                // propia, como en la captura de referencia). Como no hay
+                // ningún otro campo entre ellas en el orden del manifiesto
+                // (sus hijos están anidados, no ocupan turno en el grid), al
+                // quitarles "wide" el grid de 2 columnas de .fields las
+                // empareja automáticamente en la misma fila. Conjuntivas
+                // pálidas/Escleróticas ictéricas (Cabeza, 2026-08-19) son el
+                // mismo patrón Sí/No -> severidad debajo, pero no se pidió
+                // emparejarlas en columnas -- se quedan "wide" por defecto.
+                $campoHijoA44 = [
+                    'a44_palidez' => $campoGradoPalidezA44,
+                    'a44_petequias' => $campoLocPetequiasA44,
+                    'a44_equimosis' => $campoLocEquimosisA44,
+                    'a44_conjuntivas_palidas' => $campoGradoPalidezConjuntivalA44,
+                    'a44_escleroticas_ictericas' => $campoGradoIctericiaEscleralA44,
+                ][$campo['clave']];
+                $anchoCompletoA44 = !in_array($campo['clave'], ['a44_petequias', 'a44_equimosis'], true);
+                $renderBooleanoPillA44($campo, $valor, $error, $campoHijoA44, $anchoCompletoA44);
+            elseif ($campo['tipo'] === 'BOOLEANO'): ?>
               <div class="field">
                 <label class="fl"><?= e($campo['etiqueta']) ?><?= $campo['obligatorio'] ? ' <span class="req">*</span>' : '' ?></label>
                 <div class="control">
@@ -548,6 +681,9 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if ($abreWrapOtrosLabA97): ?></div><?php endif;
             if (in_array($campo['clave'] ?? '', ['a33_fecha_de_alta', 'a35_fecha_de_alta'], true)) {
                 ?></div><?php // cierra el .dep-wrap de Hospitalizado=Sí abierto arriba
+            }
+            if (($campo['clave'] ?? '') === 'a44_diagnostico_alta_3') {
+                ?></div></div><div class="fields" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>"><?php // cierra .fields thirds + el dep-wrap de Hospitalizado=Sí abiertos arriba, reabre .fields para el cierre final del loop
             }
             if (($campo['clave'] ?? '') === 'a37_0_fecha_de_vacunacion_tdap_de_la_madre') {
                 ?></div><?php // cierra #wrapTdapMadreA370
@@ -683,7 +819,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
 
     if (!empty($camposBooleanos)): ?>
         <div class="eyebrow" style="margin-bottom:12px">Signos y síntomas</div>
-        <div class="sym-grid">
+        <div class="chip-select">
           <?php foreach ($camposBooleanos as $campo):
             $campo['obligatorio'] = (int) $campo['obligatorio'];
             $valor = $valoresCampos[$campo['id']] ?? '';
@@ -955,15 +1091,40 @@ foreach (array_slice($secciones, 1) as $seccion):
           </div>
         <?php endif; ?>
 
-        <?php $renderizarCampos((int) $seccion['id']); ?>
+        <?php
+        // "Laboratorio y evolución" (A44) no tiene NUNCA campo_def propios
+        // (solo_tabla_hija, ver manifiesto) -- llamar a $renderizarCampos()
+        // acá solo serviría para imprimir el placeholder "Todavía no hay
+        // campos clínicos definidos aquí", que no aplica: el contenido real
+        // vive en las tablas hijas de más abajo.
+        $esLaboratorioEvolucionA44 = trim($seccion['nombre']) === 'Laboratorio y evolución' && ($enfermedad['cie10'] ?? '') === 'A44';
+        if (!$esLaboratorioEvolucionA44): ?>
+          <?php $renderizarCampos((int) $seccion['id']); ?>
+        <?php endif; ?>
 
-        <?php if (trim($seccion['nombre']) === 'Antecedentes vacunales' && ($enfermedad['cie10'] ?? '') === 'B05'): 
+        <?php if (trim($seccion['nombre']) === 'Antecedentes vacunales' && ($enfermedad['cie10'] ?? '') === 'B05'):
           $valEstadoVacunal = $campo('b05_estado_vacunal')['val'];
           $esVacunadoInicial = in_array($valEstadoVacunal, ['VACUNADO', 'VACUNADO_INCOMPLETO'], true) || !empty($filasVacunas ?? []);
         ?>
           <div id="b05-wrapper-vacunas-registradas" style="margin-top: 18px; border-top: 1px solid var(--line-2); padding-top: 14px; <?= !$esVacunadoInicial ? 'display: none;' : '' ?>" <?= !$esVacunadoInicial ? 'hidden' : '' ?>>
             <div class="eyebrow" style="margin-bottom:10px">Vacunas registradas</div>
             <?php require __DIR__ . '/tablas-hijas/vacunas.php'; ?>
+          </div>
+        <?php endif; ?>
+
+        <?php if ($esLaboratorioEvolucionA44):
+          $filasEvolucion = $filasEvolucion ?? [];
+          $erroresEvolucion = $erroresEvolucion ?? [];
+          $filasExamen = $filasExamen ?? [];
+          $erroresExamen = $erroresExamen ?? [];
+        ?>
+          <div style="margin-bottom: 24px;">
+            <div class="eyebrow" style="margin-bottom:10px">Evolución clínica</div>
+            <?php require __DIR__ . '/tablas-hijas/evolucion.php'; ?>
+          </div>
+          <div>
+            <div class="eyebrow" style="margin-bottom:10px">Exámenes auxiliares</div>
+            <?php require __DIR__ . '/tablas-hijas/examenes-auxiliares.php'; ?>
           </div>
         <?php endif; ?>
       <?php endif; ?>

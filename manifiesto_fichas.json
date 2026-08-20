@@ -3361,6 +3361,11 @@
                             "etiqueta": "Lesiones eruptivas",
                             "tipo": "MATRIZ",
                             "orden": 7,
+                            "sin_gate_libres": true,
+                            "grupos_columnas": {
+                                "Sangrante": ["SI", "NO"]
+                            },
+                            "_nota": "2026-08-19 (pedido del usuario): 'Sangrante' vuelve a la misma fila que los conteos por localización, en vez de su propia tabla -- 'sin_gate_libres' (matriz.php/cargar_fichas.php, nuevo) desactiva el gate por columna SI que normalmente deshabilitaría N.°/Cara/Cuello/... salvo Sangrante=SI (esa relación no aplica acá: el conteo no depende de si sangra). 'grupos_columnas' (nuevo) fusiona las columnas SI/NO en una sola cabecera 'Sangrante' con los radios pegados (un solo .seg), en vez de 2 columnas de tabla separadas. Ver memoria matriz_no_soporta_booleanos_independientes_por_fila.",
                             "filas": [
                                 "Miliares",
                                 "Mulares",
@@ -3373,8 +3378,15 @@
                                 "Tronco",
                                 "Ext. superior",
                                 "Ext. inferior",
-                                "Sangrante"
+                                "SI",
+                                "NO"
                             ]
+                        },
+                        {
+                            "clave": "a44_lesiones_eruptivas_observaciones",
+                            "etiqueta": "Observaciones (lesiones eruptivas)",
+                            "tipo": "TEXTAREA",
+                            "orden": 8
                         }
                     ]
                 },
@@ -3383,23 +3395,35 @@
                     "orden": 6,
                     "campos": [
                         {
+                            "clave": "a44_estado_tejido_subcutaneo",
+                            "etiqueta": "Estado del tejido celular subcutáneo",
+                            "tipo": "SELECT",
+                            "orden": 1,
+                            "opciones": [
+                                "Sin alteraciones",
+                                "Edema"
+                            ]
+                        },
+                        {
                             "clave": "a44_edema_localizacion",
                             "etiqueta": "Edema, localización",
                             "tipo": "MULTISELECT",
-                            "orden": 1,
+                            "orden": 2,
                             "opciones": [
                                 "Miembros inferiores",
                                 "Miembros superiores",
                                 "Palpebral",
                                 "Lumbosacro",
                                 "Otro"
-                            ]
+                            ],
+                            "depende_de": "Estado del tejido celular subcutáneo",
+                            "valor_activador": "EDEMA"
                         },
                         {
                             "clave": "a44_edema_otro_especificar",
                             "etiqueta": "Edema, otro (especificar)",
                             "tipo": "TEXTO",
-                            "orden": 2,
+                            "orden": 3,
                             "depende_de": "Edema, localización",
                             "valor_activador": "OTRO"
                         }
@@ -3414,6 +3438,12 @@
                             "etiqueta": "Ganglios linfáticos",
                             "tipo": "MATRIZ",
                             "orden": 1,
+                            "sin_gate_libres": true,
+                            "grupos_columnas": {
+                                "Móviles": ["SI", "NO"],
+                                "Dolorosos": ["SI", "NO"]
+                            },
+                            "_nota": "2026-08-19 (pedido del usuario): 'Móviles' y 'Dolorosos' vuelven a la misma tabla que N.°/Tamaño (mm), en vez de 2 matrices aparte -- son 2 preguntas Sí/No INDEPENDIENTES por ganglio (un ganglio puede ser móvil Y doloroso a la vez). 'grupos_columnas' con 2 grupos (mismas etiquetas SI/NO repetidas, la búsqueda por columna consume el primer índice aún libre) le da a cada uno su propia subclave de guardado (_radio_moviles/_radio_dolorosos) en vez de compartir el _radio único de 'hibrido' -- ver memoria matriz_no_soporta_booleanos_independientes_por_fila para el porqué (antes hacía falta partirlas en tablas separadas).",
                             "filas": [
                                 "Axilares",
                                 "Inguinales",
@@ -3423,61 +3453,434 @@
                             "columnas": [
                                 "N.°",
                                 "Tamaño (mm)",
-                                "Móviles",
-                                "Dolorosos"
+                                "SI",
+                                "NO",
+                                "SI",
+                                "NO"
                             ]
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Cabeza",
+                    "orden": 8,
+                    "campos": [
+                        {
+                            "clave": "a44_conjuntivas_palidas",
+                            "etiqueta": "Conjuntivas pálidas",
+                            "tipo": "BOOLEANO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_grado_palidez_conjuntival",
+                            "etiqueta": "Grado de palidez conjuntival",
+                            "tipo": "SELECT",
+                            "orden": 2,
+                            "opciones": [
+                                "Leve",
+                                "Moderada",
+                                "Severa"
+                            ],
+                            "depende_de": "Conjuntivas pálidas",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "a44_escleroticas_ictericas",
+                            "etiqueta": "Escleróticas ictéricas",
+                            "tipo": "BOOLEANO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a44_grado_ictericia_escleral",
+                            "etiqueta": "Grado de ictericia escleral",
+                            "tipo": "SELECT",
+                            "orden": 4,
+                            "opciones": [
+                                "Leve",
+                                "Moderada",
+                                "Severa"
+                            ],
+                            "depende_de": "Escleróticas ictéricas",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "a44_inyeccion_conjuntival",
+                            "etiqueta": "Inyección conjuntival",
+                            "tipo": "BOOLEANO",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "a44_pupilas",
+                            "etiqueta": "Pupilas",
+                            "tipo": "SELECT",
+                            "orden": 6,
+                            "opciones": [
+                                "CIRLA",
+                                "Otros"
+                            ]
+                        },
+                        {
+                            "clave": "a44_pupilas_otros_especificar",
+                            "etiqueta": "Pupilas, otros (especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 7,
+                            "depende_de": "Pupilas",
+                            "valor_activador": "OTROS"
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Boca",
+                    "orden": 9,
+                    "campos": [
+                        {
+                            "clave": "a44_mucosa_oral",
+                            "etiqueta": "Mucosa oral",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_faringe",
+                            "etiqueta": "Faringe",
+                            "tipo": "SELECT",
+                            "orden": 2,
+                            "opciones": [
+                                "Normal",
+                                "Congestiva"
+                            ]
+                        },
+                        {
+                            "clave": "a44_amigdalas",
+                            "etiqueta": "Amígdalas",
+                            "tipo": "MULTISELECT",
+                            "orden": 3,
+                            "opciones": [
+                                "Normales",
+                                "Hipertróficas",
+                                "Congestivas",
+                                "Purulentas",
+                                "Otros"
+                            ]
+                        },
+                        {
+                            "clave": "a44_amigdalas_otros_especificar",
+                            "etiqueta": "Amígdalas, otros (especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 4,
+                            "depende_de": "Amígdalas",
+                            "valor_activador": "OTROS"
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Osteomuscular",
+                    "orden": 10,
+                    "campos": [
+                        {
+                            "clave": "a44_tono_muscular",
+                            "etiqueta": "Tono muscular",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_mialgias",
+                            "etiqueta": "Mialgias",
+                            "tipo": "MULTISELECT",
+                            "orden": 2,
+                            "opciones": [
+                                "Lumbar",
+                                "Dorsal",
+                                "Brazos",
+                                "Muslos",
+                                "Pantorrillas",
+                                "Antebrazos",
+                                "Otros"
+                            ]
+                        },
+                        {
+                            "clave": "a44_mialgias_otros_especificar",
+                            "etiqueta": "Mialgias, otros (especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 3,
+                            "depende_de": "Mialgias",
+                            "valor_activador": "OTROS"
+                        },
+                        {
+                            "clave": "a44_dolor_articular",
+                            "etiqueta": "Dolor articular",
+                            "tipo": "MULTISELECT",
+                            "orden": 4,
+                            "opciones": [
+                                "Hombro",
+                                "Codos",
+                                "Muñeca",
+                                "Cadera",
+                                "Rodillas",
+                                "Tobillos",
+                                "Otros"
+                            ]
+                        },
+                        {
+                            "clave": "a44_dolor_articular_otros_especificar",
+                            "etiqueta": "Dolor articular, otros (especificar)",
+                            "tipo": "TEXTO",
+                            "orden": 5,
+                            "depende_de": "Dolor articular",
+                            "valor_activador": "OTROS"
+                        },
+                        {
+                            "clave": "a44_artritis",
+                            "etiqueta": "Artritis",
+                            "tipo": "TEXTO",
+                            "orden": 6
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Aparato respiratorio",
+                    "orden": 11,
+                    "campos": [
+                        {
+                            "clave": "a44_murmullo_vesicular",
+                            "etiqueta": "Murmullo vesicular",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_soplos_respiratorio",
+                            "etiqueta": "Soplos",
+                            "tipo": "BOOLEANO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a44_crepitantes",
+                            "etiqueta": "Crepitantes",
+                            "tipo": "BOOLEANO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a44_subcrepitantes",
+                            "etiqueta": "Subcrepitantes",
+                            "tipo": "BOOLEANO",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "a44_sibilantes",
+                            "etiqueta": "Sibilantes",
+                            "tipo": "BOOLEANO",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "a44_otros_respiratorio",
+                            "etiqueta": "Otros (aparato respiratorio)",
+                            "tipo": "TEXTO",
+                            "orden": 6
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Aparato cardiovascular",
+                    "orden": 12,
+                    "campos": [
+                        {
+                            "clave": "a44_ruidos_cardiacos",
+                            "etiqueta": "Ruidos cardiacos",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_soplos_cardiaco",
+                            "etiqueta": "Soplos",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a44_otros_cardiovascular",
+                            "etiqueta": "Otros (aparato cardiovascular)",
+                            "tipo": "TEXTO",
+                            "orden": 3
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Aparato gastrointestinal",
+                    "orden": 13,
+                    "campos": [
+                        {
+                            "clave": "a44_ruidos_hidroaereos",
+                            "etiqueta": "Ruidos hidroaéreos",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_higado",
+                            "etiqueta": "Hígado",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a44_bazo",
+                            "etiqueta": "Bazo",
+                            "tipo": "TEXTO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a44_otros_gastrointestinal",
+                            "etiqueta": "Otros (aparato gastrointestinal)",
+                            "tipo": "TEXTO",
+                            "orden": 4
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Genitourinario",
+                    "orden": 14,
+                    "campos": [
+                        {
+                            "clave": "a44_puntos_renoureterales",
+                            "etiqueta": "Puntos renoureterales",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_percusion_lumbar",
+                            "etiqueta": "Percusión lumbar",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a44_edemas_genitourinario",
+                            "etiqueta": "Edemas",
+                            "tipo": "TEXTO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a44_otros_genitourinario",
+                            "etiqueta": "Otros (genitourinario)",
+                            "tipo": "TEXTO",
+                            "orden": 4
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Neurológico",
+                    "orden": 15,
+                    "campos": [
+                        {
+                            "clave": "a44_estado_de_conciencia",
+                            "etiqueta": "Estado de conciencia",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_pares_craneales",
+                            "etiqueta": "Pares craneales",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a44_convulsiones",
+                            "etiqueta": "Convulsiones",
+                            "tipo": "BOOLEANO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a44_babinsky",
+                            "etiqueta": "Babinsky",
+                            "tipo": "BOOLEANO",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "a44_signos_meningeos",
+                            "etiqueta": "Signos meníngeos",
+                            "tipo": "TEXTO",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "a44_rot",
+                            "etiqueta": "ROT",
+                            "tipo": "TEXTO",
+                            "orden": 6
+                        },
+                        {
+                            "clave": "a44_sensibilidad",
+                            "etiqueta": "Sensibilidad",
+                            "tipo": "TEXTO",
+                            "orden": 7
+                        },
+                        {
+                            "clave": "a44_signos_de_focalizacion",
+                            "etiqueta": "Signos de focalización",
+                            "tipo": "TEXTO",
+                            "orden": 8
+                        },
+                        {
+                            "clave": "a44_otros_neurologico",
+                            "etiqueta": "Otros (neurológico)",
+                            "tipo": "TEXTO",
+                            "orden": 9
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Diagnósticos",
+                    "orden": 17,
+                    "_nota": "Pág. 43 del PDF: 'Diagnóstico de alta' solo aplica si Hospitalizado=Sí (sección Hospitalización, orden 16).",
+                    "campos": [
+                        {
+                            "clave": "a44_diagnostico_consulta_externa_1",
+                            "etiqueta": "Diagnóstico 1",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a44_diagnostico_consulta_externa_2",
+                            "etiqueta": "Diagnóstico 2",
+                            "tipo": "TEXTO",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a44_diagnostico_consulta_externa_3",
+                            "etiqueta": "Diagnóstico 3",
+                            "tipo": "TEXTO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a44_diagnostico_alta_1",
+                            "etiqueta": "Diagnóstico 1",
+                            "tipo": "TEXTO",
+                            "orden": 4,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "a44_diagnostico_alta_2",
+                            "etiqueta": "Diagnóstico 2",
+                            "tipo": "TEXTO",
+                            "orden": 5,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "a44_diagnostico_alta_3",
+                            "etiqueta": "Diagnóstico 3",
+                            "tipo": "TEXTO",
+                            "orden": 6,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         }
                     ]
                 },
                 {
                     "nombre": "Laboratorio y evolución",
-                    "orden": 8,
-                    "campos": [
-                        {
-                            "clave": "a44_hemoglobina",
-                            "etiqueta": "Hemoglobina",
-                            "tipo": "NUMERO",
-                            "decimales": true,
-                            "orden": 1
-                        },
-                        {
-                            "clave": "a44_hematocrito",
-                            "etiqueta": "Hematocrito",
-                            "tipo": "NUMERO",
-                            "decimales": true,
-                            "orden": 2
-                        },
-                        {
-                            "clave": "a44_transfusiones_u",
-                            "etiqueta": "Transfusiones (U)",
-                            "tipo": "NUMERO",
-                            "orden": 3
-                        },
-                        {
-                            "clave": "a44_antibioticos_usados",
-                            "etiqueta": "Antibióticos usados",
-                            "tipo": "MATRIZ",
-                            "orden": 4,
-                            "filas": [
-                                "Penicilina",
-                                "Cloranfenicol",
-                                "Rifampicina",
-                                "Ciprofloxacina",
-                                "Eritromicina",
-                                "Cotrimoxazol",
-                                "Ceftriaxona",
-                                "Otros"
-                            ],
-                            "columnas": [
-                                "SI",
-                                "DOSIS"
-                            ]
-                        }
-                    ]
+                    "orden": 18,
+                    "_nota": "Evolución clínica / Exámenes auxiliares (pág. 43 del PDF, tablas repetibles por fecha) se pintan vía tablas-hijas/evolucion.php y tablas-hijas/examenes-auxiliares.php (caso_evolucion/caso_examen_auxiliar) en secciones-clinicas.php, no campo_def -- un solo registro por campo_def no permitía repetir por fecha. 'solo_tabla_hija' fuerza a cargar_fichas.php a crear la seccion_def igual aunque 'campos' esté vacío (sin eso, la card ni el bloque de tabla hija llegan a existir).",
+                    "solo_tabla_hija": true,
+                    "campos": []
                 },
                 {
                     "nombre": "Hospitalización",
-                    "orden": 9,
+                    "orden": 16,
                     "campos": [
                         {
                             "clave": "a44_hospitalizado",

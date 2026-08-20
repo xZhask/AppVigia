@@ -7,11 +7,11 @@ $seleccionados = is_array($valor) ? $valor : [];
 ?>
 <div class="field wide">
   <label class="fl"><?= e($campo['etiqueta']) ?> <?= $campo['obligatorio'] ? '<span class="req">*</span>' : '' ?></label>
-  <div class="sym-grid">
+  <div class="chip-select">
     <?php foreach ($opciones as $opcion): ?>
-      <label class="sym">
+      <label class="chip-option">
         <input type="checkbox" name="<?= e($nombreCampo) ?>[]" value="<?= e($opcion['valor']) ?>" <?= marcado(in_array($opcion['valor'], $seleccionados, true)) ?>>
-        <?= e($opcion['etiqueta']) ?>
+        <span class="chip"><?= e($opcion['etiqueta']) ?></span>
       </label>
     <?php endforeach; ?>
   </div>

@@ -46,6 +46,72 @@ foreach ($columnas as $cIdx => $col) {
     }
 }
 
+// Grupos de columnas radio (2026-08-19, A44 "Lesiones eruptivas: Sangrante"
+// / "Ganglios linfáticos: Móviles y Dolorosos" -- pedido del usuario):
+// "grupos_columnas": {"Sangrante": ["SI","NO"]} en el config del campo_def
+// fusiona 2+ columnas radio-elegibles en UNA sola columna visual con un
+// único .seg (radios pegados, mismo look que cualquier otro Sí/No de la
+// ficha) en vez de una columna de tabla por cada opción. Cada grupo
+// nombrado guarda su propio valor bajo una subclave propia
+// ($valores[$fIdx]['_radio_<slug>']) -- así 2+ preguntas Sí/No
+// INDEPENDIENTES pueden convivir en la misma fila (Móviles Y Dolorosos a la
+// vez), a diferencia del `_radio` compartido de modo 'hibrido' de más abajo
+// (pensado para "elegir una entre N", no para "N preguntas independientes").
+// La búsqueda por etiqueta consume el primer índice radio-elegible aún no
+// asignado -- soporta etiquetas repetidas ("SI"/"NO" en 2 grupos distintos)
+// sin ambigüedad, siempre que los grupos se declaren en el mismo orden
+// izquierda-a-derecha en que aparecen sus columnas en el manifiesto.
+// Columnas radio NO declaradas en ningún grupo siguen compartiendo el
+// `_radio` legado de siempre -- las 6 matrices con radio que ya existían no
+// declaran "grupos_columnas", así que cada una queda con 1 solo miembro por
+// columna y sin "clave_valor" propia: mismo HTML y mismo formato de datos
+// que antes, cero cambio de comportamiento. Ver memoria
+// matriz_no_soporta_booleanos_independientes_por_fila.
+$slugGrupo = function (string $texto): string {
+    $texto = mb_strtolower(trim($texto), 'UTF-8');
+    $mapa = ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n'];
+    $texto = strtr($texto, $mapa);
+    $texto = preg_replace('/[^a-z0-9]+/', '_', $texto);
+    return trim($texto, '_');
+};
+$gruposColumnas = $config['grupos_columnas'] ?? [];
+$grupoDeColumna = [];
+$indicesGrupoYaAsignados = [];
+foreach ($gruposColumnas as $nombreGrupo => $miembros) {
+    foreach ((array) $miembros as $miembro) {
+        foreach ($columnas as $cIdx => $col) {
+            if ((string) $col === (string) $miembro && !isset($indicesGrupoYaAsignados[$cIdx]) && isset($columnasRadio[$cIdx])) {
+                $grupoDeColumna[$cIdx] = $nombreGrupo;
+                $indicesGrupoYaAsignados[$cIdx] = true;
+                break;
+            }
+        }
+    }
+}
+$columnasVisuales = [];
+$gruposYaAgregados = [];
+foreach ($columnas as $cIdx => $col) {
+    if (!isset($columnasRadio[$cIdx])) {
+        $columnasVisuales[] = ['nombre' => $col, 'libre' => true, 'idx' => $cIdx];
+        continue;
+    }
+    $grupo = $grupoDeColumna[$cIdx] ?? null;
+    if ($grupo !== null) {
+        if (isset($gruposYaAgregados[$grupo])) {
+            continue;
+        }
+        $gruposYaAgregados[$grupo] = true;
+        $columnasVisuales[] = [
+            'nombre' => $grupo,
+            'libre' => false,
+            'miembros' => array_keys($grupoDeColumna, $grupo, true),
+            'clave_valor' => '_radio_' . $slugGrupo($grupo),
+        ];
+    } else {
+        $columnasVisuales[] = ['nombre' => $col, 'libre' => false, 'miembros' => [$cIdx]];
+    }
+}
+
 // Si una de las columnas exclusivas es "SI" (p.ej. SI/NO/DESCONOCIDO),
 // las columnas libres de esa misma fila (p.ej. "Fecha de manifestación")
 // solo tienen sentido cuando la fila está marcada como SI -- se
@@ -120,10 +186,10 @@ $filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_m
       <thead>
         <tr>
           <?php if (!$filasSonSoloIndice): ?>
-          <th style="font-size: 10.5px; text-transform: uppercase; color: var(--faint); padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left;">Parámetro / Evaluado</th>
+          <th style="font-size: 10.5px; text-transform: uppercase; color: var(--faint); padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left;">Parámetro</th>
           <?php endif; ?>
-          <?php foreach ($columnas as $col): ?>
-            <th style="font-size: 10.5px; text-transform: uppercase; color: var(--faint); padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: center; min-width: 90px;"><?= e($col) ?></th>
+          <?php foreach ($columnasVisuales as $cv): ?>
+            <th style="font-size: 10.5px; text-transform: uppercase; color: var(--faint); padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: center; min-width: 90px;"><?= e($cv['nombre']) ?></th>
           <?php endforeach; ?>
         </tr>
       </thead>
@@ -152,22 +218,40 @@ $filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_m
             <?php if (!$filasSonSoloIndice): ?>
             <td style="font-size: 12px; font-weight: 500; color: var(--ink); padding: 8px 12px; border-bottom: 1px solid var(--line-2);"><?= e($fila) ?></td>
             <?php endif; ?>
-            <?php foreach ($columnas as $cIdx => $col): ?>
+            <?php foreach ($columnasVisuales as $cv): ?>
               <td style="padding: 4px 8px; border-bottom: 1px solid var(--line-2); text-align: center;">
-                <?php if (isset($columnasRadio[$cIdx])):
-                  $isSel = (string) $valFilaRadio === (string) $col || (string) $valFilaRadio === (string) $cIdx;
-                  $nombreRadio = $modo === 'radio' ? "{$nombreCampo}[{$fIdx}]" : "{$nombreCampo}[{$fIdx}][_radio]";
+                <?php if (!$cv['libre']):
+                  $claveValorGrupo = $cv['clave_valor'] ?? null;
+                  $valCeldaRadio = $claveValorGrupo !== null ? ($valores[$fIdx][$claveValorGrupo] ?? '') : $valFilaRadio;
                 ?>
                   <div class="seg" style="display:inline-flex; width: 100%;">
-                    <label class="seg-label <?= $isSel ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer; padding: 4px 8px; border-radius:6px;" title="<?= e($col) ?>">
-                      <input type="radio" name="<?= e($nombreRadio) ?>" value="<?= e($col) ?>" class="sr-only" <?= $isSel ? 'checked' : '' ?>>
-                      <?= e($col) ?>
-                    </label>
+                    <?php foreach ($cv['miembros'] as $cIdx):
+                      $col = $columnas[$cIdx];
+                      $isSel = (string) $valCeldaRadio === (string) $col || (string) $valCeldaRadio === (string) $cIdx;
+                      $nombreRadio = $claveValorGrupo !== null
+                          ? "{$nombreCampo}[{$fIdx}][{$claveValorGrupo}]"
+                          : ($modo === 'radio' ? "{$nombreCampo}[{$fIdx}]" : "{$nombreCampo}[{$fIdx}][_radio]");
+                    ?>
+                      <label class="seg-label <?= $isSel ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer; padding: 4px 8px; border-radius:6px;" title="<?= e($col) ?>">
+                        <input type="radio" name="<?= e($nombreRadio) ?>" value="<?= e($col) ?>" class="sr-only" <?= $isSel ? 'checked' : '' ?>>
+                        <?= e($col) ?>
+                      </label>
+                    <?php endforeach; ?>
                   </div>
                 <?php else:
+                  $cIdx = $cv['idx'];
+                  $col = $cv['nombre'];
                   $esFechaCelda = $esFecha((string) $col) || $filaEsFecha;
-                  $gateSi = $colSiIdx !== null;
-                  $gateNegativo = $colNegativoIdx !== null;
+                  // "sin_gate_libres" (2026-08-19, A44 "Lesiones eruptivas"):
+                  // opt-in para cuando la columna SI/No-realizado es una
+                  // pregunta independiente (ej. "Sangrante") que no debe
+                  // condicionar las columnas libres de la misma fila (ej.
+                  // conteos por localización) -- a diferencia de P35.0/A97
+                  // donde SÍ hay una relación real que amerita el gate. Ver
+                  // memoria matriz_no_soporta_booleanos_independientes_por_fila.
+                  $sinGateLibres = !empty($config['sin_gate_libres']);
+                  $gateSi = $colSiIdx !== null && !$sinGateLibres;
+                  $gateNegativo = $colNegativoIdx !== null && !$sinGateLibres;
                   // A97 "Pruebas de laboratorio" (2026-08-14): matrices con
                   // radio no-binario (No realizado/Positivo/Negativo) gatean
                   // la(s) columna(s) libre(s) -- "Fecha de resultado" --
@@ -179,7 +263,7 @@ $filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_m
                   // x5: 100% radio, sin columnas libres, no corre; P35.0 x4:
                   // siempre tiene columna "SI", sigue ese camino sin cambio)
                   // -- cero impacto en las 23 fichas restantes.
-                  $gateCualquierRadio = !$gateSi && !$gateNegativo && !empty($columnasRadio);
+                  $gateCualquierRadio = !$gateSi && !$gateNegativo && !empty($columnasRadio) && !$sinGateLibres;
                   $deshabilitada = $gateSi
                       ? !$filaEsSi
                       : ($gateNegativo

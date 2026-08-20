@@ -12,6 +12,8 @@ use App\Models\CampoDef;
 use App\Models\Caso;
 use App\Models\CasoBitacora;
 use App\Models\CasoContacto;
+use App\Models\CasoEvolucion;
+use App\Models\CasoExamenAuxiliar;
 use App\Models\CasoLugarInfeccion;
 use App\Models\CasoMuestra;
 use App\Models\CasoSujeto;
@@ -107,10 +109,14 @@ class CasosController extends Controller
             'filasMuestras'  => [],
             'filasBloquesMuestra' => [],
             'filasLugarInfeccion' => [],
+            'filasEvolucion' => [],
+            'filasExamen'    => [],
             'erroresViajes'  => [],
             'erroresVacunas' => [],
             'erroresMuestras' => [],
             'erroresLugarInfeccion' => [],
+            'erroresEvolucion' => [],
+            'erroresExamen'  => [],
             'valoresSujetoPorRol' => [],
         ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
     }
@@ -291,9 +297,12 @@ class CasosController extends Controller
         [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
         [$filasMuestras, $erroresMuestras] = $this->filasMuestras($enfermedad);
         [$filasLugarInfeccion, $erroresLugarInfeccion] = $this->filasLugarInfeccion();
+        [$filasEvolucion, $erroresEvolucion] = $this->filasEvolucion();
+        [$filasExamen, $erroresExamen] = $this->filasExamen();
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
-            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras) || !empty($erroresLugarInfeccion);
+            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras) || !empty($erroresLugarInfeccion)
+            || !empty($erroresEvolucion) || !empty($erroresExamen);
 
         if ($hayErrores) {
             $semana = semanaEpidemiologica($fechaNotifIso ?: (new DateTime())->format('Y-m-d'));
@@ -319,10 +328,14 @@ class CasosController extends Controller
                 'filasMuestras'  => $filasMuestrasInicial,
                 'filasBloquesMuestra' => $filasBloquesMuestra,
                 'filasLugarInfeccion' => $filasLugarInfeccion,
+                'filasEvolucion' => $filasEvolucion,
+                'filasExamen'    => $filasExamen,
                 'erroresViajes'  => $erroresViajes,
                 'erroresVacunas' => $erroresVacunas,
                 'erroresMuestras' => $erroresMuestras,
                 'erroresLugarInfeccion' => $erroresLugarInfeccion,
+                'erroresEvolucion' => $erroresEvolucion,
+                'erroresExamen'  => $erroresExamen,
                 'valoresSujetoPorRol' => $this->valoresSujetoPorRolDesdePost($enfermedad),
             ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
@@ -380,6 +393,8 @@ class CasosController extends Controller
             CasoVacuna::reemplazarTodos($casoId, $filasVacunas);
             CasoMuestra::reemplazarTodos($casoId, $filasMuestras);
             CasoLugarInfeccion::reemplazarTodos($casoId, $filasLugarInfeccion);
+            CasoEvolucion::reemplazarTodos($casoId, $filasEvolucion);
+            CasoExamenAuxiliar::reemplazarTodos($casoId, $filasExamen);
 
             $rolPrincipal = $enfermedad['multi_sujeto'] ? explode(',', $enfermedad['roles_sujeto'])[0] : 'CASO_INDICE';
             $sujetos = array_merge(
@@ -515,6 +530,8 @@ class CasosController extends Controller
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),
             'muestras'    => CasoMuestra::porCaso((int) $caso['id']),
             'lugaresInfeccion' => CasoLugarInfeccion::porCaso((int) $caso['id']),
+            'evoluciones' => CasoEvolucion::porCaso((int) $caso['id']),
+            'examenesAuxiliares' => CasoExamenAuxiliar::porCaso((int) $caso['id']),
             'valoresSujetoPorRol' => $this->sujetosConDistritoPorRol($caso),
             'bitacora'    => CasoBitacora::porCaso((int) $caso['id']),
             'puedeEditar' => $this->puedeEditarCaso($caso),
@@ -615,10 +632,14 @@ class CasosController extends Controller
             'filasMuestras'  => $filasMuestrasInicial,
             'filasBloquesMuestra' => $filasBloquesMuestra,
             'filasLugarInfeccion' => CasoLugarInfeccion::porCaso((int) $caso['id']),
+            'filasEvolucion' => CasoEvolucion::porCaso((int) $caso['id']),
+            'filasExamen'    => CasoExamenAuxiliar::porCaso((int) $caso['id']),
             'erroresViajes'  => [],
             'erroresVacunas' => [],
             'erroresLugarInfeccion' => [],
             'erroresMuestras' => [],
+            'erroresEvolucion' => [],
+            'erroresExamen'  => [],
             'valoresSujetoPorRol' => CasoSujeto::porCaso((int) $caso['id']),
         ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($caso['distrito_id'])));
     }
@@ -767,9 +788,12 @@ class CasosController extends Controller
         [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
         [$filasMuestras, $erroresMuestras] = $this->filasMuestras($enfermedad);
         [$filasLugarInfeccion, $erroresLugarInfeccion] = $this->filasLugarInfeccion();
+        [$filasEvolucion, $erroresEvolucion] = $this->filasEvolucion();
+        [$filasExamen, $erroresExamen] = $this->filasExamen();
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
-            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras) || !empty($erroresLugarInfeccion);
+            || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras) || !empty($erroresLugarInfeccion)
+            || !empty($erroresEvolucion) || !empty($erroresExamen);
 
         if ($hayErrores) {
             $caso['clasificacion'] = $clasificacion;
@@ -794,10 +818,14 @@ class CasosController extends Controller
                 'filasMuestras'  => $filasMuestrasInicial,
                 'filasBloquesMuestra' => $filasBloquesMuestra,
                 'filasLugarInfeccion' => $filasLugarInfeccion,
+                'filasEvolucion' => $filasEvolucion,
+                'filasExamen'    => $filasExamen,
                 'erroresViajes'  => $erroresViajes,
                 'erroresVacunas' => $erroresVacunas,
                 'erroresMuestras' => $erroresMuestras,
                 'erroresLugarInfeccion' => $erroresLugarInfeccion,
+                'erroresEvolucion' => $erroresEvolucion,
+                'erroresExamen'  => $erroresExamen,
                 'valoresSujetoPorRol' => $this->valoresSujetoPorRolDesdePost($enfermedad),
             ], $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
@@ -848,6 +876,8 @@ class CasosController extends Controller
             CasoVacuna::reemplazarTodos((int) $caso['id'], $filasVacunas);
             CasoMuestra::reemplazarTodos((int) $caso['id'], $filasMuestras);
             CasoLugarInfeccion::reemplazarTodos((int) $caso['id'], $filasLugarInfeccion);
+            CasoEvolucion::reemplazarTodos((int) $caso['id'], $filasEvolucion);
+            CasoExamenAuxiliar::reemplazarTodos((int) $caso['id'], $filasExamen);
 
             $rolPrincipal = $caso['enfermedad_multi_sujeto'] ?? false
                 ? explode(',', $caso['enfermedad_roles_sujeto'] ?? 'CASO_INDICE')[0]
@@ -1973,6 +2003,159 @@ class CasosController extends Controller
                 'transporte_ida'     => $transIda !== '' ? $transIda : null,
                 'transporte_retorno' => $transRetorno !== '' ? $transRetorno : null,
             ];
+        }
+
+        return [$filas, $errores];
+    }
+
+    private const ANTIBIOTICOS_EVOLUCION = ['penicilina', 'cloranfenicol', 'rifampicina', 'ciprofloxacina', 'eritromicina', 'cotrimoxazol', 'ceftriaxona', 'otros'];
+
+    /**
+     * Tabla hija de A44 "Evolución clínica" (caso_evolucion). Una fila se
+     * descarta solo si TODOS sus campos, incluidos los de la sub-tabla de
+     * antibióticos, están vacíos -- igual criterio que filasViajes().
+     */
+    private function filasEvolucion(): array
+    {
+        $fechas = $_POST['evolucion_fecha'] ?? [];
+        $temperaturas = $_POST['evolucion_temperatura'] ?? [];
+        $hemoglobinas = $_POST['evolucion_hemoglobina'] ?? [];
+        $hematocritos = $_POST['evolucion_hematocrito'] ?? [];
+        $transfusiones = $_POST['evolucion_transfusiones'] ?? [];
+        $frotis = $_POST['evolucion_frotis'] ?? [];
+        $hcMuestraTomada = $_POST['evolucion_hemocultivo_muestra_tomada'] ?? [];
+        $hcFechaToma = $_POST['evolucion_hemocultivo_fecha_toma'] ?? [];
+        $hcResultado = $_POST['evolucion_hemocultivo_resultado'] ?? [];
+        $hcFechaResultado = $_POST['evolucion_hemocultivo_fecha_resultado'] ?? [];
+        $atbOtrosEspecificar = $_POST['evolucion_atb_otros_especificar'] ?? [];
+
+        $atbUsado = [];
+        $atbDosis = [];
+        foreach (self::ANTIBIOTICOS_EVOLUCION as $atb) {
+            $atbUsado[$atb] = $_POST["evolucion_atb_{$atb}_usado"] ?? [];
+            $atbDosis[$atb] = $_POST["evolucion_atb_{$atb}_dosis"] ?? [];
+        }
+
+        $filas = [];
+        $errores = [];
+        foreach ($fechas as $i => $fechaTxtRaw) {
+            $fechaTxt = trim((string) $fechaTxtRaw);
+            $temperatura = trim((string) ($temperaturas[$i] ?? ''));
+            $hemoglobina = trim((string) ($hemoglobinas[$i] ?? ''));
+            $hematocrito = trim((string) ($hematocritos[$i] ?? ''));
+            $transfusion = trim((string) ($transfusiones[$i] ?? ''));
+            $frotisTxt = trim((string) ($frotis[$i] ?? ''));
+            $muestraTomada = trim((string) ($hcMuestraTomada[$i] ?? ''));
+            $hcFechaTomaTxt = trim((string) ($hcFechaToma[$i] ?? ''));
+            $hcResultadoTxt = trim((string) ($hcResultado[$i] ?? ''));
+            $hcFechaResultadoTxt = trim((string) ($hcFechaResultado[$i] ?? ''));
+            $otrosEspecificar = trim((string) ($atbOtrosEspecificar[$i] ?? ''));
+
+            $filaAtb = [];
+            $atbTodoVacio = true;
+            foreach (self::ANTIBIOTICOS_EVOLUCION as $atb) {
+                $usado = trim((string) ($atbUsado[$atb][$i] ?? ''));
+                $dosis = trim((string) ($atbDosis[$atb][$i] ?? ''));
+                if ($usado !== '' || $dosis !== '') {
+                    $atbTodoVacio = false;
+                }
+                $filaAtb["atb_{$atb}_usado"] = $usado !== '' ? (int) $usado : null;
+                $filaAtb["atb_{$atb}_dosis"] = $dosis !== '' ? $dosis : null;
+            }
+
+            if ($fechaTxt === '' && $temperatura === '' && $hemoglobina === '' && $hematocrito === '' && $transfusion === ''
+                && $frotisTxt === '' && $muestraTomada === '' && $hcFechaTomaTxt === '' && $hcResultadoTxt === '' && $hcFechaResultadoTxt === ''
+                && $otrosEspecificar === '' && $atbTodoVacio) {
+                continue;
+            }
+
+            $fechaIso = null;
+            if ($fechaTxt !== '') {
+                $fechaIso = fechaIsoValida($fechaTxt);
+                if (!$fechaIso) {
+                    $errores[$i]['fecha'] = self::ERROR_FECHA_INVALIDA;
+                    $fechaIso = $fechaTxt;
+                }
+            }
+            $hcFechaTomaIso = null;
+            if ($hcFechaTomaTxt !== '') {
+                $hcFechaTomaIso = fechaIsoValida($hcFechaTomaTxt);
+                if (!$hcFechaTomaIso) {
+                    $errores[$i]['hemocultivo_fecha_toma'] = self::ERROR_FECHA_INVALIDA;
+                    $hcFechaTomaIso = $hcFechaTomaTxt;
+                }
+            }
+            $hcFechaResultadoIso = null;
+            if ($hcFechaResultadoTxt !== '') {
+                $hcFechaResultadoIso = fechaIsoValida($hcFechaResultadoTxt);
+                if (!$hcFechaResultadoIso) {
+                    $errores[$i]['hemocultivo_fecha_resultado'] = self::ERROR_FECHA_INVALIDA;
+                    $hcFechaResultadoIso = $hcFechaResultadoTxt;
+                }
+            }
+
+            $fila = [
+                'fecha'                       => $fechaIso,
+                'temperatura'                 => $temperatura !== '' ? $temperatura : null,
+                'hemoglobina'                 => $hemoglobina !== '' ? $hemoglobina : null,
+                'hematocrito'                 => $hematocrito !== '' ? $hematocrito : null,
+                'transfusiones'               => $transfusion !== '' ? $transfusion : null,
+                'frotis'                      => $frotisTxt !== '' ? $frotisTxt : null,
+                'hemocultivo_muestra_tomada'  => $muestraTomada !== '' ? (int) $muestraTomada : null,
+                'hemocultivo_fecha_toma'      => $hcFechaTomaIso,
+                'hemocultivo_resultado'       => in_array($hcResultadoTxt, ['POSITIVO', 'NEGATIVO'], true) ? $hcResultadoTxt : null,
+                'hemocultivo_fecha_resultado' => $hcFechaResultadoIso,
+                'atb_otros_especificar'       => $otrosEspecificar !== '' ? $otrosEspecificar : null,
+            ];
+            $filas[] = array_merge($fila, $filaAtb);
+        }
+
+        return [$filas, $errores];
+    }
+
+    /**
+     * Tabla hija de A44 "Exámenes auxiliares" (caso_examen_auxiliar). Todos
+     * los valores son texto libre (ver examenes-auxiliares.php).
+     */
+    private function filasExamen(): array
+    {
+        $fechas = $_POST['examen_fecha'] ?? [];
+        $columnas = [];
+        foreach (CasoExamenAuxiliar::COLUMNAS as $col) {
+            $columnas[$col] = $_POST["examen_{$col}"] ?? [];
+        }
+
+        $filas = [];
+        $errores = [];
+        foreach ($fechas as $i => $fechaTxtRaw) {
+            $fechaTxt = trim((string) $fechaTxtRaw);
+            $valores = [];
+            $todoVacio = ($fechaTxt === '');
+            foreach ($columnas as $col => $arr) {
+                $valores[$col] = trim((string) ($arr[$i] ?? ''));
+                if ($valores[$col] !== '') {
+                    $todoVacio = false;
+                }
+            }
+
+            if ($todoVacio) {
+                continue;
+            }
+
+            $fechaIso = null;
+            if ($fechaTxt !== '') {
+                $fechaIso = fechaIsoValida($fechaTxt);
+                if (!$fechaIso) {
+                    $errores[$i]['fecha'] = self::ERROR_FECHA_INVALIDA;
+                    $fechaIso = $fechaTxt;
+                }
+            }
+
+            $fila = ['fecha' => $fechaIso];
+            foreach ($valores as $col => $val) {
+                $fila[$col] = $val !== '' ? $val : null;
+            }
+            $filas[] = $fila;
         }
 
         return [$filas, $errores];

@@ -209,7 +209,11 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
     // diferencia.
     $seccionesManifiesto = [];
     foreach ($fichaManifiesto['secciones'] as $idx => $s) {
-        if (empty($s['campos']) && isset($s['_nota'])) {
+        // "solo_tabla_hija" (2026-08-19, A44 "Laboratorio y evolución"): SÍ
+        // genera seccion_def en cargar_fichas.php aunque "campos" esté
+        // vacío -- distinto de las secciones informativas/pendientes de
+        // verdad (Y59.0 "Anexo 6.2"), que cargar_fichas.php se salta entero.
+        if (empty($s['campos']) && isset($s['_nota']) && empty($s['solo_tabla_hija'])) {
             $item['secciones_informativas_omitidas'][] = [
                 'nombre' => $s['nombre'],
                 'nota' => $s['_nota'],

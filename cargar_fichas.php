@@ -704,6 +704,22 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
             'columnas' => $campo['columnas'],
             'filas' => is_array($filas) ? $filas : null,
             'filas_nota' => is_string($filas) ? $filas : null,
+            // "sin_gate_libres": true (opt-in, 2026-08-19, A44 "Lesiones
+            // eruptivas") desactiva el gate por columna SI/No-realizado
+            // (matriz.php:$gateSi/$gateNegativo) sobre las columnas LIBRES
+            // de la fila -- pensado para cuando la columna radio es una
+            // pregunta Sí/No independiente de las demás columnas (ej.
+            // "Sangrante" no condiciona si tiene sentido contar lesiones
+            // por localización), a diferencia de P35.0/A97 donde SÍ hay una
+            // relación real ("fecha de manifestación" solo si esa fila
+            // ocurrió). Ver memoria matriz_no_soporta_booleanos_independientes_por_fila.
+            'sin_gate_libres' => !empty($campo['sin_gate_libres']),
+            // "grupos_columnas": {"Sangrante": ["SI","NO"]} (opt-in,
+            // 2026-08-19, mismo campo que sin_gate_libres arriba) fusiona
+            // 2+ columnas radio-elegibles en una sola columna visual con un
+            // único .seg (radios pegados) en vez de una columna de tabla
+            // por opción -- ver matriz.php.
+            'grupos_columnas' => $campo['grupos_columnas'] ?? [],
         ], JSON_UNESCAPED_UNICODE);
     }
 
@@ -862,7 +878,16 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     $pendientesDependencia = []; // [campoId => ['depende_de' => etiqueta, 'valor_activador' => valor]]
     $pendientesDependenciaSeccion = []; // [seccionId => ['depende_de' => etiqueta, 'valor_activador' => valor]]
     foreach ($fichaManifiesto['secciones'] as $seccion) {
-        if (empty($seccion['campos'])) {
+        // "solo_tabla_hija" (2026-08-19, A44 "Laboratorio y evolución"):
+        // opt-in para una sección sin NINGÚN campo_def cuyo contenido vive
+        // 100% en una tabla hija hardcodeada en secciones-clinicas.php (ver
+        // tablas-hijas/evolucion.php) -- sin esta excepción, la sección se
+        // saltaba entera (sin seccion_def no hay card, y sin card el bloque
+        // de tabla hija que depende de `trim($seccion['nombre']) === '...'`
+        // nunca se alcanzaba). Sin el flag, una sección sin campos sigue
+        // tratándose como informativa/pendiente y no genera seccion_def,
+        // mismo comportamiento de siempre para las demás fichas.
+        if (empty($seccion['campos']) && empty($seccion['solo_tabla_hija'])) {
             continue; // seccion informativa (contenido vive en tabla hija o queda pendiente): no genera seccion_def
         }
         // Orden explícito (Fase 6): si la sección lo trae, se usa tal cual

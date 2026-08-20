@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sección Síntomas — comparativa de diseño</title>
+<style>
+  :root{
+    --bg:#f2f4f7;
+    --card:#ffffff;
+    --line:#e5e8ec;
+    --line-strong:#d5dae0;
+    --ink:#1f2933;
+    --ink-2:#4b5563;
+    --muted:#8a94a0;
+    --accent:#0d8f80;
+    --accent-ink:#0a6d61;
+    --accent-soft:#e6f4f1;
+    --radius:10px;
+    --tap:40px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    padding:28px 16px 80px;
+  }
+  .wrap{max-width:880px;margin:0 auto}
+
+  /* ---- barra de comparación ---- */
+  .toolbar{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .toolbar h1{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em}
+  .toolbar p{margin:2px 0 0;color:var(--muted);font-size:12.5px}
+  .seg{display:inline-flex;background:#e9ecf1;border-radius:8px;padding:3px;gap:2px}
+  .seg button{
+    appearance:none;border:0;background:transparent;color:var(--ink-2);
+    font:inherit;font-size:12.5px;font-weight:500;padding:7px 13px;border-radius:6px;cursor:pointer;
+  }
+  .seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.10)}
+  .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+  /* ---- tarjeta ---- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .card-head{
+    display:flex;align-items:center;gap:12px;
+    padding:16px 20px;border-bottom:1px solid var(--line);
+  }
+  .step{
+    width:26px;height:26px;flex:none;border-radius:7px;background:var(--accent-soft);color:var(--accent-ink);
+    display:grid;place-items:center;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;
+  }
+  .card-head h2{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .head-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .count{
+    font-size:12.5px;color:var(--accent-ink);background:var(--accent-soft);
+    padding:4px 10px;border-radius:999px;font-variant-numeric:tabular-nums;font-weight:500;
+  }
+  .count[data-zero="true"]{color:var(--muted);background:#f1f3f6}
+  .linkbtn{
+    appearance:none;border:0;background:none;font:inherit;font-size:12.5px;color:var(--ink-2);
+    cursor:pointer;padding:4px 2px;border-radius:4px;text-decoration:underline;text-underline-offset:2px;
+  }
+  .linkbtn:hover{color:var(--ink)}
+  .linkbtn:disabled{color:#c3c9d1;cursor:default;text-decoration:none}
+  .linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .card-body{padding:18px 20px 20px}
+
+  .eyebrow{
+    font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 10px;
+  }
+
+  /* ---- vista ACTUAL ---- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+  .old-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px;color:var(--ink-2)}
+  .old-row input{width:15px;height:15px;accent-color:var(--accent);margin:0}
+
+  /* ---- controles compartidos de la propuesta ---- */
+  .prequestion{
+    display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+    padding:12px 14px;background:#f7f9fb;border:1px solid var(--line);border-radius:8px;margin-bottom:16px;
+  }
+  .prequestion .q{font-size:13.5px;font-weight:500}
+  .choice{display:inline-flex;border:1px solid var(--line-strong);border-radius:7px;overflow:hidden;background:#fff}
+  .choice button{
+    appearance:none;border:0;background:#fff;font:inherit;font-size:13px;color:var(--ink-2);
+    padding:0 16px;height:34px;cursor:pointer;
+  }
+  .choice button + button{border-left:1px solid var(--line-strong)}
+  .choice button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:500}
+  .choice button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:-2px}
+  .hint{font-size:12.5px;color:var(--muted);margin-left:auto}
+
+  .search{position:relative;margin-bottom:18px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .search input{
+    width:100%;height:var(--tap);border:1px solid var(--line-strong);border-radius:8px;
+    padding:0 12px 0 36px;font:inherit;font-size:13.5px;color:var(--ink);background:#fff;
+  }
+  .search input::placeholder{color:var(--muted)}
+  .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  .disabled-zone{opacity:.4;pointer-events:none;filter:saturate(.4)}
+
+  .group + .group{margin-top:18px}
+  .group-head{
+    display:flex;align-items:baseline;gap:8px;margin-bottom:9px;
+    padding-bottom:6px;border-bottom:1px solid var(--line);
+  }
+  .group-head h3{
+    margin:0;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);
+  }
+  .group-head .g-count{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:auto}
+
+  /* ---- chips ---- */
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{
+    appearance:none;font:inherit;font-size:13.5px;line-height:1;
+    display:inline-flex;align-items:center;gap:7px;
+    min-height:34px;padding:0 13px;border-radius:999px;
+    border:1px solid var(--line-strong);background:#fff;color:var(--ink-2);cursor:pointer;
+    transition:background .12s ease,border-color .12s ease,color .12s ease;
+  }
+  .chip:hover{border-color:#b9c1ca;background:#fbfcfd}
+  .chip .tick{width:13px;height:13px;flex:none;opacity:0;transition:opacity .12s ease}
+  .chip[aria-checked="true"]{
+    background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:500;
+  }
+  .chip[aria-checked="true"] .tick{opacity:1}
+  .chip:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+
+  /* ---- vista Sí / No ---- */
+  .rows{display:grid;grid-template-columns:1fr;gap:2px}
+  @media(min-width:720px){.rows{grid-template-columns:1fr 1fr;gap:2px 22px}}
+  .row{
+    display:flex;align-items:center;gap:12px;min-height:var(--tap);
+    padding:3px 8px;border-radius:7px;
+  }
+  .row:hover{background:#f7f9fb}
+  .row .name{font-size:13.5px;color:var(--ink-2);flex:1;min-width:0}
+  .row[data-val="SI"] .name{color:var(--ink);font-weight:500}
+  .row[data-val="NO"] .name{color:var(--muted)}
+  .yn{display:inline-flex;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden;background:#fff;flex:none}
+  .yn button{
+    appearance:none;border:0;background:#fff;font:inherit;font-size:12px;color:var(--ink-2);
+    width:38px;height:28px;cursor:pointer;
+  }
+  .yn button + button{border-left:1px solid var(--line-strong)}
+  .yn button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600}
+  .yn button.no[aria-pressed="true"]{background:#6b7684}
+  .yn button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:-2px}
+
+  /* ---- resumen ---- */
+  .summary{
+    margin-top:20px;padding:14px;border:1px dashed var(--line-strong);border-radius:8px;background:#fbfcfd;
+  }
+  .summary .eyebrow{margin-bottom:8px}
+  .sel-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .sel{
+    display:inline-flex;align-items:center;gap:6px;font-size:12.5px;
+    background:var(--accent-soft);color:var(--accent-ink);border:1px solid #c9e6e0;
+    padding:4px 6px 4px 10px;border-radius:999px;
+  }
+  .sel button{
+    appearance:none;border:0;background:none;color:var(--accent-ink);cursor:pointer;
+    width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:13px;line-height:1;padding:0;
+  }
+  .sel button:hover{background:#cfe8e2}
+  .sel button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:1px}
+  .empty{color:var(--muted);font-size:12.5px;margin:0}
+  .otros{margin-top:14px}
+  .otros label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px}
+  .otros input{
+    width:100%;height:var(--tap);border:1px solid var(--line-strong);border-radius:8px;padding:0 12px;
+    font:inherit;font-size:13.5px;background:#fff;
+  }
+  .otros input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  .notes{
+    margin-top:22px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px 20px;
+  }
+  .notes h3{margin:0 0 10px;font-size:12.5px;font-weight:600}
+  .notes ul{margin:0;padding-left:18px;color:var(--ink-2);font-size:13px}
+  .notes li{margin-bottom:6px}
+  .notes li:last-child{margin-bottom:0}
+
+  @media(max-width:640px){
+    .grid2{grid-template-columns:1fr}
+    .hint{margin-left:0;width:100%}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="toolbar">
+    <div>
+      <h1>Sección «Síntomas» — comparativa</h1>
+      <p>40 síntomas. Cambia la vista para comparar el diseño actual con dos propuestas.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Vista">
+      <button type="button" data-view="actual" aria-pressed="false">Actual</button>
+      <button type="button" data-view="chips" aria-pressed="true">Propuesta · chips</button>
+      <button type="button" data-view="sino" aria-pressed="false">Propuesta · Sí/No</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card-head">
+      <span class="step">4</span>
+      <h2>Síntomas</h2>
+      <div class="head-right" id="headRight"></div>
+    </div>
+    <div class="card-body" id="body"></div>
+  </section>
+
+  <div class="notes">
+    <h3>Qué cambia respecto de la versión actual</h3>
+    <ul>
+      <li><strong>Estado explícito.</strong> «¿Presenta síntomas?» separa <em>asintomático</em> de <em>sección sin llenar</em>. Hoy ambos casos se guardan igual: cero marcas.</li>
+      <li><strong>Agrupación por aparato.</strong> Siete grupos rotulados en lugar de una lista corrida de 40 ítems; el ojo busca dentro de un grupo de 5–9, no de 40.</li>
+      <li><strong>Buscador.</strong> Escribir «vom» es más rápido que barrer veinte filas, sobre todo al transcribir una ficha en papel.</li>
+      <li><strong>Chips en vez de filas.</strong> La sección baja de ~20 filas de alto a ~7; entra casi completa en pantalla, así que se ve lo que falta marcar.</li>
+      <li><strong>Área de clic.</strong> Todo el chip / toda la fila responde al clic, con 34–40 px de alto en vez de una casilla de 15 px.</li>
+      <li><strong>Resumen vivo.</strong> Contador en la cabecera y chips de lo seleccionado al pie, para revisar sin volver a subir.</li>
+      <li><strong>«Otros síntomas».</strong> Campo de texto para lo que la lista cerrada no cubre.</li>
+      <li><strong>Vista Sí/No.</strong> Alternativa si la ficha del MINSA pide marcar presencia <em>y</em> ausencia: tres estados (Sí / No / sin evaluar) en lugar de dos.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var GRUPOS = [
+    { nombre:"Generales", items:["Fiebre","Escalofríos","Malestar general","Astenia","Hiporexia","Mialgias","Dolor articular","Lumbalgia","Palidez"] },
+    { nombre:"Piel, mucosas y sangrado", items:["Prurito","Petequias","Equimosis","Verrugas","Ictericia","Cianosis","Epistaxis"] },
+    { nombre:"Digestivos", items:["Náuseas","Vómitos","Dolor abdominal","Epigastralgia","Diarrea","Hematoquesia","Melena"] },
+    { nombre:"Respiratorios y ORL", items:["Tos","Expectoración","Disnea","Polipnea","Dolor torácico","Congestión faríngea","Odinofagia"] },
+    { nombre:"Neurológicos", items:["Cefalea","Mareos","Somnolencia","Convulsiones","Excitación psicomotriz"] },
+    { nombre:"Oculares", items:["Fotofobia","Inyección conjuntival"] },
+    { nombre:"Urinarios", items:["Disuria","Polaquiuria","Coluria"] }
+  ];
+
+  // Orden tal como aparece hoy en el formulario (lectura por filas, de izquierda a derecha)
+  var PLANO = ["Fiebre","Palidez","Cefalea","Malestar general","Mialgias","Dolor articular","Astenia","Prurito",
+    "Petequias","Equimosis","Escalofríos","Mareos","Verrugas","Lumbalgia","Náuseas","Vómitos","Hiporexia",
+    "Dolor abdominal","Hematoquesia","Melena","Diarrea","Ictericia","Disuria","Polaquiuria","Coluria",
+    "Epigastralgia","Somnolencia","Polipnea","Tos","Expectoración","Dolor torácico","Disnea","Cianosis",
+    "Convulsiones","Inyección conjuntival","Epistaxis","Congestión faríngea","Odinofagia","Fotofobia",
+    "Excitación psicomotriz"];
+
+  var state = { view:"chips", conSintomas:true, sel:{}, ternario:{}, filtro:"" };
+
+  var body = document.getElementById("body");
+  var headRight = document.getElementById("headRight");
+
+  function norm(s){
+    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+  function seleccionados(){
+    if(state.view === "sino"){
+      return Object.keys(state.ternario).filter(function(k){ return state.ternario[k] === "SI"; });
+    }
+    return Object.keys(state.sel).filter(function(k){ return state.sel[k]; });
+  }
+  function el(tag, attrs, kids){
+    var n = document.createElement(tag);
+    if(attrs) Object.keys(attrs).forEach(function(k){
+      if(k === "text") n.textContent = attrs[k];
+      else if(k === "html") n.innerHTML = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function(c){ n.appendChild(c); });
+    return n;
+  }
+  var TICK = '<svg class="tick" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var LUPA = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.6"/><path d="M10.6 10.6L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+  /* ---------- cabecera ---------- */
+  function pintaCabecera(){
+    headRight.innerHTML = "";
+    if(state.view === "actual") return;
+    var n = seleccionados().length;
+    var pill = el("span", { "class":"count", "data-zero": n === 0 ? "true" : "false", "aria-live":"polite" });
+    pill.textContent = state.conSintomas ? (n + (n === 1 ? " marcado" : " marcados")) : "Asintomático";
+    headRight.appendChild(pill);
+    var btn = el("button", { type:"button", "class":"linkbtn", text:"Limpiar" });
+    btn.disabled = n === 0 || !state.conSintomas;
+    btn.addEventListener("click", function(){
+      state.sel = {}; state.ternario = {}; pinta();
+    });
+    headRight.appendChild(btn);
+  }
+
+  /* ---------- vista actual ---------- */
+  function vistaActual(){
+    var frag = document.createDocumentFragment();
+    frag.appendChild(el("p", { "class":"eyebrow", text:"Síntomas" }));
+    var g = el("div", { "class":"grid2" });
+    PLANO.forEach(function(nombre, i){
+      var row = el("label", { "class":"old-row", "for":"old_" + i });
+      var cb = el("input", { type:"checkbox", id:"old_" + i });
+      row.appendChild(cb);
+      row.appendChild(el("span", { text:nombre }));
+      g.appendChild(row);
+    });
+    frag.appendChild(g);
+    return frag;
+  }
+
+  /* ---------- controles comunes de la propuesta ---------- */
+  function preguntaPrevia(){
+    var box = el("div", { "class":"prequestion" });
+    box.appendChild(el("span", { "class":"q", text:"¿El paciente presenta síntomas?" }));
+    var choice = el("div", { "class":"choice", role:"group", "aria-label":"Presenta síntomas" });
+    [["Sí", true], ["No", false]].forEach(function(o){
+      var b = el("button", { type:"button", text:o[0], "aria-pressed": state.conSintomas === o[1] ? "true" : "false" });
+      b.addEventListener("click", function(){
+        state.conSintomas = o[1];
+        if(!o[1]){ state.sel = {}; state.ternario = {}; }
+        pinta();
+      });
+      choice.appendChild(b);
+    });
+    box.appendChild(choice);
+    box.appendChild(el("span", { "class":"hint",
+      text: state.conSintomas ? "Marca todos los que correspondan." : "Se guardará como asintomático, no como sección vacía." }));
+    return box;
+  }
+
+  function buscador(){
+    var box = el("div", { "class":"search" });
+    box.insertAdjacentHTML("afterbegin", LUPA);
+    var inp = el("input", { type:"search", placeholder:"Buscar síntoma…", value:state.filtro, "aria-label":"Buscar síntoma" });
+    inp.addEventListener("input", function(){
+      state.filtro = inp.value;
+      pinta({ foco:"buscador", caret:inp.selectionStart });
+    });
+    box.appendChild(inp);
+    return box;
+  }
+
+  function resumen(){
+    var box = el("div", { "class":"summary" });
+    box.appendChild(el("p", { "class":"eyebrow", text:"Seleccionados" }));
+    var lista = seleccionados();
+    if(!state.conSintomas){
+      box.appendChild(el("p", { "class":"empty", text:"Paciente asintomático." }));
+    } else if(lista.length === 0){
+      box.appendChild(el("p", { "class":"empty", text:"Ninguno todavía." }));
+    } else {
+      var cont = el("div", { "class":"sel-chips" });
+      lista.forEach(function(nombre){
+        var c = el("span", { "class":"sel" });
+        c.appendChild(el("span", { text:nombre }));
+        var x = el("button", { type:"button", "aria-label":"Quitar " + nombre, html:"&times;" });
+        x.addEventListener("click", function(){
+          if(state.view === "sino") delete state.ternario[nombre];
+          else state.sel[nombre] = false;
+          pinta();
+        });
+        c.appendChild(x);
+        cont.appendChild(c);
+      });
+      box.appendChild(cont);
+    }
+    var otros = el("div", { "class":"otros" });
+    otros.appendChild(el("label", { text:"Otros síntomas (no listados)", "for":"otrosInp" }));
+    otros.appendChild(el("input", { id:"otrosInp", type:"text", placeholder:"Escribe aquí si el paciente presenta otro síntoma" }));
+    box.appendChild(otros);
+    return box;
+  }
+
+  function gruposFiltrados(){
+    var f = norm(state.filtro.trim());
+    return GRUPOS.map(function(g){
+      return { nombre:g.nombre, total:g.items.length,
+               items: f ? g.items.filter(function(i){ return norm(i).indexOf(f) !== -1; }) : g.items };
+    }).filter(function(g){ return g.items.length > 0; });
+  }
+
+  /* ---------- vista chips ---------- */
+  function vistaChips(){
+    var frag = document.createDocumentFragment();
+    frag.appendChild(preguntaPrevia());
+    var zona = el("div", { "class": state.conSintomas ? "" : "disabled-zone" });
+    zona.appendChild(buscador());
+    var grupos = gruposFiltrados();
+    if(grupos.length === 0){
+      zona.appendChild(el("p", { "class":"empty", text:"Ningún síntoma coincide con la búsqueda." }));
+    }
+    grupos.forEach(function(g){
+      var sec = el("div", { "class":"group" });
+      var head = el("div", { "class":"group-head" });
+      head.appendChild(el("h3", { text:g.nombre }));
+      var marcados = g.items.filter(function(i){ return state.sel[i]; }).length;
+      head.appendChild(el("span", { "class":"g-count", text: marcados ? marcados + " de " + g.total : String(g.total) }));
+      sec.appendChild(head);
+      var chips = el("div", { "class":"chips" });
+      g.items.forEach(function(nombre){
+        var b = el("button", { type:"button", "class":"chip", role:"checkbox",
+                               "aria-checked": state.sel[nombre] ? "true" : "false" });
+        b.insertAdjacentHTML("afterbegin", TICK);
+        b.appendChild(el("span", { text:nombre }));
+        b.addEventListener("click", function(){
+          state.sel[nombre] = !state.sel[nombre];
+          pinta();
+        });
+        chips.appendChild(b);
+      });
+      sec.appendChild(chips);
+      zona.appendChild(sec);
+    });
+    frag.appendChild(zona);
+    frag.appendChild(resumen());
+    return frag;
+  }
+
+  /* ---------- vista Sí / No ---------- */
+  function vistaSiNo(){
+    var frag = document.createDocumentFragment();
+    frag.appendChild(preguntaPrevia());
+    var zona = el("div", { "class": state.conSintomas ? "" : "disabled-zone" });
+    zona.appendChild(buscador());
+    gruposFiltrados().forEach(function(g){
+      var sec = el("div", { "class":"group" });
+      var head = el("div", { "class":"group-head" });
+      head.appendChild(el("h3", { text:g.nombre }));
+      var resp = g.items.filter(function(i){ return state.ternario[i]; }).length;
+      head.appendChild(el("span", { "class":"g-count", text: resp + " de " + g.total + " respondidos" }));
+      sec.appendChild(head);
+      var rows = el("div", { "class":"rows" });
+      g.items.forEach(function(nombre){
+        var row = el("div", { "class":"row", "data-val": state.ternario[nombre] || "" });
+        row.appendChild(el("span", { "class":"name", text:nombre }));
+        var yn = el("div", { "class":"yn", role:"group", "aria-label":nombre });
+        [["Sí","SI"], ["No","NO"]].forEach(function(o){
+          var b = el("button", { type:"button", "class": o[1] === "NO" ? "no" : "",
+                                 text:o[0], "aria-pressed": state.ternario[nombre] === o[1] ? "true" : "false" });
+          b.addEventListener("click", function(){
+            if(state.ternario[nombre] === o[1]) delete state.ternario[nombre];
+            else state.ternario[nombre] = o[1];
+            pinta();
+          });
+          yn.appendChild(b);
+        });
+        row.appendChild(yn);
+        rows.appendChild(row);
+      });
+      sec.appendChild(rows);
+      zona.appendChild(sec);
+    });
+    frag.appendChild(zona);
+    frag.appendChild(resumen());
+    return frag;
+  }
+
+  /* ---------- render ---------- */
+  function pinta(opts){
+    opts = opts || {};
+    body.innerHTML = "";
+    if(state.view === "actual") body.appendChild(vistaActual());
+    else if(state.view === "chips") body.appendChild(vistaChips());
+    else body.appendChild(vistaSiNo());
+    pintaCabecera();
+    if(opts.foco === "buscador"){
+      var inp = body.querySelector(".search input");
+      if(inp){ inp.focus(); inp.setSelectionRange(opts.caret, opts.caret); }
+    }
+  }
+
+  document.querySelectorAll(".seg button").forEach(function(b){
+    b.addEventListener("click", function(){
+      state.view = b.dataset.view;
+      state.filtro = "";
+      document.querySelectorAll(".seg button").forEach(function(o){
+        o.setAttribute("aria-pressed", o === b ? "true" : "false");
+      });
+      pinta();
+    });
+  });
+
+  pinta();
+})();
+</script>
+</body>
+</html>
