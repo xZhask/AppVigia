@@ -218,6 +218,19 @@ if ($puedeElegirEstablecimiento) {
         </div>
       </div>
 
+      <!-- 3. Migración (cotejo B57, 2026-08-21, sección "IV. Migración" del
+           PDF pág. 40) -- tarjeta propia entre "Datos del persona" y
+           "Antecedentes epidemiológicos", no dentro de datos-paciente-nucleo.php
+           (pedido del usuario: Migración no es parte de "Datos del persona"). -->
+      <?php if (!empty($enfermedad['migracion_reciente'])): ?>
+      <div class="card section">
+        <div class="section-head"><span class="section-num">3</span><h3>Migración</h3></div>
+        <div class="section-body">
+          <?php require __DIR__ . '/../partials/migracion-b57.php'; ?>
+        </div>
+      </div>
+      <?php endif; ?>
+
       <!-- 3. III. Lugar probable de infección (B26 Parotiditis) -->
       <?php require __DIR__ . '/../partials/lugar-probable-infeccion-b26.php'; ?>
 
@@ -232,7 +245,7 @@ if ($puedeElegirEstablecimiento) {
 
       <div id="secciones-clinicas">
         <?php
-        $numeroSeccionInicial = 3;
+        $numeroSeccionInicial = !empty($enfermedad['migracion_reciente']) ? 4 : 3;
         require __DIR__ . '/../partials/secciones-clinicas.php';
         ?>
       </div>
@@ -262,8 +275,13 @@ if ($puedeElegirEstablecimiento) {
       // (pág. 42 del PDF) reposicionada dentro de "Inicio de la enfermedad"
       // (secciones-clinicas.php), mismo trato que A97 arriba.
       $isA44 = ($enfermedad['cie10'] ?? '') === 'A44';
+      // B57 (cotejo 2026-08-21): "Listado de localidades que el paciente
+      // visitó en los últimos 10 días" (pág. 40 del PDF) reposicionada en
+      // su propia tarjeta "3. Migración" (migracion-b57.php, ver arriba),
+      // no en "Antecedentes epidemiológicos" -- mismo trato que A97/A44.
+      $isB57 = ($enfermedad['cie10'] ?? '') === 'B57';
       $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
-      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44 && !$isB57;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       // Roles con columnas_sujeto que NO tienen sección propia en el

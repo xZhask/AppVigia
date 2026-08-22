@@ -172,6 +172,13 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         'b57_fecha_de_investigacion',
         'b57_fecha_conocimiento_disa',
         'b57_fecha_conocimiento_nacional',
+        // b57_viajo_ultimos_6_meses (cotejo 2026-08-21, pág. 40 del PDF):
+        // pintado a medida en migracion-b57.php (tarjeta propia "3.
+        // Migración", ver nueva/index.php/fichas/editar.php) -- no en su
+        // tarjeta lógica "Antecedentes epidemiológicos" (esa sección solo
+        // excluye este campo puntual, el resto sigue con render genérico:
+        // no está en $SECCIONES_CON_PARTIAL_A_MEDIDA['B57'] más abajo).
+        'b57_viajo_ultimos_6_meses',
     ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
@@ -531,6 +538,70 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 require __DIR__ . '/selector-ubigeo.php';
                 ?>
                 </div><div class="fields" style="margin-bottom:16px"><?php
+            }
+            // B57 (cotejo 2026-08-21, ítem 1.1-1.4): "Lugar probable de
+            // contagio" es un único bloque por caso (no una lista, a
+            // diferencia de A35 arriba) -- Departamento/Provincia/Distrito
+            // (selector-ubigeo.php) + Localidad libre, guardados en columnas
+            // fijas de `caso` (lugar_contagio_distrito_id/localidad), no en
+            // campo_def -- mismo criterio de fidelidad completa que
+            // "Domicilio anterior" (migracion-b57.php). Se inyecta justo
+            // antes de "Fecha probable de contagio" (campo_def real, ítem
+            // 1.5), que sigue rindiéndose de forma genérica.
+            if (($campo['clave'] ?? '') === 'b57_fecha_probable_de_contagio') {
+                ?></div><div style="margin-bottom:14px">
+                <div class="eyebrow" style="margin-bottom:10px">Lugar probable de contagio</div>
+                <?php
+                extract(contextoUbigeo(($valoresFijos['lugar_contagio_distrito_id'] ?? '') ?: null));
+                $prefijo = 'b57contagio-ubigeo';
+                $nombreCampoDepartamento = 'lugar_contagio_departamento_id';
+                $nombreCampoProvincia = 'lugar_contagio_provincia_id';
+                $nombreCampoDistrito = 'lugar_contagio_distrito_id';
+                $distritoSeleccionado = $valoresFijos['lugar_contagio_distrito_id'] ?? '';
+                $distritoRequerido = false;
+                $errorDistrito = null;
+                require __DIR__ . '/selector-ubigeo.php';
+                ?>
+                <div class="field" style="margin-top:10px">
+                  <label class="fl">Localidad</label>
+                  <div class="control"><input type="text" name="lugar_contagio_localidad" value="<?= e($valoresFijos['lugar_contagio_localidad'] ?? '') ?>"></div>
+                </div>
+                </div><div class="fields" style="margin-bottom:16px"><?php
+            }
+            // B57 (ítem 2.1-2.3): "Tiempo de permanencia en el lugar
+            // probable de contagio" son 3 casillas numéricas cortas (mismo
+            // patrón visual que "Dosis recibidas"/"Pentavalente" arriba) --
+            // se agrupan bajo su propio eyebrow y se cierra ese grupo justo
+            // antes de "¿Existe chirimacha...?" para volver al layout normal.
+            if (($campo['clave'] ?? '') === 'b57_permanencia_dias') {
+                ?></div><div class="eyebrow" style="margin-bottom:10px">Tiempo de permanencia en el lugar probable de contagio</div><div class="fields thirds" style="margin-bottom:16px"><?php
+            }
+            if (($campo['clave'] ?? '') === 'b57_existe_chirimacha_o_chinche_en_su_casa') {
+                ?></div><div class="fields" style="margin-bottom:16px"><?php
+            }
+            // B57 (cotejo 2026-08-21, ítem IX del PDF): "Laboratorio" agrupa
+            // "Datos del laboratorio" (nombre/fecha de recepción/tipo de
+            // muestra) y las 2 filas fijas "Sangre"/"Suero" (cada una con
+            // sus propias Fecha de toma/envío/lectura/Examen realizado/
+            // Resultado -- etiquetas repetidas entre ambos grupos a
+            // propósito, mismo criterio que "Etapa aguda"/"Etapa crónica" de
+            // Cuadro clínico) bajo su propio eyebrow. Sangre/Suero llevan
+            // además el borde-acento izquierdo que ya usa el caso especial
+            // de B05 en muestras.php (border-left+padding sobre el propio
+            // .fields, sin wrapper extra) -- pedido del usuario 2026-08-21:
+            // la vista "se perdía" con los 5 campos de cada grupo sueltos,
+            // sin separación visual clara entre Sangre y Suero. Se aplica
+            // directo sobre .fields (no un <div> aparte) para no dejar 2
+            // niveles abiertos: el cierre final tras el foreach solo cierra
+            // UNO.
+            if (($campo['clave'] ?? '') === 'b57_lab_nombre') {
+                ?></div><div class="eyebrow" style="margin-bottom:10px">Datos del laboratorio</div><div class="fields" style="margin-bottom:16px"><?php
+            }
+            if (($campo['clave'] ?? '') === 'b57_sangre_fecha_toma') {
+                ?></div><div class="eyebrow" style="margin-bottom:10px">Sangre</div><div class="fields thirds" style="margin-bottom:16px; border-left:3px solid var(--accent); padding:14px 0 4px 14px;"><?php
+            }
+            if (($campo['clave'] ?? '') === 'b57_suero_fecha_toma') {
+                ?></div><div class="eyebrow" style="margin-bottom:10px">Suero</div><div class="fields thirds" style="margin-bottom:16px; border-left:3px solid var(--accent); padding:14px 0 4px 14px;"><?php
             }
             $abreWrapHospitalizadoAlta = in_array($campo['clave'] ?? '', ['a33_condiciones_de_alta', 'a35_fecha_de_alta'], true);
             if ($abreWrapHospitalizadoAlta) {
@@ -983,7 +1054,16 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // (primer campo FECHA de la ficha, orden 1 de "Inicio de la enfermedad")
     // en vez de dejarla realmente opcional (CasosController.php no suma
     // 'A44' a $sinFechaInicioSintomasObligatoria). ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44'], true)): ?>
+    <?php // B57 (cotejo 2026-08-21): igual que A37.0/A97, ya trae su propio
+    // campo "Fecha de inicio de síntomas" (b57_fecha_de_inicio_de_sintomas,
+    // ítem 2 de "Cuadro clínico") -- el genérico duplicaría el dato. No basta
+    // con ocultarlo (a diferencia de A44/A80/B05/O95): "Antecedentes
+    // epidemiológicos" viene ANTES que "Cuadro clínico" en el manifiesto y
+    // trae 3 FECHA propias (probable de contagio, picadura, última
+    // transfusión) que extraerFechaInicioSintomas() tomaría por error como
+    // fallback -- por eso B57 también se suma a
+    // $sinFechaInicioSintomasObligatoria en CasosController.php. ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>

@@ -155,7 +155,12 @@ const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', '
 // "N.° de historia clínica" solo lo pide el PDF en el bloque de identidad
 // de 3 de las 24 fichas (P35.0, O95, A44) -- opt-out habría pintado el
 // campo sin base documental en las 21 restantes.
-const NUCLEO_INCLUIBLES = ['n_historia_clinica'];
+// 'estado_civil' (cotejo B57, ítem 2.5 del PDF): mismo criterio que
+// n_historia_clinica -- núcleo real (persona.estado_civil), pero opt-in:
+// solo 1/24 fichas confirmada contra el PDF, opt-out lo pintaría sin base
+// documental en las 23 restantes. No reemplaza a o95_estado_civil (campo_def
+// propio de O95/Anexo 2, con opciones distintas), coexisten.
+const NUCLEO_INCLUIBLES = ['n_historia_clinica', 'estado_civil'];
 
 // Entrada F (PETICION_MAPEO_Y_EDAD.md, Parte 2): unidades válidas para
 // "unidades_edad" -- opt-in, al revés que NUCLEO_OMITIBLES. Ausente = solo
@@ -169,7 +174,11 @@ const UNIDADES_EDAD_VALIDAS = ['ANIOS', 'MESES', 'DIAS', 'HORAS', 'MINUTOS'];
 // contra el PDF (A37.0, P35.0), opt-out pintaría estos campos sin base
 // documental en el resto. Debe coincidir con el ENUM de persona.tipo_zona
 // (add_detalle_domicilio_persona.php).
-const DETALLE_DOMICILIO_VALIDO = ['TIPO_ZONA', 'TIPO_VIA', 'NOMBRE_VIA', 'NUMERO', 'MZ_LOTE', 'TIEMPO_RESIDENCIA'];
+// 'NOMBRE_ZONA' (cotejo B57, ítem 3.5 del PDF): hermano de TIPO_ZONA,
+// mismo criterio opt-in. Se reutiliza también dentro de "domicilio
+// anterior" (Migración) cuando la ficha declara migracion_reciente --
+// mismo conjunto de campos habilitados para ambos bloques.
+const DETALLE_DOMICILIO_VALIDO = ['TIPO_ZONA', 'NOMBRE_ZONA', 'TIPO_VIA', 'NOMBRE_VIA', 'NUMERO', 'MZ_LOTE', 'TIEMPO_RESIDENCIA'];
 
 // Columnas reales de caso_sujeto que una ficha multi_sujeto puede declarar
 // para un rol secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2):
@@ -813,7 +822,11 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // bloques_condicionales (capacidad 6): mismo criterio -- opt-in, NULL
     // explícito si la ficha no declara ninguno.
     $bloquesCondicionalesDeclarados = $fichaManifiesto['bloques_condicionales'] ?? null;
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ?, bloques_condicionales = ? WHERE id = ?')->execute([
+    // migracion_reciente (cotejo B57, sección "IV. Migración"): booleano
+    // simple, mismo criterio que tablas_hijas -- se aplica siempre, 0 si la
+    // ficha no lo declara.
+    $migracionReciente = $fichaManifiesto['migracion_reciente'] ?? false;
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ?, bloques_condicionales = ?, migracion_reciente = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -829,6 +842,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($unidadesEdadDeclaradas) ? json_encode($unidadesEdadDeclaradas, JSON_UNESCAPED_UNICODE) : null,
         !empty($detalleDomicilioDeclarado) ? json_encode($detalleDomicilioDeclarado, JSON_UNESCAPED_UNICODE) : null,
         !empty($bloquesCondicionalesDeclarados) ? json_encode($bloquesCondicionalesDeclarados, JSON_UNESCAPED_UNICODE) : null,
+        $migracionReciente ? 1 : 0,
         $enfermedadId,
     ]);
 

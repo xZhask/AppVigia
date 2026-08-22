@@ -41,6 +41,17 @@ if (!empty($enfermedad['detalle_domicilio'])) {
 }
 $tieneDetalleDomicilio = fn(string $campo): bool => in_array($campo, $detalleDomicilio, true);
 
+// nucleo_incluidos: mismo criterio opt-in que unidades_edad/detalle_domicilio
+// (al revés que nucleo_omitidos). 'estado_civil' (cotejo B57, ítem 2.5) se
+// suma acá a 'n_historia_clinica' (ese se lee en el shell, no en este
+// partial, porque se pinta antes del bloque núcleo).
+$nucleoIncluidos = [];
+if (!empty($enfermedad['nucleo_incluidos'])) {
+    $decodificadoNucleoIncluidos = json_decode($enfermedad['nucleo_incluidos'], true);
+    $nucleoIncluidos = is_array($decodificadoNucleoIncluidos) ? $decodificadoNucleoIncluidos : [];
+}
+$nucleoIncluye = fn(string $campoNucleo): bool => in_array($campoNucleo, $nucleoIncluidos, true);
+
 require __DIR__ . '/datos-paciente-b05-loader.php';
 ?>
 <?php if (!empty($unidadesEdad)): ?>
@@ -88,38 +99,24 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
 </div>
 
 <!-- 1b. Detalle de domicilio (Entrada J acotada, opt-in vía detalle_domicilio).
-     Igual que nucleo_omitidos, cada campo se renderiza siempre y se
-     oculta/muestra con "hidden" (no con un if de PHP que lo omita del
-     DOM) para que el fetch de cambio de ficha (más abajo, datos.detalleDomicilio)
-     pueda mostrarlo sin necesitar que ya existiera en el HTML inicial. -->
-<div class="fields thirds" style="margin-top:14px" data-detalle-domicilio-bloque>
-  <div class="field" data-detalle-domicilio-campo="TIPO_ZONA" <?= $tieneDetalleDomicilio('TIPO_ZONA') ? '' : 'hidden style="display:none;"' ?>>
-    <label class="fl">Tipo de zona</label>
-    <div class="control">
-      <select name="tipo_zona" data-nosearch="true">
-        <option value="">Seleccionar…</option>
-        <option value="URBANO" <?= seleccionado($valoresFijos['tipo_zona'] ?? '', 'URBANO') ?>>Urbano</option>
-        <option value="PERIURBANO" <?= seleccionado($valoresFijos['tipo_zona'] ?? '', 'PERIURBANO') ?>>Periurbano</option>
-        <option value="RURAL" <?= seleccionado($valoresFijos['tipo_zona'] ?? '', 'RURAL') ?>>Rural</option>
-      </select>
-    </div>
-  </div>
-  <div class="field" data-detalle-domicilio-campo="TIPO_VIA" <?= $tieneDetalleDomicilio('TIPO_VIA') ? '' : 'hidden style="display:none;"' ?>>
-    <label class="fl">Tipo de vía <span class="hint">(Avenida, Calle, Jirón, etc.)</span></label>
-    <div class="control"><input type="text" name="tipo_via" value="<?= e($valoresFijos['tipo_via'] ?? '') ?>"></div>
-  </div>
-  <div class="field" data-detalle-domicilio-campo="NOMBRE_VIA" <?= $tieneDetalleDomicilio('NOMBRE_VIA') ? '' : 'hidden style="display:none;"' ?>>
-    <label class="fl">Nombre de vía</label>
-    <div class="control"><input type="text" name="nombre_via" value="<?= e($valoresFijos['nombre_via'] ?? '') ?>"></div>
-  </div>
-  <div class="field" data-detalle-domicilio-campo="NUMERO" <?= $tieneDetalleDomicilio('NUMERO') ? '' : 'hidden style="display:none;"' ?>>
-    <label class="fl">Nro.</label>
-    <div class="control"><input type="text" name="numero" value="<?= e($valoresFijos['numero'] ?? '') ?>"></div>
-  </div>
-  <div class="field" data-detalle-domicilio-campo="MZ_LOTE" <?= $tieneDetalleDomicilio('MZ_LOTE') ? '' : 'hidden style="display:none;"' ?>>
-    <label class="fl">Mz./Lote</label>
-    <div class="control"><input type="text" name="mz_lote" value="<?= e($valoresFijos['mz_lote'] ?? '') ?>"></div>
-  </div>
+     Extraído a un partial reusable (detalle-domicilio-campos.php) porque el
+     cotejo de B57 necesita el mismo bloque de 6 sub-campos otra vez para
+     "Domicilio anterior" (tarjeta propia "Migración", migracion-b57.php)
+     -- mismo criterio de "hidden" (no if de PHP) documentado ahí. -->
+<?php
+$valoresDetalleActual = [
+    'tipo_zona'   => $valoresFijos['tipo_zona'] ?? '',
+    'nombre_zona' => $valoresFijos['nombre_zona'] ?? '',
+    'tipo_via'    => $valoresFijos['tipo_via'] ?? '',
+    'nombre_via'  => $valoresFijos['nombre_via'] ?? '',
+    'numero'      => $valoresFijos['numero'] ?? '',
+    'mz_lote'     => $valoresFijos['mz_lote'] ?? '',
+];
+(function (string $prefijoNombreCampo, array $valoresDetalle, array $detalleDomicilioPermitido) {
+    require __DIR__ . '/detalle-domicilio-campos.php';
+})('', $valoresDetalleActual, $detalleDomicilio);
+?>
+<div class="fields thirds" style="margin-top:14px">
   <div class="field" data-detalle-domicilio-campo="TIEMPO_RESIDENCIA" <?= $tieneDetalleDomicilio('TIEMPO_RESIDENCIA') ? '' : 'hidden style="display:none;"' ?>>
     <label class="fl">Tiempo de residencia</label>
     <div class="control"><input type="text" name="tiempo_residencia" value="<?= e($valoresFijos['tiempo_residencia'] ?? '') ?>"></div>
@@ -317,6 +314,19 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
     <label class="fl">Ocupación</label>
     <div class="control"><input type="text" name="ocupacion" value="<?= e($valoresFijos['ocupacion'] ?? '') ?>" placeholder="Ocupación…"></div>
   </div>
+  <div class="field" data-nucleo-incluido="estado_civil" <?= $nucleoIncluye('estado_civil') ? '' : 'hidden style="display:none;"' ?>>
+    <label class="fl">Estado civil</label>
+    <div class="control">
+      <select name="estado_civil" data-nosearch="true">
+        <option value="">Seleccionar…</option>
+        <option value="SOLTERO" <?= seleccionado($valoresFijos['estado_civil'] ?? '', 'SOLTERO') ?>>Soltero(a)</option>
+        <option value="CASADO" <?= seleccionado($valoresFijos['estado_civil'] ?? '', 'CASADO') ?>>Casado(a)</option>
+        <option value="CONVIVIENTE" <?= seleccionado($valoresFijos['estado_civil'] ?? '', 'CONVIVIENTE') ?>>Conviviente</option>
+        <option value="SEPARADO" <?= seleccionado($valoresFijos['estado_civil'] ?? '', 'SEPARADO') ?>>Separado(a)</option>
+        <option value="VIUDO" <?= seleccionado($valoresFijos['estado_civil'] ?? '', 'VIUDO') ?>>Viudo(a)</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 <!-- 3b. Nombre de Madre/Responsable/Tutor y Celular del tutor (En la siguiente fila después de Etnia) -->
@@ -346,7 +356,7 @@ $esTrimestreGestacion = in_array($enfermedad['cie10'] ?? '', ['B26', 'B01'], tru
 // última regla) -- adicional, no reemplaza a semanas_gestacion.
 $pideFur = (($enfermedad['cie10'] ?? '') === 'A44');
 ?>
-<div class="fields thirds" data-nucleo-campo="gestante" style="margin-top:14px" <?= $nucleoOmite('gestante') ? 'hidden style="display:none;"' : '' ?>>
+<div class="fields thirds" data-nucleo-campo="gestante" <?= $nucleoOmite('gestante') ? 'hidden style="display:none;"' : 'style="margin-top:14px"' ?>>
   <div class="field" id="campoGestante" hidden>
     <label class="fl">¿Gestante?</label>
     <div class="control">

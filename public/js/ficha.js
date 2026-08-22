@@ -258,6 +258,41 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- B57: "Clasificación final" propio -> "clasificacion" genérico ----------
+  // Mismo patrón que sincronizarDiagnosticoDefinitivoA35() arriba: B57 tiene
+  // su propio SELECT "Clasificación final" (Confirmado/Descartado, "VII.
+  // Clasificación final" del PDF) además del "clasificacion" genérico
+  // compartido (chips al final del formulario, cotejo 2026-08-22, 2.ª
+  // revisión: reestructurado de 6 opciones combinadas -forma x resultado- a
+  // Confirmado/Descartado + "Tipo de Chagas" en cascada, así que ahora los
+  // códigos son literalmente CONFIRMADO/DESCARTADO, iguales al genérico, sin
+  // tabla de equivalencias). enfermedad.opciones_clasificacion ya restringe
+  // esos chips a solo Confirmado/Descartado
+  // (sql/migraciones/set_opciones_clasificacion_b57.php, mismo mecanismo que
+  // A35/Difteria) -- igual que A35, no hace falta un valor de respaldo para
+  // cuando el campo propio está vacío.
+  function sincronizarClasificacionB57() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('B57') === -1) return;
+
+    var selectPropio = document.querySelector('[name="' + campoPorClave('b57_clasificacion_final') + '"]');
+    if (!selectPropio || !selectPropio.value) return;
+
+    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + selectPropio.value + '"]');
+    if (radioGenerico && !radioGenerico.checked) {
+      radioGenerico.checked = true;
+      evaluarDependencias();
+    }
+  }
+
+  sincronizarClasificacionB57();
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === campoPorClave('b57_clasificacion_final')) {
+      sincronizarClasificacionB57();
+    }
+  });
+
   // ---------- A33: "Diagnóstico definitivo" propio -> "clasificacion" genérico ----------
   // Mismo patrón que sincronizarDiagnosticoDefinitivoA35() arriba (A33.8): A33
   // (Tétanos neonatal) tiene su propio campo "Diagnóstico definitivo"
@@ -610,6 +645,27 @@ document.addEventListener('DOMContentLoaded', function () {
     chkEsMenorB05.addEventListener('change', actualizarTutorB05);
   }
 
+  // ---------- Migración (cotejo B57): "Domicilio anterior" solo si reside
+  // menos de 6 meses en el domicilio actual (años×12+meses < 6) ----------
+  function actualizarDomicilioAnterior() {
+    var wrap = document.getElementById('wrapDomicilioAnterior');
+    if (!wrap) return;
+    var inpAnios = document.getElementById('tiempoResideAnios');
+    var inpMeses = document.getElementById('tiempoResideMeses');
+    var hayAnios = !!(inpAnios && inpAnios.value !== '');
+    var hayMeses = !!(inpMeses && inpMeses.value !== '');
+    var anios = hayAnios ? parseInt(inpAnios.value, 10) : 0;
+    var meses = hayMeses ? parseInt(inpMeses.value, 10) : 0;
+    var resideMenosDe6Meses = (hayAnios || hayMeses) && ((anios * 12) + meses) < 6;
+    wrap.hidden = !resideMenosDe6Meses;
+    wrap.style.display = resideMenosDe6Meses ? '' : 'none';
+  }
+  var tiempoResideAnios = document.getElementById('tiempoResideAnios');
+  var tiempoResideMeses = document.getElementById('tiempoResideMeses');
+  if (tiempoResideAnios) tiempoResideAnios.addEventListener('input', actualizarDomicilioAnterior);
+  if (tiempoResideMeses) tiempoResideMeses.addEventListener('input', actualizarDomicilioAnterior);
+  actualizarDomicilioAnterior();
+
   function actualizarLugarInfeccionB26(forcedCie10) {
     var card = document.getElementById('cardLugarProbableInfeccionB26');
     if (!card) return;
@@ -839,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!esB26) return;
 
-    var radVac = document.querySelector('input[name="b26_vacunacion_spr"]:checked');
+    var radVac = document.querySelector('input[name="' + campoPorClave('b26_vacunacion_spr') + '"]:checked');
     var valVac = radVac ? radVac.value : '';
     var wrapDetalle = document.getElementById('wrapVacunaSprDetalleB26');
     var esSiVac = (valVac === 'SI');
@@ -3284,7 +3340,7 @@ document.addEventListener('DOMContentLoaded', function () {
         e.target.classList.contains('radio-hospitalizacion-b26') || e.target.classList.contains('radio-egreso-b26')) {
       actualizarCuadroClinicoB26();
     }
-    if (e.target.name === 'b26_vacunacion_spr' || e.target.classList.contains('radio-vacuna-spr-b26')) {
+    if (e.target.name === campoPorClave('b26_vacunacion_spr') || e.target.classList.contains('radio-vacuna-spr-b26')) {
       actualizarVacunacionB26();
     }
     if (e.target.classList.contains('sel-lugar-tipo-b26')) {

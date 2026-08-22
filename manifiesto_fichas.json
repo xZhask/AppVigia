@@ -2788,31 +2788,40 @@
             "pdf_paginas": "40-41",
             "tablas_hijas": {
                 "caso_contacto": false,
-                "caso_muestra": true,
+                "caso_muestra": false,
                 "caso_viaje": true,
                 "caso_vacuna": false
             },
             "columnas_tablas_hija": {
-                "caso_muestra": {
-                    "opciones": {
-                        "tipo_muestra": [
-                            "SUERO",
-                            "SANGRE"
-                        ],
-                        "tipo_prueba": [
-                            "MICROSCOPIA",
-                            "PCR",
-                            "ELISA"
-                        ]
-                    }
-                }
+                "caso_viaje": [
+                    "distrito_id",
+                    "localidad"
+                ]
             },
-            "_observaciones_tablas_hija": "usa_viajes=1: la sección 'Migración' del PDF (tiempo de residencia, dónde vivía antes, localidades visitadas, viajó últimos 6 meses) va en caso_viaje, no en campo_def. La BD tiene hoy una sección 'Migración' propia en campo_def (seccion_def.id=39) que la duplica — ver INFORME_CARGADOR.md C.1.",
+            "_observaciones_tablas_hija": "usa_viajes=1: caso_viaje se reutiliza para 'Listado de localidades que el paciente visitó en los últimos 10 días' (pág. 40 del PDF, cierre del bloque 'IV. Migración') -- sin país/fechas/transporte (ese PDF no los pide), solo distrito_id (Departamento/Provincia/Distrito en cascada) + localidad. Reposicionada dentro de 'Datos del persona' (datos-paciente-nucleo.php, junto a 'Domicilio anterior'), no en 'Antecedentes epidemiológicos' -- mismo trato que A97/A44 ($isB57 en $mostrarViajes). Controlada por el toggle 'b57_viajo_ultimos_6_meses' (dep-wrap, valor activador SI). Cotejo cerrado 2026-08-21. usa_muestras=0 (cotejo 2026-08-21, Ronda 9): la tarjeta fija genérica de caso_muestra no encaja con 'IX. Laboratorio' del PDF (Datos del laboratorio + 2 filas fijas Sangre/Suero con exámenes distintos) -- se modela como sección campo_def propia 'Laboratorio', ver esa sección más abajo.",
             "nucleo_omitidos": [
-                "referencia_localizar",
                 "pueblo_etnico",
-                "ocupacion"
+                "etnia",
+                "celular",
+                "nacionalidad",
+                "localidad",
+                "direccion",
+                "nombre_tutor",
+                "celular_tutor",
+                "gestante"
             ],
+            "nucleo_incluidos": [
+                "estado_civil"
+            ],
+            "detalle_domicilio": [
+                "TIPO_ZONA",
+                "NOMBRE_ZONA",
+                "TIPO_VIA",
+                "NOMBRE_VIA",
+                "NUMERO",
+                "MZ_LOTE"
+            ],
+            "migracion_reciente": true,
             "secciones": [
                 {
                     "nombre": "Fechas de notificación",
@@ -2855,22 +2864,47 @@
                     "orden": 2,
                     "campos": [
                         {
+                            "clave": "b57_viajo_ultimos_6_meses",
+                            "etiqueta": "¿Viajó los últimos 6 meses?",
+                            "tipo": "SELECT",
+                            "orden": 0,
+                            "opciones": [
+                                "Sí",
+                                "No"
+                            ],
+                            "_nota": "renderizado a medida en migracion-b57.php (tarjeta propia '3. Migración', sección IV del PDF pág. 40), no en esta tarjeta -- ver $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA['B57'] en secciones-clinicas.php. Controla vía dep-wrap la tabla de viajes (caso_viaje: distrito_id + localidad)."
+                        },
+                        {
                             "clave": "b57_fecha_probable_de_contagio",
                             "etiqueta": "Fecha probable de contagio",
                             "tipo": "FECHA",
-                            "orden": 1
+                            "orden": 1,
+                            "_nota": "Departamento\/Provincia\/Distrito\/Localidad de 'Lugar probable de contagio' (ítem 1.1-1.4 del cotejo, PDF pág. 40) se pintan a medida justo antes de este campo -- ver el hook por clave en secciones-clinicas.php y caso.lugar_contagio_distrito_id\/lugar_contagio_localidad (columnas fijas, no campo_def, mismo criterio que 'Domicilio anterior')."
                         },
                         {
-                            "clave": "b57_tiempo_de_permanencia_en_el_lugar_probable_de_conta",
-                            "etiqueta": "Tiempo de permanencia en el lugar probable de contagio",
-                            "tipo": "TEXTO",
+                            "clave": "b57_permanencia_dias",
+                            "etiqueta": "N.° de días",
+                            "tipo": "NUMERO",
                             "orden": 2
+                        },
+                        {
+                            "clave": "b57_permanencia_meses",
+                            "etiqueta": "N.° de meses",
+                            "tipo": "NUMERO",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "b57_permanencia_anios",
+                            "etiqueta": "N.° de años",
+                            "tipo": "NUMERO",
+                            "orden": 4,
+                            "_nota": "Reemplaza al campo TEXTO libre 'Tiempo de permanencia en el lugar probable de contagio' -- el PDF trae 3 casillas numéricas separadas (Nº de días\/meses\/años), no un texto único."
                         },
                         {
                             "clave": "b57_existe_chirimacha_o_chinche_en_su_casa",
                             "etiqueta": "¿Existe \"chirimacha\" o chinche en su casa?",
                             "tipo": "SELECT",
-                            "orden": 3,
+                            "orden": 5,
                             "opciones": [
                                 "Sí",
                                 "No",
@@ -2881,7 +2915,7 @@
                             "clave": "b57_ha_sido_picado_por_una_chirimacha_o_chinche",
                             "etiqueta": "¿Ha sido picado por una \"chirimacha\" o chinche?",
                             "tipo": "SELECT",
-                            "orden": 4,
+                            "orden": 6,
                             "opciones": [
                                 "Sí",
                                 "No",
@@ -2892,13 +2926,15 @@
                             "clave": "b57_fecha_de_la_picadura",
                             "etiqueta": "Fecha de la picadura",
                             "tipo": "FECHA",
-                            "orden": 5
+                            "orden": 7,
+                            "depende_de": "¿Ha sido picado por una \"chirimacha\" o chinche?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "b57_ha_recibido_transfusion_sin_control_para_chagas",
                             "etiqueta": "¿Ha recibido transfusión sin control para Chagas?",
                             "tipo": "SELECT",
-                            "orden": 6,
+                            "orden": 8,
                             "opciones": [
                                 "Sí",
                                 "No",
@@ -2909,19 +2945,23 @@
                             "clave": "b57_cuantas_veces_transfusion",
                             "etiqueta": "Cuántas veces (transfusión)",
                             "tipo": "NUMERO",
-                            "orden": 7
+                            "orden": 9,
+                            "depende_de": "¿Ha recibido transfusión sin control para Chagas?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "b57_fecha_de_la_ultima_transfusion",
                             "etiqueta": "Fecha de la última transfusión",
                             "tipo": "FECHA",
-                            "orden": 8
+                            "orden": 10,
+                            "depende_de": "¿Ha recibido transfusión sin control para Chagas?",
+                            "valor_activador": "SI"
                         },
                         {
                             "clave": "b57_antecedente_de_madre_seropositiva",
                             "etiqueta": "¿Antecedente de madre seropositiva?",
                             "tipo": "SELECT",
-                            "orden": 9,
+                            "orden": 11,
                             "opciones": [
                                 "Sí",
                                 "No",
@@ -2932,7 +2972,7 @@
                             "clave": "b57_otra_persona_con_cuadro_similar_en_la_casa_o_lugar_",
                             "etiqueta": "¿Otra persona con cuadro similar en la casa o lugar de contagio?",
                             "tipo": "SELECT",
-                            "orden": 10,
+                            "orden": 12,
                             "opciones": [
                                 "Sí",
                                 "No",
@@ -2942,8 +2982,8 @@
                         {
                             "clave": "b57_posible_forma_de_transmision",
                             "etiqueta": "Posible forma de transmisión",
-                            "tipo": "SELECT",
-                            "orden": 11,
+                            "tipo": "MULTISELECT",
+                            "orden": 13,
                             "opciones": [
                                 "Vectorial",
                                 "Transfusional",
@@ -2970,7 +3010,10 @@
                             "clave": "b57_fecha_de_inicio_de_sintomas",
                             "etiqueta": "Fecha de inicio de síntomas",
                             "tipo": "FECHA",
-                            "orden": 2
+                            "orden": 2,
+                            "depende_de": "Condición",
+                            "valor_activador": "SINTOMATICO",
+                            "_nota": "Cotejo 2026-08-21 (ítem VI.1.3 del PDF): solo corresponde registrarla si Condición=Sintomático -- antes se mostraba siempre. No confundir con el campo fijo genérico 'Fecha de inicio de síntomas' (caso.fecha_inicio_sintomas), suprimido para B57 en secciones-clinicas.php porque este campo_def es el real."
                         },
                         {
                             "clave": "b57_etapa_aguda",
@@ -3025,47 +3068,124 @@
                             "clave": "b57_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
-                            "orden": 2
+                            "orden": 2,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "b57_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
-                            "orden": 3
+                            "orden": 3,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "b57_n_h_c",
                             "etiqueta": "N.° H.C.",
                             "tipo": "TEXTO",
-                            "orden": 4
+                            "orden": 4,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "b57_tiempo_enfermedad_hospitalizacion",
+                            "etiqueta": "Tiempo de enfermedad al momento de hospitalización",
+                            "tipo": "TEXTO",
+                            "orden": 5,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "b57_tiempo_traslado_horas",
+                            "etiqueta": "Tiempo en ser trasladado al hospital desde su domicilio (horas)",
+                            "tipo": "NUMERO",
+                            "orden": 6,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
+                        },
+                        {
+                            "clave": "b57_tiempo_traslado_minutos",
+                            "etiqueta": "Tiempo en ser trasladado al hospital desde su domicilio (minutos)",
+                            "tipo": "NUMERO",
+                            "orden": 7,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "b57_dx_de_ingreso_1",
                             "etiqueta": "Dx de ingreso 1",
                             "tipo": "TEXTO",
-                            "orden": 5
+                            "orden": 8,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "b57_dx_de_ingreso_2",
                             "etiqueta": "Dx de ingreso 2",
                             "tipo": "TEXTO",
-                            "orden": 6
+                            "orden": 9,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "b57_condicion_de_egreso",
                             "etiqueta": "Condición de egreso",
                             "tipo": "SELECT",
-                            "orden": 7,
+                            "orden": 10,
                             "opciones": [
                                 "Alta \/ Recuperado",
                                 "Fallecido"
-                            ]
+                            ],
+                            "_nota": "Cotejo 2026-08-21: a diferencia de los campos de arriba, esto NO depende de 'Hospitalizado' -- el listado de dependencias del usuario lo trata como un bloque independiente (evolución del caso, no solo del episodio de hospitalización)."
+                        },
+                        {
+                            "clave": "b57_dx_alta",
+                            "etiqueta": "Dx de alta",
+                            "tipo": "TEXTO",
+                            "orden": 11,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "ALTA_RECUPERADO"
+                        },
+                        {
+                            "clave": "b57_fecha_alta",
+                            "etiqueta": "Fecha de alta",
+                            "tipo": "FECHA",
+                            "orden": 12,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "ALTA_RECUPERADO"
                         },
                         {
                             "clave": "b57_necropsia",
                             "etiqueta": "Necropsia",
                             "tipo": "BOOLEANO",
-                            "orden": 8
+                            "orden": 13,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "FALLECIDO"
+                        },
+                        {
+                            "clave": "b57_dx_macroscopico",
+                            "etiqueta": "Dx macroscópico",
+                            "tipo": "TEXTO",
+                            "orden": 14,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "FALLECIDO"
+                        },
+                        {
+                            "clave": "b57_dx_microscopico",
+                            "etiqueta": "Dx microscópico",
+                            "tipo": "TEXTO",
+                            "orden": 15,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "FALLECIDO"
+                        },
+                        {
+                            "clave": "b57_fecha_fallecimiento",
+                            "etiqueta": "Fecha de fallecimiento",
+                            "tipo": "FECHA",
+                            "orden": 16,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "FALLECIDO"
                         }
                     ]
                 },
@@ -3082,8 +3202,125 @@
                     ]
                 },
                 {
-                    "nombre": "Clasificación final",
+                    "nombre": "Laboratorio",
                     "orden": 6,
+                    "_nota": "IX. LABORATORIO (pág. 40 del PDF), cotejo 2026-08-21. Se modela como sección campo_def propia (no la tarjeta fija genérica de caso_muestra: se desactivó tablas_hijas.caso_muestra para B57) para que quede en su posición real del PDF, entre Manejo\/Tratamiento y Clasificación final -- mismo motivo que la tarjeta 'Laboratorio' de A97. 'Muestras' del PDF son 2 filas FIJAS (Sangre\/Suero) con opciones de 'Examen realizado' distintas cada una, no una lista repetible de filas iguales -- no encaja en caso_muestra (tipo_muestra\/tipo_prueba compartidos) ni en MATRIZ (columnas iguales por fila), así que son campo_def sueltos agrupados por eyebrow (hook por clave en secciones-clinicas.php), con etiquetas repetidas entre ambos grupos (igual que Etapa aguda\/crónica de Cuadro clínico).",
+                    "campos": [
+                        {
+                            "clave": "b57_lab_nombre",
+                            "etiqueta": "Nombre del laboratorio",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "b57_lab_fecha_recepcion",
+                            "etiqueta": "Fecha de recepción",
+                            "tipo": "FECHA",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "b57_lab_tipo_muestra",
+                            "etiqueta": "Tipo de muestra",
+                            "tipo": "SELECT",
+                            "orden": 3,
+                            "opciones": [
+                                "Adecuada",
+                                "Inadecuada"
+                            ]
+                        },
+                        {
+                            "clave": "b57_lab_muestra_inadecuada_especificar",
+                            "etiqueta": "Si no es adecuada, especificar",
+                            "tipo": "TEXTO",
+                            "orden": 4,
+                            "depende_de": "Tipo de muestra",
+                            "valor_activador": "INADECUADA"
+                        },
+                        {
+                            "clave": "b57_sangre_fecha_toma",
+                            "etiqueta": "Fecha de toma",
+                            "tipo": "FECHA",
+                            "orden": 5
+                        },
+                        {
+                            "clave": "b57_sangre_fecha_envio",
+                            "etiqueta": "Fecha de envío",
+                            "tipo": "FECHA",
+                            "orden": 6
+                        },
+                        {
+                            "clave": "b57_sangre_fecha_lectura",
+                            "etiqueta": "Fecha de lectura",
+                            "tipo": "FECHA",
+                            "orden": 7
+                        },
+                        {
+                            "clave": "b57_sangre_examen_realizado",
+                            "etiqueta": "Examen realizado",
+                            "tipo": "MULTISELECT",
+                            "orden": 8,
+                            "opciones": [
+                                "Gota fresca",
+                                "Cultivo",
+                                "Microhematocrito"
+                            ]
+                        },
+                        {
+                            "clave": "b57_sangre_resultado",
+                            "etiqueta": "Resultado",
+                            "tipo": "SELECT",
+                            "orden": 9,
+                            "opciones": [
+                                "Positivo",
+                                "Negativo",
+                                "Indeterminado"
+                            ]
+                        },
+                        {
+                            "clave": "b57_suero_fecha_toma",
+                            "etiqueta": "Fecha de toma",
+                            "tipo": "FECHA",
+                            "orden": 10
+                        },
+                        {
+                            "clave": "b57_suero_fecha_envio",
+                            "etiqueta": "Fecha de envío",
+                            "tipo": "FECHA",
+                            "orden": 11
+                        },
+                        {
+                            "clave": "b57_suero_fecha_lectura",
+                            "etiqueta": "Fecha de lectura",
+                            "tipo": "FECHA",
+                            "orden": 12
+                        },
+                        {
+                            "clave": "b57_suero_examen_realizado",
+                            "etiqueta": "Examen realizado",
+                            "tipo": "MULTISELECT",
+                            "orden": 13,
+                            "opciones": [
+                                "ELISA",
+                                "HAI"
+                            ]
+                        },
+                        {
+                            "clave": "b57_suero_resultado",
+                            "etiqueta": "Resultado",
+                            "tipo": "SELECT",
+                            "orden": 14,
+                            "opciones": [
+                                "Positivo",
+                                "Negativo",
+                                "Indeterminado"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Clasificación final",
+                    "orden": 7,
+                    "_nota": "Cotejo 2026-08-22 (2.ª revisión): el PDF no trae un selector explícito Confirmado\/Descartado -- son 2 columnas (CASO CONFIRMADO\/CASO DESCARTADO), cada una con las mismas 3 formas de Chagas (agudo\/crónico\/congénito). Reestructurado en cascada de 2 niveles en vez de 1 SELECT combinado de 6 opciones (versión anterior de esta sesión): 'Clasificación final' (Confirmado\/Descartado, sincronizada con los chips genéricos de 'Clasificación del caso' vía sincronizarClasificacionB57() en ficha.js -- enfermedad.opciones_clasificacion restringido a CONFIRMADO,DESCARTADO, sql\/migraciones\/set_opciones_clasificacion_b57.php) -> 'Tipo de Chagas' (mismas 3 opciones sea Confirmado o Descartado, sin depender de ninguna otra sección del formulario -- pedido explícito del usuario: la tabla del PDF solo muestra que son las 3 categorías posibles, no una relación con Cuadro clínico ni otra sección) -> Fecha de confirmación (si Confirmado) o Criterio+Fecha de descarte (si Descartado).",
                     "campos": [
                         {
                             "clave": "b57_clasificacion_final",
@@ -3091,27 +3328,46 @@
                             "tipo": "SELECT",
                             "orden": 1,
                             "opciones": [
-                                "Chagas agudo - confirmado",
-                                "Chagas crónico - confirmado",
-                                "Chagas congénito - confirmado",
-                                "Chagas agudo - descartado",
-                                "Chagas crónico - descartado",
-                                "Chagas congénito - descartado"
-                            ],
-                            "_nota": "el PDF modela esto como una tabla forma x (confirmado\/descartado), cada una con su propia fecha; se simplifica a una sola SELECT combinada"
+                                "Confirmado",
+                                "Descartado"
+                            ]
                         },
                         {
-                            "clave": "b57_fecha_de_clasificacion",
-                            "etiqueta": "Fecha de clasificación",
+                            "clave": "b57_tipo_chagas",
+                            "etiqueta": "Tipo de Chagas",
+                            "tipo": "SELECT",
+                            "orden": 2,
+                            "opciones": [
+                                "Chagas agudo",
+                                "Chagas crónico",
+                                "Chagas congénito"
+                            ],
+                            "depende_de": "Clasificación final",
+                            "valor_activador": "CONFIRMADO,DESCARTADO"
+                        },
+                        {
+                            "clave": "b57_fecha_de_confirmacion",
+                            "etiqueta": "Fecha de confirmación",
                             "tipo": "FECHA",
-                            "orden": 2
+                            "orden": 3,
+                            "depende_de": "Clasificación final",
+                            "valor_activador": "CONFIRMADO"
                         },
                         {
                             "clave": "b57_criterio_de_descarte",
                             "etiqueta": "Criterio de descarte",
                             "tipo": "TEXTO",
-                            "orden": 3,
-                            "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 1.6: la tabla del PDF trae 'CRITERIO DE DESCARTE' junto a 'CASO DESCARTADO', además de la fecha; se había perdido en la simplificación a SELECT combinada. Se agrega como campo propio, siempre visible (igual que 'Dx de descarte' en Fiebre amarilla y 'Criterio de clasificación' en PFA\/Fiebre amarilla): el mecanismo depende_de solo soporta un único valor activador, y ninguna de esas otras fichas condiciona su campo de descarte, así que no se introduce esa asimetría aquí tampoco."
+                            "orden": 4,
+                            "depende_de": "Clasificación final",
+                            "valor_activador": "DESCARTADO"
+                        },
+                        {
+                            "clave": "b57_fecha_de_descarte",
+                            "etiqueta": "Fecha de descarte",
+                            "tipo": "FECHA",
+                            "orden": 5,
+                            "depende_de": "Clasificación final",
+                            "valor_activador": "DESCARTADO"
                         }
                     ]
                 }

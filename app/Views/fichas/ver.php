@@ -41,6 +41,7 @@ $etniaEtiquetas = [
     'AFRODESCENDIENTE' => 'Afrodescendiente', 'INDIGENA_AMAZONICO' => 'Indígena amazónico', 'OTRO' => 'Otro',
 ];
 $tipoZonaEtiquetas = ['URBANO' => 'Urbano', 'PERIURBANO' => 'Periurbano', 'RURAL' => 'Rural'];
+$estadoCivilEtiquetas = ['SOLTERO' => 'Soltero(a)', 'CASADO' => 'Casado(a)', 'CONVIVIENTE' => 'Conviviente', 'SEPARADO' => 'Separado(a)', 'VIUDO' => 'Viudo(a)'];
 $accionEtiquetas = [
     'CREACION'      => 'Creación',
     'EDICION'       => 'Edición',
@@ -121,6 +122,9 @@ $accionEtiquetas = [
           <?php if (!empty($caso['tipo_zona'])): ?>
             <div class="field"><label class="fl">Tipo de zona</label><div class="control" style="background:var(--paper)"><?= e($tipoZonaEtiquetas[$caso['tipo_zona']] ?? $caso['tipo_zona']) ?></div></div>
           <?php endif; ?>
+          <?php if (!empty($caso['nombre_zona'])): ?>
+            <div class="field"><label class="fl">Nombre de zona</label><div class="control" style="background:var(--paper)"><?= e($caso['nombre_zona']) ?></div></div>
+          <?php endif; ?>
           <?php if (!empty($caso['tipo_via'])): ?>
             <div class="field"><label class="fl">Tipo de vía</label><div class="control" style="background:var(--paper)"><?= e($caso['tipo_via']) ?></div></div>
           <?php endif; ?>
@@ -139,6 +143,9 @@ $accionEtiquetas = [
           <?php if (!empty($caso['ocupacion'])): ?>
             <div class="field"><label class="fl">Ocupación</label><div class="control" style="background:var(--paper)"><?= e($caso['ocupacion']) ?></div></div>
           <?php endif; ?>
+          <?php if (!empty($caso['estado_civil'])): ?>
+            <div class="field"><label class="fl">Estado civil</label><div class="control" style="background:var(--paper)"><?= e($estadoCivilEtiquetas[$caso['estado_civil']] ?? $caso['estado_civil']) ?></div></div>
+          <?php endif; ?>
           <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
             <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e(($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') . (($caso['etnia'] ?? '') === 'OTRO' && !empty($caso['etnia_otra']) ? ' (' . $caso['etnia_otra'] . ')' : '')) ?></div></div>
             <?php if (!empty($caso['pueblo_etnico'])): ?>
@@ -152,6 +159,40 @@ $accionEtiquetas = [
             <div class="field"><label class="fl">Gestante</label><div class="control" style="background:var(--paper)">Sí<?= !empty($caso['trimestre_gestacion']) ? ' · Trimestre ' . e($caso['trimestre_gestacion']) : ($caso['semanas_gestacion'] ? ' · ' . (int) $caso['semanas_gestacion'] . ' semanas' : '') ?><?= !empty($caso['fur']) ? ' · FUR: ' . e(date('d/m/Y', strtotime($caso['fur']))) : '' ?></div></div>
           <?php endif; ?>
         </div>
+        <?php if (!empty($caso['tiempo_reside_anios']) || !empty($caso['tiempo_reside_meses']) || !empty($caso['anterior_distrito_nombre']) || !empty($caso['anterior_nombre_zona']) || !empty($caso['anterior_nombre_via'])): ?>
+          <div class="eyebrow" style="margin:18px 0 10px">Migración</div>
+          <div class="fields thirds">
+            <?php if (!empty($caso['tiempo_reside_anios']) || !empty($caso['tiempo_reside_meses'])): ?>
+              <div class="field"><label class="fl">Tiempo que reside en domicilio actual</label><div class="control" style="background:var(--paper)"><?= (int) ($caso['tiempo_reside_anios'] ?? 0) ?> años, <?= (int) ($caso['tiempo_reside_meses'] ?? 0) ?> meses</div></div>
+            <?php endif; ?>
+          </div>
+          <?php if (!empty($caso['anterior_distrito_nombre']) || !empty($caso['anterior_tipo_zona']) || !empty($caso['anterior_nombre_zona']) || !empty($caso['anterior_tipo_via']) || !empty($caso['anterior_nombre_via']) || !empty($caso['anterior_numero']) || !empty($caso['anterior_mz_lote'])): ?>
+            <div class="eyebrow" style="margin:14px 0 10px">Domicilio anterior</div>
+            <div class="fields thirds">
+              <?php if (!empty($caso['anterior_distrito_nombre'])): ?>
+                <div class="field"><label class="fl">Distrito</label><div class="control" style="background:var(--paper)"><?= e($caso['anterior_distrito_nombre']) ?></div></div>
+              <?php endif; ?>
+              <?php if (!empty($caso['anterior_tipo_zona'])): ?>
+                <div class="field"><label class="fl">Tipo de zona</label><div class="control" style="background:var(--paper)"><?= e($tipoZonaEtiquetas[$caso['anterior_tipo_zona']] ?? $caso['anterior_tipo_zona']) ?></div></div>
+              <?php endif; ?>
+              <?php if (!empty($caso['anterior_nombre_zona'])): ?>
+                <div class="field"><label class="fl">Nombre de zona</label><div class="control" style="background:var(--paper)"><?= e($caso['anterior_nombre_zona']) ?></div></div>
+              <?php endif; ?>
+              <?php if (!empty($caso['anterior_tipo_via'])): ?>
+                <div class="field"><label class="fl">Tipo de vía</label><div class="control" style="background:var(--paper)"><?= e($caso['anterior_tipo_via']) ?></div></div>
+              <?php endif; ?>
+              <?php if (!empty($caso['anterior_nombre_via'])): ?>
+                <div class="field"><label class="fl">Nombre de vía</label><div class="control" style="background:var(--paper)"><?= e($caso['anterior_nombre_via']) ?></div></div>
+              <?php endif; ?>
+              <?php if (!empty($caso['anterior_numero'])): ?>
+                <div class="field"><label class="fl">Nro.</label><div class="control" style="background:var(--paper)"><?= e($caso['anterior_numero']) ?></div></div>
+              <?php endif; ?>
+              <?php if (!empty($caso['anterior_mz_lote'])): ?>
+                <div class="field"><label class="fl">Mz./Lote</label><div class="control" style="background:var(--paper)"><?= e($caso['anterior_mz_lote']) ?></div></div>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
+        <?php endif; ?>
         <?php if (($caso['condicion'] ?? 'PARTICULAR') !== 'PARTICULAR'): ?>
           <div class="eyebrow" style="margin:18px 0 10px">Condición del paciente</div>
           <div class="fields thirds">
@@ -188,6 +229,17 @@ $accionEtiquetas = [
     <div class="card section">
       <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Antecedentes epidemiológicos</h3></div>
       <div class="section-body">
+        <?php if (!empty($caso['lugar_contagio_distrito_nombre']) || !empty($caso['lugar_contagio_localidad'])): ?>
+          <div class="eyebrow" style="margin-bottom:10px">Lugar probable de contagio</div>
+          <div class="fields thirds" style="margin-bottom:18px">
+            <?php if (!empty($caso['lugar_contagio_distrito_nombre'])): ?>
+              <div class="field"><label class="fl">Distrito</label><div class="control" style="background:var(--paper)"><?= e($caso['lugar_contagio_distrito_nombre']) ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($caso['lugar_contagio_localidad'])): ?>
+              <div class="field"><label class="fl">Localidad</label><div class="control" style="background:var(--paper)"><?= e($caso['lugar_contagio_localidad']) ?></div></div>
+            <?php endif; ?>
+          </div>
+        <?php endif; ?>
         <div class="eyebrow" style="margin-bottom:10px">Contactos</div>
         <?php if (empty($contactos)): ?>
           <p style="color:var(--muted);font-size:13px;margin:0 0 18px">No se registraron contactos.</p>
@@ -214,10 +266,29 @@ $accionEtiquetas = [
           <p style="color:var(--muted);font-size:13px;margin:0 0 18px">No se registraron viajes.</p>
         <?php else: foreach ($viajes as $vj): ?>
           <div class="subrow"><div class="fields thirds" style="flex:1">
-            <div class="field"><label class="fl">Lugar visitado</label><div class="control" style="background:var(--paper)"><?= e($vj['pais'] ?? '—') ?></div></div>
-            <div class="field"><label class="fl">Fecha de salida</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vj['fecha_salida']) ?: '—') ?></div></div>
+            <?php if (!empty($vj['pais'])): ?>
+            <div class="field"><label class="fl">Lugar visitado</label><div class="control" style="background:var(--paper)"><?= e($vj['pais']) ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($vj['distrito_nombre'])): ?>
+            <div class="field"><label class="fl">Distrito</label><div class="control" style="background:var(--paper)"><?= e($vj['distrito_nombre']) ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($vj['localidad'])): ?>
+            <div class="field"><label class="fl">Localidad/ciudad</label><div class="control" style="background:var(--paper)"><?= e($vj['localidad']) ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($vj['direccion'])): ?>
+            <div class="field"><label class="fl">Dirección</label><div class="control" style="background:var(--paper)"><?= e($vj['direccion']) ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($vj['fecha_salida'])): ?>
+            <div class="field"><label class="fl">Fecha de ingreso</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vj['fecha_salida'])) ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($vj['transporte_ida'])): ?>
+            <div class="field"><label class="fl">Transporte ida</label><div class="control" style="background:var(--paper)"><?= e(ucfirst(strtolower($vj['transporte_ida']))) ?></div></div>
+            <?php endif; ?>
             <?php if (!empty($vj['fecha_retorno'])): ?>
-            <div class="field"><label class="fl">Fecha de retorno</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vj['fecha_retorno']) ?: '—') ?></div></div>
+            <div class="field"><label class="fl">Fecha de salida</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vj['fecha_retorno'])) ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($vj['transporte_retorno'])): ?>
+            <div class="field"><label class="fl">Transporte retorno</label><div class="control" style="background:var(--paper)"><?= e(ucfirst(strtolower($vj['transporte_retorno']))) ?></div></div>
             <?php endif; ?>
             <?php if (!empty($vj['tiempo_permanencia'])): ?>
             <div class="field"><label class="fl">Tiempo de permanencia</label><div class="control" style="background:var(--paper)"><?= e($vj['tiempo_permanencia']) ?></div></div>

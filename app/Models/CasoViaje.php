@@ -47,8 +47,15 @@ class CasoViaje extends Model
 
     public static function porCaso(int $casoId): array
     {
+        // JOIN a distrito (cotejo B57, 2026-08-21): la vista de solo lectura
+        // (fichas/ver.php) necesita el nombre legible, no solo el código de
+        // distrito_id crudo -- mismo patrón que Caso::conDetalle().
         $consulta = Database::conexion()->prepare(
-            'SELECT * FROM caso_viaje WHERE caso_id = :caso ORDER BY id'
+            'SELECT cv.*, d.nombre AS distrito_nombre
+               FROM caso_viaje cv
+          LEFT JOIN distrito d ON d.id = cv.distrito_id
+              WHERE cv.caso_id = :caso
+           ORDER BY cv.id'
         );
         $consulta->execute(['caso' => $casoId]);
 

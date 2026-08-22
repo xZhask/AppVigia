@@ -160,17 +160,30 @@ class CasosController extends Controller
             'direccion'          => trim($_POST['direccion'] ?? ''),
             'referencia_localizar' => trim($_POST['referencia_localizar'] ?? ''),
             'tipo_zona'          => $_POST['tipo_zona'] ?? '',
+            'nombre_zona'        => trim($_POST['nombre_zona'] ?? ''),
             'tipo_via'           => trim($_POST['tipo_via'] ?? ''),
             'nombre_via'         => trim($_POST['nombre_via'] ?? ''),
             'numero'             => trim($_POST['numero'] ?? ''),
             'mz_lote'            => trim($_POST['mz_lote'] ?? ''),
             'tiempo_residencia'  => trim($_POST['tiempo_residencia'] ?? ''),
+            'tiempo_reside_anios' => trim($_POST['tiempo_reside_anios'] ?? ''),
+            'tiempo_reside_meses' => trim($_POST['tiempo_reside_meses'] ?? ''),
+            'anterior_distrito_id' => $_POST['anterior_distrito_id'] ?? '',
+            'anterior_tipo_zona'   => $_POST['anterior_tipo_zona'] ?? '',
+            'anterior_nombre_zona' => trim($_POST['anterior_nombre_zona'] ?? ''),
+            'anterior_tipo_via'    => trim($_POST['anterior_tipo_via'] ?? ''),
+            'anterior_nombre_via'  => trim($_POST['anterior_nombre_via'] ?? ''),
+            'anterior_numero'      => trim($_POST['anterior_numero'] ?? ''),
+            'anterior_mz_lote'     => trim($_POST['anterior_mz_lote'] ?? ''),
+            'lugar_contagio_distrito_id' => $_POST['lugar_contagio_distrito_id'] ?? '',
+            'lugar_contagio_localidad'   => trim($_POST['lugar_contagio_localidad'] ?? ''),
             'n_historia_clinica' => trim($_POST['n_historia_clinica'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
             'pueblo_etnico'      => $_POST['pueblo_etnico'] ?? '',
             'ocupacion'          => trim($_POST['ocupacion'] ?? ''),
+            'estado_civil'       => $_POST['estado_civil'] ?? '',
             'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
             'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
@@ -260,7 +273,7 @@ class CasosController extends Controller
         // "Cuadro clínico" en el manifiesto, así que el fallback de
         // extraerFechaInicioSintomas() (primer campo FECHA en orden) agarraría
         // esa fecha por error si A97 no estuviera en esta lista.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97'], true);
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -585,17 +598,30 @@ class CasosController extends Controller
             'direccion'          => (string) ($caso['direccion'] ?? ''),
             'referencia_localizar' => (string) ($caso['referencia_localizar'] ?? ''),
             'tipo_zona'          => (string) ($caso['tipo_zona'] ?? ''),
+            'nombre_zona'        => (string) ($caso['nombre_zona'] ?? ''),
             'tipo_via'           => (string) ($caso['tipo_via'] ?? ''),
             'nombre_via'         => (string) ($caso['nombre_via'] ?? ''),
             'numero'             => (string) ($caso['numero'] ?? ''),
             'mz_lote'            => (string) ($caso['mz_lote'] ?? ''),
             'tiempo_residencia'  => (string) ($caso['tiempo_residencia'] ?? ''),
+            'tiempo_reside_anios' => (string) ($caso['tiempo_reside_anios'] ?? ''),
+            'tiempo_reside_meses' => (string) ($caso['tiempo_reside_meses'] ?? ''),
+            'anterior_distrito_id' => (string) ($caso['anterior_distrito_id'] ?? ''),
+            'anterior_tipo_zona'   => (string) ($caso['anterior_tipo_zona'] ?? ''),
+            'anterior_nombre_zona' => (string) ($caso['anterior_nombre_zona'] ?? ''),
+            'anterior_tipo_via'    => (string) ($caso['anterior_tipo_via'] ?? ''),
+            'anterior_nombre_via'  => (string) ($caso['anterior_nombre_via'] ?? ''),
+            'anterior_numero'      => (string) ($caso['anterior_numero'] ?? ''),
+            'anterior_mz_lote'     => (string) ($caso['anterior_mz_lote'] ?? ''),
+            'lugar_contagio_distrito_id' => (string) ($caso['lugar_contagio_distrito_id'] ?? ''),
+            'lugar_contagio_localidad'   => (string) ($caso['lugar_contagio_localidad'] ?? ''),
             'n_historia_clinica' => (string) ($caso['n_historia_clinica'] ?? ''),
             'localidad'          => (string) ($caso['localidad'] ?? ''),
             'etnia'              => (string) ($caso['etnia'] ?? ''),
             'etnia_otra'         => (string) ($caso['etnia_otra'] ?? ''),
             'pueblo_etnico'      => (string) ($caso['pueblo_etnico'] ?? ''),
             'ocupacion'          => (string) ($caso['ocupacion'] ?? ''),
+            'estado_civil'       => (string) ($caso['estado_civil'] ?? ''),
             'nombre_tutor'       => (string) ($caso['nombre_tutor'] ?? ''),
             'celular_tutor'      => (string) ($caso['celular_tutor'] ?? ''),
             'gestante'           => $caso['gestante'] !== null ? (string) $caso['gestante'] : '',
@@ -683,17 +709,30 @@ class CasosController extends Controller
             'direccion'          => trim($_POST['direccion'] ?? ''),
             'referencia_localizar' => trim($_POST['referencia_localizar'] ?? ''),
             'tipo_zona'          => $_POST['tipo_zona'] ?? '',
+            'nombre_zona'        => trim($_POST['nombre_zona'] ?? ''),
             'tipo_via'           => trim($_POST['tipo_via'] ?? ''),
             'nombre_via'         => trim($_POST['nombre_via'] ?? ''),
             'numero'             => trim($_POST['numero'] ?? ''),
             'mz_lote'            => trim($_POST['mz_lote'] ?? ''),
             'tiempo_residencia'  => trim($_POST['tiempo_residencia'] ?? ''),
+            'tiempo_reside_anios' => trim($_POST['tiempo_reside_anios'] ?? ''),
+            'tiempo_reside_meses' => trim($_POST['tiempo_reside_meses'] ?? ''),
+            'anterior_distrito_id' => $_POST['anterior_distrito_id'] ?? '',
+            'anterior_tipo_zona'   => $_POST['anterior_tipo_zona'] ?? '',
+            'anterior_nombre_zona' => trim($_POST['anterior_nombre_zona'] ?? ''),
+            'anterior_tipo_via'    => trim($_POST['anterior_tipo_via'] ?? ''),
+            'anterior_nombre_via'  => trim($_POST['anterior_nombre_via'] ?? ''),
+            'anterior_numero'      => trim($_POST['anterior_numero'] ?? ''),
+            'anterior_mz_lote'     => trim($_POST['anterior_mz_lote'] ?? ''),
+            'lugar_contagio_distrito_id' => $_POST['lugar_contagio_distrito_id'] ?? '',
+            'lugar_contagio_localidad'   => trim($_POST['lugar_contagio_localidad'] ?? ''),
             'n_historia_clinica' => trim($_POST['n_historia_clinica'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
             'etnia_otra'         => trim($_POST['etnia_otra'] ?? ''),
             'pueblo_etnico'      => $_POST['pueblo_etnico'] ?? '',
             'ocupacion'          => trim($_POST['ocupacion'] ?? ''),
+            'estado_civil'       => $_POST['estado_civil'] ?? '',
             'nombre_tutor'       => trim($_POST['nombre_tutor'] ?? ''),
             'celular_tutor'      => trim($_POST['celular_tutor'] ?? ''),
             'gestante'           => $_POST['gestante'] ?? '',
@@ -754,7 +793,7 @@ class CasosController extends Controller
         // "Cuadro clínico" en el manifiesto, así que el fallback de
         // extraerFechaInicioSintomas() (primer campo FECHA en orden) agarraría
         // esa fecha por error si A97 no estuviera en esta lista.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97'], true);
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -1276,17 +1315,30 @@ class CasosController extends Controller
             'direccion'          => '',
             'referencia_localizar' => '',
             'tipo_zona'          => '',
+            'nombre_zona'        => '',
             'tipo_via'           => '',
             'nombre_via'         => '',
             'numero'             => '',
             'mz_lote'            => '',
             'tiempo_residencia'  => '',
+            'tiempo_reside_anios' => '',
+            'tiempo_reside_meses' => '',
+            'anterior_distrito_id' => '',
+            'anterior_tipo_zona'   => '',
+            'anterior_nombre_zona' => '',
+            'anterior_tipo_via'    => '',
+            'anterior_nombre_via'  => '',
+            'anterior_numero'      => '',
+            'anterior_mz_lote'     => '',
+            'lugar_contagio_distrito_id' => '',
+            'lugar_contagio_localidad'   => '',
             'n_historia_clinica' => '',
             'localidad'          => '',
             'etnia'              => '',
             'etnia_otra'         => '',
             'pueblo_etnico'      => '',
             'ocupacion'          => '',
+            'estado_civil'       => '',
             'nombre_tutor'       => '',
             'celular_tutor'      => '',
             'gestante'           => '',
@@ -1385,6 +1437,10 @@ class CasosController extends Controller
             ? $valoresFijos['mz_lote'] : null;
         $tiempoResidencia = (in_array('TIEMPO_RESIDENCIA', $detalleDomicilioPermitido, true) && ($valoresFijos['tiempo_residencia'] ?? '') !== '')
             ? $valoresFijos['tiempo_residencia'] : null;
+        // NOMBRE_ZONA (cotejo B57, ítem 3.5): hermano de tipo_zona, mismo
+        // criterio de gating.
+        $nombreZona = (in_array('NOMBRE_ZONA', $detalleDomicilioPermitido, true) && ($valoresFijos['nombre_zona'] ?? '') !== '')
+            ? $valoresFijos['nombre_zona'] : null;
 
         // nucleo_incluidos (PETICION_HC_Y_LABORATORIO.md, Parte 1): mismo
         // criterio de opt-in que detalle_domicilio -- se descarta si la
@@ -1396,6 +1452,49 @@ class CasosController extends Controller
         }
         $nHistoriaClinica = (in_array('n_historia_clinica', $nucleoIncluidosPermitido, true) && ($valoresFijos['n_historia_clinica'] ?? '') !== '')
             ? $valoresFijos['n_historia_clinica'] : null;
+        $estadosCiviles = ['SOLTERO', 'CASADO', 'CONVIVIENTE', 'SEPARADO', 'VIUDO'];
+        $estadoCivil = (in_array('estado_civil', $nucleoIncluidosPermitido, true) && in_array($valoresFijos['estado_civil'] ?? '', $estadosCiviles, true))
+            ? $valoresFijos['estado_civil'] : null;
+
+        // migracion_reciente (cotejo B57, sección "IV. Migración"): opt-in a
+        // nivel de ficha completa (booleano, no lista) -- si la ficha activa
+        // no lo declara, años/meses y domicilio anterior se descartan aunque
+        // vengan en el POST. Domicilio anterior solo se guarda si además la
+        // condición del PDF se cumple (años×12+meses < 6), revalidada acá
+        // igual que gestante/semanas de gestación más abajo -- nunca confiar
+        // en que el bloque estaba oculto en el navegador.
+        $tiempoResideAnios = null;
+        $tiempoResideMeses = null;
+        $anteriorDistritoId = null;
+        $anteriorTipoZona = null;
+        $anteriorNombreZona = null;
+        $anteriorTipoVia = null;
+        $anteriorNombreVia = null;
+        $anteriorNumero = null;
+        $anteriorMzLote = null;
+        if (!empty($enfermedad['migracion_reciente'])) {
+            $tiempoResideAnios = (($valoresFijos['tiempo_reside_anios'] ?? '') !== '' && is_numeric($valoresFijos['tiempo_reside_anios']))
+                ? max(0, (int) $valoresFijos['tiempo_reside_anios']) : null;
+            $tiempoResideMeses = (($valoresFijos['tiempo_reside_meses'] ?? '') !== '' && is_numeric($valoresFijos['tiempo_reside_meses']))
+                ? max(0, (int) $valoresFijos['tiempo_reside_meses']) : null;
+            $resideMenosDe6Meses = ($tiempoResideAnios !== null || $tiempoResideMeses !== null)
+                && (($tiempoResideAnios ?? 0) * 12 + ($tiempoResideMeses ?? 0)) < 6;
+            if ($resideMenosDe6Meses) {
+                $anteriorDistritoId = ($valoresFijos['anterior_distrito_id'] ?? '') !== '' ? $valoresFijos['anterior_distrito_id'] : null;
+                $anteriorTipoZona = (in_array('TIPO_ZONA', $detalleDomicilioPermitido, true) && in_array($valoresFijos['anterior_tipo_zona'] ?? '', $tiposZona, true))
+                    ? $valoresFijos['anterior_tipo_zona'] : null;
+                $anteriorNombreZona = (in_array('NOMBRE_ZONA', $detalleDomicilioPermitido, true) && ($valoresFijos['anterior_nombre_zona'] ?? '') !== '')
+                    ? $valoresFijos['anterior_nombre_zona'] : null;
+                $anteriorTipoVia = (in_array('TIPO_VIA', $detalleDomicilioPermitido, true) && ($valoresFijos['anterior_tipo_via'] ?? '') !== '')
+                    ? $valoresFijos['anterior_tipo_via'] : null;
+                $anteriorNombreVia = (in_array('NOMBRE_VIA', $detalleDomicilioPermitido, true) && ($valoresFijos['anterior_nombre_via'] ?? '') !== '')
+                    ? $valoresFijos['anterior_nombre_via'] : null;
+                $anteriorNumero = (in_array('NUMERO', $detalleDomicilioPermitido, true) && ($valoresFijos['anterior_numero'] ?? '') !== '')
+                    ? $valoresFijos['anterior_numero'] : null;
+                $anteriorMzLote = (in_array('MZ_LOTE', $detalleDomicilioPermitido, true) && ($valoresFijos['anterior_mz_lote'] ?? '') !== '')
+                    ? $valoresFijos['anterior_mz_lote'] : null;
+            }
+        }
 
         $gestante = null;
         $fur = null;
@@ -1418,6 +1517,16 @@ class CasosController extends Controller
             }
         }
 
+        // Lugar probable de contagio (cotejo B57, ítem 1.1-1.4): único bloque
+        // por caso, sin lista -- mismo criterio de "solo se guarda
+        // distrito_id" que el domicilio de persona (departamento/provincia
+        // se derivan por join). No gateado por ninguna whitelist de ficha:
+        // solo B57 pinta estos inputs (secciones-clinicas.php), así que en
+        // cualquier otra ficha simplemente no llegan en el POST y quedan
+        // NULL, igual que edad_valor/investigador_*.
+        $lugarContagioDistritoId = ($valoresFijos['lugar_contagio_distrito_id'] ?? '') !== '' ? $valoresFijos['lugar_contagio_distrito_id'] : null;
+        $lugarContagioLocalidad = ($valoresFijos['lugar_contagio_localidad'] ?? '') !== '' ? $valoresFijos['lugar_contagio_localidad'] : null;
+
         $tipoCaptacion = in_array($valoresFijos['tipo_captacion'], ['ACTIVA', 'PASIVA'], true) ? $valoresFijos['tipo_captacion'] : null;
         $lugarCaptacion = in_array($valoresFijos['lugar_captacion'], ['INSTITUCIONAL', 'COMUNIDAD'], true) ? $valoresFijos['lugar_captacion'] : null;
         $clasificacionCaptacion = in_array($valoresFijos['clasificacion_captacion'], ['CONFIRMADO', 'PROBABLE', 'SOSPECHOSO'], true) ? $valoresFijos['clasificacion_captacion'] : null;
@@ -1429,17 +1538,28 @@ class CasosController extends Controller
                 'direccion'          => $valoresFijos['direccion'] !== '' ? $valoresFijos['direccion'] : null,
                 'referencia_localizar' => $valoresFijos['referencia_localizar'] !== '' ? $valoresFijos['referencia_localizar'] : null,
                 'tipo_zona'          => $tipoZona,
+                'nombre_zona'        => $nombreZona,
                 'tipo_via'           => $tipoVia,
                 'nombre_via'         => $nombreVia,
                 'numero'             => $numeroDomicilio,
                 'mz_lote'            => $mzLote,
                 'tiempo_residencia'  => $tiempoResidencia,
+                'tiempo_reside_anios' => $tiempoResideAnios,
+                'tiempo_reside_meses' => $tiempoResideMeses,
+                'anterior_distrito_id' => $anteriorDistritoId,
+                'anterior_tipo_zona'   => $anteriorTipoZona,
+                'anterior_nombre_zona' => $anteriorNombreZona,
+                'anterior_tipo_via'    => $anteriorTipoVia,
+                'anterior_nombre_via'  => $anteriorNombreVia,
+                'anterior_numero'      => $anteriorNumero,
+                'anterior_mz_lote'     => $anteriorMzLote,
                 'n_historia_clinica' => $nHistoriaClinica,
                 'localidad'          => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
                 'etnia'              => $etnia,
                 'etnia_otra'         => $etniaOtra,
                 'pueblo_etnico'      => $puebloEtnico,
                 'ocupacion'          => $valoresFijos['ocupacion'] !== '' ? $valoresFijos['ocupacion'] : null,
+                'estado_civil'       => $estadoCivil,
                 'nombre_tutor'       => $valoresFijos['nombre_tutor'] !== '' ? $valoresFijos['nombre_tutor'] : null,
                 'celular_tutor'      => $valoresFijos['celular_tutor'] !== '' ? $valoresFijos['celular_tutor'] : null,
                 'gestante'           => $gestante,
@@ -1450,6 +1570,8 @@ class CasosController extends Controller
             'caso' => [
                 'edad_valor'              => $edadValor,
                 'edad_unidad'             => $edadUnidad,
+                'lugar_contagio_distrito_id' => $lugarContagioDistritoId,
+                'lugar_contagio_localidad'   => $lugarContagioLocalidad,
                 'tipo_captacion'          => $tipoCaptacion,
                 'lugar_captacion'         => $lugarCaptacion,
                 'clasificacion_captacion' => $clasificacionCaptacion,
@@ -1953,10 +2075,24 @@ class CasosController extends Controller
         $transportesRetorno = $_POST['viaje_transporte_retorno'] ?? [];
         $semanasGestacion = $_POST['viaje_semana_gestacion'] ?? [];
 
+        // Antes se iteraba sobre $lugares (viaje_pais[]) como array
+        // conductor del foreach -- si la ficha activa no declara "pais" en
+        // columnas_tablas_hija.caso_viaje (B57, cotejo 2026-08-21: solo
+        // distrito_id + localidad, ver viajes.php), viaje_pais[] nunca
+        // llega en el POST y el foreach no corría nunca, descartando TODAS
+        // las filas en silencio pese a traer localidad/distrito_id. Ahora
+        // el número de filas sale del máximo entre todas las columnas
+        // posibles -- ninguna es obligatoria por sí sola.
+        $totalFilas = max(
+            count($lugares), count($localidades), count($distritos), count($direcciones),
+            count($salidas), count($retornos), count($tiemposPermanencia),
+            count($transportesIda), count($transportesRetorno), count($semanasGestacion)
+        );
+
         $filas = [];
         $errores = [];
-        foreach ($lugares as $i => $lugar) {
-            $lugar = trim((string) $lugar);
+        for ($i = 0; $i < $totalFilas; $i++) {
+            $lugar = trim((string) ($lugares[$i] ?? ''));
             $localidad = trim((string) ($localidades[$i] ?? ''));
             $distritoId = trim((string) ($distritos[$i] ?? ''));
             $direccion = trim((string) ($direcciones[$i] ?? ''));

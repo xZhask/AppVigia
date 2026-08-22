@@ -7,16 +7,21 @@
  * (ver "distrito_id" más abajo).
  *
  * $columnasViaje (PETICION_P35_RUBEOLA_CONGENITA.md Fase 5.1 + ítem Z.2):
- * "pais"/"fecha_salida"/"fecha_retorno" se muestran siempre (identidad
- * mínima de la fila). "localidad"/"semana_gestacion" son opt-in, propias
- * de P35.0 (ítem 33 del PDF de SRC: País y Localidad/ciudad son columnas
- * separadas). "transporte_ida"/"transporte_retorno" son opt-OUT: se
- * muestran salvo que la ficha declare columnas_tablas_hija.caso_viaje
- * sin incluirlas -- P35.0 no las pide en su PDF, las demás 7 fichas (que
- * no declaran esta clave) siguen viéndolas vía COLUMNAS_HIJA_DEFECTO.
- * "distrito_id"/"direccion" (A97, pág. 49, ítem 21 "¿Dónde estuvo en las
- * últimas dos semanas?") son opt-in, igual que "localidad": Departamento/
- * Provincia/Distrito real (mismo selector encadenado que
+ * el default (ficha que no declara columnas_tablas_hija.caso_viaje) es
+ * "pais"/"fecha_salida"/"fecha_retorno"/"transporte_ida"/"transporte_retorno"
+ * (A95, B04X). "pais"/"fecha_salida" pasaron a ser opt-in igual que el
+ * resto (cotejo B57, 2026-08-21: su PDF -pág. 40, "Listado de localidades
+ * visitadas"- no pide ninguna de las dos, solo Departamento/Provincia/
+ * Distrito/Localidad) -- las 4 fichas que ya declaraban columnas propias
+ * (A97/A37.0/A44/P35.0) las incluían explícitamente, así que este cambio
+ * no les afecta. "localidad"/"semana_gestacion" son opt-in, propias de
+ * P35.0 (ítem 33 del PDF de SRC: País y Localidad/ciudad son columnas
+ * separadas). "transporte_ida"/"transporte_retorno" son opt-in también
+ * (el nombre "opt-OUT" venía del default, no de un mecanismo real
+ * distinto -- P35.0 no las pide en su PDF y las declara fuera de su
+ * lista). "distrito_id"/"direccion" (A97, pág. 49, ítem 21 "¿Dónde estuvo
+ * en las últimas dos semanas?") son opt-in, igual que "localidad":
+ * Departamento/Provincia/Distrito real (mismo selector encadenado que
  * lugar-infeccion.php, un prefijo único por fila) + dirección libre.
  */
 $erroresViajes = $erroresViajes ?? [];
@@ -42,11 +47,13 @@ $filaViaje = function (
     ?>
   <div class="subrow">
     <div class="fields" style="flex:1; display:flex; flex-wrap:wrap; gap:12px">
+      <?php if ($mostrarColViaje('pais')): ?>
       <!-- 1. Lugar visitado -->
       <div class="field" style="flex:<?= $mostrarColViaje('localidad') ? '1' : '2' ?>; min-width:160px">
         <label class="fl"><?= e($etiquetaPais) ?></label>
         <div class="control"><input type="text" name="viaje_pais[]" value="<?= e($fila['pais'] ?? '') ?>" placeholder="<?= $mostrarColViaje('localidad') ? 'País…' : 'País o ciudad…' ?>"></div>
       </div>
+      <?php endif; ?>
       <?php if ($mostrarColViaje('localidad')): ?>
       <!-- Localidad/ciudad (columna extra, propia de fichas que la declaren).
       A37.0 reusa esta misma columna de texto libre como "Departamento"
@@ -81,12 +88,14 @@ $filaViaje = function (
         <div class="control"><input type="text" name="viaje_direccion[]" value="<?= e($fila['direccion'] ?? '') ?>" placeholder="Dirección…"></div>
       </div>
       <?php endif; ?>
+      <?php if ($mostrarColViaje('fecha_salida')): ?>
       <!-- 2. Fecha de ingreso / Fecha de viaje (A44) -->
       <div class="field" style="flex:1; min-width:130px">
         <label class="fl"><?= e($etiquetaFechaSalida) ?></label>
         <div class="control mono <?= $errorSalida ? 'err' : '' ?>"><input type="date" name="viaje_fecha_salida[]" value="<?= e($fila['fecha_salida'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         <?php if ($errorSalida): ?><span class="hint err"><?= e($errorSalida) ?></span><?php endif; ?>
       </div>
+      <?php endif; ?>
       <?php if ($mostrarColViaje('transporte_ida')): ?>
       <!-- 3. Transporte ida -->
       <div class="field" style="flex:1; min-width:130px">
