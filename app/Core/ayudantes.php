@@ -199,6 +199,23 @@ function opcionesClasificacionPara(array $enfermedad): array
 }
 
 /**
+ * Una ficha "requiere elección explícita" de Clasificación del caso cuando
+ * su primera opción permitida (opcionesClasificacionPara()[0]) ya es un
+ * resultado definitivo tipo CONFIRMADO, en vez de un estado neutral tipo
+ * SOSPECHOSO/PROBABLE. Hoy eso pasa con las fichas restringidas a solo
+ * "CONFIRMADO,DESCARTADO" (A33/A35/A36/A95/B57, sin ninguna opción
+ * intermedia): pre-marcar "Confirmado" por defecto en un caso nuevo dejaba
+ * que un registro se guardara como Confirmado sin que nadie lo hubiera
+ * elegido -- distorsiona reportes que cuentan por caso.clasificacion.
+ * Para estas fichas, "nuevo()" no pre-marca ningún chip y "crear()" exige
+ * que el usuario elija Confirmado o Descartado antes de guardar.
+ */
+function clasificacionRequiereEleccionExplicita(array $enfermedad): bool
+{
+    return (opcionesClasificacionPara($enfermedad)[0] ?? null) === 'CONFIRMADO';
+}
+
+/**
  * Evalúa si un campo con `depende_de` debe mostrarse, según el valor ya
  * asignado a su campo padre en $valoresCampos (mismo formato que usa
  * partials/secciones-clinicas.php: MULTISELECT como array, el resto como

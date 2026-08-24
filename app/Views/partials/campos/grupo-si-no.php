@@ -15,7 +15,9 @@ $esComplicacionesB05 = ($cie10Actual === 'B05' && trim($campo['etiqueta']) === '
 // por ítem -- ( ) ( ), sin una tercera columna de Ignorado/Desconocido.
 // B57 (cotejo 2026-08-21, pág. 40 del PDF): "Etapa aguda"/"Etapa crónica"
 // (únicos GRUPO_SI_NO de la ficha) traen columnas "SI NO", sin Ignorado.
-$permitirIgnorado = ($cie10Actual !== 'B05' || $esComplicacionesB05) && $cie10Actual !== 'A44' && $cie10Actual !== 'B57';
+// A95 (cotejo 2026-08-23, pág. 27 del PDF): "Criterios de confirmación"
+// (Laboratorio/Anatomía patológica/Clínica) también trae solo SI/NO.
+$permitirIgnorado = ($cie10Actual !== 'B05' || $esComplicacionesB05) && !in_array($cie10Actual, ['A44', 'B57', 'A95'], true);
 $etiquetaIgnorado = ($cie10Actual === 'B05') ? 'Desc.' : 'Ign.';
 $anchoSeg = $permitirIgnorado ? '190px' : '130px';
 ?>

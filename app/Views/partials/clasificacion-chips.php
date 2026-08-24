@@ -28,10 +28,11 @@ if ($esO95Chips) {
         $clasificacionActual = 'POR_DETERMINAR';
     }
 }
+$errorClasificacion = ($erroresFijos ?? [])['clasificacion'] ?? null;
 ?>
 <div class="field">
   <label class="fl">Clasificación del caso</label>
-  <div class="chip-select" role="radiogroup" aria-label="Clasificación del caso">
+  <div class="chip-select <?= $errorClasificacion ? 'err' : '' ?>" role="radiogroup" aria-label="Clasificación del caso">
     <?php foreach ($opcionesClasificacion as $valor => $op): ?>
       <label class="chip-option">
         <input type="radio" name="clasificacion" value="<?= $valor ?>" <?= marcado($clasificacionActual === $valor) ?>>
@@ -39,4 +40,5 @@ if ($esO95Chips) {
       </label>
     <?php endforeach; ?>
   </div>
+  <?php if ($errorClasificacion): ?><span class="hint err"><?= e($errorClasificacion) ?></span><?php endif; ?>
 </div>

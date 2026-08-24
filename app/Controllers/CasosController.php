@@ -102,7 +102,7 @@ class CasosController extends Controller
             'erroresCampos' => [],
             'fechaInicioSintomas' => '',
             'errorFechaInicioSintomas' => null,
-            'clasificacionActual' => opcionesClasificacionPara($enfermedad)[0],
+            'clasificacionActual' => clasificacionRequiereEleccionExplicita($enfermedad) ? '' : opcionesClasificacionPara($enfermedad)[0],
             'filasContactos' => [],
             'filasViajes'    => [],
             'filasVacunas'   => [],
@@ -273,7 +273,19 @@ class CasosController extends Controller
         // "Cuadro clínico" en el manifiesto, así que el fallback de
         // extraerFechaInicioSintomas() (primer campo FECHA en orden) agarraría
         // esa fecha por error si A97 no estuviera en esta lista.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57'], true);
+        // A95 (2026-08-23, pedido del usuario: quitar el genérico
+        // hardcodeado de "Cuadro clínico" -- el PDF pág. 26-27 no lo trae,
+        // "IV. CUADRO CLINICO" empieza directo con la tabla de síntomas
+        // SI/NO/IGN/FECHA): a diferencia de A44 (cuyo primer campo FECHA es
+        // "Fecha de inicio de enfermedad", un sustituto razonable),
+        // extraerFechaInicioSintomas() encontraría primero
+        // a95_fecha_de_hospitalizacion ("Hospitalización" es la 1.ª sección
+        // con un campo tipo FECHA -- "Cuadro clínico"/"Migración" no tienen
+        // ninguno) -- fecha de hospitalización no es un sustituto válido de
+        // inicio de síntomas (ni siquiera existe si el paciente no fue
+        // hospitalizado), así que A95 se suma acá en vez de dejar que el
+        // fallback la capture por error.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -296,9 +308,14 @@ class CasosController extends Controller
 
         // ---------- clasificación del caso ----------
         $opcionesClasificacion = opcionesClasificacionPara($enfermedad);
-        $clasificacion = $_POST['clasificacion'] ?? $opcionesClasificacion[0];
+        $clasificacionRequerida = clasificacionRequiereEleccionExplicita($enfermedad);
+        $clasificacion = $_POST['clasificacion'] ?? ($clasificacionRequerida ? '' : $opcionesClasificacion[0]);
         if (!in_array($clasificacion, $opcionesClasificacion, true)) {
-            $clasificacion = $opcionesClasificacion[0];
+            if ($clasificacionRequerida) {
+                $erroresFijos['clasificacion'] = 'Selecciona Confirmado o Descartado.';
+            } else {
+                $clasificacion = $opcionesClasificacion[0];
+            }
         }
 
         // ---------- dinámicos: cuadro clínico según la enfermedad ----------
@@ -793,7 +810,10 @@ class CasosController extends Controller
         // "Cuadro clínico" en el manifiesto, así que el fallback de
         // extraerFechaInicioSintomas() (primer campo FECHA en orden) agarraría
         // esa fecha por error si A97 no estuviera en esta lista.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57'], true);
+        // A95 (2026-08-23): ver el motivo completo en crear() -- el primer
+        // campo FECHA que encontraría extraerFechaInicioSintomas() es
+        // a95_fecha_de_hospitalizacion, no un sustituto válido.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -1182,7 +1202,20 @@ class CasosController extends Controller
             }
 
             if ($tipo === 'BOOLEANO') {
-                $marcado = isset($_POST[$nombreCampo]) ? '1' : '0';
+                // Un BOOLEANO que es "padre" de una dependencia se renderiza
+                // como <select> Sí/No (ver secciones-clinicas.php,
+                // $esBooleanoJuntoASuCampo/$idsPadre) en vez de la casilla
+                // normal de campos/booleano.php. Un <select> SIEMPRE envía su
+                // name en el POST (incluso en "Seleccionar…", value=""), así
+                // que isset() por sí solo no distingue "No respondido"/"No"
+                // de "Sí" -- guardaba '1' sin importar qué elegía el usuario
+                // (bug real, hallado 2026-08-23 en A95 al convertir
+                // a95_hospitalizado en padre; memoria
+                // bug_booleano_select_isset_vacio.md). Se lee el valor
+                // real cuando está presente; ausente del todo (casilla sin
+                // marcar) sigue guardando '0', igual que antes.
+                $valorPostBooleano = $_POST[$nombreCampo] ?? '';
+                $marcado = ($valorPostBooleano === '1') ? '1' : '0';
                 $valoresCampos[$campoId] = $marcado;
                 $paraGuardar[$campoId] = $marcado;
                 continue;
@@ -1775,7 +1808,18 @@ class CasosController extends Controller
      */
     private function resolverConfigMuestra(array $enfermedad): array
     {
-        $porDefecto = ['columnas' => self::COLUMNAS_HIJA_DEFECTO['muestra'], 'opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => []];
+        // unicoPorTipo (2026-08-23, pedido del usuario en el cotejo de A95):
+        // opt-in booleano -- cuando una ficha declara "unico_por_tipo": true
+        // en columnas_tablas_hija.caso_muestra, no se permite más de 1 fila
+        // con el mismo tipo_muestra en el mismo caso (A95: Biopsia/Serología/
+        // Hígado/Cultivos son 4 categorías fijas del PDF, cada una se
+        // registra como máximo una vez -- pero la ficha no exige las 4, así
+        // que sigue siendo el componente dinámico "+ Agregar muestra", no un
+        // listado fijo). Ausente = false, mismo comportamiento que antes
+        // para las demás fichas con caso_muestra=true. Aplicado también en
+        // filasMuestras() (servidor, autoritativo) y en el <select> del
+        // cliente (tablas-hijas/muestras.php + filas-dinamicas.js).
+        $porDefecto = ['columnas' => self::COLUMNAS_HIJA_DEFECTO['muestra'], 'opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => [], 'unicoPorTipo' => false];
 
         $json = $enfermedad['columnas_muestra'] ?? null;
         if ($json === null) {
@@ -1786,13 +1830,14 @@ class CasosController extends Controller
             return $porDefecto;
         }
         if (array_is_list($decodificado)) {
-            return ['columnas' => $decodificado, 'opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => []];
+            return ['columnas' => $decodificado, 'opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => [], 'unicoPorTipo' => false];
         }
         return [
             'columnas'         => $decodificado['columnas'] ?? self::COLUMNAS_HIJA_DEFECTO['muestra'],
             'opciones'         => $decodificado['opciones'] ?? [],
             'textoLibre'       => $decodificado['texto_libre'] ?? [],
             'dependeDeColumna' => $decodificado['depende_de_columna'] ?? [],
+            'unicoPorTipo'     => !empty($decodificado['unico_por_tipo']),
         ];
     }
 
@@ -1817,7 +1862,7 @@ class CasosController extends Controller
         $todosPruebas   = CatalogoItem::porCatalogo(5);
         $todosResultado = CatalogoItem::porCatalogo(3);
 
-        $config   = $enfermedad ? $this->resolverConfigMuestra($enfermedad) : ['opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => []];
+        $config   = $enfermedad ? $this->resolverConfigMuestra($enfermedad) : ['opciones' => [], 'textoLibre' => [], 'dependeDeColumna' => [], 'unicoPorTipo' => false];
         $opciones = $config['opciones'];
 
         if (!empty($opciones['tipo_muestra'])) {
@@ -1842,6 +1887,7 @@ class CasosController extends Controller
             'opcionesMuestraExtra'      => $opciones,
             'textoLibreMuestra'         => $config['textoLibre'] ?? [],
             'dependeDeColumnaMuestra'   => $config['dependeDeColumna'] ?? [],
+            'unicoPorTipoMuestra'       => $config['unicoPorTipo'] ?? false,
         ];
     }
 
@@ -2395,6 +2441,18 @@ class CasosController extends Controller
         $validosTipoMuestra = array_column($datosMuestras['opcionesTipoMuestra'], 'valor');
         $validosTipoPrueba  = array_column($datosMuestras['opcionesTipoPrueba'], 'valor');
         $validosResultado   = array_column($datosMuestras['opcionesResultado'], 'valor');
+        // unicoPorTipo (2026-08-23): el <select> ya deshabilita del lado
+        // cliente los tipos repetidos (filas-dinamicas.js), pero no hay que
+        // confiar en eso -- se revalida acá, autoritativo, igual que el
+        // resto de esta función.
+        $unicoPorTipo = $datosMuestras['unicoPorTipoMuestra'] ?? false;
+        $tiposMuestraVistos = [];
+        // tipo_prueba texto libre (A95, 2026-08-23): igual que genotipo/
+        // titulación más abajo, sin validar contra el catálogo cuando la
+        // ficha lo declara texto_libre -- si no, cualquier texto que el
+        // usuario escriba (no viene de un <select>) se descartaría en
+        // silencio por no matchear $validosTipoPrueba.
+        $tipoPruebaLibre = in_array('tipo_prueba', $datosMuestras['textoLibreMuestra'] ?? [], true);
 
         // numero_muestra: ordinal automático, no elegible por el usuario. La
         // primera fila de un tipo_muestra dado es la 1, la siguiente fila con
@@ -2434,6 +2492,14 @@ class CasosController extends Controller
 
             if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $envioEessRedTxt === '' && $envioRedLrrTxt === '' && $envioLrrInsTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '' && $titulacionTxt === '') {
                 continue;
+            }
+
+            if ($unicoPorTipo && $tipoMuestra !== '') {
+                if (isset($tiposMuestraVistos[$tipoMuestra])) {
+                    $errores[$i]['tipo_muestra'] = 'Ya registraste una muestra de este tipo.';
+                } else {
+                    $tiposMuestraVistos[$tipoMuestra] = true;
+                }
             }
 
             $contadorPorTipoMuestra[$tipoMuestra] = ($contadorPorTipoMuestra[$tipoMuestra] ?? 0) + 1;
@@ -2492,7 +2558,7 @@ class CasosController extends Controller
 
             $filas[] = [
                 'tipo_muestra'        => in_array($tipoMuestra, $validosTipoMuestra, true) ? $tipoMuestra : (in_array($tipoMuestra, ['SUERO', 'HNF_FAR', 'ORINA'], true) ? $tipoMuestra : null),
-                'tipo_prueba'         => in_array($tipoPrueba, $validosTipoPrueba, true) ? $tipoPrueba : null,
+                'tipo_prueba'         => $tipoPruebaLibre ? ($tipoPrueba !== '' ? $tipoPrueba : null) : (in_array($tipoPrueba, $validosTipoPrueba, true) ? $tipoPrueba : null),
                 'recibio_antibiotico' => in_array($antibiotico, ['0', '1'], true) ? (int) $antibiotico : null,
                 'resultado'           => in_array($resultado, $validosResultado, true) ? $resultado : ($resIgm ?: ($resPcr ?: ($resIgg ?: null))),
                 'fecha_toma'          => $tomaIso,

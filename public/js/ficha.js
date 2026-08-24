@@ -461,6 +461,42 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- A95: "Resultado de clasificación" propio -> "clasificacion" genérico ----------
+  // Mismo patrón que sincronizarClasificacionB57() arriba: A95 tiene su
+  // propio SELECT "Resultado de clasificación" (Confirmado/Descartado,
+  // "VIII. Clasificación final" del PDF) además del "clasificacion"
+  // genérico compartido (chip al fondo del formulario). 3.ª revisión del
+  // cotejo (2026-08-23): la 2.ª revisión gateaba "Criterios de
+  // confirmación"/"Dx de descarte" contra el radio núcleo con un wrap a
+  // medida -- el usuario pidió en cambio este campo propio, así que ahora
+  // esos 2 campos usan depende_de/valor_activador NORMAL (evaluarDependencias()
+  // ya los resuelve solo, son campo_def de la MISMA ficha) y lo único que
+  // falta es reflejar la elección hacia el chip genérico del fondo, igual
+  // que B57. Los códigos son literalmente CONFIRMADO/DESCARTADO en ambos
+  // lados (enfermedad.opciones_clasificacion ya restringe el chip genérico
+  // a esos 2), sin tabla de equivalencias.
+  function sincronizarClasificacionA95() {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('A95') === -1) return;
+
+    var selectPropio = document.querySelector('[name="' + campoPorClave('a95_resultado_de_clasificacion') + '"]');
+    if (!selectPropio || !selectPropio.value) return;
+
+    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + selectPropio.value + '"]');
+    if (radioGenerico && !radioGenerico.checked) {
+      radioGenerico.checked = true;
+      evaluarDependencias();
+    }
+  }
+
+  sincronizarClasificacionA95();
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === campoPorClave('a95_resultado_de_clasificacion')) {
+      sincronizarClasificacionA95();
+    }
+  });
+
   // ---------- A35: "No recuerda día" cambia Fecha de inicio de lesión a mm/aaaa ----------
   // Ítem 1 del PDF de A35 (pág. 23): "NO RECUERDA DIA ( )" junto a "FECHA DE
   // INICIO DE LESION" -- el día exacto no siempre se recuerda, así que el
@@ -2084,12 +2120,42 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // A95 (Fiebre amarilla, cotejo 2026-08-22): "¿Viajó en los últimos 6
+  // meses?" gatea la tabla caso_viaje -- mismo mecanismo que A37.0 arriba
+  // (BOOLEANO, activador '1').
+  function actualizarBloqueViajesA95() {
+    var wrapperViajes = document.getElementById('a95-wrapper-viajes-registrados');
+    if (!wrapperViajes) return;
+
+    var val = leerValorCampoPorNombre(campoPorClave('a95_viajo_en_los_ultimos_6_meses'));
+    var esViajo = (val === '1');
+
+    if (esViajo) {
+      wrapperViajes.hidden = false;
+      wrapperViajes.style.display = '';
+
+      var subrows = wrapperViajes.querySelector('.subrows');
+      if (subrows && subrows.children.length === 0) {
+        var btnAgregar = wrapperViajes.querySelector('.agregar-fila[data-lista="viajes"]');
+        if (btnAgregar) {
+          btnAgregar.click();
+        }
+      }
+    } else {
+      wrapperViajes.hidden = true;
+      wrapperViajes.style.display = 'none';
+    }
+  }
+
   document.addEventListener('change', function(e) {
     if (e.target && e.target.name === campoPorClave('a37_0_viajo_en_los_ultimos_21_dias')) {
       actualizarBloqueViajesA370();
     }
     if (e.target && e.target.name === campoPorClave('a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_')) {
       actualizarBloqueContactosA370();
+    }
+    if (e.target && e.target.name === campoPorClave('a95_viajo_en_los_ultimos_6_meses')) {
+      actualizarBloqueViajesA95();
     }
   });
 
@@ -2101,6 +2167,7 @@ document.addEventListener('DOMContentLoaded', function () {
         actualizarBloqueViajesP350();
         actualizarBloqueViajesA370();
         actualizarBloqueContactosA370();
+        actualizarBloqueViajesA95();
       }, 50);
     }
   });
@@ -2109,6 +2176,7 @@ document.addEventListener('DOMContentLoaded', function () {
   actualizarBloqueViajesP350();
   actualizarBloqueViajesA370();
   actualizarBloqueContactosA370();
+  actualizarBloqueViajesA95();
 
   function obtenerCie10Actual() {
     var enfermedadSel = document.getElementById('diseaseSel');

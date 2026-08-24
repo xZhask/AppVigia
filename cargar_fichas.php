@@ -376,8 +376,9 @@ function validarManifiesto(array $manifiesto): void
                     $opciones = [];
                     $textoLibre = [];
                     $dependeDeColumna = [];
+                    $unicoPorTipo = false;
                 } else {
-                    $clavesDesconocidas = array_diff(array_keys($declaracion), ['columnas', 'opciones', 'texto_libre', 'depende_de_columna']);
+                    $clavesDesconocidas = array_diff(array_keys($declaracion), ['columnas', 'opciones', 'texto_libre', 'depende_de_columna', 'unico_por_tipo']);
                     if ($clavesDesconocidas) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} tiene claves desconocidas: " . implode(', ', $clavesDesconocidas) . ".");
                     }
@@ -385,6 +386,7 @@ function validarManifiesto(array $manifiesto): void
                     $opciones = $declaracion['opciones'] ?? [];
                     $textoLibre = $declaracion['texto_libre'] ?? [];
                     $dependeDeColumna = $declaracion['depende_de_columna'] ?? [];
+                    $unicoPorTipo = $declaracion['unico_por_tipo'] ?? false;
                 }
 
                 foreach ($columnas as $col) {
@@ -393,8 +395,22 @@ function validarManifiesto(array $manifiesto): void
                     }
                 }
 
-                if (($opciones || $textoLibre || $dependeDeColumna) && $tabla !== 'caso_muestra') {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} declara \"opciones\"/\"texto_libre\"/\"depende_de_columna\", que hoy solo están implementados para caso_muestra.");
+                if (($opciones || $textoLibre || $dependeDeColumna || $unicoPorTipo) && $tabla !== 'caso_muestra') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla} declara \"opciones\"/\"texto_libre\"/\"depende_de_columna\"/\"unico_por_tipo\", que hoy solo están implementados para caso_muestra.");
+                }
+
+                // unico_por_tipo (2026-08-23, PETICION_HC_Y_LABORATORIO.md
+                // cotejo A95): booleano simple -- 1 registro como máximo por
+                // valor de "tipo_muestra" en el mismo caso. Solo tiene
+                // sentido si la ficha además restringe "opciones.tipo_muestra"
+                // a un vocabulario finito (si no, cualquier tipo_muestra del
+                // catálogo compartido -id 4- cuenta como "categoría única",
+                // lo que probablemente no es la intención de quien lo declare).
+                if ($unicoPorTipo !== false && $unicoPorTipo !== true) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.unico_por_tipo debe ser booleano.");
+                }
+                if ($unicoPorTipo && empty($opciones['tipo_muestra'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / columnas_tablas_hija.{$tabla}.unico_por_tipo=true requiere declarar opciones.tipo_muestra (un vocabulario finito) -- si no, no hay un conjunto cerrado de \"tipos\" contra el cual aplicar la regla.");
                 }
 
                 // depende_de_columna (capacidad 5, PETICION_HC_Y_LABORATORIO.md

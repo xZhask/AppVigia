@@ -91,6 +91,7 @@ $es = $estados[$caso['estado']];
           <?php require __DIR__ . '/../partials/notificacion-fechas-b01.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a97.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b57.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-a95.php'; ?>
         </div>
       </div>
 
@@ -170,14 +171,15 @@ $es = $estados[$caso['estado']];
       </div>
 
       <!-- 3. Migración (cotejo B57, 2026-08-21, sección "IV. Migración" del
-           PDF pág. 40) -- tarjeta propia entre "Datos del persona" y
-           "Antecedentes epidemiológicos", no dentro de datos-paciente-nucleo.php
-           (pedido del usuario: Migración no es parte de "Datos del persona"). -->
+           PDF pág. 40; sumado A95, cotejo 2026-08-22, "III. MIGRACION" pág.
+           26) -- tarjeta propia entre "Datos del persona" y "Antecedentes
+           epidemiológicos", no dentro de datos-paciente-nucleo.php (pedido
+           del usuario: Migración no es parte de "Datos del persona"). -->
       <?php if (!empty($enfermedad['migracion_reciente'])): ?>
       <div class="card section">
         <div class="section-head"><span class="section-num">3</span><h3>Migración</h3></div>
         <div class="section-body">
-          <?php require __DIR__ . '/../partials/migracion-b57.php'; ?>
+          <?php require __DIR__ . '/../partials/' . (($enfermedad['cie10'] ?? null) === 'A95' ? 'migracion-a95.php' : 'migracion-b57.php'); ?>
         </div>
       </div>
       <?php endif; ?>
@@ -229,8 +231,14 @@ $es = $estados[$caso['estado']];
       // su propia tarjeta "3. Migración" (migracion-b57.php, ver arriba),
       // no en "Antecedentes epidemiológicos" -- mismo trato que A97/A44.
       $isB57 = ($enfermedad['cie10'] ?? '') === 'B57';
+      // A95 (cotejo 2026-08-22): "¿Viajó en los últimos 6 meses?" (pág. 26
+      // del PDF) gatea su propia tabla caso_viaje dentro de "Antecedentes
+      // epidemiológicos" (secciones-clinicas.php, hook por clave
+      // a95_viajo_en_los_ultimos_6_meses) -- mismo trato que A97/A44/B57
+      // arriba, para no duplicarla en la tarjeta fija genérica.
+      $isA95 = ($enfermedad['cie10'] ?? '') === 'A95';
       $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
-      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44 && !$isB57;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44 && !$isB57 && !$isA95;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       // Roles con columnas_sujeto que NO tienen sección propia en el
@@ -279,13 +287,20 @@ $es = $estados[$caso['estado']];
       <?php if ($tieneAntecedentesEpidemiologicos) $numeroSeccion++; ?>
 
       <!-- Laboratorio -->
-      <div class="card section" id="seccionLaboratorioCard" <?= (int) ($enfermedad['usa_muestras'] ?? 0) === 1 ? '' : 'hidden' ?>>
+      <?php
+      // A95 (cotejo 2026-08-23): mismo criterio que $mostrarViajes arriba --
+      // "Laboratorio" (caso_muestra) ya se inyecta dentro de la sección
+      // campo_def "Laboratorio" (secciones-clinicas.php), se suprime esta
+      // 2.ª posición genérica para no duplicar el widget.
+      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95;
+      ?>
+      <div class="card section" id="seccionLaboratorioCard" <?= $mostrarLaboratorioGenerico ? '' : 'hidden' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>
         <div class="section-body" id="seccionLaboratorioBody">
           <?php require __DIR__ . '/../partials/tablas-hijas/muestras.php'; ?>
         </div>
       </div>
-      <?php if ((int) ($enfermedad['usa_muestras'] ?? 0) === 1) $numeroSeccion++; ?>
+      <?php if ($mostrarLaboratorioGenerico) $numeroSeccion++; ?>
 <?php
 // clasificacion-caso-p350.php (ítem Z.8): ver nueva/index.php para la
 // explicación completa. Adentro del bloque PHP, no como tag aparte, por el

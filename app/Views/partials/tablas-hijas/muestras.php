@@ -32,6 +32,10 @@ $esFechaObtencion = in_array($cie10Actual, ['A80', 'P35.0', 'B01'], true);
 // -- el PDF (pág. 3, secc. VI) la conecta con la cadena EE.SS -> Red/Microred
 // -> LRR -> INS de abajo, no es un resultado local genérico.
 $esFechaEmisionResultadoIns = ($cie10Actual === 'B01');
+// A95 (2026-08-23, VII. Muestra del PDF): "Fecha de envío" a secas, sin "a
+// INS" -- el PDF no menciona INS en absoluto (a diferencia de B05/A80, que
+// sí lo hacen explícito).
+$esA95 = ($cie10Actual === 'A95');
 
 // opcionesMuestraExtra/textoLibreMuestra: overrides declarativos por ficha
 // sobre resultado_igm/resultado_igg/resultado_pcr/genotipo/titulacion
@@ -41,6 +45,11 @@ $esFechaEmisionResultadoIns = ($cie10Actual === 'B01');
 $opcionesMuestraExtra = $opcionesMuestraExtra ?? [];
 $textoLibreMuestra = $textoLibreMuestra ?? [];
 $dependeDeColumnaMuestra = $dependeDeColumnaMuestra ?? [];
+// unicoPorTipoMuestra (2026-08-23, A95): opt-in -- el <select> de tipo de
+// muestra no deja elegir un tipo ya usado por otra fila del mismo caso
+// (filas-dinamicas.js, data-unico-por-selector en .subrows más abajo). El
+// servidor revalida (CasosController::filasMuestras()), esto es solo UX.
+$unicoPorTipoMuestra = $unicoPorTipoMuestra ?? false;
 
 // attrsDependencia(): data-depende-columna/data-valores-activadores para que
 // el JS genérico (ficha.js) sepa qué disparador vigilar dentro de la fila.
@@ -69,6 +78,11 @@ $opcionesSeroPara = function (string $col) use ($opcionesResultadoSeroDefecto, $
 
 $opcionesGenotipoDefecto = ['D8', 'B3', 'H1', 'D4', 'D9', 'G3', 'A', 'B1', 'C1', 'D1', 'D5', 'D6', 'D7', 'D10', 'D11', 'G1', 'G2', 'H2'];
 $genotipoLibre = in_array('genotipo', $textoLibreMuestra, true);
+// tipo_prueba texto libre (A95, 2026-08-23): el PDF ("PRUEBA REALIZADA") no
+// imprime ningún vocabulario cerrado para esta columna, a diferencia de
+// otras fichas con PCR/ELISA estructurados -- mismo mecanismo opt-in que ya
+// usa genotipo.
+$tipoPruebaLibre = in_array('tipo_prueba', $textoLibreMuestra, true);
 $opcionesGenotipo = !empty($opcionesMuestraExtra['genotipo'])
     ? array_values(array_intersect($opcionesGenotipoDefecto, $opcionesMuestraExtra['genotipo']))
     : $opcionesGenotipoDefecto;
@@ -91,7 +105,8 @@ $opcionesAgente = !empty($opcionesMuestraExtra['agente_aislado'])
     ? array_intersect_key($opcionesAgenteDefecto, array_flip($opcionesMuestraExtra['agente_aislado']))
     : [];
 
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_eess_red' => '', 'fecha_envio_red_lrr' => '', 'fecha_envio_lrr_ins' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esFechaEmisionResultadoIns, $esB05, $cie10Actual, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $opcionesAgente, $dependeDeColumnaMuestra, $attrsDependencia): void {
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_eess_red' => '', 'fecha_envio_red_lrr' => '', 'fecha_envio_lrr_ins' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esFechaEmisionResultadoIns, $esA95, $esB05, $cie10Actual, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $tipoPruebaLibre, $opcionesAgente, $dependeDeColumnaMuestra, $attrsDependencia): void {
+    $errorTipoMuestra = $error['tipo_muestra'] ?? null;
     $errorToma = $error['fecha_toma'] ?? null;
     $errorEnvioEessRed = $error['fecha_envio_eess_red'] ?? null;
     $errorEnvioRedLrr = $error['fecha_envio_red_lrr'] ?? null;
@@ -150,7 +165,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <?php if ($muestra('tipo_muestra')): ?>
         <div class="field">
           <label class="fl">Tipo de muestra</label>
-          <div class="control">
+          <div class="control <?= $errorTipoMuestra ? 'err' : '' ?>">
             <select name="muestra_tipo_muestra[]">
               <option value="">Seleccionar…</option>
               <?php foreach ($opcionesTipoMuestra as $op): ?>
@@ -158,18 +173,23 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
               <?php endforeach; ?>
             </select>
           </div>
+          <?php if ($errorTipoMuestra): ?><span class="hint err"><?= e($errorTipoMuestra) ?></span><?php endif; ?>
         </div>
         <?php endif; ?>
         <?php if ($muestra('tipo_prueba')): ?>
         <div class="field">
-          <label class="fl">Tipo de prueba</label>
+          <label class="fl"><?= $esA95 ? 'Prueba realizada' : 'Tipo de prueba' ?></label>
           <div class="control">
-            <select name="muestra_tipo_prueba[]">
-              <option value="">Seleccionar…</option>
-              <?php foreach ($opcionesTipoPrueba as $op): ?>
-                <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['tipo_prueba'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
-              <?php endforeach; ?>
-            </select>
+            <?php if ($tipoPruebaLibre): ?>
+              <input type="text" name="muestra_tipo_prueba[]" value="<?= e($fila['tipo_prueba'] ?? '') ?>" placeholder="Prueba realizada…">
+            <?php else: ?>
+              <select name="muestra_tipo_prueba[]">
+                <option value="">Seleccionar…</option>
+                <?php foreach ($opcionesTipoPrueba as $op): ?>
+                  <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['tipo_prueba'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            <?php endif; ?>
           </div>
         </div>
         <?php endif; ?>
@@ -216,7 +236,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <?php endif; ?>
         <?php if ($muestra('fecha_envio_ins')): ?>
         <div class="field">
-          <label class="fl">Fecha de envío a INS</label>
+          <label class="fl"><?= $esA95 ? 'Fecha de envío' : 'Fecha de envío a INS' ?></label>
           <div class="control mono <?= $errorEnvio ? 'err' : '' ?>"><input type="date" name="muestra_fecha_envio_ins[]" value="<?= e($fila['fecha_envio_ins'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
           <?php if ($errorEnvio): ?><span class="hint err"><?= e($errorEnvio) ?></span><?php endif; ?>
         </div>
@@ -358,7 +378,7 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
   </div>
 <?php };
 ?>
-<div class="subrows" data-lista="muestras">
+<div class="subrows" data-lista="muestras"<?= $unicoPorTipoMuestra ? ' data-unico-por-selector="select[name=\'muestra_tipo_muestra[]\']"' : '' ?>>
   <?php foreach ($filasMuestras as $i => $fila): $filaMuestra($fila, $erroresMuestras[$i] ?? null); endforeach; ?>
 </div>
 <template id="plantilla-muestras"><?php $filaMuestra(); ?></template>

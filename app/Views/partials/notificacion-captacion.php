@@ -10,28 +10,36 @@
 // Fichas cuyo PDF no trae "Clasificación en la captación" junto a
 // Tipo/Lugar de captación (B26: cotejo 2026-07-30; B01: cotejo 2026-08-08,
 // pág. 3 del PDF -- solo trae ítems 5 y 6, Tipo de captación y Lugar; B57:
-// cotejo 2026-08-20, pág. 40 -- tampoco trae "Lugar de captación").
-$ocultaClasifCaptacion = in_array($enfermedad['cie10'] ?? null, ['B26', 'B01', 'B57'], true);
-// B57 (cotejo 2026-08-20, pág. 40 del PDF): "Notificación Regular [ ] /
-// Búsqueda Activa [ ]" mapea 1 a 1 con las 2 opciones que ya trae "Tipo de
-// captación" (Pasiva=Regular, Activa=Búsqueda Activa) -- se conserva ese
-// campo, pero "Lugar de captación" no tiene equivalente en el PDF.
-$esB57Captacion = (($enfermedad['cie10'] ?? null) === 'B57');
+// cotejo 2026-08-20, pág. 40 -- tampoco trae "Lugar de captación"; A95:
+// cotejo 2026-08-22, pág. 26 -- mismo encabezado que B57, tampoco lo trae).
+$cie10Captacion = $enfermedad['cie10'] ?? null;
+$ocultaClasifCaptacion = in_array($cie10Captacion, ['B26', 'B01', 'B57', 'A95'], true);
+// B57 (cotejo 2026-08-20, pág. 40 del PDF) y A95 (cotejo 2026-08-22, pág. 26
+// -- mismo encabezado que B57): "Notificación Regular [ ] / Búsqueda Activa
+// [ ]" mapea 1 a 1 con las 2 opciones que ya trae "Tipo de captación"
+// (Pasiva=Regular, Activa=Búsqueda Activa) -- se conserva ese campo, pero
+// "Lugar de captación" no tiene equivalente en ninguno de los 2 PDF: en su
+// lugar pintan "Código" ("COGIGO" del encabezado, junto a las 4 fechas de
+// conocimiento).
+$FICHAS_CODIGO_EN_CAPTACION = ['B57', 'A95'];
+$usaCodigoEnCaptacion = in_array($cie10Captacion, $FICHAS_CODIGO_EN_CAPTACION, true);
 
-// b57_codigo (cotejo 2026-08-20, pedido del usuario): "CÓDIGO" del
-// encabezado del PDF (pág. 40, junto a las 4 fechas de conocimiento) se
-// pinta en el espacio que deja libre "Lugar de captación" -- mismo criterio
-// de envolver en función que notificacion-fechas-a97.php, para no pisar la
-// variable $campo del llamador (el resolvedor AMBIENTE de campos-por-clave.php).
-$campoCodigoB57 = $esB57Captacion ? $resolvedorPara('B57')('b57_codigo') : null;
-$pintarCodigoB57 = function () use ($campoCodigoB57): void {
-    if (!$campoCodigoB57 || !$campoCodigoB57['id']) {
+// {cie10}_codigo (B57: cotejo 2026-08-20, pedido del usuario; A95: cotejo
+// 2026-08-22, mismo criterio): se pinta en el espacio que deja libre "Lugar
+// de captación" -- mismo criterio de envolver en función que
+// notificacion-fechas-a97.php, para no pisar la variable $campo del
+// llamador (el resolvedor AMBIENTE de campos-por-clave.php).
+$campoCodigoCaptacion = $usaCodigoEnCaptacion
+    ? $resolvedorPara($cie10Captacion)(strtolower($cie10Captacion) . '_codigo')
+    : null;
+$pintarCodigoCaptacion = function () use ($campoCodigoCaptacion): void {
+    if (!$campoCodigoCaptacion || !$campoCodigoCaptacion['id']) {
         return;
     }
-    $campo = $campoCodigoB57['campo'];
-    $valor = $campoCodigoB57['val'];
-    $error = $campoCodigoB57['err'];
-    $opciones = $campoCodigoB57['opciones'];
+    $campo = $campoCodigoCaptacion['campo'];
+    $valor = $campoCodigoCaptacion['val'];
+    $error = $campoCodigoCaptacion['err'];
+    $opciones = $campoCodigoCaptacion['opciones'];
     require __DIR__ . '/campo-dinamico.php';
 };
 ?>
@@ -46,8 +54,8 @@ $pintarCodigoB57 = function () use ($campoCodigoB57): void {
       </select>
     </div>
   </div>
-  <?php if ($esB57Captacion): ?>
-    <?php $pintarCodigoB57(); ?>
+  <?php if ($usaCodigoEnCaptacion): ?>
+    <?php $pintarCodigoCaptacion(); ?>
   <?php else: ?>
   <div class="field">
     <label class="fl">Lugar de captación</label>

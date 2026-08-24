@@ -2155,30 +2155,62 @@
                 "caso_contacto": false,
                 "caso_muestra": true,
                 "caso_viaje": true,
-                "caso_vacuna": true
+                "caso_vacuna": false
             },
+            "_nota_vacuna": "Cotejo 2026-08-23 (pág. 27 del PDF): 'V. ANTECEDENTE DE VACUNA ANTIAMARILICA' es un solo registro (Vacunado SI\/NO\/IGN + establecimiento + N.° de dosis + fecha de última dosis), no una lista repetible -- caso_vacuna (tabla genérica de múltiples antecedentes vacunales, como usa B05) no aplica. Se modela como 4 campo_def fijos en la sección 'Antecedente de vacuna antiamarílica' (mismo criterio que B26, que tampoco usa caso_vacuna).",
+            "_nota_laboratorio": "Cotejo 2026-08-23, 2.ª revisión (pág. 27 del PDF): 'VII. MUESTRA' son 4 filas FIJAS de PAPEL (Biopsia\/Serología\/Hígado\/Cultivos), pero la 1.ª revisión (campo_def fijos, calcando a B57 Sangre\/Suero) se descartó -- el usuario señaló que la ficha no exige las 4 pruebas, así que el modelo fijo dejaba campos vacíos innecesarios en cada caso. Se usa caso_muestra (componente dinámico '+ Agregar muestra') con tipo_muestra restringido a esas 4 opciones + la regla unico_por_tipo=true (un registro por tipo como máximo, ver columnas_tablas_hija.caso_muestra abajo) para conservar la garantía 1-por-categoría sin forzar los 4 registros.",
             "columnas_tablas_hija": {
                 "caso_muestra": {
+                    "columnas": [
+                        "tipo_muestra",
+                        "fecha_toma",
+                        "fecha_envio_ins",
+                        "tipo_prueba",
+                        "resultado"
+                    ],
                     "opciones": {
                         "tipo_muestra": [
-                            "SUERO",
                             "BIOPSIA",
                             "SEROLOGIA",
                             "HIGADO",
                             "CULTIVO_MUESTRA"
-                        ],
-                        "tipo_prueba": [
-                            "PCR",
-                            "ELISA"
                         ]
-                    }
-                }
+                    },
+                    "texto_libre": [
+                        "tipo_prueba"
+                    ],
+                    "unico_por_tipo": true
+                },
+                "caso_viaje": [
+                    "distrito_id",
+                    "localidad"
+                ]
             },
+            "_nota_viajes": "Cotejo 2026-08-22: A95 dependía del default de columnas_tablas_hija.caso_viaje (país\/fecha_salida\/fecha_retorno\/transporte_ida\/transporte_retorno), que no corresponde a 'Viajó los últimos 6 meses?' del PDF (pág. 26): 3 filas fijas de Departamento\/Provincia\/Distrito\/Localidad, mismas columnas que B57 (cotejo 2026-08-21) para su propio 'Listado de localidades...'. Se declara explícito, igual que A97\/A37.0\/A44\/P35.0\/B57.",
             "nucleo_omitidos": [
-                "referencia_localizar",
                 "pueblo_etnico",
-                "ocupacion"
+                "etnia",
+                "celular",
+                "nacionalidad",
+                "localidad",
+                "direccion",
+                "nombre_tutor",
+                "celular_tutor",
+                "gestante"
             ],
+            "_nota_nucleo": "Cotejo 2026-08-22 (pág. 26 del PDF): 'I. Datos generales', 'II. Datos del paciente' y 'III. Migración' de A95 coinciden casi 1:1 con B57 (pág. 40) -- mismo nucleo_omitidos\/nucleo_incluidos\/detalle_domicilio\/migracion_reciente que B57. 'referencia_localizar' y 'ocupacion' ya NO se omiten (el PDF los pide; la config anterior los omitía sin base documental, mismo bug que tuvo B57 antes de su cotejo).",
+            "nucleo_incluidos": [
+                "estado_civil"
+            ],
+            "detalle_domicilio": [
+                "TIPO_ZONA",
+                "NOMBRE_ZONA",
+                "TIPO_VIA",
+                "NOMBRE_VIA",
+                "NUMERO",
+                "MZ_LOTE"
+            ],
+            "migracion_reciente": true,
             "secciones": [
                 {
                     "nombre": "Cuadro clínico",
@@ -2261,42 +2293,19 @@
                 {
                     "nombre": "Migración",
                     "orden": 2,
+                    "_corregido": "Cotejo 2026-08-22 (pág. 26 del PDF), 2.ª revisión: 'Tiempo que reside en domicilio actual (años\/meses)' y 'Si reside menos de 6 meses, ¿dónde vivía anteriormente?' salían como campo_def propios (el segundo, un TEXTO libre sin desglose); pasan a ser núcleo compartido (persona.tiempo_reside_anios\/meses + domicilio anterior completo vía detalle_domicilio\/migracion_reciente), mismo criterio que B57 -- domicilio anterior ahora captura Departamento\/Provincia\/Distrito real (cascada) en vez de un texto libre. Los otros 3 campos (casos_reportados\/cuantas_personas\/viajo_en_los_ultimos_6_meses) vivían en una sección aparte 'Antecedentes epidemiológicos' que no corresponde a NINGÚN encabezado del PDF -- el usuario señaló con una captura que 'Hubo casos reportados...' y 'Viajó los últimos 6 meses?' están DENTRO del bloque \"III. MIGRACION\" (entre 'Listado de localidades...' y el final de esa sección, justo antes de 'IV. CUADRO CLINICO'), así que se movieron acá. Los 4 bloques (este + 'Fechas de notificación' más abajo) se pintan a medida en migracion-a95.php\/notificacion-fechas-a95.php -- ver $SECCIONES_CON_PARTIAL_A_MEDIDA['A95'] en secciones-clinicas.php.",
                     "campos": [
-                        {
-                            "clave": "a95_tiempo_que_reside_en_domicilio_actual_anos",
-                            "etiqueta": "Tiempo que reside en domicilio actual (años)",
-                            "tipo": "NUMERO",
-                            "orden": 1
-                        },
-                        {
-                            "clave": "a95_tiempo_que_reside_en_domicilio_actual_meses",
-                            "etiqueta": "Tiempo que reside en domicilio actual (meses)",
-                            "tipo": "NUMERO",
-                            "orden": 2
-                        },
-                        {
-                            "clave": "a95_si_reside_menos_de_6_meses_donde_vivia_anteriorment",
-                            "etiqueta": "Si reside menos de 6 meses, ¿dónde vivía anteriormente?",
-                            "tipo": "TEXTO",
-                            "orden": 3
-                        },
                         {
                             "clave": "a95_localidades_visitadas_en_los_ultimos_10_dias",
                             "etiqueta": "Localidades visitadas en los últimos 10 días",
                             "tipo": "TEXTAREA",
-                            "orden": 4
-                        }
-                    ]
-                },
-                {
-                    "nombre": "Antecedentes epidemiológicos",
-                    "orden": 3,
-                    "campos": [
+                            "orden": 1
+                        },
                         {
                             "clave": "a95_casos_reportados_en_los_ultimos_10_dias",
                             "etiqueta": "Casos reportados en los últimos 10 días",
                             "tipo": "GRUPO_SI_NO",
-                            "orden": 1,
+                            "orden": 2,
                             "opciones": [
                                 "En los lugares visitados por el paciente",
                                 "En su comunidad",
@@ -2308,13 +2317,13 @@
                             "clave": "a95_cuantas_personas_viven_en_su_casa",
                             "etiqueta": "Cuántas personas viven en su casa",
                             "tipo": "NUMERO",
-                            "orden": 2
+                            "orden": 3
                         },
                         {
                             "clave": "a95_viajo_en_los_ultimos_6_meses",
                             "etiqueta": "¿Viajó en los últimos 6 meses?",
                             "tipo": "BOOLEANO",
-                            "orden": 3
+                            "orden": 4
                         }
                     ]
                 },
@@ -2332,49 +2341,65 @@
                             "clave": "a95_fecha_de_hospitalizacion",
                             "etiqueta": "Fecha de hospitalización",
                             "tipo": "FECHA",
-                            "orden": 2
+                            "orden": 2,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a95_hospital",
                             "etiqueta": "Hospital",
                             "tipo": "TEXTO",
-                            "orden": 3
+                            "orden": 3,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a95_n_h_c",
-                            "etiqueta": "N.° H.C.",
+                            "etiqueta": "H.C.",
                             "tipo": "TEXTO",
-                            "orden": 4
+                            "orden": 4,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a95_tiempo_de_enfermedad_al_momento_de_la_hospitalizaci",
                             "etiqueta": "Tiempo de enfermedad al momento de la hospitalización (días)",
                             "tipo": "NUMERO",
-                            "orden": 5
+                            "orden": 5,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a95_tiempo_de_traslado_desde_el_domicilio_horas",
                             "etiqueta": "Tiempo de traslado desde el domicilio (horas)",
                             "tipo": "NUMERO",
-                            "orden": 6
+                            "orden": 6,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a95_tiempo_de_traslado_desde_el_domicilio_minutos",
                             "etiqueta": "Tiempo de traslado desde el domicilio (minutos)",
                             "tipo": "NUMERO",
-                            "orden": 7
+                            "orden": 7,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a95_dx_de_ingreso_1",
                             "etiqueta": "Dx de ingreso 1",
                             "tipo": "TEXTO",
-                            "orden": 8
+                            "orden": 8,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a95_dx_de_ingreso_2",
                             "etiqueta": "Dx de ingreso 2",
                             "tipo": "TEXTO",
-                            "orden": 9
+                            "orden": 9,
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1"
                         },
                         {
                             "clave": "a95_condicion_de_egreso",
@@ -2384,19 +2409,26 @@
                             "opciones": [
                                 "Alta \/ Recuperado",
                                 "Fallecido"
-                            ]
+                            ],
+                            "depende_de": "Hospitalizado",
+                            "valor_activador": "1",
+                            "_corregido": "cotejo 2026-08-23: el usuario confirmó que 'Condición de egreso' (y sus 6 campos hijos: Dx\/Fecha de Alta, Necropsia\/Dx macro\/Dx micro\/Fecha de Fallecido) debe depender de Hospitalizado=Sí, revirtiendo la lectura inicial de su propia jerarquía (que la mostraba como rama hermana, no anidada)."
                         },
                         {
                             "clave": "a95_dx_de_egreso",
                             "etiqueta": "Dx de egreso",
                             "tipo": "TEXTO",
-                            "orden": 11
+                            "orden": 11,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "ALTA_RECUPERADO"
                         },
                         {
                             "clave": "a95_fecha_de_egreso",
                             "etiqueta": "Fecha de egreso",
                             "tipo": "FECHA",
-                            "orden": 12
+                            "orden": 12,
+                            "depende_de": "Condición de egreso",
+                            "valor_activador": "ALTA_RECUPERADO"
                         },
                         {
                             "clave": "a95_necropsia",
@@ -2435,15 +2467,112 @@
                     ]
                 },
                 {
-                    "nombre": "Clasificación final",
+                    "nombre": "Antecedente de vacuna antiamarílica",
                     "orden": 5,
-                    "_corregido": "v1.0 tenía un campo 'Clasificación final' SELECT (Confirmado\/Descartado) redundante: enfermedad.opciones_clasificacion ya está fijado a CONFIRMADO,DESCARTADO para esta ficha (sql\/32_fix_tosferina_fiebreamarilla.sql), así que ese valor vive en caso.clasificacion (núcleo), no en campo_def — igual que en Difteria. Se retira del manifiesto; solo quedan el criterio y el Dx de descarte, que sí son propios de esta ficha.",
+                    "_nota": "Cotejo 2026-08-23 (pág. 27 del PDF, 'V. ANTECEDENTE DE VACUNA ANTIAMARILICA', documentado con carné): 1 solo registro, no una lista -- ver _nota_vacuna arriba (tablas_hijas.caso_vacuna=false, no aplica la tabla genérica repetible).",
                     "campos": [
                         {
-                            "clave": "a95_criterio_de_clasificacion",
-                            "etiqueta": "Criterio de clasificación",
-                            "tipo": "MULTISELECT",
+                            "clave": "a95_vacunado",
+                            "etiqueta": "Vacunado",
+                            "tipo": "SELECT",
                             "orden": 1,
+                            "opciones": [
+                                "Sí",
+                                "No",
+                                "Desconocido"
+                            ]
+                        },
+                        {
+                            "clave": "a95_establecimientos_de_salud_donde_fue_vacunado",
+                            "etiqueta": "¿En qué establecimientos de salud fue vacunado?",
+                            "tipo": "TEXTO",
+                            "orden": 2,
+                            "depende_de": "Vacunado",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "a95_n_de_dosis_recibidas",
+                            "etiqueta": "N.° de dosis recibidas",
+                            "tipo": "NUMERO",
+                            "orden": 3,
+                            "depende_de": "Vacunado",
+                            "valor_activador": "SI"
+                        },
+                        {
+                            "clave": "a95_fecha_ultima_dosis",
+                            "etiqueta": "Fecha (última dosis)",
+                            "tipo": "FECHA",
+                            "orden": 4,
+                            "depende_de": "Vacunado",
+                            "valor_activador": "SI"
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Laboratorio",
+                    "orden": 6,
+                    "_nota": "VI. LABORATORIO + VII. MUESTRA (pág. 27 del PDF). 2.ª revisión (2026-08-23): el usuario pidió volver al componente dinámico 'Agregar muestra' en vez del listado fijo de la 1.ª revisión -- la ficha no exige registrar las 4 pruebas (Biopsia\/Serología\/Hígado\/Cultivos), así que el modelo fijo dejaba campos vacíos innecesarios en cada caso. caso_muestra se reactiva (tablas_hijas.caso_muestra=true) con tipo_muestra restringido a esas 4 opciones (columnas_tablas_hija.caso_muestra) + la regla nueva unico_por_tipo=true (un registro por tipo como máximo, ver secciones-clinicas.php\/muestras.php\/ficha.js\/CasosController.php) para no perder la garantía 1-por-categoría que sí tenía el modelo fijo. 'Prueba realizada' se declara texto_libre (el PDF no imprime ningún vocabulario cerrado para esa columna, a diferencia de tipo_muestra) -- 'Resultados' reusa el <select> Pendiente\/Positivo\/Negativo\/Indeterminado compartido (catalogo_id=3), mismo criterio que B57 usó para sus 2 filas fijas Sangre\/Suero.",
+                    "campos": [
+                        {
+                            "clave": "a95_lab_nombre",
+                            "etiqueta": "Laboratorio que recepciona",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a95_lab_fecha_recepcion",
+                            "etiqueta": "Fecha de recepción",
+                            "tipo": "FECHA",
+                            "orden": 2
+                        },
+                        {
+                            "clave": "a95_lab_tipo_muestra",
+                            "etiqueta": "Tipo de muestra",
+                            "tipo": "SELECT",
+                            "orden": 3,
+                            "opciones": [
+                                "Adecuada",
+                                "Inadecuada"
+                            ]
+                        },
+                        {
+                            "clave": "a95_lab_muestra_inadecuada_especificar",
+                            "etiqueta": "Si no es adecuada, especificar",
+                            "tipo": "TEXTO",
+                            "orden": 4,
+                            "depende_de": "Tipo de muestra",
+                            "valor_activador": "INADECUADA"
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Clasificación final",
+                    "orden": 7,
+                    "_corregido": "v1.0 tenía un campo 'Clasificación final' SELECT (Confirmado\/Descartado) redundante: enfermedad.opciones_clasificacion ya está fijado a CONFIRMADO,DESCARTADO para esta ficha (sql\/32_fix_tosferina_fiebreamarilla.sql), así que ese valor vive en caso.clasificacion (núcleo), no en campo_def — igual que en Difteria. 3.ª revisión (2026-08-23, jerarquía\/dependencias corregidas por el usuario tras ver la 2.ª): la 2.ª revisión gateaba 'Criterios de confirmación'\/'Dx de descarte' contra el radio núcleo 'Clasificación del caso' (al fondo del formulario) con un wrap a medida -- el usuario pidió en cambio un campo PROPIO 'Resultado de clasificación' (SELECT Confirmado\/Descartado) DENTRO de esta sección, igual de forma a b57_clasificacion_final\/a33_diagnostico_definitivo\/a35_diagnostico_definitivo: 'Criterios de confirmación' y 'Dx de descarte' ahora usan depende_de\/valor_activador NORMAL contra ese campo propio (es un campo_def de la MISMA ficha, ya no hace falta el mecanismo especial), y sincronizarClasificacionA95() en ficha.js lo refleja hacia 'clasificacion' (núcleo, mismo patrón 1 a 1 que sincronizarClasificacionB57()) para que el chip del fondo y los reportes sigan consistentes. 4.ª revisión (mismo día): el usuario aclaró que 'Criterios de confirmación' NO es exclusivo de CONFIRMADO -- también aplica para documentar un Descartado (ej. 'descartado por criterios A/B/C'), así que su valor_activador pasó de 'CONFIRMADO' a 'CONFIRMADO,DESCARTADO' (depende_de/valor_activador soporta listas separadas por coma, ver ayudantes.php:224 y ficha.js evaluarDependencias() línea ~86 -- mismo mecanismo que abreWrapOtrosLabA97). 'Dx de descarte' se queda solo en DESCARTADO, sin cambios.",
+                    "campos": [
+                        {
+                            "clave": "a95_fecha_clasificacion_final",
+                            "etiqueta": "Fecha de clasificación final",
+                            "tipo": "FECHA",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a95_resultado_de_clasificacion",
+                            "etiqueta": "Resultado de clasificación",
+                            "tipo": "SELECT",
+                            "orden": 2,
+                            "opciones": [
+                                "Confirmado",
+                                "Descartado"
+                            ]
+                        },
+                        {
+                            "clave": "a95_criterio_de_clasificacion",
+                            "etiqueta": "Criterios de confirmación",
+                            "tipo": "GRUPO_SI_NO",
+                            "orden": 3,
+                            "depende_de": "Resultado de clasificación",
+                            "valor_activador": "CONFIRMADO,DESCARTADO",
                             "opciones": [
                                 "Laboratorio",
                                 "Anatomía patológica",
@@ -2453,8 +2582,47 @@
                         {
                             "clave": "a95_dx_de_descarte",
                             "etiqueta": "Dx de descarte",
+                            "depende_de": "Resultado de clasificación",
+                            "valor_activador": "DESCARTADO",
                             "tipo": "TEXTO",
+                            "orden": 4
+                        }
+                    ]
+                },
+                {
+                    "nombre": "Fechas de notificación",
+                    "orden": 8,
+                    "_nota": "Cotejo 2026-08-22 (encabezado de la ficha, pág. 26 del PDF): 'COGIGO\/Fecha conocimiento local\/Fecha investigación\/Fecha conocimiento DISA\/Fecha conocimiento nacional' se pintan en la tarjeta fija \"1. Notificación\" (notificacion-fechas-a95.php), mismo criterio que B57 -- 'Código' ocupa el espacio que deja libre 'Lugar de captación' en notificacion-captacion.php. DISA\/Nombre del establecimiento\/UTES-UBAS-ZONADIS-RED no se capturan como campo_def: son datos del establecimiento ya elegido (mismo criterio que A37.0\/A97\/B57).",
+                    "campos": [
+                        {
+                            "clave": "a95_codigo",
+                            "etiqueta": "Código",
+                            "tipo": "TEXTO",
+                            "orden": 1
+                        },
+                        {
+                            "clave": "a95_fecha_conocimiento_local",
+                            "etiqueta": "Fecha de conocimiento local",
+                            "tipo": "FECHA",
                             "orden": 2
+                        },
+                        {
+                            "clave": "a95_fecha_de_investigacion",
+                            "etiqueta": "Fecha de investigación",
+                            "tipo": "FECHA",
+                            "orden": 3
+                        },
+                        {
+                            "clave": "a95_fecha_conocimiento_disa",
+                            "etiqueta": "Fecha de conocimiento DISA",
+                            "tipo": "FECHA",
+                            "orden": 4
+                        },
+                        {
+                            "clave": "a95_fecha_conocimiento_nacional",
+                            "etiqueta": "Fecha de conocimiento nacional",
+                            "tipo": "FECHA",
+                            "orden": 5
                         }
                     ]
                 }

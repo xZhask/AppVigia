@@ -180,6 +180,31 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // no está en $SECCIONES_CON_PARTIAL_A_MEDIDA['B57'] más abajo).
         'b57_viajo_ultimos_6_meses',
     ],
+    'A95' => [
+        // notificacion-fechas-a95.php (cotejo 2026-08-22, pág. 26 del PDF):
+        // mismo encabezado que B57 (arriba) -- "Fecha conocimiento
+        // local/Fecha investigación/Fecha conocimiento DISA/Fecha
+        // conocimiento nacional" en la tarjeta fija "1. Notificación", y
+        // "Código" junto a "Tipo de captación" (notificacion-captacion.php).
+        'a95_codigo',
+        'a95_fecha_conocimiento_local',
+        'a95_fecha_de_investigacion',
+        'a95_fecha_conocimiento_disa',
+        'a95_fecha_conocimiento_nacional',
+        // Los 4 campos de la sección "Migración" del manifiesto (cotejo
+        // 2026-08-22, 2.ª revisión: el usuario señaló con una captura que
+        // "Hubo casos reportados..."/"Viajó los últimos 6 meses?" están
+        // DENTRO de "III. MIGRACION" del PDF, no en una sección aparte) se
+        // pintan enteros a medida en migracion-a95.php (tarjeta propia "3.
+        // Migración") -- la sección entera está en
+        // $SECCIONES_CON_PARTIAL_A_MEDIDA más abajo, así que TODOS sus
+        // campos deben estar acá o la sección no desaparece del render
+        // genérico (claveCubiertaPorPartial se evalúa campo por campo).
+        'a95_localidades_visitadas_en_los_ultimos_10_dias',
+        'a95_casos_reportados_en_los_ultimos_10_dias',
+        'a95_cuantas_personas_viven_en_su_casa',
+        'a95_viajo_en_los_ultimos_6_meses',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -198,6 +223,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'B01' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Observaciones'],
     'A97' => ['Enfermedad / evento a notificar', 'Subsistema de vigilancia'],
     'B57' => ['Fechas de notificación'],
+    'A95' => ['Fechas de notificación', 'Migración'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
@@ -389,7 +415,13 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // tiene ningún campo hijo que lo marque como "padre" en $idsPadre --
     // pero el usuario la quiere junto a Conjuntivas pálidas/Escleróticas
     // ictéricas (mismo control Sí/No), no mezclada con los síntomas reales.
-    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a', 'a37_0_pentavalente_1ra', 'a37_0_pentavalente_2da', 'a37_0_pentavalente_3ra', 'a37_0_dpt_1er_refuerzo', 'a37_0_dpt_2do_refuerzo', 'a37_0_viajo_en_los_ultimos_21_dias', 'a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_', 'a44_inyeccion_conjuntival'];
+    // a95_necropsia (cotejo 2026-08-23, jerarquía Hospitalización): mismo
+    // motivo exacto que a44_inyeccion_conjuntival -- depende_de "Condición
+    // de egreso" (no es "padre" de ningún campo_def, así que $idsPadre no la
+    // detecta), pero el usuario la quiere junto a Dx macroscópico/Dx
+    // microscópico/Fecha bajo la rama "Fallecido", no como chip suelto en
+    // "Signos y síntomas" al final de la tarjeta.
+    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a', 'a37_0_pentavalente_1ra', 'a37_0_pentavalente_2da', 'a37_0_pentavalente_3ra', 'a37_0_dpt_1er_refuerzo', 'a37_0_dpt_2do_refuerzo', 'a37_0_viajo_en_los_ultimos_21_dias', 'a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_', 'a44_inyeccion_conjuntival', 'a95_necropsia'];
     $esBooleanoJuntoASuCampo = fn($c) => in_array($c['id'], $idsPadre) || in_array($c['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true);
     $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !$esBooleanoJuntoASuCampo($c));
     $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || $esBooleanoJuntoASuCampo($c));
@@ -603,6 +635,16 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if (($campo['clave'] ?? '') === 'b57_suero_fecha_toma') {
                 ?></div><div class="eyebrow" style="margin-bottom:10px">Suero</div><div class="fields thirds" style="margin-bottom:16px; border-left:3px solid var(--accent); padding:14px 0 4px 14px;"><?php
             }
+            // A95 "Laboratorio" (cotejo 2026-08-23): el encabezado fijo
+            // ("Laboratorio que recepciona"/Fecha/Tipo de muestra/
+            // especificar) no necesita eyebrow propio, son los primeros
+            // campos de la tarjeta -- las 4 filas del PDF (Biopsia/
+            // Serología/Hígado/Cultivos) se dejaron de modelar como campo_def
+            // fijos (2.ª revisión, pedido del usuario: la ficha no exige las
+            // 4 pruebas) y ahora usan el componente dinámico "+ Agregar
+            // muestra" (caso_muestra), inyectado más abajo en este mismo
+            // archivo justo después de $renderizarCampos() para la sección
+            // "Laboratorio" -- ver tablas-hijas/muestras.php.
             $abreWrapHospitalizadoAlta = in_array($campo['clave'] ?? '', ['a33_condiciones_de_alta', 'a35_fecha_de_alta'], true);
             if ($abreWrapHospitalizadoAlta) {
                 $campoHospitalizadoAlta = (($campo['clave'] ?? '') === 'a33_condiciones_de_alta') ? $campoHospitalizadoA33 : $campoHospitalizadoA35;
@@ -1063,7 +1105,17 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // transfusión) que extraerFechaInicioSintomas() tomaría por error como
     // fallback -- por eso B57 también se suma a
     // $sinFechaInicioSintomasObligatoria en CasosController.php. ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57'], true)): ?>
+    <?php // A95 (2026-08-23, pedido del usuario): el PDF (pág. 26-27) no
+    // trae "Fecha de inicio de síntomas" -- "IV. CUADRO CLINICO" empieza
+    // directo con la tabla de síntomas SI/NO/IGN/FECHA (a95_fiebre,
+    // a95_ictericia... todas SI_NO_FECHA, no FECHA suelto). Igual que B57
+    // (y a diferencia de A44/A80/B05/O95), no basta con ocultarlo acá: el
+    // primer campo tipo FECHA que extraerFechaInicioSintomas() encontraría
+    // es a95_fecha_de_hospitalizacion ("Hospitalización", ya que "Cuadro
+    // clínico"/"Migración" no tienen ningún FECHA suelto) -- no es un
+    // sustituto válido de inicio de síntomas, así que A95 también se suma a
+    // $sinFechaInicioSintomasObligatoria en CasosController.php. ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
@@ -1215,6 +1267,13 @@ foreach (array_slice($secciones, 1) as $seccion):
         $esLaboratorioEvolucionA44 = trim($seccion['nombre']) === 'Laboratorio y evolución' && ($enfermedad['cie10'] ?? '') === 'A44';
         if (!$esLaboratorioEvolucionA44): ?>
           <?php $renderizarCampos((int) $seccion['id']); ?>
+        <?php endif; ?>
+
+        <?php if (trim($seccion['nombre']) === 'Laboratorio' && ($enfermedad['cie10'] ?? '') === 'A95'): ?>
+          <div style="margin-top: 18px; border-top: 1px solid var(--line-2); padding-top: 14px;">
+            <div class="eyebrow" style="margin-bottom:10px">Muestras</div>
+            <?php require __DIR__ . '/tablas-hijas/muestras.php'; ?>
+          </div>
         <?php endif; ?>
 
         <?php if (trim($seccion['nombre']) === 'Antecedentes vacunales' && ($enfermedad['cie10'] ?? '') === 'B05'):
