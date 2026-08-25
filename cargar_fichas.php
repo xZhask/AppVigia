@@ -103,7 +103,7 @@ if ($manifiesto === null) {
 }
 
 const TIPOS_CON_OPCIONES = ['SELECT', 'MULTISELECT', 'GRUPO_SI_NO', 'CRONOLOGIA'];
-const TIPOS_VALIDOS = ['TEXTO', 'NUMERO', 'FECHA', 'BOOLEANO', 'SELECT', 'MULTISELECT', 'TEXTAREA', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'];
+const TIPOS_VALIDOS = ['TEXTO', 'NUMERO', 'FECHA', 'BOOLEANO', 'SELECT', 'MULTISELECT', 'TEXTAREA', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'SI_NO', 'MATRIZ', 'CRONOLOGIA'];
 
 // Columnas reales de cada tabla hija que se pueden activar/desactivar por
 // ficha (PENDIENTES_POST_FASE5.md punto 3) -- "nombres"/"vacuna"/
@@ -160,7 +160,14 @@ const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', '
 // solo 1/24 fichas confirmada contra el PDF, opt-out lo pintaría sin base
 // documental en las 23 restantes. No reemplaza a o95_estado_civil (campo_def
 // propio de O95/Anexo 2, con opciones distintas), coexisten.
-const NUCLEO_INCLUIBLES = ['n_historia_clinica', 'estado_civil'];
+// 'nacimiento_distrito_id' (cotejo B55, "I. Datos generales" -- pág. 45 del
+// PDF, "Lugar de Nacimiento: (Distrito, Provincia, Departamento)"): mismo
+// criterio -- ninguna otra de las 24 fichas cotejadas lo pide, así que
+// opt-out lo habría mostrado sin base documental en las demás.
+// persona.nacimiento_distrito_id (add_nacimiento_distrito_persona.php);
+// Provincia/Departamento se derivan por join, igual que distrito_id/
+// anterior_distrito_id.
+const NUCLEO_INCLUIBLES = ['n_historia_clinica', 'estado_civil', 'nacimiento_distrito_id'];
 
 // Entrada F (PETICION_MAPEO_Y_EDAD.md, Parte 2): unidades válidas para
 // "unidades_edad" -- opt-in, al revés que NUCLEO_OMITIBLES. Ausente = solo

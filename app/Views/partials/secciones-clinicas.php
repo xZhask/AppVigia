@@ -421,7 +421,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
     // detecta), pero el usuario la quiere junto a Dx macroscópico/Dx
     // microscópico/Fecha bajo la rama "Fallecido", no como chip suelto en
     // "Signos y síntomas" al final de la tarjeta.
-    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a', 'a37_0_pentavalente_1ra', 'a37_0_pentavalente_2da', 'a37_0_pentavalente_3ra', 'a37_0_dpt_1er_refuerzo', 'a37_0_dpt_2do_refuerzo', 'a37_0_viajo_en_los_ultimos_21_dias', 'a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_', 'a44_inyeccion_conjuntival', 'a95_necropsia'];
+    $clavesBooleanoJuntoASuCampo = ['a35_no_recuerda_dia', 'a35_dosis_1d', 'a35_dosis_2d', 'a35_dosis_3d', 'a35_dosis_4d', 'a35_dosis_5d', 'a33_dosis_1a', 'a33_dosis_2a', 'a33_dosis_3a', 'a33_dosis_4a', 'a33_dosis_5a', 'a37_0_pentavalente_1ra', 'a37_0_pentavalente_2da', 'a37_0_pentavalente_3ra', 'a37_0_dpt_1er_refuerzo', 'a37_0_dpt_2do_refuerzo', 'a37_0_viajo_en_los_ultimos_21_dias', 'a37_0_algun_miembro_de_la_familia_o_persona_cercana_ha_', 'a44_inyeccion_conjuntival', 'a95_necropsia', 'b55_existen_otras_personas_con_lesiones_similares'];
     $esBooleanoJuntoASuCampo = fn($c) => in_array($c['id'], $idsPadre) || in_array($c['clave'] ?? '', $clavesBooleanoJuntoASuCampo, true);
     $camposBooleanos = $esP350 ? [] : array_filter($campos, fn($c) => $c['tipo'] === 'BOOLEANO' && !$esBooleanoJuntoASuCampo($c));
     $camposOtros = $esP350 ? $campos : array_filter($campos, fn($c) => $c['tipo'] !== 'BOOLEANO' || $esBooleanoJuntoASuCampo($c));
@@ -600,6 +600,36 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 </div>
                 </div><div class="fields" style="margin-bottom:16px"><?php
             }
+            // B55 (Leishmaniasis, PDF pág. 45): "Lugar de contagio"
+            if (($campo['clave'] ?? '') === 'b55_permanencia_dias') {
+                ?></div><div style="margin-bottom:14px">
+                <div class="eyebrow" style="margin-bottom:10px">Lugar de contagio</div>
+                <?php
+                extract(contextoUbigeo(($valoresFijos['lugar_contagio_distrito_id'] ?? '') ?: null));
+                $prefijo = 'b55contagio-ubigeo';
+                $nombreCampoDepartamento = 'lugar_contagio_departamento_id';
+                $nombreCampoProvincia = 'lugar_contagio_provincia_id';
+                $nombreCampoDistrito = 'lugar_contagio_distrito_id';
+                $distritoSeleccionado = $valoresFijos['lugar_contagio_distrito_id'] ?? '';
+                $distritoRequerido = false;
+                $errorDistrito = null;
+                require __DIR__ . '/selector-ubigeo.php';
+                ?>
+                <div class="field" style="margin-top:10px">
+                  <label class="fl">Localidad</label>
+                  <div class="control"><input type="text" name="lugar_contagio_localidad" value="<?= e($valoresFijos['lugar_contagio_localidad'] ?? '') ?>"></div>
+                </div>
+                </div><div class="eyebrow" style="margin-bottom:10px">Tiempo de permanencia en el lugar de contagio</div><div class="fields thirds" style="margin-bottom:16px"><?php
+            }
+            if (($campo['clave'] ?? '') === 'b55_actividad_que_desarrollo_durante_el_contagio') {
+                ?></div><div class="fields" style="margin-bottom:16px"><?php
+            }
+            if (($campo['clave'] ?? '') === 'b55_n_de_lesiones_activas') {
+                ?></div><div class="fields halves" style="margin-bottom:16px"><?php
+            }
+            if (($campo['clave'] ?? '') === 'b55_lesiones') {
+                ?></div><div class="fields" style="margin-bottom:16px"><?php
+            }
             // B57 (ítem 2.1-2.3): "Tiempo de permanencia en el lugar
             // probable de contagio" son 3 casillas numéricas cortas (mismo
             // patrón visual que "Dosis recibidas"/"Pentavalente" arriba) --
@@ -662,6 +692,14 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             }
             if (($campo['clave'] ?? '') === 'a37_0_la_gestante_recibio_tdap_si_el_caso_es_gestante') {
                 ?><div id="wrapTdapGestanteA370" hidden style="display:none;"><?php
+            }
+            // B55 (cotejo 2026-08-25): "Fecha de última regla" solo aplica si
+            // Sexo=Femenino -- mismo mecanismo que #wrapTdapGestanteA370
+            // arriba (arranca oculto server-side, JS lo des-oculta si aplica).
+            // actualizarGestante() en ficha.js ya lee sexoSel para el bloque
+            // Gestante/FUR de A44, se reusa el mismo hook.
+            if (($campo['clave'] ?? '') === 'b55_fecha_de_ultima_regla') {
+                ?><div id="campoFurB55" hidden style="display:none;"><?php
             }
             $tieneDependencia = !empty($campo['depende_de']);
             if ($tieneDependencia):
@@ -819,7 +857,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                   </button>
                   <?php if ($error): ?><span class="hint err"><?= e($error) ?></span><?php endif; ?>
                 </div>
-            <?php else:
+            <?php elseif (($campo['clave'] ?? '') === 'b55_lesiones'):
+                require __DIR__ . '/campos/leishmaniasis-body-map.php';
+            elseif (($campo['clave'] ?? '') === 'b55_compromiso_de_estructuras'):
+                require __DIR__ . '/campos/leishmaniasis-mucosa.php';
+            else:
                 require __DIR__ . '/campo-dinamico.php';
                 if ($campo['etiqueta'] === 'Descripción de la erupción cutánea' || stripos($campo['etiqueta'], 'descripción de la erupción') !== false) {
                     require __DIR__ . '/campos/exantema-evolucion-body-map.php';
@@ -838,6 +880,9 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             }
             if (($campo['clave'] ?? '') === 'a37_0_fecha_de_vacunacion_tdap_gestante') {
                 ?></div><?php // cierra #wrapTdapGestanteA370
+            }
+            if (($campo['clave'] ?? '') === 'b55_fecha_de_ultima_regla') {
+                ?></div><?php // cierra #campoFurB55
             }
             $tipoAnterior = $campo['tipo'];
 
@@ -1115,7 +1160,15 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // clínico"/"Migración" no tienen ningún FECHA suelto) -- no es un
     // sustituto válido de inicio de síntomas, así que A95 también se suma a
     // $sinFechaInicioSintomasObligatoria en CasosController.php. ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95'], true)): ?>
+    <?php // B55 (revisión 2026-08-24): mismo caso que A95/B57 -- el PDF
+    // (pág. 45, III. DATOS CLINICOS) no trae "Fecha de inicio de
+    // síntomas", empieza directo con el checklist de síntomas. Sin esta
+    // exclusión, $secciones[0] (B55: "Antecedente epidemiológico") hacía
+    // que esta tarjeta genérica se pintara con ese mismo título DUPLICADO
+    // (numerado antes de la sección real), mostrando solo un campo
+    // obligatorio sin base en el PDF. Se suma también a
+    // $sinFechaInicioSintomasObligatoria en CasosController.php. ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
@@ -1251,6 +1304,22 @@ foreach (array_slice($secciones, 1) as $seccion):
           ?>
         <?php endif; ?>
       <?php else: ?>
+        <?php if (($enfermedad['cie10'] ?? '') === 'B55' && trim($seccion['nombre']) === 'Antecedente epidemiológico'): ?>
+          <div class="info-callout" style="background:var(--accent-soft); border:1px solid var(--accent); border-radius:var(--radius-sm, 8px); padding:14px 18px; margin-bottom:20px; color:var(--ink); font-size:0.875rem; line-height:1.5;">
+            <div style="margin-bottom:8px;">
+              <span style="display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--accent); color:var(--accent-deep); font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                Definición de Casos Probables (MINSA / CDC Perú)
+              </span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:0.82rem; color:var(--ink-2);">
+              <div><strong style="color:var(--accent-deep);">• Caso Probable Leishmaniasis Cutánea:</strong> Todo paciente procedente o residente de zonas endémicas o de nueva área de transmisión, con presencia de una o múltiples lesiones cutáneas (máculo-pápulas que progresan a tipo ulcerosa, redondeada, indolora con bordes bien definidos e indurados, de evolución ≥ 4 semanas y sin respuesta a antibióticos convencionales).</div>
+              <div><strong style="color:var(--accent-deep);">• Caso Probable Leishmaniasis Mucosa:</strong> Paciente procedente o residente de zonas endémicas con lesiones granulomatosas elevadas o ulcerosas de mucosa nasal, paladar blando, rinofaringe, faringe, laringe o labio superior, generalmente con antecedente de lesiones cutáneas.</div>
+              <div><strong style="color:var(--accent-deep);">• Caso Probable Leishmaniasis Visceral:</strong> Paciente de área endémica o brote con fiebre > 2 semanas, esplenomegalia, hepatomegalia, adenomegalia, anemia y pérdida de peso.</div>
+            </div>
+          </div>
+        <?php endif; ?>
+
         <?php if (trim($seccion['nombre']) === 'Lugar probable de infección' && ($enfermedad['cie10'] ?? '') === 'B05'): ?>
           <div style="margin-bottom: 20px;">
             <div class="eyebrow" style="margin-bottom:10px">Lugar y/o institución probable de infección (considerar entre 7 a 30 días antes del inicio de erupción cutánea)</div>
@@ -1264,8 +1333,14 @@ foreach (array_slice($secciones, 1) as $seccion):
         // acá solo serviría para imprimir el placeholder "Todavía no hay
         // campos clínicos definidos aquí", que no aplica: el contenido real
         // vive en las tablas hijas de más abajo.
+        // B55 (cotejo 2026-08-25): "Pruebas de laboratorio" tampoco tiene
+        // campo_def propio -- su panel de 6 pruebas fijas (VI. PRUEBAS DE
+        // LABORATORIO del PDF) se modela con el widget "caso_muestra"
+        // reusado (misma razón que A44: solo_tabla_hija=true en el
+        // manifiesto, $renderizarCampos() se saltaría igual que ahí).
+        $esPruebasLaboratorioB55 = trim($seccion['nombre']) === 'Pruebas de laboratorio' && ($enfermedad['cie10'] ?? '') === 'B55';
         $esLaboratorioEvolucionA44 = trim($seccion['nombre']) === 'Laboratorio y evolución' && ($enfermedad['cie10'] ?? '') === 'A44';
-        if (!$esLaboratorioEvolucionA44): ?>
+        if (!$esLaboratorioEvolucionA44 && !$esPruebasLaboratorioB55): ?>
           <?php $renderizarCampos((int) $seccion['id']); ?>
         <?php endif; ?>
 
@@ -1274,6 +1349,10 @@ foreach (array_slice($secciones, 1) as $seccion):
             <div class="eyebrow" style="margin-bottom:10px">Muestras</div>
             <?php require __DIR__ . '/tablas-hijas/muestras.php'; ?>
           </div>
+        <?php endif; ?>
+
+        <?php if ($esPruebasLaboratorioB55): ?>
+          <?php require __DIR__ . '/tablas-hijas/muestras.php'; ?>
         <?php endif; ?>
 
         <?php if (trim($seccion['nombre']) === 'Antecedentes vacunales' && ($enfermedad['cie10'] ?? '') === 'B05'):

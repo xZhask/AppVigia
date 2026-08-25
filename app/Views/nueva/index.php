@@ -108,7 +108,7 @@ if ($puedeElegirEstablecimiento) {
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44'], true) ? 'hidden' : '' ?>>
+          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55'], true) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
@@ -154,6 +154,44 @@ if ($puedeElegirEstablecimiento) {
                 <input type="text" name="n_historia_clinica" value="<?= e($valoresFijos['n_historia_clinica'] ?? '') ?>" placeholder="N.° H.C.…">
               </div>
             </div>
+          </div>
+          <span class="hint" id="buscandopersonaHint" hidden>Consultando padrón y RENIEC…</span>
+          <div class="found" id="found" style="display:none">
+            <div class="pa" id="foundIniciales"></div>
+            <div><div class="pn" id="foundNombre"></div><div class="pd" id="foundDetalle"></div></div>
+            <div class="src"><svg width="13" height="13" viewBox="0 0 13 13"><path d="M2.5 6.5 5.5 9.5l5-6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> <span id="foundFuente">Autocompletado del padrón</span></div>
+          </div>
+
+          <!-- Nombres/Apellidos antes de Sexo/Fecha de nacimiento (pedido del
+               usuario, cotejo B55 2026-08-25): coincide con el orden real del
+               PDF en todas las fichas revisadas ("Apellidos y Nombres" siempre
+               antes de "Fecha de Nacimiento") -- antes iba al revés, sin base
+               documental. Cambio de layout puro (sin tocar name= ni JS), mismos
+               campos que ya tenía la app. -->
+          <div class="fields thirds" style="margin-top:16px">
+            <div class="field">
+              <label class="fl">Apellido paterno <span class="req">*</span></label>
+              <div class="control <?= isset($erroresFijos['apellido_paterno']) ? 'err' : '' ?>">
+                <input type="text" id="apellidoPaterno" name="apellido_paterno" value="<?= e($valoresFijos['apellido_paterno']) ?>">
+              </div>
+              <?php if (isset($erroresFijos['apellido_paterno'])): ?><span class="hint err"><?= e($erroresFijos['apellido_paterno']) ?></span><?php endif; ?>
+            </div>
+            <div class="field">
+              <label class="fl">Apellido materno</label>
+              <div class="control">
+                <input type="text" id="apellidoMaterno" name="apellido_materno" value="<?= e($valoresFijos['apellido_materno']) ?>">
+              </div>
+            </div>
+            <div class="field">
+              <label class="fl">Nombres <span class="req">*</span></label>
+              <div class="control <?= isset($erroresFijos['nombres']) ? 'err' : '' ?>">
+                <input type="text" id="nombres" name="nombres" value="<?= e($valoresFijos['nombres']) ?>">
+              </div>
+              <?php if (isset($erroresFijos['nombres'])): ?><span class="hint err"><?= e($erroresFijos['nombres']) ?></span><?php endif; ?>
+            </div>
+          </div>
+
+          <div class="fields thirds" style="margin-top:14px">
             <div class="field o95-hide" <?= $esO95Index ? 'hidden style="display:none;"' : '' ?>>
               <label class="fl">Sexo</label>
               <div class="control">
@@ -178,36 +216,29 @@ if ($puedeElegirEstablecimiento) {
               <?php if (isset($erroresFijos['fecha_nac'])): ?><span class="hint err"><?= e($erroresFijos['fecha_nac']) ?></span><?php endif; ?>
             </div>
           </div>
-          <span class="hint" id="buscandopersonaHint" hidden>Consultando padrón y RENIEC…</span>
-          <div class="found" id="found" style="display:none">
-            <div class="pa" id="foundIniciales"></div>
-            <div><div class="pn" id="foundNombre"></div><div class="pd" id="foundDetalle"></div></div>
-            <div class="src"><svg width="13" height="13" viewBox="0 0 13 13"><path d="M2.5 6.5 5.5 9.5l5-6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> <span id="foundFuente">Autocompletado del padrón</span></div>
+          <div data-nucleo-incluido="nacimiento_distrito_id" <?= $nucleoIncluye('nacimiento_distrito_id') ? '' : 'hidden style="display:none;"' ?> style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+            <div class="eyebrow" style="margin-bottom:10px">Lugar de nacimiento</div>
+            <?php
+            (function (array $valoresFijos): void {
+                $prefijo = 'nacimiento-ubigeo';
+                $nombreCampoDepartamento = 'nacimiento_departamento_id';
+                $nombreCampoProvincia = 'nacimiento_provincia_id';
+                $nombreCampoDistrito = 'nacimiento_distrito_id';
+                $distritoRequerido = false;
+                $errorDistrito = null;
+                extract(contextoUbigeo($valoresFijos['nacimiento_distrito_id'] ?? null));
+                require __DIR__ . '/../partials/selector-ubigeo.php';
+            })($valoresFijos);
+            ?>
           </div>
-
-          <div class="fields thirds" style="margin-top:16px">
-            <div class="field">
-              <label class="fl">Apellido paterno <span class="req">*</span></label>
-              <div class="control <?= isset($erroresFijos['apellido_paterno']) ? 'err' : '' ?>">
-                <input type="text" id="apellidoPaterno" name="apellido_paterno" value="<?= e($valoresFijos['apellido_paterno']) ?>">
-              </div>
-              <?php if (isset($erroresFijos['apellido_paterno'])): ?><span class="hint err"><?= e($erroresFijos['apellido_paterno']) ?></span><?php endif; ?>
-            </div>
-            <div class="field">
-              <label class="fl">Apellido materno</label>
-              <div class="control">
-                <input type="text" id="apellidoMaterno" name="apellido_materno" value="<?= e($valoresFijos['apellido_materno']) ?>">
-              </div>
-            </div>
-            <div class="field">
-              <label class="fl">Nombres <span class="req">*</span></label>
-              <div class="control <?= isset($erroresFijos['nombres']) ? 'err' : '' ?>">
-                <input type="text" id="nombres" name="nombres" value="<?= e($valoresFijos['nombres']) ?>">
-              </div>
-              <?php if (isset($erroresFijos['nombres'])): ?><span class="hint err"><?= e($erroresFijos['nombres']) ?></span><?php endif; ?>
-            </div>
-          </div>
-          <div style="margin-top:14px">
+          <div <?= $nucleoIncluye('nacimiento_distrito_id') ? 'style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"' : 'style="margin-top:14px"' ?>>
+            <?php if ($nucleoIncluye('nacimiento_distrito_id')): ?>
+              <!-- Distingue este bloque de "Lugar de nacimiento" (justo arriba, mismo
+                   patrón de 3 selects) -- sin esto quedan visualmente indistinguibles.
+                   Solo se pinta cuando ambos coexisten (opt-in), para no cambiar la
+                   apariencia de las 23 fichas que no piden lugar de nacimiento. -->
+              <div class="eyebrow" style="margin-bottom:10px">Residencia habitual</div>
+            <?php endif; ?>
             <?php $prefijo = 'pac-ubigeo'; $errorDistrito = $erroresFijos['distrito_id'] ?? null; require __DIR__ . '/../partials/selector-ubigeo.php'; ?>
           </div>
 
@@ -288,6 +319,11 @@ if ($puedeElegirEstablecimiento) {
       // a95_viajo_en_los_ultimos_6_meses) -- mismo trato que A97/A44/B57
       // arriba, para no duplicarla en la tarjeta fija genérica.
       $isA95 = ($enfermedad['cie10'] ?? '') === 'A95';
+      // B55 (cotejo 2026-08-25): "Pruebas de laboratorio" inyecta el mismo
+      // widget "caso_muestra" dentro de su propia sección campo_def
+      // (secciones-clinicas.php) -- mismo trato que A95 arriba, para no
+      // duplicarlo en la tarjeta fija genérica de más abajo.
+      $isB55 = ($enfermedad['cie10'] ?? '') === 'B55';
       $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44 && !$isB57 && !$isA95;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
@@ -346,12 +382,24 @@ if ($puedeElegirEstablecimiento) {
       // duplicaba el mismo widget 2 veces. Mismo criterio que $mostrarViajes
       // arriba (usa_muestras se queda en 1, solo se suprime esta 2.ª
       // posición para A95).
-      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95;
+      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95 && !$isB55;
       ?>
       <div class="card section" id="seccionLaboratorioCard" <?= $mostrarLaboratorioGenerico ? '' : 'hidden' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>
         <div class="section-body" id="seccionLaboratorioBody">
-          <?php require __DIR__ . '/../partials/tablas-hijas/muestras.php'; ?>
+          <?php
+          // "hidden" solo esconde visualmente -- sin este if, los <select>/
+          // <input> de muestras.php se siguen renderizando (y enviando en el
+          // submit, HTML no excluye campos "hidden" salvo que además estén
+          // "disabled") aunque la tarjeta esté oculta para A95/B55. Bug real
+          // hallado 2026-08-25 al reactivar caso_muestra para B55: editar.php
+          // duplicaba cada fila de muestra al guardar (la copia oculta de acá
+          // también posteaba sus propios muestra_tipo_prueba[] con los mismos
+          // datos precargados). A95 tiene el mismo riesgo latente (nunca
+          // disparado: ningún caso A95 real tiene muestras guardadas todavía).
+          if ($mostrarLaboratorioGenerico): ?>
+            <?php require __DIR__ . '/../partials/tablas-hijas/muestras.php'; ?>
+          <?php endif; ?>
         </div>
       </div>
       <?php if ($mostrarLaboratorioGenerico) $numeroSeccion++; ?>

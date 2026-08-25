@@ -141,6 +141,7 @@ class Caso extends Model
                        p.titular_id, p.vinculo_titular,
                        p.celular, p.nacionalidad, p.direccion, p.referencia_localizar, p.tipo_zona, p.nombre_zona, p.tipo_via, p.nombre_via, p.numero, p.mz_lote, p.tiempo_residencia, p.n_historia_clinica, p.localidad, p.etnia, p.etnia_otra, p.pueblo_etnico, p.ocupacion, p.estado_civil, p.nombre_tutor, p.celular_tutor, p.gestante, p.fur, p.semanas_gestacion, p.trimestre_gestacion,
                        p.tiempo_reside_anios, p.tiempo_reside_meses, p.anterior_distrito_id, p.anterior_tipo_zona, p.anterior_nombre_zona, p.anterior_tipo_via, p.anterior_nombre_via, p.anterior_numero, p.anterior_mz_lote,
+                       p.nacimiento_distrito_id,
                        e.nombre AS enfermedad_nombre, e.cie10, e.tipo_notif,
                        e.multi_sujeto AS enfermedad_multi_sujeto, e.roles_sujeto AS enfermedad_roles_sujeto,
                        e.columnas_sujeto AS enfermedad_columnas_sujeto, e.titulo_sujeto AS enfermedad_titulo_sujeto,
@@ -152,6 +153,7 @@ class Caso extends Model
                        un.nombre AS unidad_nombre,
                        d.nombre AS distrito_nombre,
                        ad.nombre AS anterior_distrito_nombre,
+                       nd.nombre AS nacimiento_distrito_nombre,
                        lcd.nombre AS lugar_contagio_distrito_nombre,
                        t.apellido_paterno AS titular_apellido_paterno,
                        t.apellido_materno AS titular_apellido_materno,
@@ -167,6 +169,7 @@ class Caso extends Model
              LEFT JOIN unidad_pnp un     ON un.id = p.unidad_id
              LEFT JOIN distrito d        ON d.id = p.distrito_id
              LEFT JOIN distrito ad       ON ad.id = p.anterior_distrito_id
+             LEFT JOIN distrito nd       ON nd.id = p.nacimiento_distrito_id
              LEFT JOIN distrito lcd      ON lcd.id = c.lugar_contagio_distrito_id
              LEFT JOIN persona t         ON t.id = p.titular_id
              LEFT JOIN grado_pnp tg      ON tg.id = t.grado_id

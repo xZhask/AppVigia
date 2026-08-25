@@ -111,6 +111,9 @@ $accionEtiquetas = [
           <?php endif; ?>
           <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
           <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= e($edadTexto) ?></div></div>
+          <?php if (!empty($caso['nacimiento_distrito_nombre'])): ?>
+            <div class="field"><label class="fl">Distrito de nacimiento</label><div class="control" style="background:var(--paper)"><?= e($caso['nacimiento_distrito_nombre']) ?></div></div>
+          <?php endif; ?>
           <div class="field"><label class="fl">Distrito de domicilio</label><div class="control" style="background:var(--paper)"><?= e($caso['distrito_nombre'] ?? '—') ?></div></div>
           <div class="field"><label class="fl">N.° de celular</label><div class="control mono" style="background:var(--paper)"><?= e($caso['celular'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Nacionalidad</label><div class="control" style="background:var(--paper)"><?= e($caso['nacionalidad'] ?: '—') ?></div></div>

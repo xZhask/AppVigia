@@ -153,6 +153,7 @@ class CasosController extends Controller
             'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
+            'nacimiento_distrito_id' => $_POST['nacimiento_distrito_id'] ?? '',
             'edad_valor'         => trim($_POST['edad_valor'] ?? ''),
             'edad_unidad'        => $_POST['edad_unidad'] ?? '',
             'celular'            => trim($_POST['celular'] ?? ''),
@@ -285,7 +286,7 @@ class CasosController extends Controller
         // inicio de síntomas (ni siquiera existe si el paciente no fue
         // hospitalizado), así que A95 se suma acá en vez de dejar que el
         // fallback la capture por error.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95'], true);
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -608,6 +609,7 @@ class CasosController extends Controller
             'nombres'            => $caso['nombres'],
             'sexo'               => $caso['sexo'] ?? '',
             'fecha_nac'          => (string) ($caso['fecha_nac'] ?? ''),
+            'nacimiento_distrito_id' => (string) ($caso['nacimiento_distrito_id'] ?? ''),
             'edad_valor'         => (string) ($caso['edad_valor'] ?? ''),
             'edad_unidad'        => (string) ($caso['edad_unidad'] ?? ''),
             'celular'            => (string) ($caso['celular'] ?? ''),
@@ -719,6 +721,7 @@ class CasosController extends Controller
             'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
+            'nacimiento_distrito_id' => $_POST['nacimiento_distrito_id'] ?? '',
             'edad_valor'         => trim($_POST['edad_valor'] ?? ''),
             'edad_unidad'        => $_POST['edad_unidad'] ?? '',
             'celular'            => trim($_POST['celular'] ?? ''),
@@ -813,7 +816,7 @@ class CasosController extends Controller
         // A95 (2026-08-23): ver el motivo completo en crear() -- el primer
         // campo FECHA que encontraría extraerFechaInicioSintomas() es
         // a95_fecha_de_hospitalizacion, no un sustituto válido.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95'], true);
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -1182,7 +1185,7 @@ class CasosController extends Controller
                 $valoresCampos
             );
             if ($seccionOculta || (!empty($campo['depende_de']) && !campoVisiblePorDependencia($campo, $valoresCampos))) {
-                $valoresCampos[$campoId] = in_array($tipo, ['MULTISELECT', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true) ? [] : '';
+                $valoresCampos[$campoId] = in_array($tipo, ['MULTISELECT', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'SI_NO', 'MATRIZ', 'CRONOLOGIA'], true) ? [] : '';
                 continue;
             }
 
@@ -1241,7 +1244,7 @@ class CasosController extends Controller
                 continue;
             }
 
-            if (in_array($tipo, ['GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true) || is_array($_POST[$nombreCampo] ?? null)) {
+            if (in_array($tipo, ['GRUPO_SI_NO', 'SI_NO_FECHA', 'SI_NO', 'MATRIZ', 'CRONOLOGIA'], true) || is_array($_POST[$nombreCampo] ?? null)) {
                 $valorCrudo = $_POST[$nombreCampo] ?? [];
                 if (!is_array($valorCrudo)) {
                     $valorCrudo = [];
@@ -1318,7 +1321,7 @@ class CasosController extends Controller
             $crudo = $valoresCrudo[$campoId] ?? null;
             if ($campo['tipo'] === 'MULTISELECT') {
                 $valores[$campoId] = $crudo !== null && $crudo !== '' ? explode(',', $crudo) : [];
-            } elseif (in_array($campo['tipo'], ['GRUPO_SI_NO', 'SI_NO_FECHA', 'MATRIZ', 'CRONOLOGIA'], true)) {
+            } elseif (in_array($campo['tipo'], ['GRUPO_SI_NO', 'SI_NO_FECHA', 'SI_NO', 'MATRIZ', 'CRONOLOGIA'], true)) {
                 $valores[$campoId] = $crudo ? json_decode($crudo, true) ?? [] : [];
             } else {
                 $decoded = ($crudo && (str_starts_with($crudo, '{') || str_starts_with($crudo, '['))) ? json_decode($crudo, true) : null;
@@ -1341,6 +1344,7 @@ class CasosController extends Controller
             'nombres'            => '',
             'sexo'               => '',
             'fecha_nac'          => '',
+            'nacimiento_distrito_id' => '',
             'edad_valor'         => '',
             'edad_unidad'        => '',
             'celular'            => '',
@@ -1488,6 +1492,10 @@ class CasosController extends Controller
         $estadosCiviles = ['SOLTERO', 'CASADO', 'CONVIVIENTE', 'SEPARADO', 'VIUDO'];
         $estadoCivil = (in_array('estado_civil', $nucleoIncluidosPermitido, true) && in_array($valoresFijos['estado_civil'] ?? '', $estadosCiviles, true))
             ? $valoresFijos['estado_civil'] : null;
+        // nacimiento_distrito_id (cotejo B55, "I. Datos generales" -- pág. 45
+        // del PDF): mismo criterio de opt-in que n_historia_clinica/estado_civil.
+        $nacimientoDistritoId = (in_array('nacimiento_distrito_id', $nucleoIncluidosPermitido, true) && ($valoresFijos['nacimiento_distrito_id'] ?? '') !== '')
+            ? $valoresFijos['nacimiento_distrito_id'] : null;
 
         // migracion_reciente (cotejo B57, sección "IV. Migración"): opt-in a
         // nivel de ficha completa (booleano, no lista) -- si la ficha activa
@@ -1587,6 +1595,7 @@ class CasosController extends Controller
                 'anterior_numero'      => $anteriorNumero,
                 'anterior_mz_lote'     => $anteriorMzLote,
                 'n_historia_clinica' => $nHistoriaClinica,
+                'nacimiento_distrito_id' => $nacimientoDistritoId,
                 'localidad'          => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
                 'etnia'              => $etnia,
                 'etnia_otra'         => $etniaOtra,

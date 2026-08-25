@@ -34,11 +34,11 @@ tiene ficha propia en el manifiesto) = 24.
 | 22 | Sarampión / Rubéola / Febriles Eruptivas | 37-39 | B05 | ✅ cotejada |
 | 23 | Enfermedad de Chagas | 40-41 | B57 | |
 | 24 | Enfermedad de Carrión (Bartonelosis) | 42-44 | A44 | |
-| 25 | Leishmaniasis | 45-48 | B55 | |
+| 25 | Leishmaniasis | 45-48 | B55 | ✅ cotejada |
 | 26 | Arbovirosis (Dengue/Chik/Zika/FA) | 49 | A97 | el manifiesto lo marca como "Anexo N.° 01" |
 | 27 | EDA Grave — Cólera | 50-51 | A00 | ficha real de 2 páginas — ver discrepancia 2 en PENDIENTES.md; el manifiesto declara `pdf_paginas: 50` (falta la 51) |
 
-## Pendiente de cotejar (18)
+## Pendiente de cotejar (17)
 
 En el orden de la tabla: A37.0, B01, B04X, Y59.0 (3 entradas), Z21, B24,
-A50, A33, A35, Y07, A95, P96, V99, B57, A44, B55, A97, A00.
+A50, A33, A35, Y07, A95, P96, V99, B57, A44, A97, A00.

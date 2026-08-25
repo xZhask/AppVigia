@@ -603,6 +603,20 @@ document.addEventListener('DOMContentLoaded', function () {
     campoGestante.hidden = !esFemenino;
     campoGestante.style.display = esFemenino ? '' : 'none';
 
+    // B55 (cotejo 2026-08-25): "Fecha de última regla" solo si Sexo=Femenino
+    // -- independiente de Gestante (a diferencia de Semanas/Trimestre/FUR-A44
+    // de más abajo, que además exigen gestante=Sí). No existe fuera de B55,
+    // el guard hace que sea un no-op en cualquier otra ficha.
+    var campoFurB55 = document.getElementById('campoFurB55');
+    if (campoFurB55) {
+      campoFurB55.hidden = !esFemenino;
+      campoFurB55.style.display = esFemenino ? '' : 'none';
+      if (!esFemenino) {
+        var furB55Inp = campoFurB55.querySelector('input');
+        if (furB55Inp) furB55Inp.value = '';
+      }
+    }
+
     if (!esFemenino && gestanteSel) gestanteSel.value = '';
 
     var esGestante = esFemenino && gestanteSel && gestanteSel.value === '1';

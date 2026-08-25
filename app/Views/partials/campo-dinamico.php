@@ -13,6 +13,7 @@ $plantillasPorTipo = [
     'TEXTAREA'    => 'textarea',
     'GRUPO_SI_NO' => 'grupo-si-no',
     'SI_NO_FECHA' => 'si-no-fecha',
+    'SI_NO'       => 'si-no',
     'MATRIZ'      => 'matriz',
     'CRONOLOGIA'  => 'cronologia',
 ];

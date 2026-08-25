@@ -379,6 +379,10 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
     switch ($campo['tipo']) {
         case 'BOOLEANO':
             return $valorCrudo === '1' ? 'Sí' : 'No';
+        case 'SI_NO':
+            $decodSiNo = json_decode($valorCrudo, true);
+            $marcado = is_array($decodSiNo) ? ($decodSiNo['marcado'] ?? '') : '';
+            return ['SI' => 'Sí', 'NO' => 'No', 'IGNORADO' => 'Ignorado'][$marcado] ?? '—';
         case 'FECHA':
             return fechaIsoADmy($valorCrudo) ?: '—';
         case 'SELECT':
@@ -387,6 +391,50 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             $mapa = array_column($opciones, 'etiqueta', 'valor');
             $valores = $campo['tipo'] === 'MULTISELECT' ? explode(',', $valorCrudo) : [$valorCrudo];
             return implode(', ', array_map(fn($v) => $mapa[$v] ?? $v, $valores));
+        case 'MATRIZ':
+            $decoded = json_decode($valorCrudo, true);
+            if (!is_array($decoded) || empty($decoded)) {
+                return '—';
+            }
+            if (($campo['clave'] ?? '') === 'b55_lesiones') {
+                $items = [];
+                foreach ($decoded as $idx => $les) {
+                    $n = $idx + 1;
+                    $tipo = $les['tipo'] ?? 'Lesión';
+                    $loc = $les['localizacion'] ?? '—';
+                    $dim = (!empty($les['d1']) && !empty($les['d2'])) ? " ({$les['d1']}×{$les['d2']} mm)" : '';
+                    $items[] = "#{$n}: {$tipo} en {$loc}{$dim}";
+                }
+                return implode(' | ', $items) ?: '—';
+            }
+            if (($campo['clave'] ?? '') === 'b55_compromiso_de_estructuras') {
+                // Mismo diccionario clave->etiqueta que
+                // partials/campos/leishmaniasis-mucosa.php (la única fuente
+                // real de esas claves -- el "filas" del manifiesto para este
+                // campo no se usa, ver [[cotejo_leishmaniasis_b55_revision]]).
+                $etiquetasEstructuras = [
+                    'nariz_narinas' => 'Narinas', 'nariz_1_3_anterior' => '1/3 anterior',
+                    'nariz_septo' => 'Septo nasal', 'nariz_cornetes' => 'Cornetes',
+                    'boca_labios' => 'Labios', 'boca_arcada' => 'Arcada dental',
+                    'boca_paladar' => 'Paladar (duro / blando)', 'boca_uvula' => 'Úvula',
+                    'faringe' => 'Faringe / Rinofaringe', 'epiglotis' => 'Epiglotis',
+                    'cuerdas_vocales' => 'Cuerdas vocales', 'otras_estructuras' => 'Otras estructuras',
+                ];
+                $afectadas = [];
+                foreach ($decoded as $est => $vals) {
+                    if (!empty($vals['compromiso']) || !empty($vals['eritema']) || !empty($vals['ulcera']) || !empty($vals['edema']) || !empty($vals['infiltracion'])) {
+                        $signos = [];
+                        if (!empty($vals['eritema'])) $signos[] = 'Eritema';
+                        if (!empty($vals['edema'])) $signos[] = 'Edema';
+                        if (!empty($vals['infiltracion'])) $signos[] = 'Infiltración';
+                        if (!empty($vals['ulcera'])) $signos[] = 'Úlcera';
+                        $lblSignos = $signos ? ' [' . implode(', ', $signos) . ']' : '';
+                        $afectadas[] = ($etiquetasEstructuras[$est] ?? ucfirst(str_replace('_', ' ', $est))) . $lblSignos;
+                    }
+                }
+                return $afectadas ? implode('; ', $afectadas) : 'Sin compromiso de estructuras mucosas';
+            }
+            return is_array($decoded) ? 'Registrado (' . count($decoded) . ' ítems)' : $valorCrudo;
         default:
             return $valorCrudo;
     }

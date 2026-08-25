@@ -77,7 +77,7 @@ $es = $estados[$caso['estado']];
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44'], true) ? 'hidden' : '' ?>>
+          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55'], true) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
@@ -158,7 +158,29 @@ $es = $estados[$caso['estado']];
               <?php if (isset($erroresFijos['fecha_nac'])): ?><span class="hint err"><?= e($erroresFijos['fecha_nac']) ?></span><?php endif; ?>
             </div>
           </div>
-          <div style="margin-top:14px">
+          <div data-nucleo-incluido="nacimiento_distrito_id" <?= $nucleoIncluye('nacimiento_distrito_id') ? '' : 'hidden style="display:none;"' ?> style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+            <div class="eyebrow" style="margin-bottom:10px">Lugar de nacimiento</div>
+            <?php
+            (function (array $valoresFijos): void {
+                $prefijo = 'nacimiento-ubigeo';
+                $nombreCampoDepartamento = 'nacimiento_departamento_id';
+                $nombreCampoProvincia = 'nacimiento_provincia_id';
+                $nombreCampoDistrito = 'nacimiento_distrito_id';
+                $distritoRequerido = false;
+                $errorDistrito = null;
+                extract(contextoUbigeo($valoresFijos['nacimiento_distrito_id'] ?? null));
+                require __DIR__ . '/../partials/selector-ubigeo.php';
+            })($valoresFijos);
+            ?>
+          </div>
+          <div <?= $nucleoIncluye('nacimiento_distrito_id') ? 'style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"' : 'style="margin-top:14px"' ?>>
+            <?php if ($nucleoIncluye('nacimiento_distrito_id')): ?>
+              <!-- Distingue este bloque de "Lugar de nacimiento" (justo arriba, mismo
+                   patrón de 3 selects) -- sin esto quedan visualmente indistinguibles.
+                   Solo se pinta cuando ambos coexisten (opt-in), para no cambiar la
+                   apariencia de las 23 fichas que no piden lugar de nacimiento. -->
+              <div class="eyebrow" style="margin-bottom:10px">Residencia habitual</div>
+            <?php endif; ?>
             <?php $prefijo = 'pac-ubigeo'; $errorDistrito = $erroresFijos['distrito_id'] ?? null; require __DIR__ . '/../partials/selector-ubigeo.php'; ?>
           </div>
 
@@ -237,6 +259,10 @@ $es = $estados[$caso['estado']];
       // a95_viajo_en_los_ultimos_6_meses) -- mismo trato que A97/A44/B57
       // arriba, para no duplicarla en la tarjeta fija genérica.
       $isA95 = ($enfermedad['cie10'] ?? '') === 'A95';
+      // B55 (cotejo 2026-08-25): mismo trato que A95 -- "Pruebas de
+      // laboratorio" inyecta caso_muestra dentro de su propia sección
+      // campo_def (secciones-clinicas.php), se suprime la tarjeta genérica.
+      $isB55 = ($enfermedad['cie10'] ?? '') === 'B55';
       $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44 && !$isB57 && !$isA95;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
@@ -292,12 +318,20 @@ $es = $estados[$caso['estado']];
       // "Laboratorio" (caso_muestra) ya se inyecta dentro de la sección
       // campo_def "Laboratorio" (secciones-clinicas.php), se suprime esta
       // 2.ª posición genérica para no duplicar el widget.
-      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95;
+      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95 && !$isB55;
       ?>
       <div class="card section" id="seccionLaboratorioCard" <?= $mostrarLaboratorioGenerico ? '' : 'hidden' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>
         <div class="section-body" id="seccionLaboratorioBody">
-          <?php require __DIR__ . '/../partials/tablas-hijas/muestras.php'; ?>
+          <?php
+          // "hidden" solo esconde visualmente -- ver el comentario largo
+          // equivalente en nueva/index.php (bug real hallado 2026-08-25:
+          // sin este if, esta copia oculta re-postea sus propios
+          // muestra_tipo_prueba[]/etc precargados, duplicando cada fila al
+          // guardar un caso existente).
+          if ($mostrarLaboratorioGenerico): ?>
+            <?php require __DIR__ . '/../partials/tablas-hijas/muestras.php'; ?>
+          <?php endif; ?>
         </div>
       </div>
       <?php if ($mostrarLaboratorioGenerico) $numeroSeccion++; ?>
