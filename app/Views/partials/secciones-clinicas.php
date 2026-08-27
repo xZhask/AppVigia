@@ -205,6 +205,13 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         'a95_cuantas_personas_viven_en_su_casa',
         'a95_viajo_en_los_ultimos_6_meses',
     ],
+    'B04X' => [
+        // notificacion-fechas-b04x.php (cotejo 2026-08-27, págs. 5-6 del
+        // PDF, sección I): Servicio de ingreso/CERITS, en la tarjeta fija
+        // "1. Notificación". "Fecha de investigación" (ítem 2) no está acá
+        // -- se reutiliza el campo núcleo del mismo nombre en "Investigador".
+        'b04x_servicio_de_ingreso_cerits',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -224,6 +231,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'A97' => ['Enfermedad / evento a notificar', 'Subsistema de vigilancia'],
     'B57' => ['Fechas de notificación'],
     'A95' => ['Fechas de notificación', 'Migración'],
+    'B04X' => ['Datos de notificación e investigación del caso'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {

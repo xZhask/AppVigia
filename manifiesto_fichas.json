@@ -4469,15 +4469,34 @@
         ]
       },
       "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion', pero caso_contacto no tiene esa columna (no existe en el esquema) -- se deja fuera en vez de inventar una columna nueva para esto.",
+      "_nota_nucleo_omitidos": "Cotejo Sección II (2026-08-27): la carga original sin verificar omitía 'referencia_localizar' y 'pueblo_etnico', pero el PDF SÍ los pide (ítems 24 y 17 -- Andino/Indígena amazónico ===> Pueblo étnico). Se quitaron de la lista. 'ocupacion' se mantiene omitido a propósito: el PDF pide una lista cerrada de 10 categorías (ítem 18), no texto libre -- va como campo_def propio (b04x_ocupacion), mismo criterio que Y59.0 (ver memoria ocupacion_promovida_a_nucleo).",
       "nucleo_omitidos": [
-        "referencia_localizar",
-        "pueblo_etnico",
         "ocupacion"
+      ],
+      "unidades_edad": [
+        "ANIOS",
+        "MESES",
+        "DIAS"
+      ],
+      "detalle_domicilio": [
+        "TIEMPO_RESIDENCIA"
       ],
       "secciones": [
         {
-          "nombre": "Datos del paciente (adicionales)",
+          "nombre": "Datos de notificación e investigación del caso",
           "orden": 1,
+          "campos": [
+            {
+              "clave": "b04x_servicio_de_ingreso_cerits",
+              "etiqueta": "Servicio de ingreso/CERITS donde se identificó el caso",
+              "tipo": "TEXTO",
+              "orden": 1
+            }
+          ]
+        },
+        {
+          "nombre": "Datos del paciente (adicionales)",
+          "orden": 2,
           "campos": [
             {
               "clave": "b04x_poblacion_especifica",
@@ -4487,9 +4506,9 @@
               "opciones": [
                 "HSH",
                 "Mujer transgénero",
-                "Trabajador(a) sexual",
                 "Privado de la libertad",
                 "Personal de salud",
+                "Trabajador(a) sexual",
                 "Otro"
               ]
             },
@@ -4505,12 +4524,66 @@
                 "Otra"
               ],
               "sensible": true
+            },
+            {
+              "clave": "b04x_ocupacion",
+              "etiqueta": "Ocupación",
+              "tipo": "SELECT",
+              "orden": 3,
+              "opciones": [
+                "Sin ocupación",
+                "Empleado",
+                "Obrero",
+                "Independiente",
+                "Estudiante",
+                "FF.AA.",
+                "Fuerza Policial",
+                "Personal de salud",
+                "Otro",
+                "No aplica"
+              ]
+            },
+            {
+              "clave": "b04x_ocupacion_independiente_especificar",
+              "etiqueta": "Independiente (especificar)",
+              "tipo": "TEXTO",
+              "orden": 4,
+              "depende_de": "Ocupación",
+              "valor_activador": "INDEPENDIENTE"
+            },
+            {
+              "clave": "b04x_ocupacion_personal_salud_especificar",
+              "etiqueta": "Personal de salud (especificar)",
+              "tipo": "TEXTO",
+              "orden": 5,
+              "depende_de": "Ocupación",
+              "valor_activador": "PERSONAL_DE_SALUD"
+            },
+            {
+              "clave": "b04x_ocupacion_otro_especificar",
+              "etiqueta": "Otro (especificar)",
+              "tipo": "TEXTO",
+              "orden": 6,
+              "depende_de": "Ocupación",
+              "valor_activador": "OTRO"
+            },
+            {
+              "clave": "b04x_lugar_de_trabajo_o_estudio",
+              "etiqueta": "Lugar de trabajo o estudio",
+              "tipo": "TEXTO",
+              "orden": 7
+            },
+            {
+              "clave": "b04x_puerpera",
+              "etiqueta": "Puérpera",
+              "tipo": "BOOLEANO",
+              "orden": 8
             }
           ]
         },
         {
           "nombre": "Lugar probable de infección y exposición",
-          "orden": 2,
+          "orden": 3,
           "campos": [
             {
               "clave": "b04x_lugares_a_los_que_asistio",
@@ -4585,7 +4658,7 @@
         },
         {
           "nombre": "Antecedentes",
-          "orden": 3,
+          "orden": 4,
           "campos": [
             {
               "clave": "b04x_estado_inmunologico_deprimido",
@@ -4694,7 +4767,7 @@
         },
         {
           "nombre": "Cuadro clínico",
-          "orden": 4,
+          "orden": 5,
           "campos": [
             {
               "clave": "b04x_fecha_de_inicio_de_sintomas_fis",
@@ -4796,7 +4869,7 @@
         },
         {
           "nombre": "Hospitalización",
-          "orden": 5,
+          "orden": 6,
           "campos": [
             {
               "clave": "b04x_hospitalizado",
@@ -4886,7 +4959,7 @@
         },
         {
           "nombre": "Clasificación",
-          "orden": 6,
+          "orden": 7,
           "campos": [
             {
               "clave": "b04x_clasificacion",

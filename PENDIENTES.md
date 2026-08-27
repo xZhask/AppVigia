@@ -4913,3 +4913,133 @@ aprobó antes de tocar el archivo): registro real por curl con
 `caso.fecha_inicio_sintomas`, sin regresión. Casos de prueba borrados.
 Triple verificador sin cambios (B26 sigue con su único huérfano
 preexistente, `b26_fecha_de_inicio_de_sintomas`, sin variación).
+
+---
+
+## Cotejo B04X (Viruela del mono / Mpox) -- Sección I "Datos generales de
+la notificación", 2026-08-27
+
+Inicio del cotejo campo por campo de B04X contra el PDF (págs. 5-6), a
+pedido del usuario. Línea base limpia: los 3 verificadores no mostraban
+diferencias ni huérfanos en B04X antes de empezar.
+
+**Cotejado (ítems 1 a 8 del PDF, Sección I):**
+
+| Ítem | Etiqueta PDF | Resultado |
+|---|---|---|
+| 1 | Fecha de notificación | OK -- núcleo (tarjeta "1. Notificación") |
+| 2 | Fecha de investigación | OK -- núcleo `fecha_investigacion`, sección "Investigador" (`investigador.php`, común a las 24 fichas). Decisión del usuario 2026-08-27: NO duplicar como campo_def propio -- a diferencia de A370/A35/A33/B01/PFA, el PDF de B04X no trae una segunda fecha de investigación distinta más adelante (visita domiciliaria vs. cierre), así que es el mismo dato |
+| 3 | GERESA/DIRESA/DIRIS | BLOQUEADO -- dato constante del establecimiento (`red_salud.diresa`), mismo criterio que A370/A35/A33 |
+| 4 | RSS/RIS (Red de Salud) | BLOQUEADO -- dato constante del establecimiento (`red_salud.nombre`) |
+| 5 | Microred | BLOQUEADO -- sin modelo jerárquico en el sistema (mismo bloqueo ya documentado para A37.0) |
+| 6 | EESS | OK -- núcleo (selector Establecimiento) |
+| 7 | Inst. Adm. (MINSA/EsSalud/FF.AA/Privado) | BLOQUEADO -- dato constante del establecimiento (`establecimiento.institucion` enum) |
+| 8 | Servicio de ingreso/CERITS donde se identificó el caso | AGREGADO -- `b04x_servicio_de_ingreso_cerits` (TEXTO) |
+
+**Corrección post-implementación (mismo día):** la primera pasada había
+agregado `b04x_fecha_de_investigacion` como campo_def propio en la
+tarjeta "1. Notificación", duplicando el núcleo `fecha_investigacion`
+que ya se pinta en la sección "Investigador" de las 24 fichas. El
+usuario señaló la duplicación; se quitó el campo del manifiesto (43→42
+campos), del partial `notificacion-fechas-b04x.php` y de
+`$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA['B04X']`, y se recargó con
+`cargar_fichas.php --apply --cie10=B04X`. Triple verificador vuelto a
+correr en verde (42/42, 0 huérfanos, 255 claves).
+
+**Implementación:**
+1. `manifiesto_fichas.json`: nueva sección "Datos de notificación e
+   investigación del caso" (orden 1, empuja el resto de B04X de
+   orden 2 a 7) con los 2 campos nuevos.
+2. `notificacion-fechas-b04x.php` (nuevo, mismo patrón que
+   notificacion-fechas-a370.php): pinta los 2 campos en la tarjeta fija
+   "1. Notificación", envuelto en función-cierre para no pisar `$campo`
+   ambiente.
+3. `secciones-clinicas.php`: `'B04X'` agregado a
+   `$CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA` y a
+   `$SECCIONES_CON_PARTIAL_A_MEDIDA` (los 2 arreglos, como exige el
+   mecanismo -- ver `[[cabecera_notificacion_requiere_partial_dedicado]]`).
+4. `nueva/index.php` y `fichas/editar.php`: `'B04X'` sumado a la lista
+   de exclusión de `notificacionCaptacionWrap` (el PDF no trae "Tipo de
+   captación"/"Lugar de captación", igual que A80/B05/O95/P35.0/A35/
+   A33/A37.0/A97/A44/B55) + `require` del partial nuevo.
+5. `cargar_fichas.php --apply --confirmo-apply --cie10=B04X`: 7
+   secciones / 43 campos (antes 6 / 41).
+
+**Verificado:** triple verificador en verde (43/43, 0 huérfanos, 256
+claves sin faltantes). Vuelta completa con Playwright + controlador
+real: creación de caso F-00137 (B04X) con los 2 campos nuevos llenos
+-> valores persistidos en `caso_valor` -> visibles al reabrir en
+`/casos/137/editar` y en `/casos/137` (solo lectura). Prueba negativa:
+se inyectó por POST un campo ajeno a B04X (`a36_temperatura_c`) en el
+mismo formulario de edición -- el servidor lo descartó (0 filas en
+`caso_valor` para ese campo_def_id), y los 2 campos propios de B04X no
+se vieron afectados. Caso y persona de prueba borrados sin dejar filas
+residuales. Sin tocar ninguna ficha ya cotejada (A36/B26/A80/O95/B05/
+P35.0/B01/A95): A36 no está en ninguno de los arreglos modificados.
+
+**Pendiente:** el resto de B04X (Secciones III a XI del PDF: Lugar
+probable de infección, Contactos, Antecedentes, Cuadro clínico,
+Laboratorio, Clasificación, Personal de salud/Investigador) todavía no
+se cotejó campo por campo contra el PDF -- lo que hoy tiene el
+manifiesto viene de la carga masiva original (sin verificación), no de
+un cotejo. B04X **no** queda cerrado con esta sesión.
+
+---
+
+## Cotejo B04X -- Sección II "Datos del paciente", 2026-08-27 (mismo día)
+
+El usuario trajo un inventario de la Sección II generado por otra
+herramienta (formato "Jerarquía"/"Dependencias condicionales"). Por la
+regla de la plantilla ("la fuente de verdad es la página del PDF, nunca
+un inventario generado por otra herramienta") se cotejó de nuevo contra
+el texto real extraído del PDF (págs. 5-6) en vez de usarlo tal cual --
+se encontraron 2 errores en ese inventario: a "Población específica"
+le faltaban las opciones "Privado de la libertad" y "Personal de
+salud" (el PDF sí las trae, y el sistema ya las tenía bien); a
+"Ocupación" le sobraba "Profesional" (no está en el PDF) y le faltaba
+"No aplica (menores de 3 años, jubilados, privado de libertad)".
+
+**Hallazgo real (bug de la carga original sin verificar):** B04X tenía
+`pueblo_etnico` y `referencia_localizar` en `nucleo_omitidos`, pero el
+PDF SÍ pide ambos (ítem 17: "Andino ===> Pueblo étnico"/"Indígena
+amazónico ===> Pueblo étnico"; ítem 24: "Referencia del dom"). Se
+quitaron de la lista -- ya se muestran, y la cascada Etnia→Pueblo
+étnico (compartida con B05, `MAPA_GRUPO_ETNICO` en `ficha.js`) funciona
+sin tocar código, solo por dejar de omitir el campo núcleo.
+
+**Cotejado (ítems 9-29):**
+
+| Ítem | Resultado |
+|---|---|
+| 9-11, 13, 14 | OK -- núcleo, sin cambios |
+| 12 (Edad Años/Meses/Días) | AGREGADO -- `unidades_edad: ["ANIOS","MESES","DIAS"]` |
+| 15 (Población específica) | OK -- ya existía completo; se reordenaron las opciones para calzar con el orden de lectura del PDF |
+| 16 (Orientación sexual) | OK -- ya existía completo |
+| 17 (Etnia + Pueblo étnico) | CORREGIDO -- `pueblo_etnico` ya no está en `nucleo_omitidos` |
+| 18 (Ocupación, 10 categorías) | AGREGADO -- `b04x_ocupacion` (SELECT) + 3 `campo_def` TEXTO dependientes (Independiente/Personal de salud/Otro, cada uno con `depende_de: "Ocupación"`); núcleo `ocupacion` (texto libre) se mantiene omitido a propósito, mismo criterio que Y59.0 |
+| 19 (Lugar de trabajo o estudio) | AGREGADO -- `b04x_lugar_de_trabajo_o_estudio` (TEXTO) |
+| 20-21 (Gestante / semanas) | OK -- núcleo, sin cambios |
+| 22 (Puérpera) | AGREGADO -- `b04x_puerpera` (BOOLEANO), mismo criterio que A37.0 |
+| 23 (Domicilio actual) | OK -- núcleo |
+| 24 (Referencia del dom) | CORREGIDO -- `referencia_localizar` ya no está en `nucleo_omitidos` |
+| 25-27 (Distrito/Provincia/Departamento) | OK -- selector ubigeo |
+| 28 (Nacionalidad) | OK -- núcleo |
+| 29 (Tiempo de residencia, extranjeros) | AGREGADO -- `detalle_domicilio: ["TIEMPO_RESIDENCIA"]` |
+
+**Implementación:** solo cambios declarativos en `manifiesto_fichas.json`
+(sin tocar ningún partial ni JS compartido -- `nucleo_omitidos`,
+`unidades_edad`, `detalle_domicilio` y 6 `campo_def` nuevos en la
+sección "Datos del paciente (adicionales)"). Cargado con
+`cargar_fichas.php --apply --cie10=B04X` (42→48 campos).
+
+**Verificado:** triple verificador en verde (48/48, 0 huérfanos, 255
+claves). Playwright: cascada Etnia=Indígena amazónico → Pueblo étnico
+repoblado con las opciones correctas (Asháninka/Awajún/...); Ocupación=
+Independiente → solo se revela "Independiente (especificar)" (los otros
+2 dependientes quedan ocultos). Vuelta completa real: caso F-00138
+creado con edad_valor=39/edad_unidad=ANIOS, etnia=INDIGENA_AMAZONICO,
+pueblo_etnico=Awajún, ocupación=INDEPENDIENTE + especificar,
+referencia_localizar y tiempo_residencia (ambos en `persona`, no en
+`caso`) -- todo persistido, visible en editar/ver, caso y persona de
+prueba borrados sin filas residuales. Sin tocar ninguna ficha ya
+cotejada (cambio 100% declarativo, no toca partials compartidos).
