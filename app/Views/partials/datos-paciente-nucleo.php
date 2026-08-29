@@ -55,22 +55,33 @@ $nucleoIncluye = fn(string $campoNucleo): bool => in_array($campoNucleo, $nucleo
 require __DIR__ . '/datos-paciente-b05-loader.php';
 ?>
 <?php if (!empty($unidadesEdad)): ?>
-<!-- 0. Edad con unidad (solo fichas que lo declaran vía unidades_edad) -->
-<div class="fields thirds" data-edad-unidad-bloque style="margin-top:14px">
+<!--
+  0. Edad con unidad (solo fichas que lo declaran vía unidades_edad).
+  Híbrido decidido el 2026-08-27: si hay Fecha de nacimiento, la edad se
+  CALCULA (edad-calculada.js, misma fórmula que edadConUnidadDesdeFecha()
+  en ayudantes.php) y los dos controles quedan deshabilitados -- el
+  servidor recalcula igual al guardar, sin confiar en lo que llegue
+  deshabilitado o no en el POST. Si no hay fecha de nacimiento (paciente
+  sin documento, edad aproximada), quedan editables como respaldo manual.
+  data-unidades-edad es el dato que la ficha activa declaró; el JS no
+  decide nada por CIE-10, solo lee esta lista.
+-->
+<div class="fields thirds" data-edad-unidad-bloque data-unidades-edad="<?= e(json_encode($unidadesEdad)) ?>" style="margin-top:14px">
   <div class="field">
     <label class="fl">Edad</label>
-    <div class="control mono"><input type="number" name="edad_valor" min="0" step="1" value="<?= e($valoresFijos['edad_valor'] ?? '') ?>"></div>
+    <div class="control mono"><input type="number" id="edadValorInput" name="edad_valor" min="0" step="1" value="<?= e($valoresFijos['edad_valor'] ?? '') ?>"></div>
   </div>
   <div class="field">
     <label class="fl">Unidad</label>
     <div class="control">
-      <select name="edad_unidad" data-nosearch="true">
+      <select id="edadUnidadSelect" name="edad_unidad" data-nosearch="true">
         <option value="">Seleccionar…</option>
         <?php foreach ($unidadesEdad as $unidad): ?>
           <option value="<?= e($unidad) ?>" <?= seleccionado($valoresFijos['edad_unidad'] ?? '', $unidad) ?>><?= e($etiquetasUnidadEdad[$unidad] ?? $unidad) ?></option>
         <?php endforeach; ?>
       </select>
     </div>
+    <span class="hint" id="edadCalculadaHint" hidden>Calculada desde la fecha de nacimiento</span>
   </div>
 </div>
 <?php endif; ?>

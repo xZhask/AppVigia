@@ -3698,6 +3698,83 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   calcularTotalesB05();
+
+  // Edad calculada (Entrada F, híbrido 2026-08-27): mismo criterio que
+  // edadConUnidadDesdeFecha() en ayudantes.php -- unidad más gruesa entre
+  // las que declaró la ficha (data-unidades-edad) con valor > 0; si todas
+  // dan 0, la más gruesa disponible con su valor real. Es solo vista previa:
+  // el servidor recalcula igual al guardar, así que un desfase aquí nunca
+  // corrompe el dato guardado.
+  function diferenciaCalendario(fechaNacIso, fechaRefIso) {
+    var nac = new Date(fechaNacIso + 'T00:00:00');
+    var ref = new Date(fechaRefIso + 'T00:00:00');
+    if (isNaN(nac.getTime()) || isNaN(ref.getTime()) || ref < nac) return null;
+
+    var anios = ref.getFullYear() - nac.getFullYear();
+    var meses = ref.getMonth() - nac.getMonth();
+    var dias = ref.getDate() - nac.getDate();
+    if (dias < 0) {
+      meses -= 1;
+      var ultimoDiaMesAnterior = new Date(ref.getFullYear(), ref.getMonth(), 0).getDate();
+      dias += ultimoDiaMesAnterior;
+    }
+    if (meses < 0) {
+      anios -= 1;
+      meses += 12;
+    }
+    var msPorDia = 24 * 60 * 60 * 1000;
+    var diasTotales = Math.round((ref.getTime() - nac.getTime()) / msPorDia);
+    return { anios: anios, mesesTotales: anios * 12 + meses, diasTotales: diasTotales };
+  }
+
+  function actualizarEdadCalculada() {
+    var bloque = document.querySelector('[data-edad-unidad-bloque]');
+    if (!bloque) return;
+    var inputEdad = document.getElementById('edadValorInput');
+    var selectUnidad = document.getElementById('edadUnidadSelect');
+    var hint = document.getElementById('edadCalculadaHint');
+    var inputFechaNac = document.querySelector('input[name="fecha_nac"]');
+    var inputFechaNotif = document.querySelector('input[name="fecha_notif"]');
+    if (!inputEdad || !selectUnidad || !inputFechaNac) return;
+
+    var fechaNac = inputFechaNac.value;
+    if (!fechaNac) {
+      inputEdad.disabled = false;
+      selectUnidad.disabled = false;
+      if (hint) hint.hidden = true;
+      return;
+    }
+
+    var unidadesPermitidas = [];
+    try {
+      unidadesPermitidas = JSON.parse(bloque.getAttribute('data-unidades-edad') || '[]');
+    } catch (e) {
+      unidadesPermitidas = [];
+    }
+    var fechaRef = (inputFechaNotif && inputFechaNotif.value) ? inputFechaNotif.value : new Date().toISOString().slice(0, 10);
+    var diff = diferenciaCalendario(fechaNac, fechaRef);
+    if (!diff) return;
+
+    var valoresPorUnidad = { ANIOS: diff.anios, MESES: diff.mesesTotales, DIAS: diff.diasTotales };
+    var orden = ['ANIOS', 'MESES', 'DIAS'];
+    var disponibles = orden.filter(function(u) { return unidadesPermitidas.indexOf(u) !== -1; });
+    if (!disponibles.length) return;
+
+    var elegida = disponibles.find(function(u) { return valoresPorUnidad[u] > 0; }) || disponibles[0];
+    inputEdad.value = valoresPorUnidad[elegida];
+    selectUnidad.value = elegida;
+    if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selectUnidad);
+    inputEdad.disabled = true;
+    selectUnidad.disabled = true;
+    if (hint) hint.hidden = false;
+  }
+
+  document.addEventListener('input', function(e) {
+    if (e.target && (e.target.name === 'fecha_nac' || e.target.name === 'fecha_notif')) {
+      actualizarEdadCalculada();
+    }
+  });
+  actualizarEdadCalculada();
 });
 
 

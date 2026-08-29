@@ -478,3 +478,58 @@ function edadDesdeFecha(?string $fechaNacIso): ?int
 
     return $nacimiento->diff(new DateTime())->y;
 }
+
+/**
+ * Edad (valor + unidad) calculada desde fecha de nacimiento hasta una
+ * fecha de referencia (por defecto hoy), para fichas que declaran
+ * `unidades_edad` (Entrada F, PETICION_MAPEO_Y_EDAD.md Parte 2 -- híbrido
+ * decidido el 2026-08-27: si hay fecha de nacimiento, la edad se calcula;
+ * el input manual queda solo de respaldo cuando no se conoce).
+ *
+ * Elige la unidad más gruesa de $unidadesPermitidas con valor > 0 (evita
+ * "0 años" cuando en realidad son "8 meses"); si todas dan 0 (nacido el
+ * mismo día de la referencia), usa la más gruesa disponible con su valor
+ * real. "Meses" es el total de meses transcurridos (no el resto tras
+ * restar años): necesario cuando la ficha no admite ANIOS (P35.0) y la
+ * persona ya tiene más de un año -- no se trunca a 0-11.
+ *
+ * Solo contempla ANIOS/MESES/DIAS -- ninguna ficha declara hoy HORAS/
+ * MINUTOS (reservadas para Y59.0 a futuro); si $unidadesPermitidas no
+ * trae ninguna de las 3, devuelve null.
+ *
+ * @param string[] $unidadesPermitidas
+ * @return array{valor:int, unidad:string}|null
+ */
+function edadConUnidadDesdeFecha(string $fechaNacIso, ?string $fechaReferenciaIso, array $unidadesPermitidas): ?array
+{
+    $nacimiento = DateTime::createFromFormat('Y-m-d', substr($fechaNacIso, 0, 10));
+    if (!$nacimiento) {
+        return null;
+    }
+    $referencia = $fechaReferenciaIso ? DateTime::createFromFormat('Y-m-d', substr($fechaReferenciaIso, 0, 10)) : null;
+    if (!$referencia) {
+        $referencia = new DateTime();
+    }
+    if ($referencia < $nacimiento) {
+        return null; // fecha de nacimiento posterior a la referencia: dato inconsistente, no calcular
+    }
+
+    $diff = $nacimiento->diff($referencia);
+    $valoresPorUnidad = [
+        'ANIOS' => $diff->y,
+        'MESES' => $diff->y * 12 + $diff->m,
+        'DIAS'  => (int) $diff->days,
+    ];
+
+    $disponibles = array_values(array_intersect(['ANIOS', 'MESES', 'DIAS'], $unidadesPermitidas));
+    if (!$disponibles) {
+        return null;
+    }
+    foreach ($disponibles as $unidad) {
+        if ($valoresPorUnidad[$unidad] > 0) {
+            return ['valor' => $valoresPorUnidad[$unidad], 'unidad' => $unidad];
+        }
+    }
+
+    return ['valor' => $valoresPorUnidad[$disponibles[0]], 'unidad' => $disponibles[0]];
+}

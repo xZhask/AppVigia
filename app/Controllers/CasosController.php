@@ -1433,12 +1433,27 @@ class CasosController extends Controller
             $decodificadoUnidadesEdad = json_decode($enfermedad['unidades_edad'], true);
             $unidadesEdadPermitidas = is_array($decodificadoUnidadesEdad) ? $decodificadoUnidadesEdad : [];
         }
-        $edadUnidad = in_array($valoresFijos['edad_unidad'] ?? '', $unidadesEdadPermitidas, true) ? $valoresFijos['edad_unidad'] : null;
-        $edadValor = ($edadUnidad !== null && is_numeric($valoresFijos['edad_valor'] ?? '') && (int) $valoresFijos['edad_valor'] >= 0)
-            ? (int) $valoresFijos['edad_valor']
+        // Híbrido decidido el 2026-08-27 (ver ayudantes.php,
+        // edadConUnidadDesdeFecha()): si hay fecha de nacimiento, la edad se
+        // CALCULA a la fecha de notificación, ignorando lo que venga en el
+        // POST -- no se puede forzar un valor manual por POST cuando el
+        // sistema puede calcularlo. El input manual (edad_valor/edad_unidad
+        // del formulario) solo se respeta cuando no hay fecha de nacimiento
+        // (paciente sin documento, edad aproximada).
+        $edadCalculada = $unidadesEdadPermitidas && !empty($valoresFijos['fecha_nac'])
+            ? edadConUnidadDesdeFecha($valoresFijos['fecha_nac'], $valoresFijos['fecha_notif'] ?? null, $unidadesEdadPermitidas)
             : null;
-        if ($edadValor === null) {
-            $edadUnidad = null;
+        if ($edadCalculada !== null) {
+            $edadValor = $edadCalculada['valor'];
+            $edadUnidad = $edadCalculada['unidad'];
+        } else {
+            $edadUnidad = in_array($valoresFijos['edad_unidad'] ?? '', $unidadesEdadPermitidas, true) ? $valoresFijos['edad_unidad'] : null;
+            $edadValor = ($edadUnidad !== null && is_numeric($valoresFijos['edad_valor'] ?? '') && (int) $valoresFijos['edad_valor'] >= 0)
+                ? (int) $valoresFijos['edad_valor']
+                : null;
+            if ($edadValor === null) {
+                $edadUnidad = null;
+            }
         }
 
         $etnias = ['MESTIZO', 'ANDINO', 'ASIATICO_DESCENDIENTE', 'AFRODESCENDIENTE', 'INDIGENA_AMAZONICO', 'OTRO'];

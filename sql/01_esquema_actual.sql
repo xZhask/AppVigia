@@ -70,6 +70,18 @@
 --   - Estructura de las 29 tablas: sin cambios frente a la version
 --     anterior (B57/B55).
 --
+-- Regenerado de nuevo el 2026-08-29 (revision de la Entrada F -- Edad
+-- calculada en modo hibrido): SIN cambios de ESQUEMA ni de CONTENIDO
+-- (enfermedad/seccion_def/campo_def/catalogo identicos byte a byte a la
+-- version anterior) -- la unica diferencia frente al dump previo son los
+-- contadores AUTO_INCREMENT de caso/persona/caso_valor/etc., que subieron
+-- por los casos de prueba reales creados y luego borrados durante la
+-- verificacion (Playwright, con limpieza confirmada, 0 filas residuales).
+-- El cambio de codigo de esta sesion (edadConUnidadDesdeFecha() en
+-- ayudantes.php, CasosController::sanearCamposNucleo()) reutiliza columnas
+-- ya existentes (persona.fecha_nac, caso.edad_valor/edad_unidad,
+-- enfermedad.unidades_edad) -- no requirio ninguna migracion nueva.
+--
 -- Contiene:
 --   1) Estructura completa de las 29 tablas (CREATE TABLE), indices y FKs.
 --   2) Datos de catalogos y definicion de fichas (departamento, provincia,
@@ -203,7 +215,7 @@ CREATE TABLE `caso` (
   CONSTRAINT `fk_caso_lugar_contagio_dist` FOREIGN KEY (`lugar_contagio_distrito_id`) REFERENCES `distrito` (`id`),
   CONSTRAINT `fk_caso_persona` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`),
   CONSTRAINT `fk_caso_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=139 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=143 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -225,7 +237,7 @@ CREATE TABLE `caso_bitacora` (
   KEY `ix_bit_user` (`usuario_id`),
   CONSTRAINT `fk_bit_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_bit_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=172 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=177 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -440,7 +452,7 @@ CREATE TABLE `caso_sujeto` (
   CONSTRAINT `fk_cs_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_cs_distrito` FOREIGN KEY (`distrito_id`) REFERENCES `distrito` (`id`),
   CONSTRAINT `fk_cs_persona` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=187 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -487,7 +499,7 @@ CREATE TABLE `caso_valor` (
   KEY `ix_cv_campo` (`campo_def_id`),
   CONSTRAINT `fk_cv_campo` FOREIGN KEY (`campo_def_id`) REFERENCES `campo_def` (`id`),
   CONSTRAINT `fk_cv_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=1007 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1045 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -696,7 +708,7 @@ CREATE TABLE `login_intento` (
   PRIMARY KEY (`id`),
   KEY `ix_login_email_fecha` (`email`,`fecha`),
   KEY `ix_login_ip_fecha` (`ip`,`fecha`)
-) ENGINE=InnoDB AUTO_INCREMENT=412 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=423 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -827,7 +839,7 @@ CREATE TABLE `persona` (
   CONSTRAINT `fk_pac_nacimiento_dist` FOREIGN KEY (`nacimiento_distrito_id`) REFERENCES `distrito` (`id`),
   CONSTRAINT `fk_pac_unidad` FOREIGN KEY (`unidad_id`) REFERENCES `unidad_pnp` (`id`),
   CONSTRAINT `fk_persona_titular` FOREIGN KEY (`titular_id`) REFERENCES `persona` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=157 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=161 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -879,7 +891,7 @@ CREATE TABLE `reniec_consulta` (
   KEY `ix_reniec_usuario` (`usuario_id`),
   KEY `ix_reniec_dni` (`dni`),
   CONSTRAINT `fk_reniec_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=113 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=114 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -959,12 +971,7 @@ CREATE TABLE `usuario` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-27  0:54:55
-
--- ----------------------------------------------------------------------------
--- Datos de tablas semilla (11 tablas: catalogos y definicion de fichas)
--- ----------------------------------------------------------------------------
-
+-- Dump completed on 2026-08-29  2:25:11
 -- MySQL dump 10.13  Distrib 8.4.3, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: vigia
@@ -1101,4 +1108,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-27  0:55:01
+-- Dump completed on 2026-08-29  2:25:11

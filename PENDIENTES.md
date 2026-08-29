@@ -5043,3 +5043,83 @@ referencia_localizar y tiempo_residencia (ambos en `persona`, no en
 `caso`) -- todo persistido, visible en editar/ver, caso y persona de
 prueba borrados sin filas residuales. Sin tocar ninguna ficha ya
 cotejada (cambio 100% declarativo, no toca partials compartidos).
+
+---
+
+## Entrada F, revisión -- Edad calculada (híbrido), 2026-08-28
+
+El usuario preguntó por qué B04X ganó un input manual de Edad si su
+intención original era que se **calculara** desde la fecha de
+nacimiento. Repaso de `PETICION_MAPEO_Y_EDAD.md`/Entrada F: el diseño
+aprobado en su momento (F2) fue deliberadamente "campos independientes,
+sin derivación" -- por eso el input manual, pensado para cuando NO se
+conoce la fecha de nacimiento exacta. El usuario aclaró que esa
+independencia total no era lo que tenía en mente; su idea real era
+calcular años/meses/días y usar solo los que le corresponden a cada
+ficha. **Esto SÍ toca P35.0 (ficha ya revisada)** -- avisado y
+discutido con el usuario antes de implementar, no es un cambio no
+solicitado.
+
+**Diseño acordado (3 preguntas, ver conversación):**
+1. Híbrido: si hay `fecha_nac`, la edad se **calcula** (los 2 controles
+   quedan deshabilitados); si no hay `fecha_nac`, el input manual sigue
+   disponible como respaldo (paciente sin documento, edad aproximada).
+2. Fecha de referencia: **fecha de notificación del caso** (`fecha_notif`),
+   no "hoy" -- la edad correcta es la que tenía el paciente cuando se
+   notificó, no la que tiene quien consulta el caso después.
+3. Alcance: solo las fichas que ya declaran `unidades_edad` (P35.0,
+   A37.0, B04X hoy) -- no las 24. Las otras 21 no cambian.
+
+**Implementación:**
+- `ayudantes.php`: `edadConUnidadDesdeFecha($fechaNacIso, $fechaRefIso, $unidadesPermitidas)`
+  -- unidad más gruesa (ANIOS > MESES > DIAS) entre las permitidas con
+  valor > 0; "meses" es el total transcurrido (no el resto tras restar
+  años), necesario para P35.0 que no admite ANIOS. Solo contempla
+  ANIOS/MESES/DIAS (HORAS/MINUTOS de Y59.0 quedan para cuando esa ficha
+  las declare).
+- `CasosController::sanearCamposNucleo()`: si hay `fecha_nac` y la
+  ficha declaró `unidades_edad`, se calcula e **ignora lo que venga en
+  el POST** para edad_valor/edad_unidad (no se puede forzar un valor
+  manual cuando el sistema puede calcularlo) -- aplica igual en
+  `crear()` y `actualizar()`, mismo método compartido.
+- `datos-paciente-nucleo.php`: el bloque de Edad/Unidad ahora trae
+  `data-unidades-edad` (la lista que declaró la ficha, como dato, no
+  como lógica) y un hint oculto "Calculada desde la fecha de
+  nacimiento".
+- `ficha.js`: vista previa en vivo (`actualizarEdadCalculada()`, mismo
+  algoritmo que el de PHP) que deshabilita los 2 controles y muestra el
+  valor calculado cuando hay `fecha_nac`, y los rehabilita si se borra.
+  Es solo cosmético -- el servidor manda igual al guardar, así que un
+  desfase de la vista previa nunca corrompe el dato.
+
+**Verificado con Playwright + controlador real:**
+- Vista previa correcta en las 3 fichas (A37.0: 1987-02-15 a
+  2026-08-28 -> "39 ANIOS"; P35.0 sin ANIOS permitido: bebé de 1a2m ->
+  "14 MESES", no "1"+"2"; B04X: "39 ANIOS") y bloque ausente en A36
+  (control, sin `unidades_edad`, sin cambios).
+- **Prueba negativa:** se rehabilitaron los inputs por JS y se forzó
+  `edad_valor=99`/`edad_unidad=MESES` antes de enviar (simulando
+  DevTools/POST directo) en un caso A37.0 con `fecha_nac` real -- el
+  servidor lo ignoró dos veces seguidas y guardó `39`/`ANIOS`
+  calculado, no el valor forzado.
+- **Vuelta completa (crear → editar → actualizar → ver → index) en
+  4 casos reales** (A37.0 con fecha_nac, P35.0 con fecha_nac, P35.0
+  SIN fecha_nac con edad manual de respaldo, y el caso spoof): los 5
+  puntos de consumo (`crear()`, `actualizar()`, `editar()` prefill,
+  `ver()`, `fichas/index.php`) muestran el valor correcto en cada uno;
+  `editar()` deja los controles deshabilitados cuando hay `fecha_nac` y
+  editables cuando no. Se probó además **agregar** `fecha_nac` a un
+  caso que no la tenía vía `actualizar()`: recalculó correctamente
+  (10 DIAS manual -> 31 MESES calculado). Los 4 casos y sus 3 personas
+  de prueba se borraron sin dejar filas residuales.
+- Triple verificador sin cambios (255 claves, 0 huérfanos nuevos).
+
+**Hallazgo aparte, no corregido (fuera de alcance de esta conversación):**
+el `<option value="OTRO">` de "Documento de identidad" en el formulario
+no existe en el ENUM real de `persona.tipo_doc`
+(`DNI,CE,PTP,PAS,SIN_DOCUMENTO`) -- seleccionarlo y guardar produce
+`SQLSTATE[01000]: Data truncated for column 'tipo_doc'` (silencioso
+para el usuario: pantalla igual que "no se pudo registrar por un error
+interno", sin decir por qué). Encontrado al armar las pruebas de este
+cambio, no relacionado con Edad. Pendiente de decidir si el fix es
+cambiar el `<option>` a `SIN_DOCUMENTO` o agregar `'OTRO'` al ENUM.
