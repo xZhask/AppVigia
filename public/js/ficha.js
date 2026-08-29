@@ -3741,6 +3741,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!fechaNac) {
       inputEdad.disabled = false;
       selectUnidad.disabled = false;
+      if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selectUnidad);
       if (hint) hint.hidden = true;
       return;
     }
@@ -3763,9 +3764,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var elegida = disponibles.find(function(u) { return valoresPorUnidad[u] > 0; }) || disponibles[0];
     inputEdad.value = valoresPorUnidad[elegida];
     selectUnidad.value = elegida;
-    if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selectUnidad);
     inputEdad.disabled = true;
     selectUnidad.disabled = true;
+    if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selectUnidad);
     if (hint) hint.hidden = false;
   }
 

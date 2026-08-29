@@ -340,6 +340,7 @@
   .sel-row:has(input[aria-expanded="true"]) .chev{transform:rotate(180deg);color:var(--accent)}
   input.sel-input{border:0;background:none;outline:none;font-family:inherit;font-size:13.5px;color:var(--ink);width:100%;padding:0;cursor:text}
   input.sel-input::placeholder{color:var(--faint)}
+  input.sel-input:disabled{color:var(--faint);cursor:not-allowed}
   .disease-pick input.sel-input.disease{font-size:15px;font-weight:600;color:var(--ink)}
   /* position:fixed (no absolute) a propósito: .section tiene overflow:hidden
      en el bloque congelado de arriba, y esta lista necesita poder salirse de

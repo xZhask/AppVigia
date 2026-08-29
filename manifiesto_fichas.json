@@ -4469,9 +4469,11 @@
         ]
       },
       "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion', pero caso_contacto no tiene esa columna (no existe en el esquema) -- se deja fuera en vez de inventar una columna nueva para esto.",
-      "_nota_nucleo_omitidos": "Cotejo Sección II (2026-08-27): la carga original sin verificar omitía 'referencia_localizar' y 'pueblo_etnico', pero el PDF SÍ los pide (ítems 24 y 17 -- Andino/Indígena amazónico ===> Pueblo étnico). Se quitaron de la lista. 'ocupacion' se mantiene omitido a propósito: el PDF pide una lista cerrada de 10 categorías (ítem 18), no texto libre -- va como campo_def propio (b04x_ocupacion), mismo criterio que Y59.0 (ver memoria ocupacion_promovida_a_nucleo).",
+      "_nota_nucleo_omitidos": "Cotejo Sección II (2026-08-27): la carga original sin verificar omitía 'referencia_localizar' y 'pueblo_etnico', pero el PDF SÍ los pide (ítems 24 y 17 -- Andino/Indígena amazónico ===> Pueblo étnico). Se quitaron de la lista. 'ocupacion' se mantiene omitido a propósito: el PDF pide una lista cerrada de 10 categorías (ítem 18), no texto libre -- va como campo_def propio (b04x_ocupacion), mismo criterio que Y59.0 (ver memoria ocupacion_promovida_a_nucleo). Revisión 2026-08-29: 'nombre_tutor'/'celular_tutor' tampoco están en el PDF (Sección II, ítems 9-29) -- ninguna referencia a madre/tutor/responsable -- se suman a la lista, mismo criterio que la mayoría de fichas (B24, A97, A80, etc.) que ya los omiten.",
       "nucleo_omitidos": [
-        "ocupacion"
+        "ocupacion",
+        "nombre_tutor",
+        "celular_tutor"
       ],
       "unidades_edad": [
         "ANIOS",

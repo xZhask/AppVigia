@@ -388,6 +388,13 @@
     }
     estado.opciones = leerOpciones(select);
     sincronizarTexto(estado);
+    // El <select> real queda oculto (mejorarSelector) y el <input> de texto
+    // es lo único que el usuario ve y puede enfocar/hacer clic -- sin esto,
+    // deshabilitar el <select> por código (ej. edad calculada desde fecha de
+    // nacimiento, ver ficha.js actualizarEdadCalculada()) no impedía abrir
+    // el combobox: el proxy nunca heredaba el disabled.
+    estado.input.disabled = select.disabled;
+    if (select.disabled && !estado.lista.hidden) cerrar(estado);
     if (!estado.lista.hidden) renderLista(estado);
   }
 
