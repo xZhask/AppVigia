@@ -327,6 +327,8 @@
   .chip-option .chip{cursor:pointer;transition:border-color .15s,box-shadow .15s,background-color .15s}
   .chip-option input:checked + .chip{background:var(--accent-soft);border-color:var(--accent-deep);color:var(--ink)}
   .chip-option input:focus-visible + .chip{outline:2px solid var(--accent);outline-offset:2px}
+  .chip-option input:disabled{cursor:not-allowed}
+  .chip-option input:disabled + .chip{opacity:.45;cursor:not-allowed}
 
   /* ---------- Cambios post Fase 4: selector con búsqueda (todo <select>) ---------- */
   /* Envuelve un <select> existente: éste queda oculto pero se sigue enviando

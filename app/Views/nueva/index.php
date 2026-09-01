@@ -232,6 +232,17 @@ if ($puedeElegirEstablecimiento) {
             })($valoresFijos);
             ?>
           </div>
+          <?php
+          // Datos genuinamente personales antes que datos de residencia
+          // (pedido del usuario, cotejo B04X 2026-08-29): este partial se
+          // requiere ANTES del selector de Departamento/Provincia/Distrito
+          // de abajo a propósito, para que Edad, Celular, Etnia, Gestante...
+          // no queden intercalados entre los campos de residencia. Ver
+          // datos-paciente-nucleo-residencia.php (requerido más abajo) para
+          // el resto del núcleo.
+          require __DIR__ . '/../partials/datos-paciente-nucleo.php';
+          ?>
+
           <div <?= $nucleoIncluye('nacimiento_distrito_id') ? 'style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"' : 'style="margin-top:14px"' ?>>
             <?php if ($nucleoIncluye('nacimiento_distrito_id')): ?>
               <!-- Distingue este bloque de "Lugar de nacimiento" (justo arriba, mismo
@@ -243,7 +254,7 @@ if ($puedeElegirEstablecimiento) {
             <?php $prefijo = 'pac-ubigeo'; $errorDistrito = $erroresFijos['distrito_id'] ?? null; require __DIR__ . '/../partials/selector-ubigeo.php'; ?>
           </div>
 
-          <?php require __DIR__ . '/../partials/datos-paciente-nucleo.php'; ?>
+          <?php require __DIR__ . '/../partials/datos-paciente-nucleo-residencia.php'; ?>
 
           <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
             <?php require __DIR__ . '/../partials/condicion-paciente.php'; ?>
@@ -325,8 +336,14 @@ if ($puedeElegirEstablecimiento) {
       // (secciones-clinicas.php) -- mismo trato que A95 arriba, para no
       // duplicarlo en la tarjeta fija genérica de más abajo.
       $isB55 = ($enfermedad['cie10'] ?? '') === 'B55';
-      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
-      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44 && !$isB57 && !$isA95;
+      // B04X (cotejo 2026-08-29): "Viajó en los últimos 21 días" (ítem 30) y
+      // "Exposición con caso probable/confirmado" (ítem 33) gatean sus
+      // propias tablas caso_viaje/caso_contacto dentro de "Lugar probable de
+      // infección y exposición" (secciones-clinicas.php) -- mismo trato que
+      // A37.0 arriba, no siempre visibles acá.
+      $isB04X = ($enfermedad['cie10'] ?? '') === 'B04X';
+      $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isB04X;
+      $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44 && !$isB57 && !$isA95 && !$isB04X;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       $mostrarLugarInf = ((int) ($enfermedad['usa_lugar_infeccion'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
       // Roles con columnas_sujeto que NO tienen sección propia en el

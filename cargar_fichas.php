@@ -110,7 +110,11 @@ const TIPOS_VALIDOS = ['TEXTO', 'NUMERO', 'FECHA', 'BOOLEANO', 'SELECT', 'MULTIS
 // "vacuna_otro"/"fecha" no están acá porque los widgets las muestran
 // siempre (ver CasosController::COLUMNAS_HIJA_DEFECTO).
 const COLUMNAS_TABLA_HIJA_VALIDAS = [
-    'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h'],
+    // 'tipo_exposicion' (2026-08-29, B04X, ítem 33 del PDF): checklist de 6
+    // códigos por contacto (1. Por contacto íntimo...6. Otro) -- gatea tanto
+    // los 6 checkboxes como el texto libre de "6. Otro" (tipo_exposicion_otro,
+    // no es una entrada aparte acá porque siempre va junto al checklist).
+    'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h', 'tipo_exposicion'],
     'caso_vacuna'   => ['dosis', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
     // 'distrito_id'/'direccion' (2026-08-13, A97, pág. 49 ítems 23-27): la
     // columna distrito_id ya existía en caso_viaje sin usarse -- ambas se
@@ -773,6 +777,14 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
     // el TEXTO suelto no debía depender de nada).
     if ($tipo === 'SI_NO_FECHA' && array_key_exists('especificar', $campo)) {
         $config = json_encode(['especificar' => $campo['especificar']], JSON_UNESCAPED_UNICODE);
+    }
+
+    // SI_NO (campos/si-no.php): por defecto solo Sí/No. "ignorado": true
+    // agrega una 3.ª opción (B55 b55_existen_otras_personas_con_lesiones_similares)
+    // -- el partial ya lo soportaba pero este cargador nunca lo leía del
+    // manifiesto (config quedaba siempre NULL), corregido acá.
+    if ($tipo === 'SI_NO' && array_key_exists('ignorado', $campo)) {
+        $config = json_encode(['ignorado' => $campo['ignorado']], JSON_UNESCAPED_UNICODE);
     }
 
     $stmt = $pdo->prepare(

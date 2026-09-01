@@ -9,7 +9,7 @@ $es3OpcionesSiNoDesc = (count($opciones) === 3 && isset($opciones[0]['valor'], $
 // a35_documentado_por_carnet -- por CLAVE, no por "cualquier SELECT de 2
 // opciones Sí/No" (ya hay varios en A36/A80/etc., ya revisados, que deben
 // seguir viéndose como <select> normal; ver PENDIENTES.md A35.11).
-$clavesSegmentado2Botones = ['a35_documentado_por_carnet', 'a33_documento_con_carnet'];
+$clavesSegmentado2Botones = ['a35_documentado_por_carnet', 'a33_documento_con_carnet', 'b04x_viajo_en_los_ultimos_21_dias'];
 $esSegmentado2Botones = (
     in_array($campo['clave'] ?? '', $clavesSegmentado2Botones, true)
     && count($opciones) === 2

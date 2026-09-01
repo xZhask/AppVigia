@@ -55,6 +55,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Identidad de fila para columnas multivalor de tabla hija (ej.
+  // contacto_tipo_exposicion[ID][], ver tablas-hijas/contactos.php): el
+  // <template> clonado trae el literal "__NUEVA_FILA__" en cualquier
+  // name="..." que necesite una clave de array estable para esa fila -- acá
+  // se reemplaza por un id único ("n0", "n1"...) antes de insertar el
+  // fragmento, para que sobreviva aunque se borren otras filas después (a
+  // diferencia de las columnas de un solo valor, alineadas por POSICIÓN de
+  // envío, no por índice).
+  var contadorFilaId = 0;
+  function reindexarPlaceholderFila(fragmento) {
+    if (!fragmento.querySelector('[name*="__NUEVA_FILA__"]')) return;
+    var idNuevo = 'n' + (contadorFilaId++);
+    fragmento.querySelectorAll('[name*="__NUEVA_FILA__"]').forEach(function (el) {
+      el.name = el.name.split('__NUEVA_FILA__').join(idNuevo);
+    });
+  }
+
   document.addEventListener('click', function (evento) {
     var boton = evento.target.closest('.agregar-fila');
     if (boton) {
@@ -69,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!plantilla || !lista) return;
       var fragmento = plantilla.content.cloneNode(true);
       var prefijosNuevos = reindexarSelectoresUbigeo(fragmento);
+      reindexarPlaceholderFila(fragmento);
       lista.appendChild(fragmento);
       prefijosNuevos.forEach(function (prefijo) {
         if (window.inicializarUbigeo) window.inicializarUbigeo(prefijo);

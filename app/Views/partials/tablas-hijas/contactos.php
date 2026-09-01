@@ -21,12 +21,49 @@
 $columnasContacto = $columnasContacto ?? ['parentesco', 'doc', 'celular'];
 $muestra = fn(string $col) => in_array($col, $columnasContacto, true);
 
+// Códigos de "Tipo de exposición" (B04X, ítem 33 del PDF, footnote de la
+// tabla): checklist de 6 valores fijos por contacto, guardado como lista de
+// códigos separados por coma en caso_contacto.tipo_exposicion (ver la
+// migración add_tipo_exposicion_caso_contacto.php). No es un catálogo BD
+// (catalogo_item) porque no es un campo_def -- es una columna de tabla hija,
+// mismo tratamiento que el resto de columnas fijas de este parcial. Variable
+// local (no "const" de nivel de archivo): este parcial se `require`a varias
+// veces por request en fichas con más de una tabla de contactos (B05/A80/PFA
+// tienen su propia sección "cadena de transmisión" además de la genérica) --
+// una "const" a nivel de archivo lanzaría "Cannot redeclare constant" en el
+// segundo require.
+$opcionesTipoExposicionContacto = [
+    '1' => 'Por contacto íntimo',
+    '2' => 'Exposición a material o superficies contaminadas',
+    '3' => 'Exposición a lesiones o fluidos corporales o contacto cara a cara (<2 metros) sin EPP adecuado',
+    '4' => 'Accidente punzocortante',
+    '5' => 'Transmisión placentaria',
+    '6' => 'Otro',
+];
+
 $filaContacto = function (array $fila = [
     'nombres' => '', 'parentesco' => '', 'edad' => '', 'sexo' => '', 'vacunado' => '',
     'fecha_vacunacion' => '', 'profilaxis' => '', 'doc' => '', 'celular' => '',
     'fecha_contacto' => '', 'lugar_contacto' => '', 'fecha_inicio_erupcion' => '', 'vacunado_72h' => '',
-]) use ($muestra): void { ?>
+    'tipo_exposicion' => [], 'tipo_exposicion_otro' => '',
+], ?int $indice = null) use ($muestra, $opcionesTipoExposicionContacto): void {
+    // Identidad estable de la fila para columnas multivalor (tipo_exposicion):
+    // "__NUEVA_FILA__" es el placeholder que filas-dinamicas.js reemplaza por
+    // un id único al clonar el <template> -- no puede ser el índice del
+    // bucle PHP porque, a diferencia de las columnas de un solo valor
+    // (contacto_doc[], alineadas por POSICIÓN de envío), tipo_exposicion
+    // necesita una clave de array (contacto_tipo_exposicion[ID][]) que siga
+    // perteneciendo a la MISMA fila aunque se borren filas anteriores en el
+    // navegador (ver filasContactos() en CasosController.php).
+    $idFila = $indice !== null ? (string) $indice : '__NUEVA_FILA__';
+    $tiposExpFila = is_array($fila['tipo_exposicion'] ?? null)
+        ? $fila['tipo_exposicion']
+        : array_filter(explode(',', (string) ($fila['tipo_exposicion'] ?? '')));
+    ?>
   <div class="subrow">
+    <?php if ($muestra('tipo_exposicion')): ?>
+    <input type="hidden" name="contacto_fila_id[]" value="<?= e($idFila) ?>">
+    <?php endif; ?>
     <div class="fields thirds" style="flex:1">
       <div class="field wide">
         <label class="fl">Nombres y apellidos</label>
@@ -141,6 +178,24 @@ $filaContacto = function (array $fila = [
         <div class="control mono"><input type="date" name="contacto_fecha_contacto[]" value="<?= e($fila['fecha_contacto'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
       </div>
       <?php endif; ?>
+      <?php if ($muestra('tipo_exposicion')): ?>
+      <div class="field wide">
+        <label class="fl">Tipo de exposición <span class="hint">(selección múltiple)</span></label>
+        <div class="chip-select">
+          <?php foreach ($opcionesTipoExposicionContacto as $codigoExp => $etiquetaExp): ?>
+          <?php $codigoExpStr = (string) $codigoExp; // PHP castea claves "1".."6" a int al armar el array ?>
+          <label class="chip-option">
+            <input type="checkbox" name="contacto_tipo_exposicion[<?= e($idFila) ?>][]" value="<?= e($codigoExpStr) ?>" <?= marcado(in_array($codigoExpStr, $tiposExpFila, true)) ?> <?= $codigoExpStr === '6' ? 'data-tipo-exposicion-otro' : '' ?>>
+            <span class="chip"><?= e($codigoExpStr) ?>. <?= e($etiquetaExp) ?></span>
+          </label>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      <div class="field tipo-exposicion-otro-wrap" <?= in_array('6', $tiposExpFila, true) ? '' : 'hidden' ?>>
+        <label class="fl">Especificar otro tipo de exposición</label>
+        <div class="control"><input type="text" name="contacto_tipo_exposicion_otro[<?= e($idFila) ?>]" value="<?= e($fila['tipo_exposicion_otro'] ?? '') ?>"></div>
+      </div>
+      <?php endif; ?>
       <?php if ($muestra('lugar_contacto')): ?>
       <div class="field">
         <label class="fl">Lugar de contacto / exposición</label>
@@ -174,7 +229,7 @@ $filaContacto = function (array $fila = [
 <?php };
 ?>
 <div class="subrows" data-lista="contactos">
-  <?php foreach ($filasContactos as $fila): $filaContacto($fila); endforeach; ?>
+  <?php foreach ($filasContactos as $i => $fila): $filaContacto($fila, $i); endforeach; ?>
 </div>
 <template id="plantilla-contactos"><?php $filaContacto(); ?></template>
 <button type="button" class="btn btn-ghost agregar-fila" data-plantilla="plantilla-contactos" data-lista="contactos" style="margin-top:12px">

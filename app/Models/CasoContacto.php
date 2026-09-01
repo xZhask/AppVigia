@@ -16,7 +16,9 @@ class CasoContacto extends Model
      * 'vacunado_72h']. Todas las columnas clínicas son opcionales: NULL si
      * la ficha no las pide (censo de contactos, punto 6 de
      * AUDITORIA_FICHA_DIFTERIA.md; las últimas 4 son de la cadena de
-     * transmisión de sarampión, CIERRE_RECARGA_Y_FASE5.md Parte 1.4). Debe
+     * transmisión de sarampión, CIERRE_RECARGA_Y_FASE5.md Parte 1.4).
+     * 'tipo_exposicion'/'tipo_exposicion_otro' (B04X, cotejo 2026-08-29,
+     * ítem 33 del PDF): lista de códigos "1".."6" separados por coma. Debe
      * ejecutarse dentro de la transacción abierta por el llamador.
      */
     public static function reemplazarTodos(int $casoId, array $filas): void
@@ -25,8 +27,8 @@ class CasoContacto extends Model
         $pdo->prepare('DELETE FROM caso_contacto WHERE caso_id = :caso')->execute(['caso' => $casoId]);
 
         $consulta = $pdo->prepare(
-            'INSERT INTO caso_contacto (caso_id, nombres, parentesco, edad, sexo, vacunado, dosis_recibidas, fecha_vacunacion, profilaxis, doc, celular, fecha_contacto, fecha_colecta_heces, fecha_envio, fecha_resultado, resultado_aislamiento, lugar_contacto, fecha_inicio_erupcion, vacunado_72h, direccion)
-             VALUES (:caso, :nombres, :parentesco, :edad, :sexo, :vacunado, :dosis_recibidas, :fecha_vacunacion, :profilaxis, :doc, :celular, :fecha_contacto, :fecha_colecta_heces, :fecha_envio, :fecha_resultado, :resultado_aislamiento, :lugar_contacto, :fecha_inicio_erupcion, :vacunado_72h, :direccion)'
+            'INSERT INTO caso_contacto (caso_id, nombres, parentesco, edad, sexo, vacunado, dosis_recibidas, fecha_vacunacion, profilaxis, doc, celular, fecha_contacto, fecha_colecta_heces, fecha_envio, fecha_resultado, resultado_aislamiento, lugar_contacto, fecha_inicio_erupcion, vacunado_72h, direccion, tipo_exposicion, tipo_exposicion_otro)
+             VALUES (:caso, :nombres, :parentesco, :edad, :sexo, :vacunado, :dosis_recibidas, :fecha_vacunacion, :profilaxis, :doc, :celular, :fecha_contacto, :fecha_colecta_heces, :fecha_envio, :fecha_resultado, :resultado_aislamiento, :lugar_contacto, :fecha_inicio_erupcion, :vacunado_72h, :direccion, :tipo_exposicion, :tipo_exposicion_otro)'
         );
 
         foreach ($filas as $fila) {
@@ -51,6 +53,8 @@ class CasoContacto extends Model
                 'fecha_inicio_erupcion' => $fila['fecha_inicio_erupcion'] ?? null,
                 'vacunado_72h'          => $fila['vacunado_72h'] ?? null,
                 'direccion'             => $fila['direccion'] ?? null,
+                'tipo_exposicion'       => $fila['tipo_exposicion'] ?? null,
+                'tipo_exposicion_otro'  => $fila['tipo_exposicion_otro'] ?? null,
             ]);
         }
     }

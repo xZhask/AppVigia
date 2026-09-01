@@ -12,6 +12,7 @@ use App\Models\CampoDef;
 use App\Models\Caso;
 use App\Models\CasoBitacora;
 use App\Models\CasoContacto;
+use App\Models\CasoContactoDirecto;
 use App\Models\CasoEvolucion;
 use App\Models\CasoExamenAuxiliar;
 use App\Models\CasoLugarInfeccion;
@@ -104,6 +105,7 @@ class CasosController extends Controller
             'errorFechaInicioSintomas' => null,
             'clasificacionActual' => clasificacionRequiereEleccionExplicita($enfermedad) ? '' : opcionesClasificacionPara($enfermedad)[0],
             'filasContactos' => [],
+            'filasContactosDirectos' => [],
             'filasViajes'    => [],
             'filasVacunas'   => [],
             'filasMuestras'  => [],
@@ -286,7 +288,12 @@ class CasosController extends Controller
         // inicio de síntomas (ni siquiera existe si el paciente no fue
         // hospitalizado), así que A95 se suma acá en vez de dejar que el
         // fallback la capture por error.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55'], true);
+        // B04X (cotejo 2026-08-29): mismo motivo que A97/B57/A95 -- su
+        // propia "Fecha de inicio de síntomas (FIS)" vive en "Cuadro
+        // clínico" (orden 5), pero "Antecedentes" (orden 4, ANTES) trae un
+        // FECHA suelto (b04x_fecha_de_diagnostico_vih) que
+        // extraerFechaInicioSintomas() agarraría por error como fallback.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -324,6 +331,7 @@ class CasosController extends Controller
 
         // ---------- tablas hijas (opcionales) ----------
         $filasContactos = $this->filasContactos();
+        $filasContactosDirectos = $this->filasContactosDirectos();
         [$filasViajes, $erroresViajes] = $this->filasViajes();
         [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
         [$filasMuestras, $erroresMuestras] = $this->filasMuestras($enfermedad);
@@ -354,6 +362,7 @@ class CasosController extends Controller
                 'errorFechaInicioSintomas' => $errorFechaInicioSintomas,
                 'clasificacionActual' => $clasificacion,
                 'filasContactos' => $filasContactos,
+                'filasContactosDirectos' => $filasContactosDirectos,
                 'filasViajes'    => $filasViajes,
                 'filasVacunas'   => $filasVacunas,
                 'filasMuestras'  => $filasMuestrasInicial,
@@ -420,6 +429,7 @@ class CasosController extends Controller
 
             CasoValor::guardarTodos($casoId, $paraGuardar);
             CasoContacto::reemplazarTodos($casoId, $filasContactos);
+            CasoContactoDirecto::reemplazarTodos($casoId, $filasContactosDirectos);
             CasoViaje::reemplazarTodos($casoId, $filasViajes);
             CasoVacuna::reemplazarTodos($casoId, $filasVacunas);
             CasoMuestra::reemplazarTodos($casoId, $filasMuestras);
@@ -672,6 +682,7 @@ class CasosController extends Controller
             'fechaInicioSintomas' => (string) ($caso['fecha_inicio_sintomas'] ?? ''),
             'errorFechaInicioSintomas' => null,
             'filasContactos' => CasoContacto::porCaso((int) $caso['id']),
+            'filasContactosDirectos' => CasoContactoDirecto::porCaso((int) $caso['id']),
             'filasViajes'    => CasoViaje::porCaso((int) $caso['id']),
             'filasVacunas'   => CasoVacuna::porCaso((int) $caso['id']),
             'filasMuestras'  => $filasMuestrasInicial,
@@ -816,7 +827,10 @@ class CasosController extends Controller
         // A95 (2026-08-23): ver el motivo completo en crear() -- el primer
         // campo FECHA que encontraría extraerFechaInicioSintomas() es
         // a95_fecha_de_hospitalizacion, no un sustituto válido.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55'], true);
+        // B04X (2026-08-29): ver el motivo completo en crear() -- el primer
+        // campo FECHA que encontraría extraerFechaInicioSintomas() es
+        // b04x_fecha_de_diagnostico_vih, no un sustituto válido.
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -846,6 +860,7 @@ class CasosController extends Controller
         $fallecido = isset($_POST['fallecido']) ? 1 : 0;
 
         $filasContactos = $this->filasContactos();
+        $filasContactosDirectos = $this->filasContactosDirectos();
         [$filasViajes, $erroresViajes] = $this->filasViajes();
         [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
         [$filasMuestras, $erroresMuestras] = $this->filasMuestras($enfermedad);
@@ -875,6 +890,7 @@ class CasosController extends Controller
                 'fechaInicioSintomas' => $fechaInicioSintomas,
                 'errorFechaInicioSintomas' => $errorFechaInicioSintomas,
                 'filasContactos' => $filasContactos,
+                'filasContactosDirectos' => $filasContactosDirectos,
                 'filasViajes'    => $filasViajes,
                 'filasVacunas'   => $filasVacunas,
                 'filasMuestras'  => $filasMuestrasInicial,
@@ -934,6 +950,7 @@ class CasosController extends Controller
             CasoValor::eliminarPorCaso((int) $caso['id']);
             CasoValor::guardarTodos((int) $caso['id'], $paraGuardar);
             CasoContacto::reemplazarTodos((int) $caso['id'], $filasContactos);
+            CasoContactoDirecto::reemplazarTodos((int) $caso['id'], $filasContactosDirectos);
             CasoViaje::reemplazarTodos((int) $caso['id'], $filasViajes);
             CasoVacuna::reemplazarTodos((int) $caso['id'], $filasVacunas);
             CasoMuestra::reemplazarTodos((int) $caso['id'], $filasMuestras);
@@ -2079,6 +2096,14 @@ class CasosController extends Controller
         $fechasInicioErupcion = $_POST['contacto_fecha_inicio_erupcion'] ?? [];
         $vacunados72h = $_POST['contacto_vacunado_72h'] ?? [];
         $direcciones = $_POST['contacto_direccion'] ?? [];
+        // "Tipo de exposición" (B04X, ítem 33): a diferencia de las demás
+        // columnas de arriba (un valor por fila, alineadas por POSICIÓN de
+        // envío -- $i del foreach de abajo), esta es multivalor por fila y
+        // viene indexada por un id ESTABLE (contacto_fila_id[]), no por
+        // posición -- ver el comentario largo en tablas-hijas/contactos.php.
+        $filaIds = $_POST['contacto_fila_id'] ?? [];
+        $tiposExposicionPorFila = $_POST['contacto_tipo_exposicion'] ?? [];
+        $tiposExposicionOtroPorFila = $_POST['contacto_tipo_exposicion_otro'] ?? [];
 
         $filas = [];
         foreach ($nombres as $i => $nombre) {
@@ -2098,6 +2123,10 @@ class CasosController extends Controller
             $fechaInicioErupcion = trim((string) ($fechasInicioErupcion[$i] ?? ''));
             $vacunado72h = $vacunados72h[$i] ?? '';
             $direccion = trim((string) ($direcciones[$i] ?? ''));
+            $filaId = (string) ($filaIds[$i] ?? $i);
+            $tiposExposicionFila = is_array($tiposExposicionPorFila[$filaId] ?? null) ? $tiposExposicionPorFila[$filaId] : [];
+            $tiposExposicionFila = array_values(array_intersect($tiposExposicionFila, ['1', '2', '3', '4', '5', '6']));
+            $tipoExposicionOtroFila = trim((string) ($tiposExposicionOtroPorFila[$filaId] ?? ''));
 
             $filas[] = [
                 'nombres'               => $nombre,
@@ -2119,6 +2148,48 @@ class CasosController extends Controller
                 'fecha_inicio_erupcion' => $fechaInicioErupcion !== '' ? fechaIsoValida($fechaInicioErupcion) : null,
                 'vacunado_72h'          => in_array($vacunado72h, ['SI', 'NO', 'DESCONOCIDO'], true) ? $vacunado72h : null,
                 'direccion'             => $direccion !== '' ? $direccion : null,
+                'tipo_exposicion'       => $tiposExposicionFila ? implode(',', $tiposExposicionFila) : null,
+                'tipo_exposicion_otro'  => in_array('6', $tiposExposicionFila, true) && $tipoExposicionOtroFila !== '' ? $tipoExposicionOtroFila : null,
+            ];
+        }
+
+        return $filas;
+    }
+
+    /**
+     * "Contactos directos" (B04X, ítem 35 del PDF): censo independiente de
+     * filasContactos() (ver tablas-hijas/contactos-directos.php y
+     * CasoContactoDirecto -- dos censos con preguntas gatillo distintas, no
+     * pueden compartir tabla). Mismo patrón de id estable que
+     * contacto_tipo_exposicion en filasContactos(): "grupo_poblacion" es un
+     * checklist multivalor por fila, indexado por contacto_directo_fila_id[]
+     * en vez de por posición de envío.
+     */
+    private function filasContactosDirectos(): array
+    {
+        $nombres = $_POST['contacto_directo_nombres'] ?? [];
+        $parentescos = $_POST['contacto_directo_parentesco'] ?? [];
+        $celulares = $_POST['contacto_directo_celular'] ?? [];
+        $docs = $_POST['contacto_directo_doc'] ?? [];
+        $filaIds = $_POST['contacto_directo_fila_id'] ?? [];
+        $gruposPoblacionPorFila = $_POST['contacto_directo_grupo_poblacion'] ?? [];
+
+        $filas = [];
+        foreach ($nombres as $i => $nombre) {
+            $nombre = trim((string) $nombre);
+            if ($nombre === '') {
+                continue;
+            }
+            $filaId = (string) ($filaIds[$i] ?? $i);
+            $grupoPoblacionFila = is_array($gruposPoblacionPorFila[$filaId] ?? null) ? $gruposPoblacionPorFila[$filaId] : [];
+            $grupoPoblacionFila = array_values(array_intersect($grupoPoblacionFila, ['1', '2', '3', '4', '5', '6']));
+
+            $filas[] = [
+                'nombres'         => $nombre,
+                'parentesco'      => trim((string) ($parentescos[$i] ?? '')) ?: null,
+                'celular'         => trim((string) ($celulares[$i] ?? '')) ?: null,
+                'doc'             => trim((string) ($docs[$i] ?? '')) ?: null,
+                'grupo_poblacion' => $grupoPoblacionFila ? implode(',', $grupoPoblacionFila) : null,
             ];
         }
 

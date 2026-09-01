@@ -4465,15 +4465,23 @@
           "parentesco",
           "celular",
           "doc",
-          "lugar_contacto"
+          "lugar_contacto",
+          "tipo_exposicion"
+        ],
+        "caso_viaje": [
+          "pais",
+          "localidad",
+          "fecha_salida",
+          "fecha_retorno"
         ]
       },
-      "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion', pero caso_contacto no tiene esa columna (no existe en el esquema) -- se deja fuera en vez de inventar una columna nueva para esto.",
-      "_nota_nucleo_omitidos": "Cotejo Sección II (2026-08-27): la carga original sin verificar omitía 'referencia_localizar' y 'pueblo_etnico', pero el PDF SÍ los pide (ítems 24 y 17 -- Andino/Indígena amazónico ===> Pueblo étnico). Se quitaron de la lista. 'ocupacion' se mantiene omitido a propósito: el PDF pide una lista cerrada de 10 categorías (ítem 18), no texto libre -- va como campo_def propio (b04x_ocupacion), mismo criterio que Y59.0 (ver memoria ocupacion_promovida_a_nucleo). Revisión 2026-08-29: 'nombre_tutor'/'celular_tutor' tampoco están en el PDF (Sección II, ítems 9-29) -- ninguna referencia a madre/tutor/responsable -- se suman a la lista, mismo criterio que la mayoría de fichas (B24, A97, A80, etc.) que ya los omiten.",
+      "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion' (ítem 33 del PDF), inicialmente dejada fuera porque caso_contacto no tenía esa columna -- agregada 2026-08-29 (sql/migraciones/add_tipo_exposicion_caso_contacto.php: tipo_exposicion + tipo_exposicion_otro), pedido del usuario de construir la funcionalidad completa (checklist de 6 códigos por contacto, ver tablas-hijas/contactos.php). caso_viaje (cotejo 2026-08-29, ítem 30 del PDF -- 'País, Departamento, Fecha de salida, Fecha de retorno'): 'localidad' se reutiliza como 'Departamento' (mismo criterio que A37.0, ver la etiqueta condicional en tablas-hijas/viajes.php), sin transporte_ida/transporte_retorno (el PDF no los pide).",
+      "_nota_nucleo_omitidos": "Cotejo Sección II (2026-08-27): la carga original sin verificar omitía 'referencia_localizar' y 'pueblo_etnico', pero el PDF SÍ los pide (ítems 24 y 17 -- Andino/Indígena amazónico ===> Pueblo étnico). Se quitaron de la lista. 'ocupacion' se mantiene omitido a propósito: el PDF pide una lista cerrada de 10 categorías (ítem 18), no texto libre -- va como campo_def propio (b04x_ocupacion), mismo criterio que Y59.0 (ver memoria ocupacion_promovida_a_nucleo). Revisión 2026-08-29: 'nombre_tutor'/'celular_tutor' tampoco están en el PDF (Sección II, ítems 9-29) -- ninguna referencia a madre/tutor/responsable -- se suman a la lista, mismo criterio que la mayoría de fichas (B24, A97, A80, etc.) que ya los omiten. 'localidad' tampoco está en el PDF (ítems 23-29 solo piden Domicilio actual/Referencia/Distrito/Provincia/Departamento/Nacionalidad/Tiempo de residencia) -- se suma también.",
       "nucleo_omitidos": [
         "ocupacion",
         "nombre_tutor",
-        "celular_tutor"
+        "celular_tutor",
+        "localidad"
       ],
       "unidades_edad": [
         "ANIOS",
@@ -4528,10 +4536,19 @@
               "sensible": true
             },
             {
+              "clave": "b04x_orientacion_sexual_otra_especificar",
+              "etiqueta": "Especificar otra orientación",
+              "tipo": "TEXTO",
+              "orden": 3,
+              "depende_de": "Orientación sexual",
+              "valor_activador": "OTRA",
+              "_nota": "Cotejo 2026-08-29 (pedido del usuario): el PDF trae 'Otra:______' con línea en blanco (ítem 16) -- faltaba el campo_def dependiente, mismo criterio que las 3 'especificar' de Ocupación abajo."
+            },
+            {
               "clave": "b04x_ocupacion",
               "etiqueta": "Ocupación",
               "tipo": "SELECT",
-              "orden": 3,
+              "orden": 4,
               "opciones": [
                 "Sin ocupación",
                 "Empleado",
@@ -4549,7 +4566,7 @@
               "clave": "b04x_ocupacion_independiente_especificar",
               "etiqueta": "Independiente (especificar)",
               "tipo": "TEXTO",
-              "orden": 4,
+              "orden": 5,
               "depende_de": "Ocupación",
               "valor_activador": "INDEPENDIENTE"
             },
@@ -4557,7 +4574,7 @@
               "clave": "b04x_ocupacion_personal_salud_especificar",
               "etiqueta": "Personal de salud (especificar)",
               "tipo": "TEXTO",
-              "orden": 5,
+              "orden": 6,
               "depende_de": "Ocupación",
               "valor_activador": "PERSONAL_DE_SALUD"
             },
@@ -4565,7 +4582,7 @@
               "clave": "b04x_ocupacion_otro_especificar",
               "etiqueta": "Otro (especificar)",
               "tipo": "TEXTO",
-              "orden": 6,
+              "orden": 7,
               "depende_de": "Ocupación",
               "valor_activador": "OTRO"
             },
@@ -4573,25 +4590,38 @@
               "clave": "b04x_lugar_de_trabajo_o_estudio",
               "etiqueta": "Lugar de trabajo o estudio",
               "tipo": "TEXTO",
-              "orden": 7
+              "orden": 8
             },
             {
               "clave": "b04x_puerpera",
               "etiqueta": "Puérpera",
-              "tipo": "BOOLEANO",
-              "orden": 8
+              "tipo": "SELECT",
+              "orden": 9,
+              "opciones": [
+                "Sí",
+                "No"
+              ],
+              "_corregido_tipo": "Cotejo 2026-08-29 (pedido del usuario, 2 vueltas): 1) BOOLEANO caía al checklist genérico 'Signos y síntomas' al final de la tarjeta (cualquier BOOLEANO suelto de la sección aterriza ahí, sin importar el tema) -- para una pregunta de 'Datos del paciente' eso era engañoso. 2) Se probó SI_NO (control segmentado, mismo tipo que B55) pero el usuario pidió que fuera un <select> real -- el segmentado no se alineaba verticalmente con 'Orientación sexual'/'Ocupación' (label+control apilados) al compartir fila. SELECT con 2 opciones ('Sí'/'No', sin clave en $clavesSegmentado2Botones de select.php) ya renderiza como <select> plano por defecto, igual que cualquier otro SELECT de la ficha."
             }
           ]
         },
         {
           "nombre": "Lugar probable de infección y exposición",
           "orden": 3,
+          "_nota_cotejo_seccion_iii": "Cotejo completo 2026-08-29 (pedido del usuario, jerarquía + dependencias). Ítem 30 (Viaje) no tenía campo_def -- 'usa_viajes' quedaba en 1 (tablas_hijas.caso_viaje) pero la tabla nunca se mostraba porque nada la gateaba/posicionaba acá; se agregó b04x_viajo_en_los_ultimos_21_dias, gate por clave en secciones-clinicas.php (mismo mecanismo que A37.0/A95), y B04X se sumó a la exclusión de 'Viajes'/'Contactos' de la tarjeta genérica 'Antecedentes epidemiológicos' en nueva/index.php y editar.php. Ítem 31 (Lugares): faltaban los dependientes de EE.SS./Otro. Ítem 32 (Exposiciones): faltaban los dependientes de 'procedimiento médico' y 'Otros'. Ítem 33 (Contacto): el SELECT Sí/No/Desconocido ya existía pero no gateaba nada -- se agregó el mismo gate por clave para caso_contacto (columnas ya declaradas: parentesco/celular/doc/lugar_contacto). Ítem 34 (Animales): faltaba el depende_de del booleano hacia el multiselect, y el dependiente de 'Otros'. 'Tipo de exposición' y 'Ninguno' mutuamente excluyente (los 2 puntos que quedaron pendientes de decisión) se construyeron después, mismo día, a pedido explícito del usuario: 'Tipo de exposición' -- caso_contacto.tipo_exposicion/tipo_exposicion_otro (sql/migraciones/add_tipo_exposicion_caso_contacto.php), checklist de 6 códigos por contacto en tablas-hijas/contactos.php, con id de fila estable (contacto_fila_id[]) para no depender de la posición de envío (ver el comentario largo en ese archivo). 'Ninguno' mutuamente excluyente -- mecanismo GENÉRICO por catálogo (data-excluyente=\"NINGUNO\" en campos/multiselect.php + ficha.js), no específico de B04X: cualquier MULTISELECT de cualquier ficha que declare una opción \"Ninguno\" lo hereda solo. Ojo: sql/migraciones/add_columnas_caso_contacto_faltantes.php también corrigió un hallazgo previo no relacionado -- 9 columnas de caso_contacto que ya estaban documentadas/usadas en código pero le faltaban a esta BD local.",
           "campos": [
+            {
+              "clave": "b04x_viajo_en_los_ultimos_21_dias",
+              "etiqueta": "¿Viajó en los últimos 21 días antes del inicio del sarpullido (exantema)?",
+              "tipo": "SELECT",
+              "orden": 1,
+              "opciones": ["Sí", "No"]
+            },
             {
               "clave": "b04x_lugares_a_los_que_asistio",
               "etiqueta": "Lugares a los que asistió",
               "tipo": "MULTISELECT",
-              "orden": 1,
+              "orden": 2,
               "opciones": [
                 "Discoteca",
                 "Sauna",
@@ -4605,10 +4635,26 @@
               ]
             },
             {
+              "clave": "b04x_lugares_asistio_ee_ss_nombre",
+              "etiqueta": "Nombre del EE.SS.",
+              "tipo": "TEXTO",
+              "orden": 3,
+              "depende_de": "Lugares a los que asistió",
+              "valor_activador": "EE_SS"
+            },
+            {
+              "clave": "b04x_lugares_asistio_otro_especificar",
+              "etiqueta": "Especificar otro lugar",
+              "tipo": "TEXTO",
+              "orden": 4,
+              "depende_de": "Lugares a los que asistió",
+              "valor_activador": "OTRO"
+            },
+            {
               "clave": "b04x_exposiciones_en_los_ultimos_21_dias",
               "etiqueta": "Exposiciones en los últimos 21 días",
               "tipo": "MULTISELECT",
-              "orden": 2,
+              "orden": 5,
               "opciones": [
                 "Tuvo relaciones sexuales con desconocido(a) o parejas múltiples",
                 "Tuvo relaciones sexuales con trabajador(a) sexual",
@@ -4626,10 +4672,26 @@
               "sensible": true
             },
             {
+              "clave": "b04x_exposicion_procedimiento_especificar",
+              "etiqueta": "¿Cuál procedimiento?",
+              "tipo": "TEXTO",
+              "orden": 6,
+              "depende_de": "Exposiciones en los últimos 21 días",
+              "valor_activador": "SE_REALIZO_ALGUN_PROCEDIMIENTO_MEDICO_O_DE_LABORATORIO"
+            },
+            {
+              "clave": "b04x_exposiciones_otros_especificar",
+              "etiqueta": "Especificar otra exposición",
+              "tipo": "TEXTO",
+              "orden": 7,
+              "depende_de": "Exposiciones en los últimos 21 días",
+              "valor_activador": "OTROS"
+            },
+            {
               "clave": "b04x_exposicion_con_caso_probable_o_confirmado",
               "etiqueta": "¿Exposición con caso probable o confirmado?",
               "tipo": "SELECT",
-              "orden": 3,
+              "orden": 8,
               "opciones": [
                 "Sí",
                 "No",
@@ -4640,13 +4702,15 @@
               "clave": "b04x_contacto_directo_y_frecuente_con_animales",
               "etiqueta": "¿Contacto directo y frecuente con animales?",
               "tipo": "BOOLEANO",
-              "orden": 4
+              "orden": 9
             },
             {
               "clave": "b04x_animales_especificar",
               "etiqueta": "Animales (especificar)",
               "tipo": "MULTISELECT",
-              "orden": 5,
+              "orden": 10,
+              "depende_de": "¿Contacto directo y frecuente con animales?",
+              "valor_activador": "1",
               "opciones": [
                 "Perro",
                 "Gato",
@@ -4655,12 +4719,45 @@
                 "Roedores",
                 "Otros"
               ]
+            },
+            {
+              "clave": "b04x_animales_otros_especificar",
+              "etiqueta": "Especificar otro animal",
+              "tipo": "TEXTO",
+              "orden": 11,
+              "depende_de": "Animales (especificar)",
+              "valor_activador": "OTROS"
+            }
+          ]
+        },
+        {
+          "nombre": "Contactos directos",
+          "orden": 4,
+          "_nota_seccion_iv": "Cotejo 2026-09-01, ítem 35 del PDF: censo de personas con las que el caso tuvo contacto desde 04 días antes del inicio del sarpullido hasta la caída total de costras. Se corrigió una confusión de nomenclatura con el ítem 33 (Sección III, 'Contacto con caso probable o confirmado de VM'): ese widget usa caso_contacto y vive en la tarjeta anterior; este es un censo independiente en caso_contacto_directo (ver tablas-hijas/contactos-directos.php y la migración add_tabla_caso_contacto_directo.php), gateado por 'Número de contactos directos > 0' en vez de un SELECT Sí/No -- por eso las 3 preguntas de conteo son NUMERO simples, sin depende_de/valor_activador declarativo (el gate real es actualizarBloqueContactosDirectosB04X() en ficha.js, ver el hook por clave en secciones-clinicas.php).",
+          "campos": [
+            {
+              "clave": "b04x_contactos_directos_parejas_sexuales",
+              "etiqueta": "N.° de parejas sexuales",
+              "tipo": "NUMERO",
+              "orden": 1
+            },
+            {
+              "clave": "b04x_contactos_directos_domiciliarios",
+              "etiqueta": "N.° de domiciliarios (sin considerar parejas sexuales)",
+              "tipo": "NUMERO",
+              "orden": 2
+            },
+            {
+              "clave": "b04x_contactos_directos_extradomiciliarios",
+              "etiqueta": "N.° de extradomiciliarios (sin considerar parejas sexuales)",
+              "tipo": "NUMERO",
+              "orden": 3
             }
           ]
         },
         {
           "nombre": "Antecedentes",
-          "orden": 4,
+          "orden": 5,
           "campos": [
             {
               "clave": "b04x_estado_inmunologico_deprimido",
@@ -4769,7 +4866,7 @@
         },
         {
           "nombre": "Cuadro clínico",
-          "orden": 5,
+          "orden": 6,
           "campos": [
             {
               "clave": "b04x_fecha_de_inicio_de_sintomas_fis",
@@ -4871,7 +4968,7 @@
         },
         {
           "nombre": "Hospitalización",
-          "orden": 6,
+          "orden": 7,
           "campos": [
             {
               "clave": "b04x_hospitalizado",
@@ -4961,7 +5058,7 @@
         },
         {
           "nombre": "Clasificación",
-          "orden": 7,
+          "orden": 8,
           "campos": [
             {
               "clave": "b04x_clasificacion",

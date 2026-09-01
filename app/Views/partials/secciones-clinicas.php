@@ -390,7 +390,15 @@ $campoGradoIctericiaEscleralA44 = (($enfermedad['cie10'] ?? '') === 'A44')
     ? $campo('a44_grado_ictericia_escleral')
     : ['id' => null, 'name' => '', 'val' => '', 'err' => null, 'opciones' => [], 'campo' => null];
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $campoHospitalizadoA44, $nombreRadioOtrosLabA97, $valorOtrosLabA97, $campoGradoPalidezA44, $campoLocPetequiasA44, $campoLocEquimosisA44, $campoGradoPalidezConjuntivalA44, $campoGradoIctericiaEscleralA44, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto): void {
+// B04X "Contactos directos" (cotejo 2026-09-01, ítem 35): el gate de la
+// tabla depende de los 3 campos NUMERO de conteo, no de uno solo -- mismo
+// motivo que $campoFechaUltSeg arriba, se precalculan afuera porque adentro
+// $campo ya está tomado por la fila de campo_def de cada iteración.
+$camposContactosDirectosB04X = (($enfermedad['cie10'] ?? '') === 'B04X')
+    ? ['parejas' => $campo('b04x_contactos_directos_parejas_sexuales')['val'], 'domiciliarios' => $campo('b04x_contactos_directos_domiciliarios')['val']]
+    : ['parejas' => 0, 'domiciliarios' => 0];
+
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $campoHospitalizadoA44, $nombreRadioOtrosLabA97, $valorOtrosLabA97, $campoGradoPalidezA44, $campoLocPetequiasA44, $campoLocEquimosisA44, $campoGradoPalidezConjuntivalA44, $campoGradoIctericiaEscleralA44, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto, $camposContactosDirectosB04X, $filasContactosDirectos): void {
     $campos = CampoDef::porSeccion($seccionId);
     // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
     // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
@@ -511,6 +519,16 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             }
             $campo['obligatorio'] = (int) $campo['obligatorio'];
             $valor = $valoresCampos[$campo['id']] ?? ($campo['tipo'] === 'MULTISELECT' ? [] : '');
+            // B04X "Contactos directos" (2026-09-01, pedido del usuario): un
+            // <input type="number"> vacío salta directo a 1 al primer click
+            // en la flechita (el navegador interpreta "vacío" como "sin
+            // valor", y sube desde ahí) -- confuso para un conteo que debería
+            // arrancar en 0. Solo estos 3 campos, no un default genérico de
+            // NUMERO (los demás NUMERO de otras fichas sí deben arrancar
+            // vacíos).
+            if ($valor === '' && in_array($campo['clave'] ?? '', ['b04x_contactos_directos_parejas_sexuales', 'b04x_contactos_directos_domiciliarios', 'b04x_contactos_directos_extradomiciliarios'], true)) {
+                $valor = '0';
+            }
             $error = $erroresCampos[$campo['id']] ?? null;
             $opciones = [];
             if ($campo['catalogo_id']) {
@@ -912,9 +930,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $esViajoInicial = ($valPacienteViajo === 'SI') || !empty($filasViajes ?? []);
                 ?>
                 </div>
-                <div id="b05-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="SI" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esViajoInicial ? 'display: none;' : '' ?>" <?= !$esViajoInicial ? 'hidden' : '' ?>>
-                  <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
-                  <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                <div id="b05-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="SI" style="<?= !$esViajoInicial ? 'display: none;' : '' ?>" <?= !$esViajoInicial ? 'hidden' : '' ?>>
+                  <div style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0;">
+                    <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
+                    <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                  </div>
                 </div>
                 <div class="fields" style="width: 100%; margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
                 <?php
@@ -929,9 +949,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $esViajoInicialP350 = ($valViajoP350 === '1') || !empty($filasViajes ?? []);
                 ?>
                 </div>
-                <div id="p350-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esViajoInicialP350 ? 'display: none;' : '' ?>" <?= !$esViajoInicialP350 ? 'hidden' : '' ?>>
-                  <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
-                  <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                <div id="p350-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="<?= !$esViajoInicialP350 ? 'display: none;' : '' ?>" <?= !$esViajoInicialP350 ? 'hidden' : '' ?>>
+                  <div style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0;">
+                    <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
+                    <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                  </div>
                 </div>
                 <div class="fields" style="width: 100%; margin-bottom:0">
                 <?php
@@ -948,9 +970,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $esViajoInicialA370 = ($valViajoA370 === '1') || !empty($filasViajes ?? []);
                 ?>
                 </div>
-                <div id="a370-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esViajoInicialA370 ? 'display: none;' : '' ?>" <?= !$esViajoInicialA370 ? 'hidden' : '' ?>>
-                  <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
-                  <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                <div id="a370-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="<?= !$esViajoInicialA370 ? 'display: none;' : '' ?>" <?= !$esViajoInicialA370 ? 'hidden' : '' ?>>
+                  <div style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0;">
+                    <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
+                    <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                  </div>
                 </div>
                 <div class="fields" style="width: 100%; margin-bottom:16px">
                 <?php
@@ -965,9 +989,109 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $esFamiliarTosInicialA370 = ($valFamiliarTosA370 === '1') || !empty($filasContactos ?? []);
                 ?>
                 </div>
-                <div id="a370-wrapper-contactos-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0; <?= !$esFamiliarTosInicialA370 ? 'display: none;' : '' ?>" <?= !$esFamiliarTosInicialA370 ? 'hidden' : '' ?>>
-                  <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si tuvo tos prolongada, registrar el familiar/contacto</div>
-                  <?php require __DIR__ . '/tablas-hijas/contactos.php'; ?>
+                <div id="a370-wrapper-contactos-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="1" style="<?= !$esFamiliarTosInicialA370 ? 'display: none;' : '' ?>" <?= !$esFamiliarTosInicialA370 ? 'hidden' : '' ?>>
+                  <div style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0;">
+                    <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si tuvo tos prolongada, registrar el familiar/contacto</div>
+                    <?php require __DIR__ . '/tablas-hijas/contactos.php'; ?>
+                  </div>
+                </div>
+                <div class="fields" style="width: 100%; margin-bottom:16px">
+                <?php
+            }
+
+            // B04X (cotejo 2026-08-29): ítem 30 del PDF -- "¿Viajó en los
+            // últimos 21 días...?" gatea la tabla caso_viaje, mismo
+            // mecanismo que A37.0/A95 arriba (antes B04X tenía
+            // tablas_hijas.caso_viaje=true en el manifiesto pero ningún
+            // campo_def lo gateaba ni lo posicionaba -- "usa_viajes" quedaba
+            // en 1 sin que la tabla apareciera en ningún lado). Se excluyó a
+            // B04X de la tarjeta genérica "Antecedentes epidemiológicos" en
+            // nueva/index.php/editar.php para que solo aparezca acá.
+            // Corregido 2026-09-01: el campo pasó de BOOLEANO a SELECT
+            // Sí/No segmentado (pedido del usuario, para que se vea como
+            // pregunta Sí/No en vez de una sola pastilla) -- ver
+            // actualizarBloqueViajesB04X() en ficha.js para el motivo por el
+            // que este hook por sí solo (evaluarDependencias genérico) no
+            // basta para revelar la tabla. El margin/padding/border de
+            // separación va en un <div> interno, no en el que tiene
+            // class="dep-wrap": theme.css define ".dep-wrap{display:contents}"
+            // (para que no agregue caja propia dentro del ".fields" flex del
+            // padre) y con display:contents esas propiedades se calculan pero
+            // nunca se renderizan (mismo hallazgo ya documentado/verificado
+            // con Playwright en migracion-a95.php) -- por eso, sin el <div>
+            // interno, "Agregar viaje" quedaba pegado a la siguiente pregunta.
+            if (($campo['clave'] ?? '') === 'b04x_viajo_en_los_ultimos_21_dias') {
+                $valViajoB04X = $valoresCampos[$campo['id']] ?? '';
+                $esViajoInicialB04X = ($valViajoB04X === 'SI') || !empty($filasViajes ?? []);
+                ?>
+                </div>
+                <div id="b04x-wrapper-viajes-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="SI" style="<?= !$esViajoInicialB04X ? 'display: none;' : '' ?>" <?= !$esViajoInicialB04X ? 'hidden' : '' ?>>
+                  <div style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0;">
+                    <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si viajó, especificar antecedente de viaje</div>
+                    <?php require __DIR__ . '/tablas-hijas/viajes.php'; ?>
+                  </div>
+                </div>
+                <div class="fields" style="width: 100%; margin-bottom:16px">
+                <?php
+            }
+
+            // B04X (cotejo 2026-08-29): ítem 33 del PDF -- "¿Ha tenido algún
+            // tipo de exposición con caso probable o confirmado de VM?"
+            // gatea la tabla caso_contacto, mismo mecanismo que el hook de
+            // viajes de arriba (antes vivía siempre visible en "Antecedentes
+            // epidemiológicos"; B04X se excluyó de esa tarjeta para que solo
+            // aparezca acá, condicionada a la respuesta "Sí"). Ver
+            // actualizarBloqueContactosB04X() en ficha.js -- el atributo
+            // "hidden" que alterna evaluarDependencias() no basta para
+            // revelar el bloque porque el server lo renderiza con
+            // style="display:none" inline al inicio (mismo bug histórico
+            // documentado en actualizarBloqueViajesA370()).
+            // Eyebrow renombrado 2026-09-01 (pedido del usuario, cotejo del
+            // ítem 35/Sección IV): "registrar el contacto" a secas se
+            // confundía con la Sección IV "Contactos directos" que faltaba
+            // implementar -- este widget es sobre el CASO probable/confirmado
+            // (caso_contacto), así que ahora dice explícitamente "el caso"; el
+            // nombre "contacto" a secas (botón "Agregar contacto", eyebrow
+            // "contactos identificados") se reservó para el widget nuevo de
+            // más abajo (contactos-directos.php, caso_contacto_directo).
+            if (($campo['clave'] ?? '') === 'b04x_exposicion_con_caso_probable_o_confirmado') {
+                $valContactoB04X = $valoresCampos[$campo['id']] ?? '';
+                $esContactoInicialB04X = ($valContactoB04X === 'SI') || !empty($filasContactos ?? []);
+                ?>
+                </div>
+                <div id="b04x-wrapper-contactos-registrados" class="dep-wrap" data-depende-de="campo_<?= (int) $campo['id'] ?>" data-valor-activador="SI" style="<?= !$esContactoInicialB04X ? 'display: none;' : '' ?>" <?= !$esContactoInicialB04X ? 'hidden' : '' ?>>
+                  <div style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0;">
+                    <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Si tuvo exposición, registrar el contacto con el caso</div>
+                    <?php require __DIR__ . '/tablas-hijas/contactos.php'; ?>
+                  </div>
+                </div>
+                <div class="fields" style="width: 100%; margin-bottom:16px">
+                <?php
+            }
+
+            // B04X (cotejo 2026-09-01): ítem 35 del PDF -- "Contactos
+            // directos" (Sección IV), censo independiente de contactos con
+            // los que el caso convivió/tuvo pareja sexual desde 04 días
+            // antes del inicio del sarpullido hasta la caída total de
+            // costras. El gate NO es un solo campo Sí/No: son 3 conteos
+            // (parejas sexuales / domiciliarios / extradomiciliarios) y la
+            // tabla se revela si CUALQUIERA es > 0 -- por eso este hook no
+            // declara data-depende-de/data-valor-activador (el motor
+            // genérico solo sabe leer UN campo por nombre): el gate real es
+            // actualizarBloqueContactosDirectosB04X() en ficha.js, que lee
+            // los 3 campos directamente.
+            if (($campo['clave'] ?? '') === 'b04x_contactos_directos_extradomiciliarios') {
+                $val1ContactosDirectosB04X = (int) ($valoresCampos[$idsPorClave['b04x_contactos_directos_parejas_sexuales'] ?? 0] ?? 0);
+                $val2ContactosDirectosB04X = (int) ($valoresCampos[$idsPorClave['b04x_contactos_directos_domiciliarios'] ?? 0] ?? 0);
+                $val3ContactosDirectosB04X = (int) ($valoresCampos[$campo['id']] ?? 0);
+                $hayContactosDirectosInicialB04X = ($val1ContactosDirectosB04X + $val2ContactosDirectosB04X + $val3ContactosDirectosB04X) > 0 || !empty($filasContactosDirectos ?? []);
+                ?>
+                </div>
+                <div id="b04x-wrapper-contactos-directos-registrados" class="dep-wrap" style="<?= !$hayContactosDirectosInicialB04X ? 'display: none;' : '' ?>" <?= !$hayContactosDirectosInicialB04X ? 'hidden' : '' ?>>
+                  <div style="width: 100%; flex-basis: 100%; clear: both; margin-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0;">
+                    <div class="eyebrow" style="margin-bottom:10px; width:100%; display:block">Registre los contactos identificados</div>
+                    <?php require __DIR__ . '/tablas-hijas/contactos-directos.php'; ?>
+                  </div>
                 </div>
                 <div class="fields" style="width: 100%; margin-bottom:16px">
                 <?php
@@ -1176,7 +1300,17 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // (numerado antes de la sección real), mostrando solo un campo
     // obligatorio sin base en el PDF. Se suma también a
     // $sinFechaInicioSintomasObligatoria en CasosController.php. ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55'], true)): ?>
+    <?php // B04X (cotejo 2026-08-29, pedido del usuario): ya trae su propio
+    // "Fecha de inicio de síntomas (FIS)" (b04x_fecha_de_inicio_de_sintomas_fis,
+    // ítem 1 de "Cuadro clínico") -- el genérico duplicaría el dato acá,
+    // aterrizando en $secciones[0] ("Datos del paciente (adicionales)",
+    // que va ANTES de "Cuadro clínico" en el manifiesto). Mismo motivo que
+    // A37.0/B57 arriba: no basta con ocultarlo, hay que sumar B04X también
+    // a $sinFechaInicioSintomasObligatoria en CasosController.php, porque
+    // "Antecedentes" (orden 4, ANTES de "Cuadro clínico") trae su propio
+    // FECHA suelto (b04x_fecha_de_diagnostico_vih) que
+    // extraerFechaInicioSintomas() agarraría por error como fallback. ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55', 'B04X'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>

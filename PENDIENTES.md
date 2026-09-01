@@ -5019,7 +5019,8 @@ sin tocar código, solo por dejar de omitir el campo núcleo.
 | 18 (Ocupación, 10 categorías) | AGREGADO -- `b04x_ocupacion` (SELECT) + 3 `campo_def` TEXTO dependientes (Independiente/Personal de salud/Otro, cada uno con `depende_de: "Ocupación"`); núcleo `ocupacion` (texto libre) se mantiene omitido a propósito, mismo criterio que Y59.0 |
 | 19 (Lugar de trabajo o estudio) | AGREGADO -- `b04x_lugar_de_trabajo_o_estudio` (TEXTO) |
 | 20-21 (Gestante / semanas) | OK -- núcleo, sin cambios |
-| 22 (Puérpera) | AGREGADO -- `b04x_puerpera` (BOOLEANO), mismo criterio que A37.0 |
+| 22 (Puérpera) | AGREGADO -- `b04x_puerpera` (SELECT, opciones Sí/No); corregido 2026-08-29, dos vueltas: BOOLEANO caía al checklist genérico "Signos y síntomas"; SI_NO (probado después) no se alineaba en la fila con "Orientación sexual"/"Ocupación" -- SELECT plano de 2 opciones queda igual que cualquier otro `<select>` de la ficha |
+| 16 (Orientación sexual, "Otra") | CORREGIDO 2026-08-29 -- faltaba `b04x_orientacion_sexual_otra_especificar` (TEXTO, `depende_de` "Orientación sexual" = OTRA); el PDF trae "Otra:______" con línea en blanco |
 | 23 (Domicilio actual) | OK -- núcleo |
 | 24 (Referencia del dom) | CORREGIDO -- `referencia_localizar` ya no está en `nucleo_omitidos` |
 | 25-27 (Distrito/Provincia/Departamento) | OK -- selector ubigeo |

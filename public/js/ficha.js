@@ -112,6 +112,53 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('input', evaluarDependencias);
   document.addEventListener('change', evaluarDependencias);
 
+  // ---------- MULTISELECT: opción "Ninguno" mutuamente excluyente ----------
+  // Mecanismo genérico (cotejo B04X, 2026-08-29, pedido del usuario): si un
+  // MULTISELECT trae una opción de valor "NINGUNO" (chip-select con
+  // data-excluyente="NINGUNO", ver campos/multiselect.php), marcarla
+  // desmarca y deshabilita las demás; marcar cualquier otra vuelve a
+  // habilitarlas todas. Se detecta por CATÁLOGO (cualquier ficha que declare
+  // una opción "Ninguno" lo hereda solo), no por clave de campo -- sin
+  // config nueva en el manifiesto.
+  function aplicarExcluyenteMultiselect(contenedor) {
+    var valorExcluyente = contenedor.getAttribute('data-excluyente');
+    var checks = Array.prototype.slice.call(contenedor.querySelectorAll('input[type="checkbox"]'));
+    var chkExcluyente = checks.find(function (c) { return c.value === valorExcluyente; });
+    if (!chkExcluyente) return;
+    var otros = checks.filter(function (c) { return c !== chkExcluyente; });
+    if (chkExcluyente.checked) {
+      otros.forEach(function (c) { c.checked = false; c.disabled = true; });
+    } else {
+      otros.forEach(function (c) { c.disabled = false; });
+    }
+  }
+  document.querySelectorAll('.chip-select[data-excluyente]').forEach(aplicarExcluyenteMultiselect);
+  document.addEventListener('change', function (e) {
+    if (!e.target || e.target.type !== 'checkbox') return;
+    var contenedor = e.target.closest('.chip-select[data-excluyente]');
+    if (contenedor) aplicarExcluyenteMultiselect(contenedor);
+  });
+
+  // ---------- Tipo de exposición (caso_contacto): "6. Otro" -> Especificar ----------
+  // Bloque específico, no genérico (B04X, cotejo 2026-08-29, ítem 33 del
+  // PDF): el motor .dep-wrap genérico (evaluarDependencias arriba) lee un
+  // solo campo por name= vía leerValorCampoPorNombre(); acá el disparador es
+  // UN checkbox dentro de un grupo de 6 por FILA de una tabla dinámica
+  // (contacto_tipo_exposicion[ID][]), con múltiples filas repetidas en la
+  // misma página -- no encaja en ese contrato de "un campo, un valor".
+  function actualizarTipoExposicionOtro(subrow) {
+    var chkOtro = subrow.querySelector('input[data-tipo-exposicion-otro]');
+    var wrap = subrow.querySelector('.tipo-exposicion-otro-wrap');
+    if (!chkOtro || !wrap) return;
+    wrap.hidden = !chkOtro.checked;
+  }
+  document.querySelectorAll('.subrow').forEach(actualizarTipoExposicionOtro);
+  document.addEventListener('change', function (e) {
+    if (!e.target || !e.target.hasAttribute || !e.target.hasAttribute('data-tipo-exposicion-otro')) return;
+    var subrow = e.target.closest('.subrow');
+    if (subrow) actualizarTipoExposicionOtro(subrow);
+  });
+
   // ---------- PFA: Clasificación final -> Criterios y Clasificación del caso inferior ----------
   function sincronizarDescartadoPfa() {
     var tagCie = document.getElementById('cieTag');
@@ -2161,6 +2208,100 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // B04X (cotejo 2026-08-29, corregido 2026-09-01): mismo mecanismo que
+  // A370/A95 arriba -- "¿Viajó...?" es SELECT Sí/No segmentado (activador
+  // 'SI'), "¿Exposición con caso probable o confirmado?" ya era SELECT
+  // Sí/No/Desc.
+  function actualizarBloqueViajesB04X() {
+    var wrapperViajes = document.getElementById('b04x-wrapper-viajes-registrados');
+    if (!wrapperViajes) return;
+
+    var val = leerValorCampoPorNombre(campoPorClave('b04x_viajo_en_los_ultimos_21_dias'));
+    var esViajo = (val === 'SI');
+
+    if (esViajo) {
+      wrapperViajes.hidden = false;
+      wrapperViajes.style.display = '';
+
+      var subrows = wrapperViajes.querySelector('.subrows');
+      if (subrows && subrows.children.length === 0) {
+        var btnAgregar = wrapperViajes.querySelector('.agregar-fila[data-lista="viajes"]');
+        if (btnAgregar) {
+          btnAgregar.click();
+        }
+      }
+    } else {
+      wrapperViajes.hidden = true;
+      wrapperViajes.style.display = 'none';
+    }
+  }
+
+  function actualizarBloqueContactosB04X() {
+    var wrapperContactos = document.getElementById('b04x-wrapper-contactos-registrados');
+    if (!wrapperContactos) return;
+
+    var val = leerValorCampoPorNombre(campoPorClave('b04x_exposicion_con_caso_probable_o_confirmado'));
+    var esContacto = (val === 'SI');
+
+    if (esContacto) {
+      wrapperContactos.hidden = false;
+      wrapperContactos.style.display = '';
+
+      var subrows = wrapperContactos.querySelector('.subrows');
+      if (subrows && subrows.children.length === 0) {
+        var btnAgregar = wrapperContactos.querySelector('.agregar-fila[data-lista="contactos"]');
+        if (btnAgregar) {
+          btnAgregar.click();
+        }
+      }
+    } else {
+      wrapperContactos.hidden = true;
+      wrapperContactos.style.display = 'none';
+    }
+  }
+
+  // B04X "Contactos directos" (cotejo 2026-09-01, ítem 35): a diferencia de
+  // los demás actualizarBloque*B04X() de arriba, el gate no es UN campo --
+  // son 3 conteos (parejas sexuales/domiciliarios/extradomiciliarios) y la
+  // tabla se revela si la SUMA es > 0. leerValorCampoPorNombre() solo sabe
+  // leer un nombre a la vez, así que se leen los 3 por separado acá.
+  var CLAVES_CONTACTOS_DIRECTOS_B04X = [
+    'b04x_contactos_directos_parejas_sexuales',
+    'b04x_contactos_directos_domiciliarios',
+    'b04x_contactos_directos_extradomiciliarios',
+  ];
+  function actualizarBloqueContactosDirectosB04X() {
+    var wrapper = document.getElementById('b04x-wrapper-contactos-directos-registrados');
+    if (!wrapper) return;
+
+    var suma = CLAVES_CONTACTOS_DIRECTOS_B04X.reduce(function (acumulado, clave) {
+      var valor = parseInt(leerValorCampoPorNombre(campoPorClave(clave)), 10);
+      return acumulado + (isNaN(valor) ? 0 : valor);
+    }, 0);
+
+    if (suma > 0) {
+      wrapper.hidden = false;
+      wrapper.style.display = '';
+
+      var subrows = wrapper.querySelector('.subrows');
+      if (subrows && subrows.children.length === 0) {
+        var btnAgregar = wrapper.querySelector('.agregar-fila[data-lista="contactos-directos"]');
+        if (btnAgregar) {
+          btnAgregar.click();
+        }
+      }
+    } else {
+      wrapper.hidden = true;
+      wrapper.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('input', function(e) {
+    if (e.target && e.target.name && CLAVES_CONTACTOS_DIRECTOS_B04X.some(function (clave) { return e.target.name === campoPorClave(clave); })) {
+      actualizarBloqueContactosDirectosB04X();
+    }
+  });
+
   document.addEventListener('change', function(e) {
     if (e.target && e.target.name === campoPorClave('a37_0_viajo_en_los_ultimos_21_dias')) {
       actualizarBloqueViajesA370();
@@ -2170,6 +2311,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     if (e.target && e.target.name === campoPorClave('a95_viajo_en_los_ultimos_6_meses')) {
       actualizarBloqueViajesA95();
+    }
+    if (e.target && e.target.name === campoPorClave('b04x_viajo_en_los_ultimos_21_dias')) {
+      actualizarBloqueViajesB04X();
+    }
+    if (e.target && e.target.name === campoPorClave('b04x_exposicion_con_caso_probable_o_confirmado')) {
+      actualizarBloqueContactosB04X();
     }
   });
 
@@ -2182,6 +2329,9 @@ document.addEventListener('DOMContentLoaded', function () {
         actualizarBloqueViajesA370();
         actualizarBloqueContactosA370();
         actualizarBloqueViajesA95();
+        actualizarBloqueViajesB04X();
+        actualizarBloqueContactosB04X();
+        actualizarBloqueContactosDirectosB04X();
       }, 50);
     }
   });
@@ -2191,6 +2341,9 @@ document.addEventListener('DOMContentLoaded', function () {
   actualizarBloqueViajesA370();
   actualizarBloqueContactosA370();
   actualizarBloqueViajesA95();
+  actualizarBloqueViajesB04X();
+  actualizarBloqueContactosB04X();
+  actualizarBloqueContactosDirectosB04X();
 
   function obtenerCie10Actual() {
     var enfermedadSel = document.getElementById('diseaseSel');

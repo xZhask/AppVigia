@@ -29,6 +29,10 @@ $columnasViaje = $columnasViaje ?? ['pais', 'fecha_salida', 'fecha_retorno', 'tr
 $mostrarColViaje = fn(string $col) => in_array($col, $columnasViaje, true);
 $etiquetaPais = $mostrarColViaje('localidad') ? 'País' : 'Lugar visitado (país o ciudad)';
 $esA370Viaje = (($enfermedad['cie10'] ?? '') === 'A37.0');
+// B04X (cotejo 2026-08-29, ítem 30 del PDF): "País, Departamento, Fecha de
+// salida, Fecha de retorno" -- mismo reuso de "localidad" como
+// "Departamento" que A37.0 arriba, sin columna nueva en caso_viaje.
+$esDepartamentoViaje = in_array($enfermedad['cie10'] ?? '', ['A37.0', 'B04X'], true);
 // A44 (cotejo 2026-08-18, pág. 42 del PDF): "Viaje a localidades o
 // comunidades vecinas" solo trae Fecha de viaje/Lugar/Tiempo de
 // permanencia -- una sola fecha, no el par fecha_salida/fecha_retorno de
@@ -40,7 +44,7 @@ $filaViaje = function (
     array $fila = ['pais' => '', 'localidad' => '', 'distrito_id' => '', 'direccion' => '', 'fecha_salida' => '', 'fecha_retorno' => '', 'tiempo_permanencia' => '', 'semana_gestacion' => ''],
     ?array $error = null,
     ?int $indice = null
-) use ($mostrarColViaje, $etiquetaPais, $esA370Viaje, $etiquetaFechaSalida): void {
+) use ($mostrarColViaje, $etiquetaPais, $esDepartamentoViaje, $etiquetaFechaSalida): void {
     $errorSalida = $error['fecha_salida'] ?? null;
     $errorRetorno = $error['fecha_retorno'] ?? null;
     $prefijoUbigeo = $indice !== null ? 'viaje-ubigeo-' . $indice : 'viaje-ubigeo-nueva';
@@ -56,13 +60,13 @@ $filaViaje = function (
       <?php endif; ?>
       <?php if ($mostrarColViaje('localidad')): ?>
       <!-- Localidad/ciudad (columna extra, propia de fichas que la declaren).
-      A37.0 reusa esta misma columna de texto libre como "Departamento"
-      (ítem 59 del PDF: País/Departamento/Fecha de salida/Fecha de retorno)
-      -- no se creó una columna nueva en caso_viaje para esto, solo cambia
-      la etiqueta visible. -->
+      A37.0/B04X reusan esta misma columna de texto libre como "Departamento"
+      (A37.0 ítem 59, B04X ítem 30: País/Departamento/Fecha de salida/Fecha
+      de retorno) -- no se creó una columna nueva en caso_viaje para esto,
+      solo cambia la etiqueta visible. -->
       <div class="field" style="flex:1; min-width:160px">
-        <label class="fl"><?= $esA370Viaje ? 'Departamento' : 'Localidad/ciudad' ?></label>
-        <div class="control"><input type="text" name="viaje_localidad[]" value="<?= e($fila['localidad'] ?? '') ?>" placeholder="<?= $esA370Viaje ? 'Departamento…' : 'Localidad o ciudad…' ?>"></div>
+        <label class="fl"><?= $esDepartamentoViaje ? 'Departamento' : 'Localidad/ciudad' ?></label>
+        <div class="control"><input type="text" name="viaje_localidad[]" value="<?= e($fila['localidad'] ?? '') ?>" placeholder="<?= $esDepartamentoViaje ? 'Departamento…' : 'Localidad o ciudad…' ?>"></div>
       </div>
       <?php endif; ?>
       <?php if ($mostrarColViaje('distrito_id')): ?>
