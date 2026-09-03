@@ -57,3 +57,64 @@ html[data-theme="dark"] .seg-label.on {
   .grupo-si-no-field .grupo-si-no-row.is-si,
   .si-no-fecha-field .grupo-si-no-row.is-si { border-left: 3px solid var(--accent) !important; }
 }
+
+/* ---------------------------------------------------------------------------
+   B04X ítem 50: secuencia de aparición del exantema (mapa + tabla numerada).
+   Ver app/Views/partials/campos/secuencia-exantema-b04x.php. Las siluetas
+   reutilizan el arte de exantema-evolucion-body-map.php (B05), pero acá la
+   zona no se "sombrea": muestra el número de orden que se le asignó.
+--------------------------------------------------------------------------- */
+.secuencia-exantema-b04x .secuencia-b04x-ayuda {
+  font-size: 12px; color: var(--muted); margin: 2px 0 10px;
+}
+.secuencia-exantema-b04x .secuencia-b04x-layout {
+  display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start;
+}
+.secuencia-exantema-b04x .secuencia-b04x-tabla {
+  flex: 1 1 260px; min-width: 240px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 9px; padding: 4px 2px;
+}
+.secuencia-exantema-b04x .secuencia-b04x-fila {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 10px; border-bottom: 1px solid var(--line-2);
+  border-left: 3px solid transparent; transition: border-left-color .15s, background .15s;
+}
+.secuencia-exantema-b04x .secuencia-b04x-fila:last-child { border-bottom: none; }
+.secuencia-exantema-b04x .secuencia-b04x-fila.tiene-valor { border-left-color: var(--accent); }
+.secuencia-exantema-b04x .secuencia-b04x-etiqueta {
+  flex: 1; font-size: 12.5px; color: var(--ink);
+}
+.secuencia-exantema-b04x .secuencia-b04x-input {
+  width: 62px; flex-shrink: 0; text-align: center;
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 5px 6px; font-size: 12px;
+  background: var(--paper); color: var(--ink); outline: none;
+}
+.secuencia-exantema-b04x .secuencia-b04x-figuras {
+  display: flex; gap: 14px; flex: 0 0 auto;
+}
+.secuencia-exantema-b04x .secuencia-b04x-vista {
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 9px; padding: 8px 10px;
+}
+.secuencia-exantema-b04x .secuencia-b04x-vista-titulo {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--faint); margin-bottom: 4px;
+}
+.secuencia-exantema-b04x .secuencia-b04x-svg { width: 118px; height: 210px; }
+.secuencia-exantema-b04x .body-part {
+  fill: var(--paper-2, #e5e7eb); stroke: var(--line-2, #9ca3af); stroke-width: 1.5;
+  cursor: pointer; transition: fill .15s ease, stroke .15s ease;
+}
+.secuencia-exantema-b04x .body-part:hover { fill: var(--accent-subtle, #cbd5e1); stroke: var(--accent, #0f766e); }
+.secuencia-exantema-b04x .body-part.marcada { fill: var(--accent, #0f766e); stroke: var(--accent, #0f766e); }
+/* Cuello, pies y la cabeza de la vista posterior: contexto visual, no son
+   zonas del PDF -- no reciben clic ni cambian de color. */
+.secuencia-exantema-b04x .body-part-inerte { cursor: default; pointer-events: none; opacity: .55; }
+.secuencia-exantema-b04x .secuencia-b04x-badge { pointer-events: none; }
+.secuencia-exantema-b04x .secuencia-b04x-badge circle { fill: var(--paper, #fff); stroke: var(--accent, #0f766e); stroke-width: 1.5; }
+.secuencia-exantema-b04x .secuencia-b04x-badge text {
+  font-size: 9px; font-weight: 700; fill: var(--accent, #0f766e);
+}

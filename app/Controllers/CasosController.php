@@ -2197,6 +2197,7 @@ class CasosController extends Controller
     }
 
     private const ERROR_FECHA_INVALIDA = 'Ingresa una fecha válida.';
+    private const ERROR_RESULTADO_ANTES_DE_TOMA = 'La fecha de resultado no puede ser anterior a la de obtención de la muestra.';
 
     /**
      * @return array{0: array, 1: array} [$filas, $errores] — $errores queda
@@ -2647,6 +2648,19 @@ class CasosController extends Controller
                     $errores[$i]['fecha_result'] = self::ERROR_FECHA_INVALIDA;
                     $resultIso = $resultTxt;
                 }
+            }
+
+            // Un resultado no puede ser anterior a la toma de la muestra: no es
+            // un criterio opinable sino un imposible físico, así que se valida
+            // para las 10 fichas que usan este widget, no solo para la que lo
+            // pidió (B04X, cotejo Sección VII 2026-09-03, ítem 57 del PDF:
+            // "Fecha de resultado" debe ser igual o posterior a "Fecha de
+            // obtención de muestra"). Solo se compara cuando AMBAS fechas son
+            // válidas -- si alguna no lo es, ya tiene su propio error arriba y
+            // encadenar un segundo mensaje sobre el mismo campo solo confunde.
+            if ($tomaIso && $resultIso && !isset($errores[$i]['fecha_toma']) && !isset($errores[$i]['fecha_result'])
+                && $resultIso < $tomaIso) {
+                $errores[$i]['fecha_result'] = self::ERROR_RESULTADO_ANTES_DE_TOMA;
             }
 
             $antibiotico = $recibioAntibiotico[$i] ?? '';

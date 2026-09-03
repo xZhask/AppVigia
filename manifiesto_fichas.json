@@ -4456,10 +4456,11 @@
       "pdf_paginas": "5-6",
       "tablas_hijas": {
         "caso_contacto": true,
-        "caso_muestra": false,
+        "caso_muestra": true,
         "caso_viaje": true,
-        "caso_vacuna": true
+        "caso_vacuna": false
       },
+      "_nota_caso_vacuna": "Apagado 2026-09-03 al cerrar el cotejo del PDF completo (decisión del usuario). Venía en true desde la carga masiva original sin verificar, y hacía aparecer la tarjeta genérica 'Antecedentes epidemiológicos' conteniendo SOLO el widget 'Antecedentes vacunales / Agregar antecedente vacunal', que no corresponde a ningún ítem del PDF de B04X. La vacunación que el PDF sí pide (ítem 42: 'Recibió vacuna contra la viruela' + Dosis 1/Dosis 2 con fecha y país) se modeló en la Sección V como el campo MATRIZ b04x_dosis_vacuna_viruela, así que el widget genérico era un segundo camino de captura para lo mismo. Se verificó que había 0 filas de caso_vacuna para B04X antes de apagarlo: no se perdió ningún dato. Mismo criterio con el que se quitaron 2 tarjetas genéricas duplicadas al cerrar A95.",
       "columnas_tablas_hija": {
         "caso_contacto": [
           "parentesco",
@@ -4473,9 +4474,29 @@
           "localidad",
           "fecha_salida",
           "fecha_retorno"
-        ]
+        ],
+        "caso_muestra": {
+          "columnas": [
+            "tipo_muestra",
+            "fecha_toma",
+            "fecha_result",
+            "resultado"
+          ],
+          "opciones": {
+            "tipo_muestra": [
+              "LESION",
+              "COSTRA",
+              "HNF_ORF"
+            ],
+            "resultado": [
+              "POS",
+              "NEG"
+            ]
+          },
+          "unico_por_tipo": true
+        }
       },
-      "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion' (ítem 33 del PDF), inicialmente dejada fuera porque caso_contacto no tenía esa columna -- agregada 2026-08-29 (sql/migraciones/add_tipo_exposicion_caso_contacto.php: tipo_exposicion + tipo_exposicion_otro), pedido del usuario de construir la funcionalidad completa (checklist de 6 códigos por contacto, ver tablas-hijas/contactos.php). caso_viaje (cotejo 2026-08-29, ítem 30 del PDF -- 'País, Departamento, Fecha de salida, Fecha de retorno'): 'localidad' se reutiliza como 'Departamento' (mismo criterio que A37.0, ver la etiqueta condicional en tablas-hijas/viajes.php), sin transporte_ida/transporte_retorno (el PDF no los pide).",
+      "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'tipo_exposicion' (ítem 33 del PDF), inicialmente dejada fuera porque caso_contacto no tenía esa columna -- agregada 2026-08-29 (sql/migraciones/add_tipo_exposicion_caso_contacto.php: tipo_exposicion + tipo_exposicion_otro), pedido del usuario de construir la funcionalidad completa (checklist de 6 códigos por contacto, ver tablas-hijas/contactos.php). caso_viaje (cotejo 2026-08-29, ítem 30 del PDF -- 'País, Departamento, Fecha de salida, Fecha de retorno'): 'localidad' se reutiliza como 'Departamento' (mismo criterio que A37.0, ver la etiqueta condicional en tablas-hijas/viajes.php), sin transporte_ida/transporte_retorno (el PDF no los pide). caso_muestra (cotejo Seccion VII, 2026-09-03, item 57 del PDF): los 3 tipos que pide la ficha YA existian en el catalogo compartido id=4 con el texto exacto del PDF (LESION='Hisopado de lesion dermica', COSTRA='Piel esfacelada o costra', HNF_ORF='Hisopado nasofaringeo / orofaringeo'), asi que no se creo catalogo propio. 'resultado' se restringe a POS/NEG porque el catalogo compartido id=3 trae ademas 'Indeterminado', que este PDF no ofrece (el filtro lo aplica CasosController::datosMuestrasCatalogo(), no el partial). 'unico_por_tipo' porque el PDF lista 3 filas fijas, una por tipo. La jerarquia que trajo el usuario decia 'Piel: raspado o costra'; el PDF y el catalogo dicen 'Piel esfacelada o costra' -- manda el PDF.",
       "_nota_nucleo_omitidos": "Cotejo Sección II (2026-08-27): la carga original sin verificar omitía 'referencia_localizar' y 'pueblo_etnico', pero el PDF SÍ los pide (ítems 24 y 17 -- Andino/Indígena amazónico ===> Pueblo étnico). Se quitaron de la lista. 'ocupacion' se mantiene omitido a propósito: el PDF pide una lista cerrada de 10 categorías (ítem 18), no texto libre -- va como campo_def propio (b04x_ocupacion), mismo criterio que Y59.0 (ver memoria ocupacion_promovida_a_nucleo). Revisión 2026-08-29: 'nombre_tutor'/'celular_tutor' tampoco están en el PDF (Sección II, ítems 9-29) -- ninguna referencia a madre/tutor/responsable -- se suman a la lista, mismo criterio que la mayoría de fichas (B24, A97, A80, etc.) que ya los omiten. 'localidad' tampoco está en el PDF (ítems 23-29 solo piden Domicilio actual/Referencia/Distrito/Provincia/Departamento/Nacionalidad/Tiempo de residencia) -- se suma también.",
       "nucleo_omitidos": [
         "ocupacion",
@@ -4758,6 +4779,7 @@
         {
           "nombre": "Antecedentes",
           "orden": 5,
+          "_nota_cotejo_seccion_v": "Cotejo completo 2026-09-02 (ítems 36-45 del PDF, jerarquía + dependencias dadas por el usuario). La carga original sin verificar solo traía 11 campos planos (36, 37 parcial, 38 sin su pregunta gate, 40 sin fechas, 41) -- se completaron los ítems 38 (faltaba el SELECT que gatea el checklist de ITS + 'Otros especificar'), 39, 40 (opción 'No' + 3 fechas de diagnóstico, una por comorbilidad, + 'Otros especificar'), 42 (nuevo, con Dosis 1/Dosis 2 como campo MATRIZ 'libre' -- mismo patrón que 'Secuencia de aparición por zona' de Cuadro clínico -- en vez de la tabla_hija genérica de vacunas, porque acá NO es una lista variable sino exactamente 2 dosis fijas con Fecha+País), 43, 44 y 45. 'Recibe TAR' (ítem 37) era BOOLEANO -- caía al checklist genérico 'Signos y síntomas' por no estar en la lista blanca de secciones-clinicas.php (mismo bug que b04x_puerpera, Sección II) -- se cambió a SI_NO. Simplificaciones deliberadas: (1) el 'aplica solo a nacidos hasta 1978' del ítem 41 se deja como guía textual en la etiqueta, no como lógica de edad calculada -- no amerita un mecanismo nuevo para un solo campo; (2) los ítems 44 y 45 NO llevan depende_de hacia 43/44 porque en el PDF no aparecen anidados bajo un 'Si respondió Sí' (a diferencia de 36-38, 42), se muestran siempre igual que el documento; (3) no se fuerza coherencia numérica mujeres/hombres según la opción de 43 (SOLO_CON_HOMBRES -> hombres>0, etc.) vía validación bloqueante -- son datos de campo, no queremos rechazar un caso real por un tipeo menor.",
           "campos": [
             {
               "clave": "b04x_estado_inmunologico_deprimido",
@@ -4776,6 +4798,8 @@
               "etiqueta": "Por enfermedad (especificar)",
               "tipo": "TEXTO",
               "orden": 2,
+              "depende_de": "Estado inmunológico deprimido",
+              "valor_activador": "SI",
               "sensible": true
             },
             {
@@ -4783,6 +4807,8 @@
               "etiqueta": "Por medicación (especificar)",
               "tipo": "TEXTO",
               "orden": 3,
+              "depende_de": "Estado inmunológico deprimido",
+              "valor_activador": "SI",
               "sensible": true
             },
             {
@@ -4802,13 +4828,18 @@
               "etiqueta": "Fecha de diagnóstico VIH",
               "tipo": "FECHA",
               "orden": 5,
+              "depende_de": "Infección VIH",
+              "valor_activador": "SI",
               "sensible": true
             },
             {
               "clave": "b04x_recibe_tar",
               "etiqueta": "Recibe TAR",
-              "tipo": "BOOLEANO",
+              "tipo": "SI_NO",
               "orden": 6,
+              "depende_de": "Infección VIH",
+              "valor_activador": "SI",
+              "_corregido_tipo": "Cotejo 2026-09-02: BOOLEANO caía al checklist genérico 'Signos y síntomas' (no estaba en la lista blanca de secciones-clinicas.php) -- mismo bug ya corregido antes en b04x_puerpera. SI_NO es el tipo correcto para una pregunta suelta Sí/No sin catálogo ni fecha.",
               "sensible": true
             },
             {
@@ -4816,6 +4847,8 @@
               "etiqueta": "Último recuento CD4",
               "tipo": "NUMERO",
               "orden": 7,
+              "depende_de": "Recibe TAR",
+              "valor_activador": "SI",
               "sensible": true
             },
             {
@@ -4823,13 +4856,29 @@
               "etiqueta": "Fecha del recuento CD4",
               "tipo": "FECHA",
               "orden": 8,
+              "depende_de": "Recibe TAR",
+              "valor_activador": "SI",
+              "sensible": true
+            },
+            {
+              "clave": "b04x_its_ultimos_12_meses_pregunta",
+              "etiqueta": "Infecciones de transmisión sexual (ITS) en los últimos 12 meses",
+              "tipo": "SELECT",
+              "orden": 9,
+              "opciones": [
+                "Sí",
+                "No",
+                "Desconocido"
+              ],
               "sensible": true
             },
             {
               "clave": "b04x_its_en_los_ultimos_12_meses",
               "etiqueta": "ITS en los últimos 12 meses",
               "tipo": "MULTISELECT",
-              "orden": 9,
+              "orden": 10,
+              "depende_de": "Infecciones de transmisión sexual (ITS) en los últimos 12 meses",
+              "valor_activador": "SI",
               "opciones": [
                 "Chlamydia",
                 "Gonorrea",
@@ -4841,32 +4890,162 @@
               "sensible": true
             },
             {
+              "clave": "b04x_its_otros_especificar",
+              "etiqueta": "Especificar otra ITS",
+              "tipo": "TEXTO",
+              "orden": 11,
+              "depende_de": "ITS en los últimos 12 meses",
+              "valor_activador": "OTROS",
+              "sensible": true
+            },
+            {
+              "clave": "b04x_presenta_actualmente_alguna_its",
+              "etiqueta": "¿Se presenta en el momento de esta atención alguna de las ITS anteriormente mencionadas?",
+              "tipo": "SELECT",
+              "orden": 12,
+              "opciones": [
+                "Sí",
+                "No",
+                "Desconocido"
+              ],
+              "sensible": true
+            },
+            {
               "clave": "b04x_comorbilidades",
               "etiqueta": "Comorbilidades",
               "tipo": "MULTISELECT",
-              "orden": 10,
+              "orden": 13,
               "opciones": [
+                "No",
                 "Tuberculosis",
                 "COVID-19",
                 "Otros"
               ]
             },
             {
+              "clave": "b04x_comorbilidad_fecha_tuberculosis",
+              "etiqueta": "Fecha de diagnóstico (Tuberculosis)",
+              "tipo": "FECHA",
+              "orden": 14,
+              "depende_de": "Comorbilidades",
+              "valor_activador": "TUBERCULOSIS"
+            },
+            {
+              "clave": "b04x_comorbilidad_fecha_covid19",
+              "etiqueta": "Fecha de diagnóstico (COVID-19)",
+              "tipo": "FECHA",
+              "orden": 15,
+              "depende_de": "Comorbilidades",
+              "valor_activador": "COVID_19"
+            },
+            {
+              "clave": "b04x_comorbilidades_otros_especificar",
+              "etiqueta": "Especificar otra comorbilidad",
+              "tipo": "TEXTO",
+              "orden": 16,
+              "depende_de": "Comorbilidades",
+              "valor_activador": "OTROS"
+            },
+            {
+              "clave": "b04x_comorbilidad_fecha_otros",
+              "etiqueta": "Fecha de diagnóstico (Otros)",
+              "tipo": "FECHA",
+              "orden": 17,
+              "depende_de": "Comorbilidades",
+              "valor_activador": "OTROS"
+            },
+            {
               "clave": "b04x_cicatriz_por_vacuna_variolica_nacidos_hasta_1978",
               "etiqueta": "Cicatriz por vacuna variólica (nacidos hasta 1978)",
               "tipo": "SELECT",
-              "orden": 11,
+              "orden": 18,
               "opciones": [
                 "Sí",
                 "No",
                 "Desconocido"
               ]
+            },
+            {
+              "clave": "b04x_recibio_vacuna_contra_la_viruela",
+              "etiqueta": "Recibió vacuna contra la viruela",
+              "tipo": "SELECT",
+              "orden": 19,
+              "opciones": [
+                "Sí",
+                "No",
+                "Desconocido"
+              ]
+            },
+            {
+              "clave": "b04x_dosis_vacuna_viruela",
+              "etiqueta": "Dosis de vacuna contra la viruela",
+              "tipo": "MATRIZ",
+              "orden": 20,
+              "depende_de": "Recibió vacuna contra la viruela",
+              "valor_activador": "SI",
+              "filas": [
+                "Dosis 1",
+                "Dosis 2"
+              ],
+              "columnas": [
+                "Fecha de vacunación",
+                "País de vacunación"
+              ]
+            },
+            {
+              "clave": "b04x_antecedente_relaciones_sexuales_ultimos_6_meses",
+              "etiqueta": "Antecedente de relaciones sexuales en los últimos 6 meses",
+              "tipo": "SELECT",
+              "orden": 21,
+              "opciones": [
+                "Solo con hombres",
+                "Solo con mujeres",
+                "Con ambos sexos",
+                "Desconocido"
+              ],
+              "sensible": true
+            },
+            {
+              "clave": "b04x_numero_mujeres_relaciones_sexuales",
+              "etiqueta": "N.° de mujeres (relaciones sexuales últimos 6 meses)",
+              "tipo": "NUMERO",
+              "orden": 22,
+              "depende_de": "Antecedente de relaciones sexuales en los últimos 6 meses",
+              "valor_activador": "SOLO_CON_MUJERES,CON_AMBOS_SEXOS,DESCONOCIDO",
+              "_nota": "Cotejo 2026-09-02, ajuste post-cierre pedido por el usuario al ver el formulario real (2 vueltas): 1) antes estaba siempre visible; 2) primero se gateó contra CUALQUIER respuesta del ítem 43, pero el usuario aclaró que cada conteo debe seguir al sexo elegido -- 'Solo con mujeres' muestra solo este campo, 'Solo con hombres' solo el otro, 'Con ambos sexos' los dos. 'DESCONOCIDO' activa ambos a propósito: si no se sabe con quién, no hay base para ocultar ninguno de los dos conteos y el ítem 43 igual permite esa respuesta.",
+              "sensible": true
+            },
+            {
+              "clave": "b04x_numero_hombres_relaciones_sexuales",
+              "etiqueta": "N.° de hombres (relaciones sexuales últimos 6 meses)",
+              "tipo": "NUMERO",
+              "orden": 23,
+              "depende_de": "Antecedente de relaciones sexuales en los últimos 6 meses",
+              "valor_activador": "SOLO_CON_HOMBRES,CON_AMBOS_SEXOS,DESCONOCIDO",
+              "sensible": true
+            },
+            {
+              "clave": "b04x_uso_red_social_o_app_citas",
+              "etiqueta": "¿Utilizó alguna red social o aplicativo de citas para concretar el encuentro sexual?",
+              "tipo": "SI_NO",
+              "orden": 24,
+              "sensible": true
+            },
+            {
+              "clave": "b04x_uso_red_social_cual_especificar",
+              "etiqueta": "¿Cuál?",
+              "tipo": "TEXTO",
+              "orden": 25,
+              "depende_de": "¿Utilizó alguna red social o aplicativo de citas para concretar el encuentro sexual?",
+              "valor_activador": "SI",
+              "sensible": true
             }
           ]
         },
         {
           "nombre": "Cuadro clínico",
           "orden": 6,
+          "_nota_cotejo_seccion_vi": "Cotejo 2026-09-02, ítems 45-56 del PDF (la Sección VI del documento abarca esta tarjeta Y la de Hospitalización; se cotejaron juntas pero siguen siendo 2 tarjetas en la interfaz). Ítem 46 (S.E.) NO se agregó como campo_def: la semana epidemiológica ya es núcleo derivado (caso.semana_epi/anio_epi, calculadas por semanaEpidemiologica() desde fecha_notif y mostradas como badge 'SE X · año' en la cabecera del formulario) -- mismo criterio que GERESA/Red de Salud en la Sección I. Ítem 50 (secuencia de aparición) NO se gatea contra el ítem 49 (Distribución): en el PDF son independientes, y gatearla impediría numerar zonas antes de responder distribución; la misma MATRIZ cubre tanto el caso Localizado (numerar una zona) como el Generalizado (numerar varias), sin campo extra de 'ubicación específica'. Etiquetas de opciones alineadas al texto literal del PDF (paréntesis explicativos incluidos), misma convención que 'Fiebre (>38,5°C)'/'Proctitis (dolor o sangrado anal)' que ya venían así. La jerarquía que trajo el usuario decía 'Enantema/lesión' y 'Prurito (dolor o sangrado anal)'; el PDF dice 'Exantema/lesión' y 'Proctitis (dolor o sangrado anal)' -- manda el PDF.",
           "campos": [
             {
               "clave": "b04x_fecha_de_inicio_de_sintomas_fis",
@@ -4901,20 +5080,37 @@
               ]
             },
             {
-              "clave": "b04x_distribucion_del_sarpullido",
-              "etiqueta": "Distribución del sarpullido",
-              "tipo": "SELECT",
+              "clave": "b04x_signos_otros_especificar",
+              "etiqueta": "Especificar otro signo o síntoma",
+              "tipo": "TEXTO",
               "orden": 4,
+              "depende_de": "Signos y síntomas",
+              "valor_activador": "OTROS"
+            },
+            {
+              "clave": "b04x_lugar_de_exantema_lesion",
+              "etiqueta": "Lugar del exantema/lesión",
+              "tipo": "TEXTO",
+              "orden": 5,
+              "depende_de": "Signos y síntomas",
+              "valor_activador": "EXANTEMA_LESION",
+              "_nota": "PDF ítem 48: la línea 'Lugar: ______' va debajo del checkbox 'Exantema/lesión', no suelta al final del checklist -- por eso se gatea contra esa opción y no contra el campo entero."
+            },
+            {
+              "clave": "b04x_distribucion_del_sarpullido",
+              "etiqueta": "Distribución del sarpullido (exantema)/lesión",
+              "tipo": "SELECT",
+              "orden": 6,
               "opciones": [
-                "Localizado",
-                "Generalizado"
+                "Localizado (en una parte del cuerpo)",
+                "Generalizado (en varias partes del cuerpo)"
               ]
             },
             {
               "clave": "b04x_secuencia_de_aparicion_por_zona",
-              "etiqueta": "Secuencia de aparición por zona",
+              "etiqueta": "Secuencia de aparición del exantema o lesión",
               "tipo": "MATRIZ",
-              "orden": 5,
+              "orden": 7,
               "filas": [
                 "Genital/perianal",
                 "Oral (boca, labios)",
@@ -4931,9 +5127,9 @@
             },
             {
               "clave": "b04x_numero_de_lesiones",
-              "etiqueta": "Número de lesiones",
+              "etiqueta": "Número de lesiones presentadas (aprox.)",
               "tipo": "SELECT",
-              "orden": 6,
+              "orden": 8,
               "opciones": [
                 "1 a 10 lesiones",
                 "11 a 25 lesiones",
@@ -4943,25 +5139,25 @@
             },
             {
               "clave": "b04x_estadio_de_los_exantemas",
-              "etiqueta": "Estadio de los exantemas",
+              "etiqueta": "Estadio de los exantemas en el momento de la evaluación clínica",
               "tipo": "MULTISELECT",
-              "orden": 7,
+              "orden": 9,
               "opciones": [
-                "Mácula",
-                "Pápula",
-                "Vesícula",
-                "Pústula",
+                "Mácula (ronchas rojas de base plana)",
+                "Pápula (roncha roja elevada)",
+                "Vesícula (ampolla llena de líquidos)",
+                "Pústula (ampolla con pus)",
                 "Costra"
               ]
             },
             {
               "clave": "b04x_tipo_de_presentacion",
-              "etiqueta": "Tipo de presentación",
+              "etiqueta": "Tipo de presentación de los exantemas",
               "tipo": "SELECT",
-              "orden": 8,
+              "orden": 10,
               "opciones": [
-                "Monomórfico",
-                "Polimórfico"
+                "Presencia de exantema o lesiones en un solo estadio (monomórfico)",
+                "Presencia de exantema o lesiones en varios estadios (polimórfico)"
               ]
             }
           ]
@@ -4969,96 +5165,140 @@
         {
           "nombre": "Hospitalización",
           "orden": 7,
+          "_nota_cotejo_seccion_vi_hosp": "Cotejo 2026-09-02, ítems 53-56 del PDF (segunda mitad de la Sección VI, ver _nota_cotejo_seccion_vi de 'Cuadro clínico'). Los 4 BOOLEANO gatillo (Hospitalizado/UCI/Defunción/Alta) pasaron a SI_NO: el PDF los dibuja como 'Si [] No []' explícito, y un BOOLEANO suelto cae al checklist genérico 'Signos y síntomas' de secciones-clinicas.php salvo que esté en la lista blanca (mismo bug ya corregido antes en b04x_puerpera y b04x_recibe_tar). Ninguno de los 14 campos tenía depende_de -- todos los detalles se mostraban siempre, aunque el caso no estuviera hospitalizado. La jerarquía que trajo el usuario ponía 'Hospital' y 'Motivo de ingreso' bajo Defunción; en el PDF esos dos están en la fila de UCI (ítem 54) y Defunción (ítem 55) solo trae Fecha + 'Clasificación (según Grupo de Trabajo)' -- manda el PDF. 'Hospital (UCI)'/'Motivo de ingreso (UCI)' llevan el sufijo entre paréntesis porque depende_de resuelve por ETIQUETA y ya existen 'Hospital'/'Motivo de ingreso' de hospitalización en esta misma ficha (ver [[depende_de_resuelve_por_etiqueta]]).",
           "campos": [
             {
               "clave": "b04x_hospitalizado",
               "etiqueta": "Hospitalizado",
-              "tipo": "BOOLEANO",
+              "tipo": "SI_NO",
               "orden": 1
             },
             {
               "clave": "b04x_fecha_de_ingreso",
-              "etiqueta": "Fecha de ingreso",
+              "etiqueta": "Ingreso hospitalario",
               "tipo": "FECHA",
-              "orden": 2
+              "orden": 2,
+              "depende_de": "Hospitalizado",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_fecha_de_egreso",
-              "etiqueta": "Fecha de egreso",
+              "etiqueta": "Fecha de egreso hospitalario",
               "tipo": "FECHA",
-              "orden": 3
+              "orden": 3,
+              "depende_de": "Hospitalizado",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_hospital",
               "etiqueta": "Hospital",
               "tipo": "TEXTO",
-              "orden": 4
+              "orden": 4,
+              "depende_de": "Hospitalizado",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_motivo_de_ingreso",
               "etiqueta": "Motivo de ingreso",
               "tipo": "TEXTO",
-              "orden": 5
+              "orden": 5,
+              "depende_de": "Hospitalizado",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_dx_de_egreso_1",
-              "etiqueta": "Dx de egreso 1",
+              "etiqueta": "Diagnóstico de egreso 1",
               "tipo": "TEXTO",
-              "orden": 6
+              "orden": 6,
+              "depende_de": "Hospitalizado",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_dx_de_egreso_2",
-              "etiqueta": "Dx de egreso 2",
+              "etiqueta": "Diagnóstico de egreso 2",
               "tipo": "TEXTO",
-              "orden": 7
+              "orden": 7,
+              "depende_de": "Hospitalizado",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_uci",
               "etiqueta": "UCI",
-              "tipo": "BOOLEANO",
+              "tipo": "SI_NO",
               "orden": 8
             },
             {
               "clave": "b04x_fecha_de_ingreso_a_uci",
-              "etiqueta": "Fecha de ingreso a UCI",
+              "etiqueta": "Ingreso a UCI",
               "tipo": "FECHA",
-              "orden": 9
+              "orden": 9,
+              "depende_de": "UCI",
+              "valor_activador": "SI"
+            },
+            {
+              "clave": "b04x_uci_hospital",
+              "etiqueta": "Hospital (UCI)",
+              "tipo": "TEXTO",
+              "orden": 10,
+              "depende_de": "UCI",
+              "valor_activador": "SI"
+            },
+            {
+              "clave": "b04x_uci_motivo_de_ingreso",
+              "etiqueta": "Motivo de ingreso (UCI)",
+              "tipo": "TEXTO",
+              "orden": 11,
+              "depende_de": "UCI",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_defuncion",
               "etiqueta": "Defunción",
-              "tipo": "BOOLEANO",
-              "orden": 10
+              "tipo": "SI_NO",
+              "orden": 12
             },
             {
               "clave": "b04x_fecha_de_defuncion",
               "etiqueta": "Fecha de defunción",
               "tipo": "FECHA",
-              "orden": 11
+              "orden": 13,
+              "depende_de": "Defunción",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_clasificacion_de_la_defuncion",
-              "etiqueta": "Clasificación de la defunción",
+              "etiqueta": "Clasificación de la defunción (según Grupo de Trabajo)",
               "tipo": "TEXTO",
-              "orden": 12
+              "orden": 14,
+              "depende_de": "Defunción",
+              "valor_activador": "SI"
             },
             {
               "clave": "b04x_alta_clinico_epidemiologica",
-              "etiqueta": "Alta clínico-epidemiológica",
-              "tipo": "BOOLEANO",
-              "orden": 13
+              "etiqueta": "Alta clínico-epidemiológica (considerar hasta la caída total de costras y renovación de piel)",
+              "tipo": "SI_NO",
+              "orden": 15
             },
             {
               "clave": "b04x_fecha_de_alta_clinico_epidemiologica",
               "etiqueta": "Fecha de alta clínico-epidemiológica",
               "tipo": "FECHA",
-              "orden": 14
+              "orden": 16,
+              "depende_de": "Alta clínico-epidemiológica (considerar hasta la caída total de costras y renovación de piel)",
+              "valor_activador": "SI"
             }
           ]
         },
         {
-          "nombre": "Clasificación",
+          "nombre": "Laboratorio",
           "orden": 8,
+          "solo_tabla_hija": true,
+          "_nota_cotejo_seccion_vii": "Cotejo 2026-09-03, ítem 57 del PDF (VII. LABORATORIO). La sección NO tiene campo_def propios: todo su contenido (tipo de muestra + fecha de obtención + fecha de resultado + resultado) es el widget compartido de `caso_muestra`, declarado en columnas_tablas_hija. Se usa `solo_tabla_hija` (mismo patrón que A44 'Laboratorio y evolución' y B55 'Pruebas de laboratorio') en vez de la tarjeta genérica de Laboratorio de nueva/index.php porque esa se dibuja DESPUÉS de todas las secciones, y el PDF pone Laboratorio (VII) ANTES de Clasificación (VIII); declarándola acá queda en el orden correcto. B04X se sumó a la supresión de la tarjeta genérica en nueva/index.php y fichas/editar.php para que no aparezca dos veces. El PDF no trae ninguna pregunta gatillo para esta sección (a diferencia de otras del cotejo), así que no lleva depende_de: el propio listado de muestras es el opt-in -- se agregan solo las que se tomaron.",
+          "campos": []
+        },
+        {
+          "nombre": "Clasificación",
+          "orden": 9,
           "campos": [
             {
               "clave": "b04x_clasificacion",
@@ -5071,6 +5311,38 @@
                 "Confirmado",
                 "Descartado"
               ]
+            }
+          ]
+        },
+        {
+          "nombre": "Observaciones",
+          "orden": 10,
+          "_nota_cotejo_seccion_ix": "Cotejo 2026-09-03, sección IX del PDF (un recuadro de texto libre, sin ítem numerado). TEXTAREA suelta, mismo patrón que las 'Observaciones' de A97/B01/B26/A80/B05/Z21 -- no existe una columna núcleo `caso.observaciones`, en todas las fichas es un campo_def. Cae en el orden correcto sin reposicionar: las secciones campo_def se pintan antes de la tarjeta núcleo 'Investigador', que es justamente la sección X del PDF.",
+          "campos": [
+            {
+              "clave": "b04x_observaciones",
+              "etiqueta": "Observaciones",
+              "tipo": "TEXTAREA",
+              "orden": 1
+            }
+          ]
+        },
+        {
+          "nombre": "Personal de epidemiología (control de calidad)",
+          "orden": 11,
+          "_nota_cotejo_seccion_xi": "Cotejo 2026-09-03, sección XI del PDF (ítems 61-62): 'PERSONAL DE EPIDEMIOLOGÍA QUIEN REALIZA EL CONTROL DE CALIDAD (GERESA/DIRESA/DIRIS/RED DE SALUD)'. Es una SEGUNDA persona, distinta de quien llena la ficha: esa (sección X, ítems 58-60 -- Apellidos y nombres, Cargo, Teléfono) ya está cubierta por el bloque núcleo 'Investigador' (investigador_nombre/cargo/telefono), así que no se duplicó. Ninguna de las 24 fichas modelaba un responsable de control de calidad, por eso es sección nueva. Va reposicionada con partial dedicado (personal-epidemiologia-b04x.php) porque las secciones campo_def se pintan ANTES de la tarjeta 'Investigador', y el PDF pone XI DESPUÉS de X -- mismo mecanismo que observaciones-b01.php / clasificacion-caso-a370.php. 'Firma y sello' no se modela: es del papel. El sufijo '(control de calidad)' en las etiquetas evita chocar con otras etiquetas de la ficha, porque depende_de resuelve por ETIQUETA.",
+          "campos": [
+            {
+              "clave": "b04x_control_calidad_nombres",
+              "etiqueta": "Apellidos y nombres (control de calidad)",
+              "tipo": "TEXTO",
+              "orden": 1
+            },
+            {
+              "clave": "b04x_control_calidad_telefono",
+              "etiqueta": "Teléfono (control de calidad)",
+              "tipo": "TEXTO",
+              "orden": 2
             }
           ]
         }

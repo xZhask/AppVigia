@@ -238,6 +238,18 @@ function campoVisiblePorDependencia(array $campo, array $valoresCampos): bool
         return is_array($valorPadre) && in_array($campo['valor_activador'], $valorPadre, true);
     }
 
+    // SI_NO (campos/si-no.php) guarda su valor como array ['marcado' => 'SI'|
+    // 'NO'|'IGNORADO'], no como escalar -- sin este caso, (string) $valorPadre
+    // convertía el array entero al literal "Array" (con warning), la
+    // comparación nunca coincidía y cualquier hijo de un padre SI_NO se
+    // guardaba vacío en silencio aunque el navegador lo mostrara lleno.
+    // Hallado 2026-09-02 al dar "Recibe TAR"/"¿Utilizó red social...?" (B04X,
+    // Sección V) hijos por primera vez -- el único SI_NO anterior (B55) no
+    // tenía ninguno, por eso el bug estaba dormido.
+    if ($padre['tipo'] === 'SI_NO') {
+        $valorPadre = is_array($valorPadre) ? ($valorPadre['marcado'] ?? '') : $valorPadre;
+    }
+
     $activadores = array_map('trim', explode(',', (string) $campo['valor_activador']));
     return in_array((string) $valorPadre, $activadores, true);
 }

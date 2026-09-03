@@ -211,6 +211,11 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // "1. Notificación". "Fecha de investigación" (ítem 2) no está acá
         // -- se reutiliza el campo núcleo del mismo nombre en "Investigador".
         'b04x_servicio_de_ingreso_cerits',
+        // personal-epidemiologia-b04x.php (cotejo 2026-09-03, sección XI del
+        // PDF, ítems 61-62): reposicionada DESPUÉS de la tarjeta núcleo
+        // "Investigador" (que es la sección X del PDF), porque las secciones
+        // campo_def se pintan todas antes de esa tarjeta.
+        'b04x_control_calidad_nombres', 'b04x_control_calidad_telefono',
     ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
@@ -231,7 +236,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'A97' => ['Enfermedad / evento a notificar', 'Subsistema de vigilancia'],
     'B57' => ['Fechas de notificación'],
     'A95' => ['Fechas de notificación', 'Migración'],
-    'B04X' => ['Datos de notificación e investigación del caso'],
+    'B04X' => ['Datos de notificación e investigación del caso', 'Personal de epidemiología (control de calidad)'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
@@ -887,6 +892,11 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 require __DIR__ . '/campos/leishmaniasis-body-map.php';
             elseif (($campo['clave'] ?? '') === 'b55_compromiso_de_estructuras'):
                 require __DIR__ . '/campos/leishmaniasis-mucosa.php';
+            elseif (($campo['clave'] ?? '') === 'b04x_secuencia_de_aparicion_por_zona'):
+                // B04X ítem 50: mapa anatómico con numeración por zona. Sustituye el
+                // render de matriz.php pero conserva sus mismos name= (ver el comentario
+                // largo del partial), así que el lado servidor no cambia.
+                require __DIR__ . '/campos/secuencia-exantema-b04x.php';
             else:
                 require __DIR__ . '/campo-dinamico.php';
                 if ($campo['etiqueta'] === 'Descripción de la erupción cutánea' || stripos($campo['etiqueta'], 'descripción de la erupción') !== false) {
@@ -1480,10 +1490,22 @@ foreach (array_slice($secciones, 1) as $seccion):
         // LABORATORIO del PDF) se modela con el widget "caso_muestra"
         // reusado (misma razón que A44: solo_tabla_hija=true en el
         // manifiesto, $renderizarCampos() se saltaría igual que ahí).
+        // B04X (cotejo 2026-09-03): "Laboratorio" (VII del PDF, ítem 57) es el
+        // tercer caso del mismo patrón -- su contenido entero es el widget de
+        // caso_muestra (3 tipos fijos con su fecha de obtención, fecha de
+        // resultado y resultado). Se declara como sección propia, y no se deja
+        // a la tarjeta genérica de nueva/index.php, porque esa se dibuja
+        // después de TODAS las secciones y el PDF pone Laboratorio antes de
+        // Clasificación.
         $esPruebasLaboratorioB55 = trim($seccion['nombre']) === 'Pruebas de laboratorio' && ($enfermedad['cie10'] ?? '') === 'B55';
         $esLaboratorioEvolucionA44 = trim($seccion['nombre']) === 'Laboratorio y evolución' && ($enfermedad['cie10'] ?? '') === 'A44';
-        if (!$esLaboratorioEvolucionA44 && !$esPruebasLaboratorioB55): ?>
+        $esLaboratorioB04X = trim($seccion['nombre']) === 'Laboratorio' && ($enfermedad['cie10'] ?? '') === 'B04X';
+        if (!$esLaboratorioEvolucionA44 && !$esPruebasLaboratorioB55 && !$esLaboratorioB04X): ?>
           <?php $renderizarCampos((int) $seccion['id']); ?>
+        <?php endif; ?>
+
+        <?php if ($esLaboratorioB04X): ?>
+          <?php require __DIR__ . '/tablas-hijas/muestras.php'; ?>
         <?php endif; ?>
 
         <?php if (trim($seccion['nombre']) === 'Laboratorio' && ($enfermedad['cie10'] ?? '') === 'A95'): ?>

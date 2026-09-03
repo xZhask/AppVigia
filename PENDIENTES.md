@@ -5124,3 +5124,446 @@ para el usuario: pantalla igual que "no se pudo registrar por un error
 interno", sin decir por qué). Encontrado al armar las pruebas de este
 cambio, no relacionado con Edad. Pendiente de decidir si el fix es
 cambiar el `<option>` a `SIN_DOCUMENTO` o agregar `'OTRO'` al ENUM.
+
+## Cotejo B04X -- Sección V "Antecedentes" (ítems 36-45), 2026-09-02
+
+Cotejo completo de la Sección V del PDF (pág. 5-6, ítems 36-45), a partir
+de la jerarquía y dependencias que dio el usuario. La carga original sin
+verificar traía 11 campos planos (36, 37 parcial -- sin Recibe TAR/CD4
+gateados --, 38 sin su pregunta gate, 40 sin fechas, 41); se completó todo
+lo demás. 25 campos en total en la sección (antes 11).
+
+**Paso 2 -- decisiones de diseño:**
+- **Ítem 36** (Estado inmunológico deprimido): los 2 TEXTO "especificar"
+  ya existían -- solo se les agregó `depende_de` hacia el ítem 36 = Sí.
+  Independientes entre sí (ninguno depende del otro).
+- **Ítem 37** (Infección VIH): "Recibe TAR" era **BOOLEANO** -- caía al
+  checklist genérico "Signos y síntomas" de secciones-clinicas.php por no
+  estar en la lista blanca `$clavesBooleanoJuntoASuCampo` (mismo bug ya
+  visto en b04x_puerpera, Sección II). Se cambió a **SI_NO** (tipo
+  dedicado para preguntas sueltas Sí/No, ver `[[tipo_campo_si_no_nuevo]]`).
+  CD4+Fecha se gatean contra "Recibe TAR" (más específico), no contra VIH
+  directamente.
+- **Ítem 38**: faltaba el SELECT Sí/No/Desconocido que gatea el checklist
+  de ITS -- se agregó (`b04x_its_ultimos_12_meses_pregunta`), con etiqueta
+  distinta a la del checklist existente para no chocar por
+  `[[depende_de_resuelve_por_etiqueta]]`. Se agregó "Otros (especificar)".
+- **Ítem 40** (Comorbilidades): se agregó la opción "No" (el PDF la trae
+  como primer checkbox) y 3 FECHA independientes, una por comorbilidad
+  seleccionable (Tuberculosis/COVID-19/Otros) -- el PDF pide "cada
+  comorbilidad" con su propia fecha, no una fecha compartida. "No" NO
+  hereda el mecanismo de exclusión mutua genérico (`data-excluyente`),
+  que está codificado específicamente para el código de catálogo
+  "NINGUNO" -- no se tocó ese código compartido para esto.
+- **Ítem 41**: sin cambios de campo. La condición "aplica solo a nacidos
+  hasta 1978" queda como guía textual en la etiqueta (ya lo estaba) --
+  deliberadamente NO se construyó una lógica de edad calculada para un
+  solo campo aislado.
+- **Ítem 42** (vacuna contra la viruela): en vez de la tabla_hija genérica
+  de vacunas (pensada para listas variables), se usó un campo **MATRIZ**
+  en modo "libre" -- filas fijas "Dosis 1"/"Dosis 2", columnas "Fecha de
+  vacunación" (autodetectada como `<input type=date>` por contener
+  "FECHA", ver `campos/matriz.php`) y "País de vacunación" (texto libre).
+  Mismo patrón que "Secuencia de aparición por zona" (Cuadro clínico, ya
+  cotejada). Permite Dosis 1 sin Dosis 2 sin ningún campo extra.
+- **Ítems 44/45**: NO llevan `depende_de` hacia 43/44 -- en el PDF no
+  aparecen anidados bajo un "Si respondió Sí" (a diferencia de 36-38, 42),
+  se muestran siempre, igual que el documento. Tampoco se fuerza
+  coherencia numérica mujeres/hombres según la opción de 43 -- son datos
+  de campo, no se quiso arriesgar a rechazar un caso real por un tipeo.
+
+**Bug real encontrado y corregido (código compartido):**
+`campoVisiblePorDependencia()` en `app/Core/ayudantes.php` no reconocía
+un campo padre de tipo **SI_NO** -- su valor en `$valoresCampos` es un
+array (`['marcado' => 'SI']`), y la función hacía `(string) $valorPadre`
+sin ese caso especial, lo que producía `Array to string conversion` y la
+comparación nunca coincidía. Efecto real: **"Último recuento CD4"/"Fecha
+del recuento CD4"/"¿Cuál?"" (red social) se guardaban vacíos en
+silencio** aunque el usuario los llenara correctamente y el navegador los
+mostrara. El único SI_NO anterior (B55, `b55_existen_otras_personas_con_
+lesiones_similares`) no tenía ningún hijo, por eso el bug estaba dormido
+desde el 2026-08-25. Corregido agregando el mismo tratamiento que ya
+existía para MULTISELECT (extraer `['marcado']` antes de comparar).
+Confirmado con datos reales: antes del fix, `caso_valor` no tenía fila
+para esos 3 campos pese a estar llenos en el POST; después del fix, sí.
+
+**Verificación:**
+- Triple verificador: B04X 72/72 campos (antes 58), 8/8 secciones, 0
+  huérfanos, 0 claves faltantes (255 totales).
+- **E2E real (Playwright), caso completo:** las 25 preguntas de la
+  Sección V, con las cadenas de dependencia abiertas paso a paso
+  (36→especificar, 37→TAR→CD4, 38→checklist→Otros, 40→fechas por
+  comorbilidad, 42→MATRIZ Dosis 1 sin Dosis 2, 45→Cuál) -- confirmado que
+  cada `.dep-wrap` pasa de oculto a visible en el momento correcto y
+  registra el valor.
+- **Vuelta completa** crear→editar→ver: los 22 valores capturados
+  (de 25 preguntas, 3 quedaron deliberadamente sin marcar para probar
+  independencia) reaparecen exactos en el formulario de edición
+  (radios/checkboxes/MATRIZ prellenados, controles no gateados vacíos) y
+  el texto correspondiente aparece en la vista de solo lectura. La vista
+  de solo lectura muestra el campo MATRIZ nuevo como "Registrado (2
+  ítems)" -- mismo resumen genérico que ya usan otros MATRIZ sin
+  formato dedicado (ej. "Secuencia de aparición por zona"), no es una
+  regresión de este cambio.
+- **Prueba negativa:** en un caso nuevo, sin abrir ningún gate de la
+  Sección V, se forzaron por JS (sin disparar eventos, simulando
+  DevTools) 5 valores en campos ocultos representando los 3 mecanismos
+  de dependencia usados (SELECT segmentado, MULTISELECT, SI_NO) -- los 5
+  llegaron al servidor por POST pero **ninguno se guardó** en
+  `caso_valor`.
+- **Regresión de control (A36, ficha ya revisada, sin tocar):** carga y
+  envía sin errores de consola ni HTTP 500; se detiene en la validación
+  ya documentada ("Selecciona Confirmado o Descartado") -- comportamiento
+  esperado, no relacionado con este cambio.
+- Los 4 casos y 3 personas de prueba (F-00143, F-00144, F-00145, F-00146)
+  se borraron sin dejar filas residuales.
+
+Pendiente: Sección VI en adelante del PDF de B04X (Cuadro clínico ya
+cotejado en una carga previa sin verificación formal -- revisar si
+amerita su propio paso de cotejo -- y las secciones posteriores:
+Hospitalización, Clasificación, Investigador).
+
+### Ajuste post-cierre: "No" excluyente en Comorbilidades + bug real en cascada, 2026-09-02
+
+El usuario pidió que la opción "No" del ítem 40 (Comorbilidades)
+deshabilite/desmarque las demás, mismo comportamiento que "Ninguno" en
+otros MULTISELECT de esta misma ficha.
+
+- **Generalizado el mecanismo genérico existente** (`campos/multiselect.php`
+  + `ficha.js`, antes solo reconocía el código de catálogo "NINGUNO"): ahora
+  también reconoce "NO" como código excluyente. Cambio mínimo -- ficha.js ya
+  era genérico respecto al VALOR del atributo `data-excluyente`, solo hubo
+  que ampliar el detector en PHP a una lista `['NINGUNO', 'NO']`. Sin
+  blast radius: `b04x_comorbilidades` es el único MULTISELECT de las 24
+  fichas con una opción literal "No" (verificado por script contra el
+  manifiesto completo).
+- **Bug real encontrado y corregido, más antiguo que este cambio**: al
+  activar la exclusión, `aplicarExcluyenteMultiselect()` desmarca las
+  otras opciones con `checkbox.checked = false` sin disparar `change` --
+  el motor genérico de dependencias (`evaluarDependencias()`) nunca se
+  enteraba, así que un campo "Especificar..." que dependía de una opción
+  recién desmarcada por la exclusión **se quedaba visible y con su valor
+  viejo** (ej. "Especificar otra comorbilidad" seguía mostrando "Asma"
+  después de marcar "No"). Estaba dormido desde que existe el mecanismo
+  (2026-08-29) porque ninguna combinación probada entonces tenía un
+  MULTISELECT con "Ninguno" + un dependiente marcado simultáneamente antes
+  de excluir. Confirmado que también afectaba al caso preexistente
+  "Lugares a los que asistió" -> "Ninguno" (Sección III). Corregido con una
+  sola línea: `aplicarExcluyenteMultiselect()` llama a
+  `evaluarDependencias()` al final.
+- **Verificación:** marcar Tuberculosis+Otros, luego "No" -> ambas se
+  desmarcan y deshabilitan, y "Especificar otra comorbilidad" (antes con
+  "Asma" escrito) se oculta y vacía; desmarcar "No" reactiva todo;
+  reintentar marcar una opción deshabilitada no tiene efecto. Repetido el
+  flujo completo de la Sección V (25 preguntas) sin diferencias respecto a
+  antes del fix. Confirmado también en "Lugares a los que asistió" (el caso
+  preexistente). Triple verificador sin cambios (72/72, 255 claves). Sin
+  datos residuales tras la prueba.
+
+### Ajuste post-cierre 2: N.° de mujeres/hombres dependen del ítem 43, 2026-09-02
+
+Al ver el formulario real, el usuario pidió que "N.° de mujeres" y "N.° de
+hombres" (ítem 44) dependan de la respuesta al ítem 43 ("Antecedente de
+relaciones sexuales..."), en vez de estar siempre visibles (decisión
+original de esta misma sesión, revertida acá porque el usuario prefiere
+gatearlos igual que el resto de la sección pese a que el PDF no los anida
+visualmente).
+
+Se hizo en 2 vueltas: primero se gateó contra CUALQUIER respuesta del
+ítem 43 (ambos conteos aparecían juntos); el usuario corrigió al verlo en
+pantalla -- cada conteo debe seguir al sexo elegido, no aparecer siempre
+en bloque.
+
+- `depende_de` = "Antecedente de relaciones sexuales en los últimos 6
+  meses" en ambos campos, con `valor_activador` distinto por campo
+  (lista separada por coma, mecanismo que ya soportaba
+  `campoVisiblePorDependencia()`/`evaluarDependencias()`):
+  - N.° de mujeres -> `SOLO_CON_MUJERES,CON_AMBOS_SEXOS,DESCONOCIDO`
+  - N.° de hombres -> `SOLO_CON_HOMBRES,CON_AMBOS_SEXOS,DESCONOCIDO`
+  "Desconocido" activa los dos a propósito: si no se sabe con quién fueron
+  las relaciones, no hay base para ocultar uno u otro conteo, y el ítem 43
+  igual admite esa respuesta. Esto sigue siendo VISIBILIDAD, no la
+  validación de coherencia numérica (mujeres=0 si "solo con hombres",
+  etc.), que se mantiene descartada.
+- **Verificado en navegador real, las 4 opciones + estado vacío:** sin
+  responder -> ninguno; Solo con mujeres -> solo mujeres; Solo con hombres
+  -> solo hombres; Con ambos sexos -> los dos; Desconocido -> los dos;
+  volver a "Seleccionar…" -> ninguno. Al pasar de "Con ambos sexos" a
+  "Solo con mujeres" con ambos llenos, el de hombres se oculta Y se limpia
+  (queda vacío) mientras el de mujeres conserva su valor.
+- **Prueba negativa (servidor):** con "Solo con mujeres" elegido y el
+  conteo de hombres forzado a 9 por DOM sin eventos, el POST guardó solo
+  `SOLO_CON_MUJERES` + mujeres=4; el conteo de hombres no llegó a
+  `caso_valor`. Confirma que la lista de activadores separada por coma
+  también se respeta del lado servidor.
+- Triple verificador sin cambios (72/72, 255 claves, 0 huérfanos). Caso de
+  prueba borrado sin residuos.
+
+## Cotejo B04X -- Sección VI "Cuadro clínico" (ítems 45-56), 2026-09-02
+
+La Sección VI del PDF abarca dos tarjetas de la interfaz ("Cuadro clínico" y
+"Hospitalización"); se cotejaron juntas. 72 -> 76 campos.
+
+**Paso 2 -- decisiones:**
+- **Ítem 46 (S.E.): NO se agregó campo_def.** La semana epidemiológica ya es
+  núcleo derivado (`caso.semana_epi`/`anio_epi`, calculadas por
+  `semanaEpidemiologica()` desde `fecha_notif`, visibles como badge
+  "SE X · año" en la cabecera del formulario). Mismo criterio que
+  GERESA/Red de Salud en la Sección I: dato derivado, no se re-captura.
+- **Ítem 48:** faltaban los 2 dependientes que el PDF sí dibuja --
+  "Otros: ____" y la línea "Lugar: ____" que va debajo del checkbox
+  "Exantema/lesión" (no suelta al final del checklist, por eso se gatea
+  contra esa opción concreta y no contra el campo entero).
+- **Ítems 49/51/52:** las etiquetas de opciones se alinearon al texto
+  literal del PDF, con sus paréntesis explicativos ("Localizado (en una
+  parte del cuerpo)", "Mácula (ronchas rojas de base plana)", "Presencia de
+  exantema o lesiones en un solo estadio (monomórfico)"...). Misma
+  convención que "Fiebre (>38,5°C)"/"Proctitis (dolor o sangrado anal)",
+  que ya venían así.
+- **Ítem 50: NO se gatea contra el ítem 49.** En el PDF son independientes
+  y gatearlo impediría numerar zonas antes de responder distribución. La
+  misma tabla/mapa cubre tanto Localizado (numerar una zona) como
+  Generalizado (numerar varias) -- no hace falta un campo aparte de
+  "ubicación específica".
+- **Ítems 53-56:** los 4 BOOLEANO gatillo (Hospitalizado/UCI/Defunción/
+  Alta) pasaron a **SI_NO** -- el PDF los dibuja como "Si [] No []"
+  explícito, y un BOOLEANO suelto cae al checklist genérico "Signos y
+  síntomas" salvo que esté en la lista blanca de secciones-clinicas.php
+  (mismo bug ya corregido en b04x_puerpera y b04x_recibe_tar). Ninguno de
+  los 14 campos de esa tarjeta tenía `depende_de`: todos los detalles de
+  hospitalización/UCI/defunción se mostraban siempre, aunque el caso no
+  estuviera hospitalizado. Ahora cada bloque se revela con su gatillo.
+- **Campos nuevos:** "Hospital (UCI)" y "Motivo de ingreso (UCI)" (ítem 54
+  del PDF los pide y no existían). Llevan el sufijo entre paréntesis porque
+  `depende_de` resuelve por ETIQUETA y ya existían "Hospital"/"Motivo de
+  ingreso" de hospitalización en la misma ficha.
+
+**Diferencias con la jerarquía que trajo el usuario (manda el PDF):**
+- Ponía "Hospital" y "Motivo de ingreso" bajo *Defunción*; en el PDF esos
+  dos están en la fila de **UCI** (ítem 54), y Defunción (ítem 55) solo trae
+  Fecha + "Clasificación (según Grupo de Trabajo)".
+- Decía "Enantema/lesión" y "Prurito (dolor o sangrado anal)"; el PDF dice
+  **Exantema**/lesión y **Proctitis** (dolor o sangrado anal).
+
+**Mapa anatómico del ítem 50 (pedido explícito del usuario).** Se construyó
+`app/Views/partials/campos/secuencia-exantema-b04x.php`, despachado por
+clave desde secciones-clinicas.php (mismo mecanismo que `b55_lesiones`):
+- 2 siluetas SVG (frente y espalda) reutilizando el arte de
+  `exantema-evolucion-body-map.php` (B05), más 2 zonas que ese dibujo no
+  tenía: Genital/perianal y Oral (boca, labios). Cuello, pies y la cabeza de
+  la vista posterior son decorativos (`.body-part-inerte`, sin clic).
+- **El formato de datos NO cambió**: los inputs conservan el
+  `name="campo_<id>[<fila>][0]"` que ya emitía `matriz.php` en modo libre,
+  así que el lado servidor (rama MATRIZ genérica de CasosController) y lo ya
+  guardado en `caso_valor` siguen igual. Verificado: guarda
+  `[[""],[""],["1"],["3"],[""],[""],[""],["7"]]`, idéntico al formato previo.
+- Interacción: clic en una zona = siguiente número de orden; clic en una zona
+  ya numerada la borra **sin renumerar las demás** (el PDF admite huecos, y
+  renumerar movería números que el investigador escribió a mano). La tabla y
+  el dibujo son dos vistas del mismo dato: escribir en la tabla actualiza el
+  dibujo y viceversa.
+- No se reutilizó el partial de B05 tal cual porque captura otra cosa
+  (sombrea zonas por día 1/3/5/7 bajo su propio `name="exantema_zonas[...]"`);
+  acá el dato es un número de orden por zona. Se reutilizó el arte, no el
+  modelo de datos.
+
+**Verificación:**
+- Triple verificador: B04X 76/76 campos, 8/8 secciones, 0 huérfanos, 0
+  mecanismos no estándar, 255 claves sin faltantes.
+- **E2E real:** el mapa renderiza 2 siluetas y 8 zonas; clics sucesivos
+  asignan 1, 2, 3; volver a clicar una zona la borra dejando intactas las
+  otras; escribir "7" en la tabla pinta la zona y su número en ambas
+  siluetas. Los 6 gates nuevos (Otros, Lugar, Hospitalizado, UCI, Defunción,
+  Alta) se revelan y ocultan bien; apagar "Hospitalizado" oculta Y limpia
+  sus 6 hijos sin tocar los de UCI (gates independientes).
+- **Vuelta completa** crear -> editar -> ver: el mapa se repinta desde lo
+  guardado (badges y zonas marcadas correctos) y los 6 campos gateados
+  reaparecen con su valor; la vista de solo lectura muestra los textos.
+- **Prueba negativa:** sin abrir ningún gate, se forzaron por DOM (sin
+  eventos) 5 valores en campos ocultos de los 3 mecanismos usados
+  (MULTISELECT, SI_NO, y la cadena de hospitalización) -- ninguno llegó a
+  `caso_valor`.
+- Casos y personas de prueba borrados sin residuos.
+
+**Hallazgo aparte PREEXISTENTE (afecta a B05, ficha ya revisada) --
+CORREGIDO el mismo día, a pedido del usuario:** en el mapa corporal de B05
+(`exantema-evolucion-body-map.php`), hacer clic sobre la **silueta** no
+sombreaba nada; solo funcionaba marcando la casilla de la lista de abajo.
+
+- **Causa real (medida, no supuesta):** los 4 `document.addEventListener`
+  del bloque de cronología + mapa de exantema estaban DENTRO del bucle
+  `grupos.forEach(...)` de `window.inicializarGruposSiNo()` (ficha.js), así
+  que se registraban **una vez por cada `.grupo-si-no-field` de la página**.
+  El handler del mapa hace `chk.checked = !chk.checked`, de modo que con un
+  número PAR de grupos cada clic se anulaba a sí mismo. Instrumentando el
+  setter de `checked` en el navegador se contaron **14 asignaciones por un
+  solo clic**, con 14 grupos en la página de B05 -- par, luego el checkbox
+  volvía a su estado inicial y la silueta parecía muerta. El camino de la
+  casilla sí funcionaba porque su handler usa
+  `classList.toggle(clase, booleano)`, que es idempotente.
+- **Fix:** bandera `listenersDocumentoGruposSiNo` en el ámbito exterior;
+  los 4 listeners se registran una sola vez. Se declaró fuera de la función
+  (y no dentro) porque `inicializarGruposSiNo` está expuesta en `window`
+  para re-inicializar tras una recarga parcial, y sin eso cada
+  re-inicialización volvería a duplicarlos. Las 2 funciones que usan esos
+  listeners (`actualizarCronologiaDiaCero`/`actualizarGraficoCronologia`)
+  operan solo sobre el elemento que reciben por argumento, no sobre el
+  `grupo` de la iteración, así que conservar la primera copia no cambia nada.
+- **Verificación:** en B05, clic sobre la silueta ahora marca la zona; el
+  2.º clic la desmarca (una sola alternancia); los 4 días son independientes
+  entre sí; la casilla de la lista sigue funcionando. Regresión: el mapa
+  nuevo de B04X, sus 15 grupos Sí/No, el gate de Hospitalizado y la
+  cronología de B05 (que usa los otros 2 listeners movidos) siguen OK.
+  Verificadores: 24/24 fichas, 255 claves, 0 huérfanos.
+- **Nota de pruebas:** al clicar zonas del mapa de B05 con Playwright, el
+  centro del tórax cae sobre el círculo "E" de espalda y los bordes sobre
+  los brazos (ambos se dibujan DESPUÉS en el SVG). No es un bug del fix; para
+  probar zonas sin ambigüedad usar "cara" o "abdomen".
+
+## Cotejo B04X -- Sección VII "Laboratorio" (ítem 57), 2026-09-03
+
+Sección nueva. 9 secciones en total, 76 campo_def (sin cambio: todo el
+contenido de esta sección vive en la tabla hija compartida `caso_muestra`).
+
+**Paso 2 -- decisiones:**
+- **Se reutiliza el widget compartido de muestras**, no un modelo nuevo: los
+  3 tipos que pide el PDF YA existían en el catálogo compartido id=4 con su
+  texto exacto (`LESION` = "Hisopado de lesión dérmica", `COSTRA` = "Piel
+  esfacelada o costra", `HNF_ORF` = "Hisopado nasofaríngeo / orofaríngeo"),
+  así que no hubo que crear catálogo propio ni tabla nueva.
+- `resultado` se restringe a `POS`/`NEG` porque el catálogo compartido id=3
+  trae además "Indeterminado", que este PDF no ofrece. El filtro lo aplica
+  `CasosController::datosMuestrasCatalogo()` (no el partial), que ya
+  soportaba `opciones.resultado` -- A37.0 ya lo usaba.
+- `unico_por_tipo: true`: el PDF lista 3 filas fijas, una por tipo; no tiene
+  sentido registrar dos veces el mismo tipo en un caso. El `<select>`
+  deshabilita los ya usados y el servidor revalida.
+- **Posición**: la sección se declara en el manifiesto con
+  `solo_tabla_hija: true` y `campos: []` (mismo patrón que A44 "Laboratorio y
+  evolución" y B55 "Pruebas de laboratorio") en vez de usar la tarjeta
+  genérica de Laboratorio de `nueva/index.php`. Motivo: esa tarjeta se dibuja
+  DESPUÉS de todas las secciones, y el PDF pone Laboratorio (VII) ANTES de
+  Clasificación (VIII). B04X se sumó a la supresión de la tarjeta genérica en
+  `nueva/index.php` y `fichas/editar.php` para que no salga dos veces.
+- `fecha_toma` se rotula "Fecha de obtención" (B04X sumada a
+  `$esFechaObtencion` en muestras.php, junto a A80/P35.0/B01) porque el PDF
+  dice "Fecha de obtención de muestra". `fecha_result` ya usaba "Fecha de
+  resultado" por defecto.
+- **Sin gate**: el PDF no trae ninguna pregunta gatillo para esta sección, así
+  que no lleva `depende_de` -- el propio listado es el opt-in (se agregan solo
+  las muestras que se tomaron).
+
+**Diferencia con la jerarquía del usuario (manda el PDF):** decía "Piel:
+raspado o costra"; el PDF y el catálogo compartido dicen "Piel esfacelada o
+costra".
+
+**Validación nueva de fechas (código compartido, autorizada por el usuario):**
+`fecha_result` no puede ser anterior a `fecha_toma`. Se implementó en
+`CasosController::filasMuestras()` (constante `ERROR_RESULTADO_ANTES_DE_TOMA`),
+así que aplica a las **10 fichas** que usan el widget, no solo a B04X -- es un
+imposible físico, no un criterio opinable. Solo compara cuando ambas fechas
+son válidas (si alguna no lo es ya tiene su propio error, encadenar un segundo
+mensaje sobre el mismo campo confunde). Verificado en 3 escenarios: resultado
+anterior -> bloquea y muestra el mensaje en esa fila (no se creó ni la
+persona); misma fecha -> guarda (el PDF pide "igual o posterior"); solo fecha
+de toma sin resultado -> guarda (resultado pendiente es normal).
+
+**Verificación:**
+- Triple verificador: B04X 9/9 secciones, 76/76 campos, 0 huérfanos; 24/24
+  fichas OK; 255 claves sin faltantes.
+- **E2E real:** el orden de tarjetas en pantalla queda
+  ...8. Hospitalización | 9. Laboratorio | 10. Clasificación (como el PDF), sin
+  tarjeta de Laboratorio duplicada al final; el widget muestra solo las 4
+  columnas declaradas, solo los 3 tipos de la ficha y solo Positivo/Negativo;
+  2 muestras con fechas y resultados independientes se guardan y reaparecen
+  exactas al editar; `unico_por_tipo` deshabilita el tipo ya usado.
+- **Prueba negativa:** inyectando por DOM un tipo fuera del vocabulario
+  declarado (`HECES`) el servidor lo descarta (queda NULL), y un `resultado`
+  fuera de lo declarado (`IND`) también.
+- **Regresión:** B05 (ficha revisada que también usa el widget) sigue
+  guardando una muestra válida sin errores tras la validación nueva.
+- Casos y personas de prueba borrados sin residuos; 0 muestras huérfanas.
+
+**Tres hallazgos PREEXISTENTES, no corregidos (ninguno introducido acá):**
+1. **Salto en la numeración de tarjetas** cuando una ficha suprime la tarjeta
+   genérica de Laboratorio: la tarjeta oculta imprime el número y algo lo
+   incrementa igual. No es de B04X: A95 salta 8 -> 11 y B55 salta 10 -> 13,
+   ambos mayores que el de B04X (11 -> 13). Es cosmético (un número en un
+   encabezado) y el arreglo toca la numeración compartida de las 24 fichas.
+2. **Lista de escape en la validación de `tipo_muestra`**
+   (`CasosController::filasMuestras()`): los códigos `SUERO`, `HNF_FAR` y
+   `ORINA` se aceptan aunque la ficha no los declare en `opciones.tipo_muestra`
+   (línea del array `['SUERO', 'HNF_FAR', 'ORINA']`, sin comentario que explique
+   por qué). El resto del vocabulario sí se valida -- comprobado: `HECES`
+   inyectado se descarta, `SUERO` inyectado se guarda. Afecta a las 9 fichas
+   que declaran `opciones.tipo_muestra`.
+3. **B05 exige `fecha_inicio_sintomas` pero su único input está oculto**
+   (`id="fechaInicioSintomasB26"`, dentro de un bloque `hidden`): al guardar
+   una ficha B05 nueva desde el navegador el servidor responde "Ingresa la
+   fecha de inicio de síntomas" y no hay campo visible donde ponerla; llenando
+   el input oculto por consola, guarda. Comprobado que ocurre igual SIN tocar
+   muestras, así que es ajeno a este cotejo. Emparentado con el bug ya
+   documentado de B26 (`required` en un input oculto con name repetido), pero
+   esta vez del lado servidor. Vale revisarlo aparte: si se confirma en uso
+   real, B05 no se podría registrar desde la interfaz.
+
+## Cotejo B04X -- Secciones VIII a XI (cierre de la ficha), 2026-09-03
+
+11 secciones, 79 campo_def. Con esto queda cotejado todo el PDF de B04X.
+
+**VIII. Clasificación del caso** -- ya estaba implementada (SELECT
+Sospechoso/Probable/Confirmado/Descartado), confirmado por el usuario. Sin
+cambios.
+
+**IX. Observaciones** -- sección nueva con un TEXTAREA (`b04x_observaciones`),
+mismo patrón que las "Observaciones" de A97/B01/B26/A80/B05/Z21: no existe
+una columna núcleo `caso.observaciones`, en todas las fichas es un campo_def.
+Cae en el orden correcto sin reposicionar, porque las secciones campo_def se
+pintan justo antes de la tarjeta núcleo "Investigador".
+
+**X. Personal de salud quien llena la ficha (ítems 58-60)** -- **sin campos
+nuevos**: el bloque núcleo "Investigador" ya trae los 3 datos que pide el PDF
+(Apellidos y nombres -> `investigador_nombre`, Cargo -> `investigador_cargo`,
+Teléfono -> `investigador_telefono`). Mismo criterio que "Fecha de
+investigación" en la Sección I: si el núcleo ya lo cubre, no se duplica. El
+bloque núcleo muestra además Profesión, Email y Fecha de investigación, que
+este PDF no pide -- se dejan, son compartidos por las 24 fichas.
+
+**XI. Personal de epidemiología / control de calidad (ítems 61-62)** --
+sección nueva con 2 TEXTO (`b04x_control_calidad_nombres`,
+`b04x_control_calidad_telefono`). Es una SEGUNDA persona, distinta de quien
+llena la ficha; ninguna de las 24 fichas modelaba un responsable de control de
+calidad. Va con partial dedicado `personal-epidemiologia-b04x.php`
+(4.º camino de render) porque las secciones campo_def se pintan ANTES de la
+tarjeta "Investigador" y el PDF pone XI DESPUÉS de X -- mismo mecanismo que
+`observaciones-b01.php`/`clasificacion-caso-a370.php`. Requirió los **2**
+enganches de siempre en secciones-clinicas.php (claves cubiertas + sección
+excluida del loop) más el `require` en las 2 vistas. Las etiquetas llevan el
+sufijo "(control de calidad)" porque `depende_de` resuelve por etiqueta.
+"Firma y sello" no se modela: es del papel.
+
+**Verificación:**
+- Triple verificador: B04X 11/11 secciones, 79/79 campos, 0 huérfanos, 0
+  mecanismos no estándar; 24/24 fichas OK; 255 claves sin faltantes.
+- **E2E real:** el orden en pantalla queda 10. Clasificación | 11.
+  Observaciones | ... | 14. Investigador | 15. Personal de epidemiología
+  (control de calidad), es decir VIII -> IX -> X -> XI como el PDF. Los 3
+  campos nuevos aparecen una sola vez (sin duplicar por el partial
+  reposicionado), se guardan, y reaparecen exactos al editar y en la vista de
+  solo lectura, junto con los datos del investigador.
+- Casos y personas de prueba borrados sin residuos; 0 filas huérfanas en
+  caso_muestra/caso_vacuna.
+
+**Hallazgo de la propia ficha, NO corregido (requiere decisión):** B04X sigue
+con `tablas_hijas.caso_vacuna = true` de la carga original sin verificar, así
+que la tarjeta genérica "Antecedentes epidemiológicos" se muestra conteniendo
+ÚNICAMENTE el widget "Antecedentes vacunales / Agregar antecedente vacunal".
+Eso quedó duplicando la captura de vacunación: el ítem 42 del PDF (Recibió
+vacuna contra la viruela, Dosis 1 y 2 con fecha y país) se modeló en el cotejo
+de la Sección V como un campo MATRIZ dentro de "Antecedentes", que es lo que
+el PDF pide. El widget genérico no corresponde a ningún ítem del PDF. Hay 0
+filas de `caso_vacuna` para B04X, así que apagarlo (`caso_vacuna: false`) no
+perdería datos y dejaría la ficha con un solo camino de captura de vacunación
+-- mismo criterio con el que se quitaron 2 tarjetas genéricas duplicadas al
+cerrar A95. Se deja a decisión del usuario por ser una sección que no estaba
+en el alcance pedido.

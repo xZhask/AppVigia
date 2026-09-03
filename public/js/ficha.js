@@ -112,14 +112,16 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('input', evaluarDependencias);
   document.addEventListener('change', evaluarDependencias);
 
-  // ---------- MULTISELECT: opción "Ninguno" mutuamente excluyente ----------
-  // Mecanismo genérico (cotejo B04X, 2026-08-29, pedido del usuario): si un
-  // MULTISELECT trae una opción de valor "NINGUNO" (chip-select con
-  // data-excluyente="NINGUNO", ver campos/multiselect.php), marcarla
-  // desmarca y deshabilita las demás; marcar cualquier otra vuelve a
-  // habilitarlas todas. Se detecta por CATÁLOGO (cualquier ficha que declare
-  // una opción "Ninguno" lo hereda solo), no por clave de campo -- sin
-  // config nueva en el manifiesto.
+  // ---------- MULTISELECT: opción "Ninguno"/"No" mutuamente excluyente ----------
+  // Mecanismo genérico (cotejo B04X, 2026-08-29 y 2026-09-02, pedido del
+  // usuario): si un MULTISELECT trae una opción de valor "NINGUNO" o "NO"
+  // (chip-select con data-excluyente="<ese valor>", ver
+  // campos/multiselect.php), marcarla desmarca y deshabilita las demás;
+  // marcar cualquier otra vuelve a habilitarlas todas. Se detecta por
+  // CATÁLOGO (cualquier ficha que declare una de esas opciones lo hereda
+  // solo), no por clave de campo -- sin config nueva en el manifiesto. Este
+  // código ya era genérico respecto al VALOR del atributo -- no hubo que
+  // tocarlo al sumar "NO", solo el detector en el PHP.
   function aplicarExcluyenteMultiselect(contenedor) {
     var valorExcluyente = contenedor.getAttribute('data-excluyente');
     var checks = Array.prototype.slice.call(contenedor.querySelectorAll('input[type="checkbox"]'));
@@ -131,6 +133,13 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
       otros.forEach(function (c) { c.disabled = false; });
     }
+    // Bug real (hallado 2026-09-02 en b04x_comorbilidades, latente desde que
+    // existe este mecanismo): desmarcar las "otras" opciones arriba no
+    // dispara 'change', así que evaluarDependencias() nunca se enteraba --
+    // un campo "Especificar..." que dependía de una opción recién
+    // desmarcada por la exclusión se quedaba visible y con su valor viejo.
+    // Se fuerza la re-evaluación acá mismo.
+    evaluarDependencias();
   }
   document.querySelectorAll('.chip-select[data-excluyente]').forEach(aplicarExcluyenteMultiselect);
   document.addEventListener('change', function (e) {
@@ -1519,6 +1528,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // ---------- Lógica de GRUPO_SI_NO y SI_NO_FECHA ----------
+  // Bandera de una sola vez para los listeners de nivel `document` que viven
+  // dentro del bucle por grupo (ver el comentario largo más abajo). Va acá
+  // afuera para que sobreviva a una segunda llamada a inicializarGruposSiNo()
+  // -- está expuesta en window justamente para poder re-inicializar tras una
+  // recarga parcial, y sin esto cada re-inicialización volvería a duplicarlos.
+  var listenersDocumentoGruposSiNo = false;
   window.inicializarGruposSiNo = function() {
     var grupos = document.querySelectorAll('.grupo-si-no-field');
     grupos.forEach(function(grupo) {
@@ -1749,61 +1764,76 @@ document.addEventListener('DOMContentLoaded', function () {
         });
       }
 
-      document.addEventListener('input', function(e) {
-        if (e.target) {
-          if (e.target.classList.contains('input-fecha-dia-cero')) {
-            actualizarCronologiaDiaCero(e.target);
-          } else if (e.target.classList.contains('cron-fecha-inicio') || e.target.classList.contains('cron-fecha-fin')) {
-            var cw = e.target.closest('.cronologia-field');
-            if (cw) actualizarGraficoCronologia(cw);
+      // Estos 4 listeners son de nivel `document`, no del grupo: registrarlos
+      // dentro de este forEach los duplicaba una vez POR CADA .grupo-si-no-field
+      // de la pagina. El del mapa de exantema hace `chk.checked = !chk.checked`,
+      // asi que con un numero PAR de grupos cada clic se anulaba a si mismo y la
+      // silueta parecia muerta (B05 tiene 14 grupos: 14 alternancias por clic).
+      // Bug real hallado 2026-09-02 al cotejar la Seccion VI de B04X; se corrige
+      // registrandolos una sola vez. Las 2 funciones que usan
+      // (actualizarCronologiaDiaCero/actualizarGraficoCronologia) trabajan solo
+      // sobre el elemento que reciben por argumento, no sobre el `grupo` de la
+      // iteracion, asi que quedarse con la primera copia no cambia nada.
+      if (!listenersDocumentoGruposSiNo) {
+        listenersDocumentoGruposSiNo = true;
+
+        document.addEventListener('input', function(e) {
+          if (e.target) {
+            if (e.target.classList.contains('input-fecha-dia-cero')) {
+              actualizarCronologiaDiaCero(e.target);
+            } else if (e.target.classList.contains('cron-fecha-inicio') || e.target.classList.contains('cron-fecha-fin')) {
+              var cw = e.target.closest('.cronologia-field');
+              if (cw) actualizarGraficoCronologia(cw);
+            }
           }
-        }
-      });
-      document.addEventListener('change', function(e) {
-        if (e.target) {
-          if (e.target.classList.contains('input-fecha-dia-cero')) {
-            actualizarCronologiaDiaCero(e.target);
-          } else if (e.target.classList.contains('cron-fecha-inicio') || e.target.classList.contains('cron-fecha-fin')) {
-            var cw = e.target.closest('.cronologia-field');
-            if (cw) actualizarGraficoCronologia(cw);
+        });
+        document.addEventListener('change', function(e) {
+          if (e.target) {
+            if (e.target.classList.contains('input-fecha-dia-cero')) {
+              actualizarCronologiaDiaCero(e.target);
+            } else if (e.target.classList.contains('cron-fecha-inicio') || e.target.classList.contains('cron-fecha-fin')) {
+              var cw = e.target.closest('.cronologia-field');
+              if (cw) actualizarGraficoCronologia(cw);
+            }
           }
-        }
-      });
+        });
 
-      // ---------- Exantema Body Map Interaction ----------
-      document.addEventListener('click', function(e) {
-        var bodyPart = e.target.closest('.exantema-body-map-section .body-part');
-        if (!bodyPart) return;
+        // ---------- Exantema Body Map Interaction ----------
+        document.addEventListener('click', function(e) {
+          var bodyPart = e.target.closest('.exantema-body-map-section .body-part');
+          if (!bodyPart) return;
 
-        var region = bodyPart.getAttribute('data-region');
-        var cardDia = bodyPart.closest('.card-dia-exantema');
-        if (!region || !cardDia) return;
+          var region = bodyPart.getAttribute('data-region');
+          var cardDia = bodyPart.closest('.card-dia-exantema');
+          if (!region || !cardDia) return;
 
-        var chk = cardDia.querySelector('.chk-zona-input[data-region="' + region + '"]');
-        if (!chk) return;
+          var chk = cardDia.querySelector('.chk-zona-input[data-region="' + region + '"]');
+          if (!chk) return;
 
-        chk.checked = !chk.checked;
-        chk.dispatchEvent(new Event('change', { bubbles: true }));
-      });
+          chk.checked = !chk.checked;
+          chk.dispatchEvent(new Event('change', { bubbles: true }));
+        });
 
-      document.addEventListener('change', function(e) {
-        if (e.target && e.target.classList.contains('chk-zona-input')) {
-          var chk = e.target;
-          var region = chk.getAttribute('data-region');
-          var cardDia = chk.closest('.card-dia-exantema');
-          if (!cardDia || !region) return;
+        document.addEventListener('change', function(e) {
+          if (e.target && e.target.classList.contains('chk-zona-input')) {
+            var chk = e.target;
+            var region = chk.getAttribute('data-region');
+            var cardDia = chk.closest('.card-dia-exantema');
+            if (!cardDia || !region) return;
 
-          var bodyPart = cardDia.querySelector('.body-part[data-region="' + region + '"]');
-          if (bodyPart) {
-            bodyPart.classList.toggle('sombreado', chk.checked);
+            var bodyPart = cardDia.querySelector('.body-part[data-region="' + region + '"]');
+            if (bodyPart) {
+              bodyPart.classList.toggle('sombreado', chk.checked);
+            }
+
+            var itemLabel = chk.closest('.chk-zona-item');
+            if (itemLabel) {
+              itemLabel.classList.toggle('active', chk.checked);
+            }
           }
+        });
+      }
 
-          var itemLabel = chk.closest('.chk-zona-item');
-          if (itemLabel) {
-            itemLabel.classList.toggle('active', chk.checked);
-          }
-        }
-      });
 
       function actualizarContador() {
         if (esSiNoFecha) return;
@@ -3929,6 +3959,76 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
   actualizarEdadCalculada();
+
+  // ---------- B04X ítem 50: secuencia de aparición del exantema ----------
+  // El dibujo y la tabla numerada son dos vistas del MISMO dato: los inputs
+  // name="campo_<id>[fila][0]" que ya emitía matriz.php (ver
+  // partials/campos/secuencia-exantema-b04x.php). El SVG no guarda nada por
+  // su cuenta -- escribe en esos inputs y vuelve a pintarse desde ellos, así
+  // que el servidor sigue recibiendo exactamente el mismo POST que antes.
+  function inputsSecuenciaB04x(bloque) {
+    return Array.prototype.slice.call(bloque.querySelectorAll('.secuencia-b04x-input'));
+  }
+
+  function repintarSecuenciaB04x(bloque) {
+    var inputs = inputsSecuenciaB04x(bloque);
+    var porRegion = {};
+    inputs.forEach(function (input) {
+      var region = input.getAttribute('data-region');
+      var valor = (input.value || '').trim();
+      if (region) porRegion[region] = valor;
+      var fila = input.closest('.secuencia-b04x-fila');
+      if (fila) fila.classList.toggle('tiene-valor', valor !== '');
+    });
+
+    bloque.querySelectorAll('[data-badge-region]').forEach(function (badge) {
+      var valor = porRegion[badge.getAttribute('data-badge-region')] || '';
+      var texto = badge.querySelector('text');
+      if (texto) texto.textContent = valor;
+      badge.hidden = (valor === '');
+    });
+    bloque.querySelectorAll('.body-part[data-region]').forEach(function (parte) {
+      var valor = porRegion[parte.getAttribute('data-region')] || '';
+      parte.classList.toggle('marcada', valor !== '');
+    });
+  }
+
+  function alternarZonaSecuenciaB04x(bloque, region) {
+    var inputs = inputsSecuenciaB04x(bloque);
+    var objetivo = inputs.find(function (i) { return i.getAttribute('data-region') === region; });
+    if (!objetivo) return;
+
+    if ((objetivo.value || '').trim() !== '') {
+      // Segunda vez sobre una zona ya numerada: la borra. No se renumeran las
+      // demás a propósito -- el PDF admite huecos en la secuencia y renumerar
+      // solo movería números que el investigador ya escribió a mano.
+      objetivo.value = '';
+    } else {
+      var maximo = 0;
+      inputs.forEach(function (i) {
+        var n = parseInt(i.value, 10);
+        if (!isNaN(n) && n > maximo) maximo = n;
+      });
+      objetivo.value = maximo + 1;
+    }
+    repintarSecuenciaB04x(bloque);
+  }
+
+  document.querySelectorAll('.secuencia-exantema-b04x').forEach(repintarSecuenciaB04x);
+
+  document.addEventListener('click', function (e) {
+    if (!e.target || !e.target.closest) return;
+    var parte = e.target.closest('.secuencia-exantema-b04x .body-part[data-region]');
+    if (!parte) return;
+    var bloque = parte.closest('.secuencia-exantema-b04x');
+    if (bloque) alternarZonaSecuenciaB04x(bloque, parte.getAttribute('data-region'));
+  });
+
+  document.addEventListener('input', function (e) {
+    if (!e.target || !e.target.classList || !e.target.classList.contains('secuencia-b04x-input')) return;
+    var bloque = e.target.closest('.secuencia-exantema-b04x');
+    if (bloque) repintarSecuenciaB04x(bloque);
+  });
 });
 
 

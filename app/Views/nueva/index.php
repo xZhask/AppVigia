@@ -400,7 +400,11 @@ if ($puedeElegirEstablecimiento) {
       // duplicaba el mismo widget 2 veces. Mismo criterio que $mostrarViajes
       // arriba (usa_muestras se queda en 1, solo se suprime esta 2.ª
       // posición para A95).
-      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95 && !$isB55;
+      // B04X (cotejo 2026-09-03, Sección VII): igual que A95/B55, su
+      // Laboratorio se declara como sección propia (solo_tabla_hija) para que
+      // caiga antes de Clasificación, como en el PDF -- esta tarjeta genérica
+      // se dibuja después de todas las secciones y lo duplicaría al final.
+      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95 && !$isB55 && !$isB04X;
       ?>
       <div class="card section" id="seccionLaboratorioCard" <?= $mostrarLaboratorioGenerico ? '' : 'hidden' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>
@@ -461,6 +465,15 @@ endforeach;
         </div>
       </div>
       <?php $numeroSeccion++; ?>
+
+      <?php
+      // B04X, sección XI del PDF (ítems 61-62): "Personal de epidemiología
+      // quien realiza el control de calidad". Va acá, después de la tarjeta
+      // "Investigador" (que cubre la sección X, "Personal de salud quien llena
+      // la ficha"), porque las secciones campo_def se pintan todas antes -- el
+      // partial se encarga de la tarjeta y del $numeroSeccion++.
+      if ($isB04X) require __DIR__ . '/../partials/personal-epidemiologia-b04x.php';
+      ?>
 
       <!-- Clasificación del caso -->
       <?php $esB26Clasif = (($enfermedad['cie10'] ?? '') === 'B26'); ?>

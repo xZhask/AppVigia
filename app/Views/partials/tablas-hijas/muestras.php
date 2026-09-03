@@ -26,7 +26,8 @@ $esB05 = ($cie10Actual === 'B05');
 // "Fecha de obtención de 1 muestra"). "Fecha resultado Fiocruz" ($esPfa más
 // abajo) sigue siendo específico de A80 -- el PDF de P35.0 no menciona
 // Fiocruz.
-$esFechaObtencion = in_array($cie10Actual, ['A80', 'P35.0', 'B01'], true);
+// B04X (cotejo 2026-09-03, ítem 57 del PDF): "Fecha de obtención de muestra".
+$esFechaObtencion = in_array($cie10Actual, ['A80', 'P35.0', 'B01', 'B04X'], true);
 // "Fecha emisión resultado INS" (en vez de "Fecha de resultado"): B01
 // (2026-08-09) es la primera en pedir esta etiqueta exacta para fecha_result
 // -- el PDF (pág. 3, secc. VI) la conecta con la cadena EE.SS -> Red/Microred
