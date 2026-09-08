@@ -70,7 +70,11 @@ $silueta = function (string $vista) use ($regionPorEtiqueta, $filasSec, $valorFi
     ?>
     <div class="secuencia-b04x-vista">
       <div class="secuencia-b04x-vista-titulo"><?= $esFrente ? 'Frente' : 'Espalda' ?></div>
+      <!-- El tamaño va también inline, como en el mapa de B05: un SVG con solo
+           viewBox mide 300x150 por defecto, así que si la hoja de estilos llega
+           tarde o cacheada el mapa se dibuja enorme. -->
       <svg viewBox="0 0 120 220" class="secuencia-b04x-svg" role="img"
+           style="width: 118px; height: 210px;"
            aria-label="Silueta corporal, vista <?= $esFrente ? 'frontal' : 'posterior' ?>">
         <!-- Cabeza: clicable solo de frente (zona "Cara"); de espaldas es decorativa -->
         <path <?= $esFrente ? 'data-region="cara"' : '' ?>
