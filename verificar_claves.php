@@ -25,6 +25,11 @@
  *      -- la lista de esos archivos está a propósito en $AMBIENTE_SEGURO
  *      de este script, no inferida por análisis estático del despacho; si
  *      se agrega un partial a medida nuevo, hay que sumarlo acá.
+ *   3. campoPorClave('clave') en public/js/*.js -- el JS resuelve contra el
+ *      mapa [clave => name] que emite el servidor para la enfermedad activa,
+ *      así que una clave obsoleta ahí falla en SILENCIO (devuelve '' y el
+ *      querySelector no encuentra nada). La ficha se deduce del prefijo de la
+ *      clave, y la deducción se comprueba contra campo_def.
  *
  * Uso:
  *   php verificar_claves.php                # imprime el reporte en Markdown
@@ -70,6 +75,36 @@ $LITERALES_PINEADOS = [
         'B05' => ['b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos'],
     ],
 ];
+
+// Forma 3 del encabezado: claves usadas desde JavaScript vía campoPorClave().
+// El servidor emite <script id="mapaCampos"> con [clave => name] de la
+// enfermedad ACTIVA (campos-por-clave.php), así que una clave obsoleta acá no
+// da error: campoPorClave() devuelve '' y el querySelector('[name=""]') que
+// sigue devuelve null, con lo que el bloque entero queda en silencio -- el
+// mismo modo de falla que motivó este script para las vistas, pero en el otro
+// lado del alambre (ver bug de la tabla de viajes de B05, 2026-08-03).
+//
+// La ficha de cada clave se deduce del prefijo (cie10 en minúsculas y con
+// '.' -> '_', p. ej. P35.0 -> p35_0_), que es la convención que sigue
+// cargar_fichas.php; el script COMPRUEBA la deducción contra campo_def, así
+// que no es una suposición ciega. Una clave que no case con ningún prefijo se
+// reporta como faltante (cie10 '?') en vez de saltarse en silencio: si es una
+// excepción legítima, hay que declararla acá con su ficha, igual que
+// $AMBIENTE_SEGURO más arriba.
+$CLAVES_JS_SIN_PREFIJO = [
+    // 'clave_sin_prefijo_de_ficha' => 'CIE10',
+];
+
+$archivosJs = glob(__DIR__ . '/public/js/*.js');
+
+// Prefijo -> cie10, de más largo a más corto para que gane el más específico
+// (p. ej. 'a37_0_' antes que un hipotético 'a37_').
+$prefijosFicha = [];
+foreach (Enfermedad::activas() as $enf) {
+    $prefijo = strtolower(str_replace('.', '_', (string) $enf['cie10'])) . '_';
+    $prefijosFicha[$prefijo] = (string) $enf['cie10'];
+}
+uksort($prefijosFicha, fn($a, $b) => strlen($b) <=> strlen($a));
 
 $archivosVistas = array_merge(
     glob(__DIR__ . '/app/Views/partials/*.php'),
@@ -147,6 +182,34 @@ foreach ($archivosVistas as $ruta) {
     }
 }
 
+// 4) campoPorClave('clave') en public/js/*.js (ver $prefijosFicha arriba).
+foreach ($archivosJs as $ruta) {
+    $relativo = str_replace('\\', '/', $ruta);
+    $relativo = ltrim(str_replace($raizNormalizada, '', $relativo), '/');
+    $codigo = file_get_contents($ruta);
+
+    if (!preg_match_all('/campoPorClave\(\s*\'([a-z0-9_.]+)\'\s*\)/', $codigo, $mJs)) {
+        continue;
+    }
+    foreach (array_unique($mJs[1]) as $clave) {
+        $cie10 = $CLAVES_JS_SIN_PREFIJO[$clave] ?? null;
+        if ($cie10 === null) {
+            foreach ($prefijosFicha as $prefijo => $cie) {
+                if (str_starts_with($clave, $prefijo)) {
+                    $cie10 = $cie;
+                    break;
+                }
+            }
+        }
+        $resultados[] = [
+            'archivo' => $relativo,
+            'cie10'   => $cie10 ?? '?',
+            'clave'   => $clave,
+            'origen'  => 'js-campoPorClave',
+        ];
+    }
+}
+
 $faltantes = [];
 $totalRevisadas = 0;
 foreach ($resultados as $r) {
@@ -165,8 +228,9 @@ if ($modoJson) {
 echo "# REPORTE_VERIFICACION_CLAVES.md\n\n";
 echo "Generado por `verificar_claves.php` el " . date('Y-m-d') . ".\n\n";
 echo "Audita cada literal de clave pasado a \$campo()/\$resolvedorPara()(...) en las\n";
-echo "vistas contra `campo_def` real, usando el mismo mecanismo de resolución\n";
-echo "que usa la aplicación. No modifica nada.\n\n";
+echo "vistas, y cada campoPorClave('...') en public/js/*.js, contra `campo_def`\n";
+echo "real, usando el mismo mecanismo de resolución que usa la aplicación.\n";
+echo "No modifica nada.\n\n";
 echo "Claves revisadas: **{$totalRevisadas}**. Faltantes: **" . count($faltantes) . "**.\n\n";
 
 if (!$faltantes) {
