@@ -171,6 +171,14 @@ const CATALOGO_CLASIFICACION = [
     'SOSPECHOSO'     => ['etiqueta' => 'Sospechoso',      'dot' => 'dot-sos'],
     'PROBABLE'       => ['etiqueta' => 'Probable',        'dot' => 'dot-pro'],
     'CONFIRMADO'     => ['etiqueta' => 'Confirmado',      'dot' => 'dot-con'],
+    // 'COMPATIBLE' (2026-09-07, cotejo A00 / EDA grave-cólera, "VI.
+    // CLASIFICACIÓN" de la pág. 51): caso que no se pudo confirmar ni
+    // descartar por laboratorio y se cierra por criterio clínico-
+    // epidemiológico. Va entre Confirmado y Descartado porque el orden de
+    // salida de opcionesClasificacionPara() es el de esta constante, no el
+    // del CSV de la ficha. Sólo lo ve A00 (única con COMPATIBLE en su
+    // enfermedad.opciones_clasificacion); las demás no cambian.
+    'COMPATIBLE'     => ['etiqueta' => 'Compatible',      'dot' => 'dot-pro'],
     'DESCARTADO'     => ['etiqueta' => 'Descartado',      'dot' => 'dot-des'],
     'DIRECTA'        => ['etiqueta' => 'Directa',         'dot' => 'dot-con'],
     'INDIRECTA'      => ['etiqueta' => 'Indirecta',       'dot' => 'dot-pro'],

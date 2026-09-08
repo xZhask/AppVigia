@@ -37,6 +37,12 @@ $esFechaEmisionResultadoIns = ($cie10Actual === 'B01');
 // INS" -- el PDF no menciona INS en absoluto (a diferencia de B05/A80, que
 // sí lo hacen explícito).
 $esA95 = ($cie10Actual === 'A95');
+// Misma etiqueta neutra de fecha_envio_ins para A00 (2026-09-07, pág. 51:
+// "Fecha de envío al laboratorio", tampoco menciona al INS). Se separa de
+// $esA95 y no se le suma un CIE-10 porque $esA95 también decide "Prueba
+// realizada" vs "Tipo de prueba", que A00 NO comparte: su PDF sí trae un
+// vocabulario cerrado (Cultivo / Otro) para esa columna.
+$etiquetaEnvioNeutra = in_array($cie10Actual, ['A95', 'A00'], true);
 
 // opcionesMuestraExtra/textoLibreMuestra: overrides declarativos por ficha
 // sobre resultado_igm/resultado_igg/resultado_pcr/genotipo/titulacion
@@ -106,7 +112,24 @@ $opcionesAgente = !empty($opcionesMuestraExtra['agente_aislado'])
     ? array_intersect_key($opcionesAgenteDefecto, array_flip($opcionesMuestraExtra['agente_aislado']))
     : [];
 
-$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_eess_red' => '', 'fecha_envio_red_lrr' => '', 'fecha_envio_lrr_ins' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esFechaEmisionResultadoIns, $esA95, $esB05, $cie10Actual, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $tipoPruebaLibre, $opcionesAgente, $dependeDeColumnaMuestra, $attrsDependencia): void {
+// Serogrupo / serotipo de Vibrio cholerae (2026-09-07, A00 "V. LABORATORIO",
+// pág. 51). Mismo mecanismo opt-in que $opcionesAgente arriba: la columna
+// sólo se pinta si la ficha la declara en columnas_tablas_hija, y su
+// vocabulario sale de opciones.serogrupo / opciones.serotipo. El default
+// vive acá (no en catalogo_item) por el mismo motivo que agente_aislado y
+// genotipo: no hay catálogo compartido de serogrupos entre fichas, y meterlo
+// en una tabla que comparten las otras 11 fichas con usa_muestras=1 les
+// agregaría opciones que su PDF no pide.
+$opcionesSerogrupoDefecto = ['O1' => 'O1', 'O139' => 'O139'];
+$opcionesSerotipoDefecto  = ['OGAWA' => 'Ogawa', 'INABA' => 'Inaba', 'HIKOJIMA' => 'Hikojima'];
+$opcionesSerogrupo = !empty($opcionesMuestraExtra['serogrupo'])
+    ? array_intersect_key($opcionesSerogrupoDefecto, array_flip($opcionesMuestraExtra['serogrupo']))
+    : $opcionesSerogrupoDefecto;
+$opcionesSerotipo = !empty($opcionesMuestraExtra['serotipo'])
+    ? array_intersect_key($opcionesSerotipoDefecto, array_flip($opcionesMuestraExtra['serotipo']))
+    : $opcionesSerotipoDefecto;
+
+$filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '', 'recibio_antibiotico' => '', 'resultado' => '', 'fecha_toma' => '', 'fecha_envio_eess_red' => '', 'fecha_envio_red_lrr' => '', 'fecha_envio_lrr_ins' => '', 'fecha_envio_ins' => '', 'fecha_result' => '', 'agente_aislado' => '', 'observaciones' => ''], ?array $error = null) use ($opcionesTipoMuestra, $opcionesTipoPrueba, $opcionesResultado, $muestra, $esPfa, $esFechaObtencion, $esFechaEmisionResultadoIns, $esA95, $esB05, $cie10Actual, $opcionesSeroPara, $opcionesGenotipo, $genotipoLibre, $tipoPruebaLibre, $etiquetaEnvioNeutra, $opcionesAgente, $opcionesSerogrupo, $opcionesSerotipo, $dependeDeColumnaMuestra, $attrsDependencia): void {
     $errorTipoMuestra = $error['tipo_muestra'] ?? null;
     $errorToma = $error['fecha_toma'] ?? null;
     $errorEnvioEessRed = $error['fecha_envio_eess_red'] ?? null;
@@ -163,6 +186,17 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
 
       <?php else: ?>
         <!-- Formulario estándar para otras enfermedades -->
+        <?php if ($muestra('establecimiento')): ?>
+        <!-- A00 (pág. 51): 1.ª columna de la tabla de laboratorio. Texto libre
+             (no un <select> del padrón) por el mismo criterio y con el mismo
+             ancho que caso_vacuna.establecimiento: es el EE.SS./laboratorio que
+             procesó ESA muestra, distinto del establecimiento notificante del
+             caso, que ya vive en el núcleo. -->
+        <div class="field">
+          <label class="fl">Establecimiento de salud</label>
+          <div class="control"><input type="text" name="muestra_establecimiento[]" value="<?= e($fila['establecimiento'] ?? '') ?>" maxlength="160" placeholder="EE.SS. o laboratorio…"></div>
+        </div>
+        <?php endif; ?>
         <?php if ($muestra('tipo_muestra')): ?>
         <div class="field">
           <label class="fl">Tipo de muestra</label>
@@ -207,6 +241,38 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
           </div>
         </div>
         <?php endif; ?>
+        <?php if ($muestra('serogrupo')): ?>
+        <!-- A00 (pág. 51): Serogrupo / Serotipo por MUESTRA, no por caso -- así
+             un caso con más de un aislamiento no tiene que elegir uno solo.
+             El gate "Serogrupo = O1 -> habilitar Serotipo" (los serotipos
+             Ogawa/Inaba/Hikojima sólo existen dentro de O1) se declara en
+             columnas_tablas_hija.caso_muestra.depende_de_columna, con el mismo
+             $attrsDependencia que ya usan B05/P35.0/A37.0. -->
+        <div class="field"<?= $attrsDependencia('serogrupo') ?> style="<?= !$visiblePorDependencia('serogrupo') ? 'display:none;' : '' ?>">
+          <label class="fl">Serogrupo</label>
+          <div class="control">
+            <select name="muestra_serogrupo[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesSerogrupo as $valOpt => $lblOpt): ?>
+                <option value="<?= e($valOpt) ?>" <?= seleccionado($fila['serogrupo'] ?? '', $valOpt) ?>><?= e($lblOpt) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('serotipo')): ?>
+        <div class="field"<?= $attrsDependencia('serotipo') ?> style="<?= !$visiblePorDependencia('serotipo') ? 'display:none;' : '' ?>">
+          <label class="fl">Serotipo</label>
+          <div class="control">
+            <select name="muestra_serotipo[]">
+              <option value="">Seleccionar…</option>
+              <?php foreach ($opcionesSerotipo as $valOpt => $lblOpt): ?>
+                <option value="<?= e($valOpt) ?>" <?= seleccionado($fila['serotipo'] ?? '', $valOpt) ?>><?= e($lblOpt) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <?php endif; ?>
         <?php if ($muestra('fecha_toma')): ?>
         <div class="field">
           <label class="fl"><?= $esFechaObtencion ? 'Fecha de obtención' : 'Fecha de toma' ?></label>
@@ -237,9 +303,19 @@ $filaMuestra = function (array $fila = ['tipo_muestra' => '', 'tipo_prueba' => '
         <?php endif; ?>
         <?php if ($muestra('fecha_envio_ins')): ?>
         <div class="field">
-          <label class="fl"><?= $esA95 ? 'Fecha de envío' : 'Fecha de envío a INS' ?></label>
+          <label class="fl"><?= $etiquetaEnvioNeutra ? 'Fecha de envío al laboratorio' : 'Fecha de envío a INS' ?></label>
           <div class="control mono <?= $errorEnvio ? 'err' : '' ?>"><input type="date" name="muestra_fecha_envio_ins[]" value="<?= e($fila['fecha_envio_ins'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
           <?php if ($errorEnvio): ?><span class="hint err"><?= e($errorEnvio) ?></span><?php endif; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($muestra('fecha_recepcion_ins')): ?>
+        <!-- A00 (pág. 51): "Fecha de recepción en laboratorio". La columna ya
+             existía en caso_muestra y se guardaba, pero sólo la pintaba la rama
+             especial de B05 más arriba; acá queda disponible para cualquier
+             ficha que la declare. -->
+        <div class="field">
+          <label class="fl">Fecha de recepción en laboratorio</label>
+          <div class="control mono"><input type="date" name="muestra_fecha_recepcion_ins[]" value="<?= e($fila['fecha_recepcion_ins'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
         </div>
         <?php endif; ?>
         <?php if ($muestra('fecha_result')): ?>

@@ -108,7 +108,7 @@ if ($puedeElegirEstablecimiento) {
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55', 'B04X'], true) ? 'hidden' : '' ?>>
+          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55', 'B04X', 'A00'], true) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
@@ -124,6 +124,7 @@ if ($puedeElegirEstablecimiento) {
           <?php require __DIR__ . '/../partials/notificacion-fechas-b57.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a95.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b04x.php'; ?>
+          <?php require __DIR__ . '/../partials/notificacion-fechas-a00.php'; ?>
         </div>
       </div>
 
@@ -342,6 +343,13 @@ if ($puedeElegirEstablecimiento) {
       // infección y exposición" (secciones-clinicas.php) -- mismo trato que
       // A37.0 arriba, no siempre visibles acá.
       $isB04X = ($enfermedad['cie10'] ?? '') === 'B04X';
+      // A00 (cotejo 2026-09-07): mismo trato que A95/B55/B04X -- "V.
+      // LABORATORIO" se declara como sección campo_def propia (con el widget
+      // de caso_muestra inyectado dentro, ver secciones-clinicas.php) para
+      // que caiga ANTES de "VI. Clasificación" como en el papel; la tarjeta
+      // genérica de Laboratorio se dibuja después de TODAS las secciones y
+      // duplicaría el mismo widget al final del formulario.
+      $isA00 = ($enfermedad['cie10'] ?? '') === 'A00';
       $mostrarContactos = ((int) ($enfermedad['usa_contactos'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isB04X;
       $mostrarViajes = ((int) ($enfermedad['usa_viajes'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370 && !$isA97 && !$isA44 && !$isB57 && !$isA95 && !$isB04X;
       $mostrarVacunas = ((int) ($enfermedad['usa_vacunas'] ?? 0) === 1) && !$isPfa && !$isB05 && !$isB26 && !$isP350 && !$isA370;
@@ -404,7 +412,7 @@ if ($puedeElegirEstablecimiento) {
       // Laboratorio se declara como sección propia (solo_tabla_hija) para que
       // caiga antes de Clasificación, como en el PDF -- esta tarjeta genérica
       // se dibuja después de todas las secciones y lo duplicaría al final.
-      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95 && !$isB55 && !$isB04X;
+      $mostrarLaboratorioGenerico = (int) ($enfermedad['usa_muestras'] ?? 0) === 1 && !$isA95 && !$isB55 && !$isB04X && !$isA00;
       ?>
       <div class="card section" id="seccionLaboratorioCard" <?= $mostrarLaboratorioGenerico ? '' : 'hidden' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>

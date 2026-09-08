@@ -356,14 +356,74 @@ $accionEtiquetas = [
     <div class="card section">
       <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Laboratorio</h3></div>
       <div class="section-body">
+        <?php
+        // Se pintan las columnas que la ficha declara (columnas_tablas_hija),
+        // no un juego fijo: antes del cotejo de A00 (2026-09-07) esta vista
+        // mostraba siempre las mismas 6 y escondía todo lo demás que sí se
+        // había capturado y guardado. $columnasMuestra/$datosMuestra los
+        // resuelve CasosController::ver() con el mismo código que usan "Nueva
+        // ficha" y "Editar"; el ?? de abajo mantiene el juego histórico por si
+        // alguna vista incluye este archivo sin pasarlos.
+        $colsMuestraVer = $columnasMuestra ?? ['tipo_muestra', 'tipo_prueba', 'resultado', 'fecha_toma', 'fecha_result'];
+        $etiquetasMuestraVer = [
+            'establecimiento'      => 'Establecimiento de salud',
+            'tipo_muestra'         => 'Tipo de muestra',
+            'tipo_prueba'          => 'Tipo de prueba',
+            'recibio_antibiotico'  => '¿Recibió antibiótico?',
+            'resultado'            => 'Resultado',
+            'serogrupo'            => 'Serogrupo',
+            'serotipo'             => 'Serotipo',
+            'agente_aislado'       => 'Agente aislado',
+            'genotipo'             => 'Genotipo',
+            'titulacion'           => 'Titulación',
+            'observaciones'        => 'Observaciones',
+            'resultado_pcr'        => 'Resultado PCR',
+            'resultado_igm'        => 'Resultado IgM',
+            'resultado_igg'        => 'Resultado IgG',
+            'fecha_toma'           => 'Fecha de toma',
+            'fecha_envio_eess_red' => 'Fecha de envío EE.SS. → Red',
+            'fecha_envio_red_lrr'  => 'Fecha de envío Red → LRR',
+            'fecha_envio_lrr_ins'  => 'Fecha de envío LRR → INS',
+            'fecha_envio_ins'      => 'Fecha de envío al laboratorio',
+            'fecha_recepcion_ins'  => 'Fecha de recepción en laboratorio',
+            'fecha_result'         => 'Fecha de resultado',
+            'fecha_result_pcr'     => 'Fecha de resultado PCR',
+            'fecha_result_igm'     => 'Fecha de resultado IgM',
+            'fecha_result_igg'     => 'Fecha de resultado IgG',
+        ];
+        // Códigos -> etiqueta legible, para no mostrar "POS"/"HNF_FAR" crudos.
+        $mapaEtiquetasMuestraVer = [];
+        foreach ([
+            'tipo_muestra' => 'opcionesTipoMuestra',
+            'tipo_prueba'  => 'opcionesTipoPrueba',
+            'resultado'    => 'opcionesResultado',
+        ] as $col => $clave) {
+            foreach (($datosMuestra[$clave] ?? []) as $op) {
+                $mapaEtiquetasMuestraVer[$col][$op['valor']] = $op['etiqueta'];
+            }
+        }
+        $valorMuestraVer = function (array $ms, string $col) use ($mapaEtiquetasMuestraVer): string {
+            $bruto = $ms[$col] ?? null;
+            if ($col === 'recibio_antibiotico') {
+                return $bruto === null ? '—' : ($bruto ? 'Sí' : 'No');
+            }
+            if (str_starts_with($col, 'fecha_')) {
+                return fechaIsoADmy($bruto) ?: '—';
+            }
+            if ($bruto === null || $bruto === '') {
+                return $col === 'resultado' ? 'Pendiente' : '—';
+            }
+            return $mapaEtiquetasMuestraVer[$col][$bruto] ?? (string) $bruto;
+        };
+        ?>
         <?php foreach ($muestras as $ms): ?>
           <div class="subrow"><div class="fields thirds" style="flex:1">
-            <div class="field"><label class="fl">Tipo de muestra</label><div class="control" style="background:var(--paper)"><?= e($ms['tipo_muestra'] ?? '—') ?></div></div>
-            <div class="field"><label class="fl">Tipo de prueba</label><div class="control" style="background:var(--paper)"><?= e($ms['tipo_prueba'] ?? '—') ?></div></div>
-            <div class="field"><label class="fl">¿Recibió antibiótico?</label><div class="control" style="background:var(--paper)"><?= $ms['recibio_antibiotico'] === null ? '—' : ($ms['recibio_antibiotico'] ? 'Sí' : 'No') ?></div></div>
-            <div class="field"><label class="fl">Resultado</label><div class="control" style="background:var(--paper)"><?= e($ms['resultado'] ?? 'Pendiente') ?></div></div>
-            <div class="field"><label class="fl">Fecha de toma</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($ms['fecha_toma']) ?: '—') ?></div></div>
-            <div class="field"><label class="fl">Fecha de resultado</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($ms['fecha_result']) ?: '—') ?></div></div>
+            <?php foreach ($colsMuestraVer as $colMuestra): ?>
+              <div class="field">
+                <label class="fl"><?= e($etiquetasMuestraVer[$colMuestra] ?? $colMuestra) ?></label>
+                <div class="control<?= str_starts_with($colMuestra, 'fecha_') ? ' mono' : '' ?>" style="background:var(--paper)"><?= e($valorMuestraVer($ms, $colMuestra)) ?></div>
+              </div>
+            <?php endforeach; ?>
           </div></div>
         <?php endforeach; ?>
       </div>

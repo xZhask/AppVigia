@@ -5567,3 +5567,506 @@ perdería datos y dejaría la ficha con un solo camino de captura de vacunación
 -- mismo criterio con el que se quitaron 2 tarjetas genéricas duplicadas al
 cerrar A95. Se deja a decisión del usuario por ser una sección que no estaba
 en el alcance pedido.
+
+**Decisión tomada el 2026-09-03 (cierre del cotejo):** el usuario aprobó
+apagarlo. `tablas_hijas.caso_vacuna` de B04X pasó a `false` y la tarjeta
+genérica "Antecedentes epidemiológicos" ya no se muestra; el ítem 42 queda
+capturado únicamente por la MATRIZ de la Sección V.
+
+---
+
+## Cotejo B04X — sincronización de "Clasificación" con los chips genéricos (2026-09-06)
+
+**Pedido del usuario:** "sincroniza el select de la clasificación, con los
+chips de clasificación final del caso".
+
+**Situación de partida.** B04X tiene su propio SELECT "Clasificación"
+(`b04x_clasificacion`, sección VIII del PDF) *además* del control núcleo
+"Clasificación del caso" (chips al fondo del formulario, `caso.clasificacion`,
+el que alimenta paneles/reportes/filtros). Es el mismo patrón ya documentado
+para A80/B05/P35.0/A35/A33/B57/A95/O95 — 6.ª vez que aparece — pero con una
+diferencia importante: acá los dos controles ofrecen **exactamente las mismas
+4 opciones**. El catálogo propio (`catalogo_id=433`) son literalmente
+`SOSPECHOSO/PROBABLE/CONFIRMADO/DESCARTADO`, y
+`enfermedad.opciones_clasificacion` es `NULL` para B04X, así que el chip
+muestra las 4 genéricas. Correspondencia 1 a 1, sin tabla de equivalencias y
+sin ningún valor propio que no exista del otro lado (a diferencia de P35.0,
+que sí tiene "Infección congénita" sin equivalente).
+
+**Decisión: bidireccional, no unidireccional.** B57/A95/A35/A33 solo copian
+campo propio → chip; el chip sigue siendo libre de contradecir al campo propio
+después. Como acá el mapeo es 1 a 1 en ambos sentidos, se siguió en cambio el
+patrón de `sincronizarClasificacionO95()` (el único bidireccional, ya probado
+en producción): ninguno de los dos controles es "el bueno", tocar cualquiera
+deja el otro alineado, y la discrepancia deja de ser posible en vez de
+corregirse solo en un sentido. Tampoco hizo falta restringir
+`opciones_clasificacion` en la BD (el camino de 2 pasos de A35.14/A33.8) —
+esa restricción existe justamente para eliminar opciones del chip que el campo
+propio no puede representar, y acá no sobra ninguna.
+
+**Cambio:** `sincronizarClasificacionB04X()` en `public/js/ficha.js`, junto a
+las otras funciones del mismo bloque. **60 líneas, aditivo, un solo archivo:
+no se tocó ningún .php, así que el HTML de las 24 fichas es byte-idéntico por
+construcción.** Detalles no obvios que quedaron resueltos:
+
+1. **Gate por `#cieTag`**, igual que sus hermanas — el listener escucha
+   `name === 'clasificacion'`, que existe en las 24 fichas, así que la función
+   tiene que salir temprano en las otras 23 (incluida O95, que tiene su propio
+   handler bidireccional sobre el mismo `name`).
+2. **`evaluarDependencias()` a mano** tras asignar `.value`/`.checked` por JS:
+   asignar por código no dispara el `change` nativo que ese motor escucha
+   (mismo motivo ya documentado en `sincronizarClasificacionP350()`).
+3. **Select vacío en la carga inicial: NO se toca el chip.** Una ficha ya
+   guardada puede traer un `caso.clasificacion` real que nunca se capturó en la
+   sección VIII (p. ej. el default "Sospechoso"); rellenar hacia atrás
+   inventaría una respuesta del PDF que nadie dio.
+4. **Select vaciado por el usuario: el chip vuelve a `SOSPECHOSO`.** Misma
+   decisión explícita ya tomada para P35.0 — si no, el genérico queda pegado en
+   CONFIRMADO después de haber pasado por ahí y cambiar de opinión. La
+   distinción entre los puntos 3 y 4 es el argumento `origenElemento`: sin
+   origen = carga inicial, con origen = acción del usuario.
+
+**Verificación (navegador real, Playwright, sesión autenticada):**
+- **8/8 direcciones OK** en B04X: los 4 valores select → chip y los 4 chip →
+  select (clic real sobre el chip, no asignación por JS). 0 errores de consola.
+- **Vaciar el select** deja el chip en Sospechoso, no pegado en Confirmado.
+- **Vuelta completa real:** caso nuevo tocando **solo** el select
+  (`DESCARTADO`) → guardado → BD con `caso.clasificacion='DESCARTADO'` **y**
+  `caso_valor`=`DESCARTADO`; se abre a editar, ambos cargan alineados; se
+  cambia **solo** el chip a `CONFIRMADO` → el select lo sigue → guardado → BD
+  con ambos en `CONFIRMADO`. Caso y persona de prueba borrados sin residuos.
+- **Controles de no regresión en vivo:** A95 (unidireccional) sigue copiando
+  su campo propio al chip; O95 (bidireccional preexistente) sigue reflejando
+  el chip en su select. Ninguna interferencia entre los 3 gates.
+- Triple verificador: 24/24 fichas OK, 255 claves sin faltantes, sin huérfanos
+  nuevos (los únicos reportados son los ya conocidos de B55 y O95).
+
+**Nota sobre el alcance de `verificar_claves.php`:** ese verificador audita los
+literales pasados a `$campo()`/`$resolvedorPara()` **en las vistas**, no los de
+`campoPorClave()` en `ficha.js` — por eso el conteo siguió en 255 pese a la
+clave nueva referenciada desde JS. `b04x_clasificacion` se verificó a mano
+contra `campo_def` (id 130617, catálogo 433). Era una brecha preexistente del
+verificador que afectaba a todas las funciones `sincronizarXxx()`.
+**CERRADA el 2026-09-07** a pedido del usuario ("no pretendo llenar más
+pendientes"): ver la sección siguiente — al taparla apareció un bug real en
+B05.
+
+---
+
+## `verificar_claves.php` ahora audita también `ficha.js` — y eso destapó un bug real en B05 (2026-09-07)
+
+**Cierre del pendiente anotado el día anterior.** La brecha era: el verificador
+auditaba los literales de `$campo()`/`$resolvedorPara()` en las **vistas**,
+pero no los de `campoPorClave()` en `public/js/*.js`. Ninguna de las claves que
+usan las ~20 funciones `sincronizarXxx()`/`actualizarXxx()` de `ficha.js`
+estaba cubierta. El usuario pidió resolverlo en el momento en vez de dejarlo
+como pendiente.
+
+**Por qué importaba.** Es el mismo modo de falla que motivó el script para las
+vistas, pero del otro lado del alambre: el servidor emite
+`<script id="mapaCampos">` con `[clave => name]` de la enfermedad activa
+(`campos-por-clave.php`); si la clave ya no existe, `campoPorClave()` devuelve
+`''`, el `document.querySelector('[name=""]')` que sigue devuelve `null`, y el
+bloque entero queda inerte. **Sin error de consola, sin excepción, sin nada que
+lo delate** — sólo un cálculo que nunca ocurre. Mismo patrón que el bug de la
+tabla de viajes de B05 del 2026-08-03.
+
+**Bug real encontrado en la primera corrida — B05, "Total VAC" nunca se
+calculaba.** `calcularTotalesB05()` suma las 4 franjas de edad del bloqueo
+vacunal (Sección VIII, Investigación epidemiológica) hacia
+`b05_numero_de_vacunados_en_el_bloqueo`, pero pedía las 4 franjas con claves
+obsoletas que **no existen en `campo_def`**:
+
+| clave usada en `ficha.js` (obsoleta) | clave real en `campo_def` |
+|---|---|
+| `vacunados_bloqueo_menor_1`  | `b05_numero_de_vacunados_en_bloqueo_1_ano`    |
+| `vacunados_bloqueo_1_4`      | `b05_numero_de_vacunados_en_bloqueo_1_4_anos` |
+| `vacunados_bloqueo_5_14`     | `b05_numero_de_vacunados_en_bloqueo_5_14_anos`|
+| `vacunados_bloqueo_mayor_15` | `b05_numero_de_vacunados_en_bloqueo_15_anos`  |
+
+3 apariciones cada una (el bloque de cálculo + los 2 listeners de
+`input`/`change`). El "Total de casas" de la misma función sí funcionaba,
+porque sus 4 claves nunca se renombraron — por eso el bloque parecía sano de
+lejos. **Medido, no supuesto:** con el `ficha.js` de antes del fix, llenar las
+4 franjas (3+10+20+7) deja el total en `""` y editable; con el fix, queda en
+`40` y `readOnly`, igual que Total de casas (8) que sirve de control en la
+misma corrida.
+
+**Aviso sobre ficha revisada (B05).** Esto **altera** el comportamiento de B05,
+que está en la lista de fichas ya cotejadas: el campo "Número de vacunados en
+el bloqueo" pasa de escribirse a mano a calcularse solo y quedar bloqueado en
+cuanto haya alguna franja de edad con valor. `calcularTotalesB05()` también
+corre al cargar (línea final del bloque), así que al abrir un caso existente
+con franjas llenas el total se recalcula. **Hay 0 casos de B05 en la base**, así
+que no hay dato en riesgo, pero el cambio de comportamiento queda anotado acá
+por la regla de avisar antes de commitear cambios en fichas revisadas.
+
+**Extensión del verificador (4.ª forma de uso, `origen: js-campoPorClave`).**
+Escanea `public/js/*.js` buscando `campoPorClave('...')`. La ficha de cada clave
+se **deduce del prefijo** (cie10 en minúsculas con `.` → `_`: `P35.0` →
+`p35_0_`, `B04X` → `b04x_`), que es la convención de `cargar_fichas.php`, y el
+prefijo más largo gana. No es una suposición ciega: la deducción se **comprueba
+contra `campo_def`** con el mismo mecanismo que el resto del script. Se
+verificó a mano que los 24 cie10 dan prefijos sin colisión y que las 61 claves
+con prefijo viven efectivamente en la ficha que su prefijo indica. Una clave
+que no case con ningún prefijo se reporta como faltante con ficha `?` en vez de
+saltarse en silencio; si alguna vez hay una excepción legítima, se declara en
+`$CLAVES_JS_SIN_PREFIJO` (hoy vacío), mismo criterio que `$AMBIENTE_SEGURO`.
+
+**Verificación:**
+- Conteo: **255 → 320 claves** auditadas (las 65 de `ficha.js`), 0 faltantes.
+- **Prueba negativa 1:** corriendo el verificador contra el `ficha.js` de
+  ANTES del fix, reporta las 4 claves obsoletas y sale con código 1. Es decir,
+  el verificador atrapa exactamente el bug para el que se extendió.
+- **Prueba negativa 2:** con una clave inventada de prefijo válido
+  (`b04x_clasificacion_inventada`) la reporta correctamente atribuida a B04X,
+  no como `?` — las dos rutas de resolución fallan ruidosamente.
+- Navegador real: B05 Total VAC y Total de casas OK después del fix, Total VAC
+  FALLA antes — mismo script, misma corrida.
+- Triple verificador al cierre: 24/24 fichas, 320/320 claves, y las 10 líneas
+  de `verificar_render.php` son las preexistentes ya anotadas (B55, A35, A37.0,
+  A80, B01, B26 ×2, O95 ×3), ninguna nueva.
+
+---
+
+# Cotejo de EDA grave / cólera (`A00`) — págs. 50-51 del PDF (2026-09-07)
+
+Ficha cerrada: los 7 bloques romanos del papel quedan en `OK`, salvo lo que se
+lista más abajo con su motivo. Antes de este cotejo el manifiesto declaraba sólo
+la pág. 50 (`pdf_paginas: "50"`) y 34 campos sin ninguna dependencia condicional;
+queda en 52 campos, 9 secciones y 22 `depende_de`.
+
+## Estado final por sección del PDF
+
+| Sección del papel | Estado |
+|---|---|
+| I. Datos generales | OK — `notificacion-fechas-a00.php` (Código, Fecha de investigación, Captación de 4 opciones). DISA/Red/Establecimiento notificante no se capturan: son datos del establecimiento elegido, mismo criterio que A37.0/A97/B57/A95 |
+| II. Datos del paciente | OK — `unidades_edad` (Años/Meses/Días), `ocupacion` reactivada, `n_historia_clinica`, `detalle_domicilio` (6 campos), sección propia "Para los residentes en otros países" |
+| III. Antecedentes epidemiológicos (3.1-3.9) | OK — los 9 ítems, con los 4 "Otro (especificar)", el gate 3.2→3.3, el par 3.4 verificación/nivel de cloro y el gate por edad de 3.7 |
+| IV. Cuadro clínico y manejo | OK — características de la diarrea gateadas por el síntoma "Diarrea"; Clasificación de la diarrea partida en Con/Sin deshidratación + Grado + Shock independiente; Tratamiento y Evolución con sus 9 dependencias |
+| V. Laboratorio | OK — 9 columnas de `caso_muestra` (incluidas `establecimiento`, `serogrupo`, `serotipo` nuevas y `fecha_recepcion_ins` recién declarable) + las 3 líneas sueltas del papel |
+| VI. Clasificación | OK — 5 opciones incluyendo "Compatible" (nueva en el catálogo y en el ENUM), Causa del descarte gateada y Fecha de la clasificación |
+| VII. Observaciones | OK — `a00_observaciones`; Nombre/Cargo de quien investiga son núcleo. "Firma" no se modela (artefacto de papel) |
+
+## Lo que NO quedó resuelto
+
+### 1. "Códigos de Zona" del pie de página (afecta a 5 fichas, no sólo a A00)
+
+El PDF define `Zona°` como un código de **tipo de asentamiento**: [1] Urbanización,
+[2] Villa, [3] Cooperativa, [4] Proyecto Municipal de vivienda, [5] PPJJ/AAHH,
+[6] Otro. El `TIPO_ZONA` de `detalle_domicilio` es otro eje —
+Urbano/Periurbano/Rural—, que es el que corresponde a "Zona de residencia:
+Urbana ( ) Rural ( )" del mismo bloque. O sea que el papel pide **dos** ejes y la
+app modela uno.
+
+No se resuelve por A00 sola: el mismo bloque de domicilio MINSA está en A95,
+B57, A37.0 y P35.0, todas ya cotejadas con el mismo mapeo. Arreglarlo bien es
+agregar un campo al detalle de domicilio (columna nueva en `persona` +
+`DETALLE_DOMICILIO_VALIDO` + el partial compartido) y revisar las 5 fichas de una
+vez. **Decisión del usuario.**
+
+### 2. `caso_muestra` guarda columnas que la ficha no declara (bug preexistente, general)
+
+Hallado por la prueba negativa del Paso 4: un POST forjado con
+`muestra_titulacion[]` se guarda en un caso de A00 aunque A00 no declare esa
+columna y su widget no la pinte. No es propio de A00 ni lo introdujo este
+cotejo: `CasosController::filasMuestras()` lee del POST **todas** las columnas de
+la tabla y arma la fila sin cruzarla contra `columnas_tablas_hija`, así que la
+clase de bug alcanza a las 12 fichas con `usa_muestras=1` y a `agente_aislado`,
+`observaciones`, `genotipo`, `titulacion` y los 6 campos serológicos.
+
+Por qué no se arregla acá:
+
+- El filtro estricto **rompería B05**, cuya rama especial de `muestras.php` pinta
+  `tipo_muestra`/`fecha_toma`/`fecha_envio_ins`/`fecha_recepcion_ins` sin
+  declararlas en `columnas`. Arreglarlo bien pide o una lista de columnas
+  siempre permitidas, o declarar esas 4 en el manifiesto de B05 — y B05 es una
+  ficha ya cotejada.
+- Regla de "un arreglo de partial compartido por sesión": esta sesión ya tocó
+  `muestras.php` para las columnas de A00.
+
+Lo que sí se hizo para **no ampliar** el agujero: las 3 columnas nuevas quedan
+protegidas. `serogrupo`/`serotipo` se validan contra `opciones.*` (NULL si la
+ficha no las declara) y `establecimiento`, que es texto libre y no tiene catálogo
+contra el cual validarse, sólo se guarda si la ficha declaró la columna.
+Verificado con la ficha de control A36: las 3 llegan por POST y las 3 se
+descartan.
+
+### 3. `caso.fecha_inicio_sintomas` queda NULL en A00
+
+A00 se suma a `$sinFechaInicioSintomasObligatoria` junto con P35.0, A35, A37.0,
+B01, A97, B57, A95, B55 y B04X: su PDF no trae una "Fecha de inicio de síntomas"
+genérica, sino "Fecha de inicio de la diarrea", que ya es ese dato con el nombre
+de esta ficha. Ocultar la tarjeta genérica no bastaba: `extraerFechaInicioSintomas()`
+toma el primer campo `FECHA` en orden de sección, que en A00 sería
+`a00_fecha_de_investigacion` — la fecha equivocada.
+
+Consecuencia, igual que en las otras 9 fichas: la columna de núcleo queda NULL y
+la curva epidemiológica no puede usar esa ficha. El arreglo genérico sería
+declarar en el manifiesto de qué clave sale (`fecha_inicio_sintomas_desde`), lo
+que lo resolvería para las 10 a la vez. **Es motor nuevo: pendiente de tu visto
+bueno.**
+
+### 4. "Número de días de duración de la diarrea" se ingresa a mano
+
+El pedido decía "preferentemente calcularlo a partir de fechas cuando exista
+fecha de evaluación". El PDF de A00 no trae ninguna fecha de evaluación ni de
+egreso con la cual restar: sólo "Fecha de inicio de la diarrea". Queda como
+`NUMERO` editable, que es la segunda opción del propio pedido.
+
+## Cambios que tocan fichas ya cotejadas (regla de avisar antes de commitear)
+
+1. **`caso.clasificacion` (ENUM) ampliado.** Se agregó `COMPATIBLE` (lo pide A00)
+   y, en el mismo `ALTER`, `DIRECTA`/`INDIRECTA`/`INCIDENTAL`/`POR_DETERMINAR`.
+   Estos 4 son un **bug latente de O95** hallado durante este cotejo: O95 los
+   declara en `enfermedad.opciones_clasificacion` desde su propio cotejo y
+   `CATALOGO_CLASIFICACION` los ofrece, pero nunca se agregaron al ENUM — con
+   `STRICT_TRANS_TABLES` activo (que es el `sql_mode` de este entorno), guardar
+   un caso de O95 con cualquiera de ellos fallaba. Ampliar un ENUM no puede
+   romper filas existentes. Verificado con `INSERT` + `ROLLBACK`: los 5 valores
+   entran.
+2. **`fichas/ver.php` pinta las columnas de muestra que la ficha declara.** Antes
+   mostraba un juego fijo de 6 e ignoraba `columnas_tablas_hija`, así que todo lo
+   demás que sí se capturaba y guardaba (fecha de envío, fecha de recepción,
+   agente aislado, observaciones, genotipo, titulación, los 6 serológicos, y
+   ahora establecimiento/serogrupo/serotipo) no se veía nunca al abrir la ficha.
+   El cambio es declarativo, sin condiciones por CIE-10, y **hace visible
+   información que ya existía** en A80, B01, B05, P35.0, A37.0, A95 y B55. De
+   paso, los códigos crudos (`POS`, `HNF_FAR`) ahora se muestran con su etiqueta.
+
+## Verificación de cierre
+
+- **Verificadores:** `verificar_fichas.php` 24/24 sin diferencias ·
+  `verificar_claves.php` 324 claves (eran 320), 0 faltantes ·
+  `verificar_render.php` A00 52/52, 0 huérfanos, y los 3 huérfanos totales son
+  los preexistentes de A80/B26/B55, ninguno nuevo.
+- **Vuelta completa con el controlador real en A00** (crear → BD → `ver()` →
+  `editar()`): 33 comprobaciones OK, incluidas las 2 filas de muestra con
+  serogrupo O1→serotipo Inaba y O139 sin serotipo. Caso de prueba borrado, 0
+  filas residuales.
+- **Pruebas negativas:** `campo_999999` descartado; `gestante` (núcleo omitido
+  por A00) no se guarda; en la ficha de control A36, las 3 columnas nuevas de
+  muestra llegan por POST y se descartan. La única prueba negativa que **falla**
+  es `muestra_titulacion` en A00 — es el punto 2 de arriba, preexistente.
+- **Ficha de control A36** (cotejada, sin cambios): vuelta completa 11/11 OK,
+  `ver()`/`editar()` sin columnas ajenas, 0 filas residuales.
+- **Navegador real (Playwright, Chromium):** 54 comprobaciones OK sobre A00 y 0
+  errores de JS — el gate por edad de 3.7 (visible sin edad, oculto con adulto,
+  reaparece con lactante), los 11 `depende_de` de las secciones III/IV, el gate
+  de columna serogrupo→serotipo, la sincronización bidireccional de
+  Clasificación con los chips (incluido "Compatible") y el orden de las 12
+  tarjetas idéntico al del PDF.
+- **Regresión en navegador** sobre B04X, A36, O95 y B05: 20/20 OK, sin errores de
+  JS, chips de clasificación sin cambios, y ninguna trae la cabecera, el wrap
+  3.7 ni las columnas de A00.
+
+## 1.ª revisión del usuario (2026-09-07, captura de "2. Datos del persona")
+
+### a) "N.º de historia clínica" — NO es un campo de más
+
+El usuario marcó el campo con un recuadro rojo diciendo que no aparece en el
+PDF. **Sí aparece**, pero no en la página que estaba mirando: está en la
+**pág. 51**, primera línea, a la derecha del bloque "Características de la
+diarrea" (sección IV, no II):
+
+```
+Características de la diarrea:            N° Historia Clínica: __________________________
+```
+
+Verificado con `pdftotext -f 50 -l 50` (no hay ninguna aparición en la pág. 50)
+y `-f 51 -l 51` (la línea de arriba). Se conserva.
+
+Lo que sí no calza es **dónde lo pinta la app**: `n_historia_clinica` es una
+columna de `persona`, y el partial del núcleo lo dibuja arriba, dentro de "Datos
+del paciente", no junto al cuadro clínico como el papel. Es el mismo tratamiento
+que ya reciben A97, A44, P35.0 y O95, que también lo declaran vía
+`nucleo_incluidos`. Moverlo a la posición del papel obligaría a sacarlo del
+núcleo y volverlo `campo_def`, duplicando un dato que ya tiene columna propia y
+rompiendo la consistencia con esas 4 fichas. **Queda como está, pendiente de tu
+decisión si preferís que se mueva.**
+
+### b) Gate Sí/No para el bloque de residentes extranjeros — HECHO
+
+Pedido del usuario: "para que se habiliten los controles de personas
+extranjeras, puede haber un radio que los active". Se agregó
+`a00_reside_en_otro_pais` (`SI_NO`, orden 1 de la sección "Para los residentes
+en otros países"), y "País de origen" y "Fecha de ingreso al país" pasan a
+depender de él con `valor_activador: "SI"`.
+
+El PDF sólo imprime el rótulo "Para los residentes en otros países:" seguido de
+las 2 líneas; no trae una casilla propia. El disparador se agrega igual porque
+sin él los 2 campos se le piden a todo paciente, cuando el papel los acota a un
+subconjunto — mismo criterio que el gate por edad de 3.7. No inventa dato
+clínico: con "No" los 2 campos se ocultan y se guardan vacíos, que es
+exactamente lo que un formulario en papel dejaría en blanco.
+
+**A00 queda en 53 campos** (eran 52).
+
+**Verificación de esta revisión:**
+- 3 verificadores en verde: 24/24 fichas · 324 claves, 0 faltantes ·
+  A00 **53/53** presentes, 0 huérfanos, ninguno nuevo en las otras 23.
+- Navegador real (Playwright): **60/60 OK**, 0 errores de JS — incluidos los 7
+  checks nuevos del gate (visible al cargar, los 2 hijos ocultos, se revelan con
+  Sí, se vuelven a ocultar con No).
+- Vuelta completa con el controlador real: **30/30 OK** salvo la prueba negativa
+  de `muestra_titulacion`, que es el bug preexistente ya documentado arriba.
+  `a00_reside_en_otro_pais` se guarda como `{"marcado":"SI"}` y sus 2 hijos
+  persisten; `ver()` muestra país de origen, serotipo y establecimiento de la
+  muestra. Caso de prueba borrado, 0 filas residuales.
+
+### c) 3.1 "¿De dónde obtuvo el agua?" pasa a selección múltiple — HECHO
+
+Pedido del usuario sobre la sección 4 en pantalla. Era `SELECT` (una sola
+fuente); pasa a `MULTISELECT`. El PDF dibuja las 8 alternativas como casillas
+`( )` independientes, exactamente igual que 3.6 (consumo de alimentos), que ya
+era múltiple, y en 3 días una familia puede haber tomado agua de más de una
+fuente — restringirlo a una obligaba a elegir cuál anotar.
+
+El hijo "Especificar otra fuente de agua" sigue gateado: el motor de
+`depende_de` admite padres `MULTISELECT` (mismo patrón que
+`a97_otros_sintomas_especificar`, `b01_otras_complicaciones_especificar` y los 6
+"Otro" de O95). Verificado que se revela al marcar "Otro" **y** que se vuelve a
+ocultar al desmarcarlo aunque quede otra casilla marcada.
+
+**Los otros dos de la misma clase quedan como están, pendientes de tu criterio:**
+`3.3 ¿En qué tipo de recipiente lo almacena?` y `3.8 La eliminación de las
+excretas se hace por` también son casillas en el papel y también siguen siendo
+`SELECT` únicos. Se pueden convertir igual de barato si querés (una vivienda
+puede almacenar en tanque **y** cilindro); no se tocaron porque el pedido fue
+puntual sobre 3.1.
+
+**Verificación de este cambio:**
+- 3 verificadores en verde: 24/24 fichas · 324 claves · A00 53/53, 0 huérfanos.
+- Navegador real: **67/67 OK**, 0 errores de JS — incluidos los 6 checks nuevos
+  (ya no hay `<select>`, se pintan 8 `input[type=checkbox]`, se pueden marcar 2
+  a la vez, y el "Otro" se revela/oculta correctamente).
+- Vuelta completa con el controlador real: **32/32 OK** salvo la negativa de
+  `muestra_titulacion` (bug preexistente). `caso_valor` guarda
+  `DE_UN_POZO,OTRO` y el texto de "Otro" persiste. 0 filas residuales.
+
+### d) IV. Cuadro clínico: el bloque de la diarrea pasa a ser una cadena de 3 niveles — HECHO
+
+El usuario señaló que la ficha pedía datos de la diarrea sin haber marcado
+"Diarrea" en síntomas, y pasó el árbol completo. Antes sólo estaban gateados
+Tipo / Presencia de / N.º de deposiciones. Ahora:
+
+| Nivel | Disparador | Campos que revela |
+|---|---|---|
+| 1 | `Síntomas y signos` = **Diarrea** | Fecha de inicio · N.º de días de duración · Consistencia de la deposición · Tipo de diarrea · Presencia de · N.º de deposiciones por día · Clasificación de la diarrea |
+| 2 | `Clasificación de la diarrea` = **Con deshidratación** | Grado de deshidratación · **Shock** |
+
+**Shock deja de ser independiente.** El árbol del usuario lo agrupa bajo "Si
+Clasificación = Con deshidratación", junto con el grado, que es también como lo
+dibuja el papel (misma línea que leve/moderada/grave). Se gatea por la
+**clasificación**, no por "Grado = Grave": la nota del usuario dice que con grave
+"puede registrarse como condición asociada", no que sea la única combinación
+posible, y un shock con deshidratación moderada es clínicamente posible. Si se
+prefiere el gate estricto por Grave, es un cambio de una línea.
+
+**Cómo se sostiene la cadena de 3 niveles.** El motor evalúa **un solo nivel**
+por campo (`campoVisiblePorDependencia()` mira el valor del padre, no sube por la
+cadena), pero funciona por transitividad: al ocultarse un campo su valor se
+limpia, con lo que el hijo deja de ver su activador y se oculta en la pasada
+siguiente. En el cliente eso lo garantiza el bucle `do/while` de
+`evaluarDependencias()` (hasta 10 pasadas). En el servidor lo garantiza el orden
+de evaluación: los campos se recorren por sección y por `orden`, así que el padre
+se vacía antes de que se evalúe el nieto. **Ambos caminos se verificaron
+explícitamente, no se asumieron** (ver abajo).
+
+**Verificación de este cambio:**
+- 3 verificadores en verde: 24/24 fichas · 324 claves · A00 53/53, 0 huérfanos.
+- Navegador real: **76/76 OK**, 0 errores de JS. Incluye los 2 sentidos de la
+  cadena: marcar "Diarrea" revela los 7 campos; clasificar "Con deshidratación"
+  revela Grado y Shock; "Sin deshidratación" los vuelve a ocultar; y —el caso
+  que suele romperse— con el nieto ya visible y con valor, **desmarcar "Diarrea"
+  propaga los 2 saltos**: oculta los 7, oculta Grado y Shock, y además los deja
+  vacíos/desmarcados.
+- **Prueba negativa dedicada** (`neg_cadena.php`): se crea un caso posteando
+  TODO el bloque de la diarrea —incluidos el nieto "Grado de deshidratación" y
+  "Shock"— con el síntoma "Diarrea" SIN marcar. El servidor descarta los 7 del
+  nivel 2 **y los 2 del nivel 3**: 10/10 OK. Que el navegador los oculte no
+  probaba que no se guardaran.
+- Vuelta completa con el controlador real (con "Diarrea" sí marcada): 32/32 OK
+  salvo la negativa de `muestra_titulacion` (bug preexistente). 0 filas
+  residuales en las 3 corridas.
+
+**Lo que NO se hizo:** los rótulos agrupadores "Características de la diarrea" y
+"Clasificación de la diarrea" que el papel imprime en negrita siguen sin
+dibujarse como subtítulos; los campos se ven seguidos dentro de la tarjeta
+"Cuadro clínico". Agregarlos es el patrón de `eyebrow` por clave que ya usa B57
+en su sección de Laboratorio (hooks en `secciones-clinicas.php`). Queda a
+criterio del usuario si vale el código por ficha.
+
+---
+
+## Bug de sincronización entre estaciones: el mapa anatómico de B04X salía enorme — CORREGIDO
+
+**Síntoma reportado por el usuario (2026-09-08):** tras abrir el proyecto en otra
+estación y actualizar con `git pull`, el mapa corporal de B04X (ítem 50,
+"Secuencia de aparición del exantema") "aparecía dañado, algo grande".
+
+**No era la base de datos ni el pull.** Se descartaron los sospechosos obvios
+antes de tocar nada: los tres partials de mapa están versionados, nada relevante
+está en `.gitignore`, y el dump de `HEAD` ya traía los 79 `campo_def` de B04X, así
+que la otra estación tenía los datos correctos.
+
+**Causa raíz: el CSS no llevaba cache-buster.** En `app/Views/layouts/shell.php`
+los `<script>` pasaban por `asset()`, que agrega `?v=<filemtime>`, pero los
+`<link rel="stylesheet">` estaban escritos a mano como `href="/css/theme.css"`,
+sin versión. Tras el `git pull` el archivo en disco era el nuevo, pero el
+navegador siguió sirviendo el `campos-dinamicos.css` viejo de su caché.
+
+Eso rompe **específicamente** a B04X y a ninguno de los otros dos mapas, porque
+el tamaño del suyo vivía **solo** en la hoja de estilos
+(`.secuencia-b04x-svg { width: 118px; height: 210px; }`), mientras que B05
+(`exantema-evolucion-body-map.php`) y B55 (`leishmaniasis-body-map.php`) lo
+llevan inline en el `style=` del `<svg>`. Un SVG con `viewBox` y sin `width`/
+`height` mide **300×150 px** por defecto según la especificación de CSS: de ahí
+"algo grande".
+
+**Corrección, en dos capas:**
+
+1. **La causa.** Los 11 `<link rel="stylesheet">` locales del proyecto pasan por
+   `asset()` — `shell.php` (3), `403/404/500.php` (1 c/u) y las 3 vistas de
+   `auth/` (2 c/u). Ahora cualquier cambio de CSS llega solo tras un `git pull`,
+   no solo este. `asset()` está disponible en todas: `ayudantes.php` se carga en
+   la línea 3 de `public/index.php`.
+2. **El blindaje.** El `<svg>` de `secuencia-exantema-b04x.php` lleva además su
+   tamaño inline, igual que el de B05, para no depender de la hoja de estilos.
+
+**Verificado en el HTML servido de verdad**, no solo en el archivo: el login
+emite `/css/theme.css?v=1788326619` y la ficha de B04X emite los 3 CSS con `?v=`
+y los 2 `<svg>` (frente y espalda) con `style="width: 118px; height: 210px;"`.
+
+**Nota para la otra estación:** el `?v=` corrige el problema de aquí en adelante,
+pero la caché que ya está guardada en ese navegador tiene la URL vieja sin
+versión. La primera vez conviene forzar una recarga dura (Ctrl+F5).
+
+---
+
+## El dump versionado se había quedado atrás en DATOS (no solo en esquema)
+
+Al preparar el commit se encontró que `sql/01_esquema_actual.sql` tenía el
+esquema actualizado a mano (las 3 columnas nuevas de `caso_muestra` y el ENUM
+ampliado) pero los **`INSERT` seguían siendo los del 2026-09-02**: traía los 34
+campos viejos de A00 en vez de los 53, y 1151 `campo_def` en vez de 1170.
+Editar el DDL a mano no alcanza — el archivo también transporta los datos de
+configuración de las 11 tablas de catálogo/definición de fichas.
+
+Se regeneró con el procedimiento de `PETICION_01_ESQUEMA_REPRODUCIBLE.md`
+(Fase 3): `mysqldump --no-data` de toda la base, más `mysqldump
+--no-create-info` de las 11 tablas de configuración, con la cabecera manual
+reescrita para esta sesión.
+
+**Se verificó que instala y reproduce la base**, que es el punto del archivo:
+se creó `vigia_limpia`, se importó y se comparó contra la base viva por
+`information_schema`, no por diff de texto —
+**376 columnas, 103 índices y 47 claves foráneas idénticas**, más los conteos de
+las 8 tablas de configuración (24 enfermedades, 180 secciones, 1170 campos, 329
+catálogos, 1786 ítems, 1874 distritos, 82 establecimientos) y `caso` en 0. La
+base de prueba se borró después.
+
+Un `SHOW CREATE TABLE` textual sí mostraba diferencias, pero son de impresión:
+MySQL escribe `CHARACTER SET utf8mb4` explícito en las columnas cuando el
+charset de tabla no coincide con el de la base. Los metadatos reales son
+idénticos y todo el esquema es `utf8mb4` / `utf8mb4_unicode_ci`.

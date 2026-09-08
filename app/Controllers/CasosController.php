@@ -293,7 +293,7 @@ class CasosController extends Controller
         // clínico" (orden 5), pero "Antecedentes" (orden 4, ANTES) trae un
         // FECHA suelto (b04x_fecha_de_diagnostico_vih) que
         // extraerFechaInicioSintomas() agarraría por error como fallback.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X'], true);
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -552,7 +552,11 @@ class CasosController extends Controller
 
         $secciones = SeccionDef::porEnfermedad((int) $caso['enfermedad_id']);
         $valoresCampos = CasoValor::porCaso((int) $caso['id']);
-        
+        // La fila completa de `enfermedad` (conDetalle() sólo trae unas pocas
+        // columnas suyas): hace falta para resolver qué columnas de muestra
+        // declara la ficha, igual que en nuevo()/editar().
+        $enfermedadVer = Enfermedad::buscarPorCie10((string) $caso['cie10']) ?? [];
+
         $camposDef = CampoDef::porEnfermedad((int) $caso['enfermedad_id']);
         $tieneSensibles = !empty(array_filter($camposDef, fn($c) => !empty($c['sensible'])));
         $puedeVerSensibles = Auth::tieneRol('ADMIN');
@@ -570,6 +574,18 @@ class CasosController extends Controller
             'viajes'      => CasoViaje::porCaso((int) $caso['id']),
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),
             'muestras'    => CasoMuestra::porCaso((int) $caso['id']),
+            // columnasMuestra/datosMuestra (2026-09-07, cotejo A00): hasta acá
+            // fichas/ver.php pintaba un juego FIJO de 6 columnas de muestra e
+            // ignoraba lo que la ficha declara en columnas_tablas_hija, así que
+            // cualquier columna fuera de ese juego (fecha de envío, fecha de
+            // recepción, agente aislado, observaciones, genotipo, titulación,
+            // resultados serológicos, y ahora establecimiento/serogrupo/
+            // serotipo) se capturaba y se guardaba pero no se veía nunca al
+            // abrir la ficha. Se pasa la misma declaración que ya usan "Nueva
+            // ficha" y "Editar" para que la vista de sólo lectura muestre
+            // exactamente las columnas de esa ficha, sin condiciones por CIE-10.
+            'columnasMuestra' => $this->resolverConfigMuestra($enfermedadVer ?? [])['columnas'],
+            'datosMuestra'    => $this->datosMuestrasCatalogo($enfermedadVer ?: null),
             'lugaresInfeccion' => CasoLugarInfeccion::porCaso((int) $caso['id']),
             'evoluciones' => CasoEvolucion::porCaso((int) $caso['id']),
             'examenesAuxiliares' => CasoExamenAuxiliar::porCaso((int) $caso['id']),
@@ -830,7 +846,7 @@ class CasosController extends Controller
         // B04X (2026-08-29): ver el motivo completo en crear() -- el primer
         // campo FECHA que encontraría extraerFechaInicioSintomas() es
         // b04x_fecha_de_diagnostico_vih, no un sustituto válido.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X'], true);
+        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
         $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
@@ -2522,6 +2538,12 @@ class CasosController extends Controller
         $fechasResultado = $_POST['muestra_fecha_result'] ?? [];
         $agentesAislados = $_POST['muestra_agente_aislado'] ?? [];
         $observacionesArr = $_POST['muestra_observaciones'] ?? [];
+        // A00 (cotejo 2026-09-07, "V. LABORATORIO" pág. 51): 3 columnas más de
+        // la tabla del papel -- opt-in por ficha vía columnas_tablas_hija, las
+        // otras 11 fichas con caso_muestra nunca las postean.
+        $establecimientosMuestra = $_POST['muestra_establecimiento'] ?? [];
+        $serogrupos = $_POST['muestra_serogrupo'] ?? [];
+        $serotipos = $_POST['muestra_serotipo'] ?? [];
 
         $fechasRecepcionIns = $_POST['muestra_fecha_recepcion_ins'] ?? [];
         $resultadosPcr = $_POST['muestra_resultado_pcr'] ?? [];
@@ -2537,6 +2559,18 @@ class CasosController extends Controller
         $validosTipoMuestra = array_column($datosMuestras['opcionesTipoMuestra'], 'valor');
         $validosTipoPrueba  = array_column($datosMuestras['opcionesTipoPrueba'], 'valor');
         $validosResultado   = array_column($datosMuestras['opcionesResultado'], 'valor');
+        $validosSerogrupo   = $datosMuestras['opcionesMuestraExtra']['serogrupo'] ?? [];
+        $validosSerotipo    = $datosMuestras['opcionesMuestraExtra']['serotipo'] ?? [];
+        // 'establecimiento' es texto libre (no hay catálogo contra el que
+        // validarlo), así que se guarda sólo si la ficha declaró la columna.
+        // Sin esto, un POST forjado la escribiría en cualquiera de las 12
+        // fichas con caso_muestra, aunque su widget no la pinte -- que es
+        // justamente el agujero preexistente documentado en PENDIENTES.md para
+        // el resto de las columnas de esta tabla. Las columnas nuevas de este
+        // cotejo no lo amplían: serogrupo/serotipo ya quedan en NULL por no
+        // pasar la validación contra opciones.* cuando la ficha no las declara.
+        $columnasDeclaradasMuestra = $this->resolverConfigMuestra($enfermedad ?? [])['columnas'];
+        $declaraEstablecimientoMuestra = in_array('establecimiento', $columnasDeclaradasMuestra, true);
         // unicoPorTipo (2026-08-23): el <select> ya deshabilita del lado
         // cliente los tipos repetidos (filas-dinamicas.js), pero no hay que
         // confiar en eso -- se revalida acá, autoritativo, igual que el
@@ -2576,6 +2610,9 @@ class CasosController extends Controller
             $resultTxt = trim((string) ($fechasResultado[$i] ?? ''));
             $agenteTxt = trim((string) ($agentesAislados[$i] ?? ''));
             $obsTxt = trim((string) ($observacionesArr[$i] ?? ''));
+            $eessMuestraTxt = trim((string) ($establecimientosMuestra[$i] ?? ''));
+            $serogrupoTxt = trim((string) ($serogrupos[$i] ?? ''));
+            $serotipoTxt = trim((string) ($serotipos[$i] ?? ''));
 
             $resPcr = trim((string) ($resultadosPcr[$i] ?? ''));
             $resPcrTxt = trim((string) ($fechasResultPcr[$i] ?? ''));
@@ -2586,7 +2623,7 @@ class CasosController extends Controller
             $resIggTxt = trim((string) ($fechasResultIgg[$i] ?? ''));
             $titulacionTxt = trim((string) ($titulaciones[$i] ?? ''));
 
-            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $envioEessRedTxt === '' && $envioRedLrrTxt === '' && $envioLrrInsTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '' && $titulacionTxt === '') {
+            if ($tipoMuestra === '' && $tipoPrueba === '' && $resultado === '' && $tomaTxt === '' && $envioEessRedTxt === '' && $envioRedLrrTxt === '' && $envioLrrInsTxt === '' && $resultTxt === '' && $envioInsTxt === '' && $recepInsTxt === '' && $agenteTxt === '' && $obsTxt === '' && $eessMuestraTxt === '' && $serogrupoTxt === '' && $serotipoTxt === '' && $resPcr === '' && $resPcrTxt === '' && $genotipoTxt === '' && $resIgm === '' && $resIgmTxt === '' && $resIgg === '' && $resIggTxt === '' && $titulacionTxt === '') {
                 continue;
             }
 
@@ -2687,6 +2724,14 @@ class CasosController extends Controller
                 'resultado_igg'       => $resIgg !== '' ? $resIgg : null,
                 'fecha_result_igg'    => $resIggTxt !== '' ? fechaIsoValida($resIggTxt) : null,
                 'titulacion'          => $titulacionTxt !== '' ? $titulacionTxt : null,
+                'establecimiento'     => ($declaraEstablecimientoMuestra && $eessMuestraTxt !== '') ? $eessMuestraTxt : null,
+                // serogrupo/serotipo: vocabulario cerrado (O1/O139 y
+                // Ogawa/Inaba/Hikojima en A00), validado contra lo que la
+                // ficha declaró en opciones.* -- igual que tipo_muestra y a
+                // diferencia de agente_aislado/genotipo, que son texto libre
+                // para las fichas que no declaran opciones.
+                'serogrupo'           => in_array($serogrupoTxt, $validosSerogrupo, true) ? $serogrupoTxt : null,
+                'serotipo'            => in_array($serotipoTxt, $validosSerotipo, true) ? $serotipoTxt : null,
                 'numero_muestra'      => $numeroMuestraCalculado,
                 'contexto'            => null,
             ];

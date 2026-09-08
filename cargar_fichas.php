@@ -136,7 +136,14 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
     // LRR -> INS del PDF (pág. 3, secc. VI) -- distinta de 'fecha_envio_ins'
     // (una sola fecha genérica que ya usan otras fichas para el mismo
     // concepto, sin desglosar el tramo).
-    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_envio_eess_red', 'fecha_envio_red_lrr', 'fecha_envio_lrr_ins', 'fecha_result', 'fecha_envio_ins', 'agente_aislado', 'observaciones', 'resultado_pcr', 'fecha_result_pcr', 'genotipo', 'resultado_igm', 'fecha_result_igm', 'resultado_igg', 'fecha_result_igg', 'titulacion'],
+    // 'fecha_recepcion_ins' (2026-09-07, A00 pág. 51: "Fecha de recepción en
+    // laboratorio"): la columna existía en caso_muestra y se guardaba, pero
+    // sólo la pintaba la rama especial de B05 en muestras.php -- ninguna
+    // ficha podía declararla. Se vuelve declarable como el resto.
+    // 'establecimiento'/'serogrupo'/'serotipo' (2026-09-07, A00, misma
+    // sección): 3 de las 6 columnas de la tabla del papel; ver
+    // sql/migraciones/add_lab_colera_caso_muestra.php.
+    'caso_muestra'  => ['tipo_muestra', 'tipo_prueba', 'recibio_antibiotico', 'resultado', 'fecha_toma', 'fecha_envio_eess_red', 'fecha_envio_red_lrr', 'fecha_envio_lrr_ins', 'fecha_result', 'fecha_envio_ins', 'fecha_recepcion_ins', 'agente_aislado', 'observaciones', 'resultado_pcr', 'fecha_result_pcr', 'genotipo', 'resultado_igm', 'fecha_result_igm', 'resultado_igg', 'fecha_result_igg', 'titulacion', 'establecimiento', 'serogrupo', 'serotipo'],
 ];
 
 // Campos del núcleo compartido de "Datos del paciente" (columnas fijas de

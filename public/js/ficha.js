@@ -553,6 +553,188 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---------- B04X: "Clasificación" propia <-> "clasificacion" genérico ----------
+  // B04X (Viruela del mono/Mpox) tiene su propio SELECT "Clasificación"
+  // (sección VIII del PDF) además del "clasificacion" genérico compartido
+  // (chips al fondo del formulario). A diferencia de B57/A95/A35/A33, acá los
+  // dos controles ofrecen EXACTAMENTE las mismas 4 opciones -- el catálogo
+  // propio son literalmente SOSPECHOSO/PROBABLE/CONFIRMADO/DESCARTADO y
+  // enfermedad.opciones_clasificacion es NULL para esta ficha, así que el chip
+  // muestra las 4 genéricas. Siendo 1 a 1 en ambos sentidos, se sincroniza
+  // BIDIRECCIONAL como sincronizarClasificacionO95() (el patrón ya probado en
+  // producción) en vez de solo copiar campo propio -> chip: ninguno de los dos
+  // es "el bueno", y tocar cualquiera deja el otro alineado, así que la
+  // discrepancia deja de ser posible en vez de solo corregirse en un sentido.
+  function sincronizarClasificacionB04X(origenElemento) {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('B04X') === -1) return;
+
+    var selectPropio = document.querySelector('[name="' + campoPorClave('b04x_clasificacion') + '"]');
+    var radiosGenericos = Array.prototype.slice.call(document.querySelectorAll('input[name="clasificacion"]'));
+    if (!selectPropio || !radiosGenericos.length) return;
+
+    if (origenElemento && origenElemento.name === 'clasificacion') {
+      if (selectPropio.value === origenElemento.value) return;
+      selectPropio.value = origenElemento.value;
+    } else {
+      // Sin origen (carga inicial) o cambio del select propio: el select manda.
+      var valorDestino = selectPropio.value;
+      if (!valorDestino) {
+        // En la carga inicial, un select vacío NO toca el chip: una ficha ya
+        // guardada puede traer un genérico real que nunca se capturó en la
+        // sección VIII, y rellenarlo hacia atrás inventaría el dato del PDF.
+        if (!origenElemento) return;
+        // Si en cambio el usuario acaba de vaciar el select, el genérico
+        // vuelve a Sospechoso -- misma decisión ya tomada para
+        // sincronizarClasificacionP350(): así no queda pegado en CONFIRMADO
+        // tras haber pasado por ahí y cambiar de opinión.
+        valorDestino = 'SOSPECHOSO';
+      }
+      var radioDestino = null;
+      for (var i = 0; i < radiosGenericos.length; i++) {
+        if (radiosGenericos[i].value === valorDestino) { radioDestino = radiosGenericos[i]; break; }
+      }
+      if (!radioDestino || radioDestino.checked) return;
+      radiosGenericos.forEach(function (r) { r.checked = (r === radioDestino); });
+    }
+
+    // Asignar .value/.checked por JS no dispara el 'change' nativo que el motor
+    // de dependencias escucha; hay que llamarlo a mano (mismo motivo que en
+    // sincronizarClasificacionP350()).
+    evaluarDependencias();
+  }
+
+  sincronizarClasificacionB04X();
+  document.addEventListener('change', function (e) {
+    if (!e.target) return;
+    if (e.target.name === 'clasificacion' || e.target.name === campoPorClave('b04x_clasificacion')) {
+      sincronizarClasificacionB04X(e.target);
+    }
+  });
+
+  // ---------- A00: "Clasificación final del caso probable" <-> "clasificacion" genérico ----------
+  // A00 (EDA grave / cólera, "VI. CLASIFICACIÓN" de la pág. 51) repite el
+  // mismo caso que B04X: un SELECT propio del PDF más los chips genéricos al
+  // fondo del formulario, con EXACTAMENTE las mismas opciones en ambos --
+  // acá son 5, porque enfermedad.opciones_clasificacion de A00 declara
+  // SOSPECHOSO,PROBABLE,CONFIRMADO,COMPATIBLE,DESCARTADO (COMPATIBLE se
+  // agregó a CATALOGO_CLASIFICACION y al ENUM caso.clasificacion en este
+  // mismo cotejo). Siendo 1 a 1 en ambos sentidos se sincroniza BIDIRECCIONAL,
+  // igual que sincronizarClasificacionB04X()/sincronizarClasificacionO95():
+  // ninguno de los dos controles es "el bueno", y tocar cualquiera deja el
+  // otro alineado.
+  function sincronizarClasificacionA00(origenElemento) {
+    var tagCie = document.getElementById('cieTag');
+    var cieText = tagCie ? tagCie.textContent : '';
+    if (cieText.indexOf('A00') === -1) return;
+
+    var selectPropio = document.querySelector('[name="' + campoPorClave('a00_clasificacion_final') + '"]');
+    var radiosGenericos = Array.prototype.slice.call(document.querySelectorAll('input[name="clasificacion"]'));
+    if (!selectPropio || !radiosGenericos.length) return;
+
+    if (origenElemento && origenElemento.name === 'clasificacion') {
+      if (selectPropio.value === origenElemento.value) return;
+      selectPropio.value = origenElemento.value;
+    } else {
+      var valorDestino = selectPropio.value;
+      if (!valorDestino) {
+        // Carga inicial con el select vacío: no se toca el chip -- una ficha
+        // ya guardada puede traer un genérico real que nunca se capturó en la
+        // sección VI, y rellenarlo hacia atrás inventaría el dato del PDF.
+        if (!origenElemento) return;
+        // Si en cambio el usuario acaba de vaciar el select, el genérico
+        // vuelve a Sospechoso (misma decisión que B04X/P35.0): así no queda
+        // pegado en CONFIRMADO tras haber pasado por ahí y cambiar de idea.
+        valorDestino = 'SOSPECHOSO';
+      }
+      var radioDestino = null;
+      for (var i = 0; i < radiosGenericos.length; i++) {
+        if (radiosGenericos[i].value === valorDestino) { radioDestino = radiosGenericos[i]; break; }
+      }
+      if (!radioDestino || radioDestino.checked) return;
+      radiosGenericos.forEach(function (r) { r.checked = (r === radioDestino); });
+    }
+
+    // Asignar .value/.checked por JS no dispara el 'change' nativo que el
+    // motor de dependencias escucha (de a00_clasificacion_final cuelga
+    // "Causa del descarte"); hay que llamarlo a mano.
+    evaluarDependencias();
+  }
+
+  sincronizarClasificacionA00();
+  document.addEventListener('change', function (e) {
+    if (!e.target) return;
+    if (e.target.name === 'clasificacion' || e.target.name === campoPorClave('a00_clasificacion_final')) {
+      sincronizarClasificacionA00(e.target);
+    }
+  });
+
+  // ---------- A00: ítem 3.7 "Para los menores de 2 años" ----------
+  // El propio encabezado del PDF (pág. 50) acota la pregunta a menores de 2
+  // años. El motor de depende_de sólo sabe mirar otros campo_def, nunca la
+  // edad del núcleo, así que el gate se hace acá -- mismo patrón que
+  // #wrapTdapMadreA370 (A37.0) y #campoFurB55, con dos diferencias:
+  //   1. A00 declara unidades_edad, así que la edad puede venir de la fecha
+  //      de nacimiento O de los controles manuales edad_valor/edad_unidad;
+  //      se leen los dos, con la fecha de nacimiento con prioridad (es lo
+  //      mismo que hace el servidor al guardar, ver edadConUnidadDesdeFecha()).
+  //   2. El wrap arranca VISIBLE en el HTML: mientras no haya ni fecha ni
+  //      edad manual la edad es desconocida, y ocultar entonces escondería
+  //      una pregunta que el encuestador quizá sí deba llenar.
+  function edadEnAniosA00() {
+    var inpFechaNac = document.getElementById('fechaNac');
+    var partes = inpFechaNac && inpFechaNac.value ? inpFechaNac.value.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
+    if (partes) {
+      var nacimiento = new Date(+partes[1], partes[2] - 1, +partes[3]);
+      var hoy = new Date();
+      var anios = hoy.getFullYear() - nacimiento.getFullYear();
+      var aunNoCumple = (hoy.getMonth() < nacimiento.getMonth()) ||
+        (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate());
+      if (aunNoCumple) anios--;
+      return anios >= 0 ? anios : null;
+    }
+
+    var inpValor = document.getElementById('edadValorInput');
+    var selUnidad = document.getElementById('edadUnidadSelect');
+    if (!inpValor || !selUnidad || inpValor.value === '' || !selUnidad.value) return null;
+    var valor = parseFloat(inpValor.value);
+    if (isNaN(valor) || valor < 0) return null;
+    if (selUnidad.value === 'ANIOS') return valor;
+    if (selUnidad.value === 'MESES') return valor / 12;
+    if (selUnidad.value === 'DIAS') return valor / 365.25;
+    return null;
+  }
+
+  function actualizarBloqueMenores2A00() {
+    var wrap = document.getElementById('wrapMenores2A00');
+    if (!wrap) return;   // no-op en las otras 23 fichas
+
+    var anios = edadEnAniosA00();
+    var ocultar = (anios !== null && anios >= 2);
+    if (wrap.hidden === ocultar) return;
+
+    wrap.hidden = ocultar;
+    // .hidden solo no basta: evaluarDependencias() y varios wraps de esta app
+    // pintan display inline, así que se alterna explícitamente (mismo motivo
+    // que #wrapTdapMadreA370).
+    wrap.style.display = ocultar ? 'none' : '';
+    if (ocultar) {
+      wrap.querySelectorAll('input, select, textarea').forEach(function (el) {
+        if (el.type === 'checkbox' || el.type === 'radio') { el.checked = false; } else { el.value = ''; }
+      });
+    }
+  }
+
+  ['fechaNac', 'edadValorInput', 'edadUnidadSelect'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', actualizarBloqueMenores2A00);
+      el.addEventListener('input', actualizarBloqueMenores2A00);
+    }
+  });
+  actualizarBloqueMenores2A00();
+
   // ---------- A35: "No recuerda día" cambia Fecha de inicio de lesión a mm/aaaa ----------
   // Ítem 1 del PDF de A35 (pág. 23): "NO RECUERDA DIA ( )" junto a "FECHA DE
   // INICIO DE LESION" -- el día exacto no siempre se recuerda, así que el
@@ -3825,10 +4007,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // 2. Total VAC = (<1 año) + (1-4 años) + (5-14 años) + (>15 años)
-    var inputVacMenor1 = document.querySelector('[name="' + campoPorClave('vacunados_bloqueo_menor_1') + '"]');
-    var inputVac14 = document.querySelector('[name="' + campoPorClave('vacunados_bloqueo_1_4') + '"]');
-    var inputVac514 = document.querySelector('[name="' + campoPorClave('vacunados_bloqueo_5_14') + '"]');
-    var inputVacMayor15 = document.querySelector('[name="' + campoPorClave('vacunados_bloqueo_mayor_15') + '"]');
+    var inputVacMenor1 = document.querySelector('[name="' + campoPorClave('b05_numero_de_vacunados_en_bloqueo_1_ano') + '"]');
+    var inputVac14 = document.querySelector('[name="' + campoPorClave('b05_numero_de_vacunados_en_bloqueo_1_4_anos') + '"]');
+    var inputVac514 = document.querySelector('[name="' + campoPorClave('b05_numero_de_vacunados_en_bloqueo_5_14_anos') + '"]');
+    var inputVacMayor15 = document.querySelector('[name="' + campoPorClave('b05_numero_de_vacunados_en_bloqueo_15_anos') + '"]');
     var inputTotalVac = document.querySelector('[name="' + campoPorClave('b05_numero_de_vacunados_en_el_bloqueo') + '"]');
 
     if (inputTotalVac && (inputVacMenor1 || inputVac14 || inputVac514 || inputVacMayor15)) {
@@ -3865,7 +4047,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     if (e.target && e.target.name && (
       e.target.name === campoPorClave('b05_casas_abiertas') || e.target.name === campoPorClave('b05_casas_cerradas') || e.target.name === campoPorClave('b05_casas_abandonadas') ||
-      e.target.name === campoPorClave('vacunados_bloqueo_menor_1') || e.target.name === campoPorClave('vacunados_bloqueo_1_4') || e.target.name === campoPorClave('vacunados_bloqueo_5_14') || e.target.name === campoPorClave('vacunados_bloqueo_mayor_15')
+      e.target.name === campoPorClave('b05_numero_de_vacunados_en_bloqueo_1_ano') || e.target.name === campoPorClave('b05_numero_de_vacunados_en_bloqueo_1_4_anos') || e.target.name === campoPorClave('b05_numero_de_vacunados_en_bloqueo_5_14_anos') || e.target.name === campoPorClave('b05_numero_de_vacunados_en_bloqueo_15_anos')
     )) {
       calcularTotalesB05();
     }
@@ -3874,7 +4056,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('change', function(e) {
     if (e.target && e.target.name && (
       e.target.name === campoPorClave('b05_casas_abiertas') || e.target.name === campoPorClave('b05_casas_cerradas') || e.target.name === campoPorClave('b05_casas_abandonadas') ||
-      e.target.name === campoPorClave('vacunados_bloqueo_menor_1') || e.target.name === campoPorClave('vacunados_bloqueo_1_4') || e.target.name === campoPorClave('vacunados_bloqueo_5_14') || e.target.name === campoPorClave('vacunados_bloqueo_mayor_15')
+      e.target.name === campoPorClave('b05_numero_de_vacunados_en_bloqueo_1_ano') || e.target.name === campoPorClave('b05_numero_de_vacunados_en_bloqueo_1_4_anos') || e.target.name === campoPorClave('b05_numero_de_vacunados_en_bloqueo_5_14_anos') || e.target.name === campoPorClave('b05_numero_de_vacunados_en_bloqueo_15_anos')
     )) {
       calcularTotalesB05();
     }

@@ -17,6 +17,9 @@ class CasoMuestra extends Model
      * (2026-08-09, B01): cadena de 3 fechas de envío EE.SS -> Red/Microred ->
      * LRR -> INS, distinta de `fecha_envio_ins` (una sola fecha genérica que
      * ya usan otras fichas) -- opcionales, NULL si la ficha no las declara.
+     * `establecimiento`/`serogrupo`/`serotipo` (2026-09-07, A00 "V.
+     * LABORATORIO", pág. 51): 3 columnas más de la tabla del papel, también
+     * opcionales y NULL para las 11 fichas que no las declaran.
      * Debe ejecutarse dentro de la transacción abierta por el llamador.
      */
     public static function reemplazarTodos(int $casoId, array $filas): void
@@ -31,14 +34,14 @@ class CasoMuestra extends Model
                 fecha_result, fecha_envio_ins, agente_aislado, observaciones,
                 numero_muestra, fecha_recepcion_ins, resultado_pcr, fecha_result_pcr,
                 genotipo, resultado_igm, fecha_result_igm, resultado_igg, fecha_result_igg,
-                titulacion
+                titulacion, establecimiento, serogrupo, serotipo
              ) VALUES (
                 :caso, :contexto, :tipo_muestra, :tipo_prueba, :recibio_antibiotico, :resultado,
                 :fecha_toma, :fecha_envio_eess_red, :fecha_envio_red_lrr, :fecha_envio_lrr_ins,
                 :fecha_result, :fecha_envio_ins, :agente_aislado, :observaciones,
                 :numero_muestra, :fecha_recepcion_ins, :resultado_pcr, :fecha_result_pcr,
                 :genotipo, :resultado_igm, :fecha_result_igm, :resultado_igg, :fecha_result_igg,
-                :titulacion
+                :titulacion, :establecimiento, :serogrupo, :serotipo
              )'
         );
 
@@ -68,6 +71,9 @@ class CasoMuestra extends Model
                 'resultado_igg'         => $fila['resultado_igg'] ?? null,
                 'fecha_result_igg'      => $fila['fecha_result_igg'] ?? null,
                 'titulacion'            => $fila['titulacion'] ?? null,
+                'establecimiento'       => $fila['establecimiento'] ?? null,
+                'serogrupo'             => $fila['serogrupo'] ?? null,
+                'serotipo'              => $fila['serotipo'] ?? null,
             ]);
         }
     }

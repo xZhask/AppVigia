@@ -217,6 +217,16 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // campo_def se pintan todas antes de esa tarjeta.
         'b04x_control_calidad_nombres', 'b04x_control_calidad_telefono',
     ],
+    'A00' => [
+        // notificacion-fechas-a00.php (cotejo 2026-09-07, pág. 50 del PDF,
+        // "I. DATOS GENERALES"): Código, Fecha de investigación del caso y
+        // Captación del caso, en la tarjeta fija "1. Notificación". Los otros
+        // 3 ítems de esa sección del papel no son campo_def: "Fecha de
+        // notificación" es el núcleo fecha_notif de esa misma tarjeta, y
+        // DISA/Red/Establecimiento notificante son datos del establecimiento
+        // ya elegido (mismo criterio que A37.0/A97/B57/A95).
+        'a00_codigo', 'a00_fecha_de_investigacion', 'a00_captacion_del_caso',
+    ],
 ];
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -237,6 +247,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'B57' => ['Fechas de notificación'],
     'A95' => ['Fechas de notificación', 'Migración'],
     'B04X' => ['Datos de notificación e investigación del caso', 'Personal de epidemiología (control de calidad)'],
+    'A00' => ['Datos generales'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
 if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
@@ -732,6 +743,19 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if (($campo['clave'] ?? '') === 'b55_fecha_de_ultima_regla') {
                 ?><div id="campoFurB55" hidden style="display:none;"><?php
             }
+            // A00 (cotejo 2026-09-07): el ítem 3.7 del PDF se titula "Para
+            // los menores de 2 años", así que sólo aplica bajo esa edad --
+            // mismo mecanismo que #wrapTdapMadreA370/#campoFurB55 (el motor de
+            // depende_de sólo sabe mirar otros campo_def, nunca la edad del
+            // núcleo). A diferencia de esos dos, arranca VISIBLE: A00 admite
+            // edad manual además de fecha de nacimiento (unidades_edad), y
+            // mientras no haya ninguna de las dos la edad es desconocida --
+            // ocultar el bloque ahí escondería una pregunta que el
+            // encuestador quizá sí deba llenar. actualizarBloqueMenores2A00()
+            // en ficha.js lo oculta en cuanto la edad se conoce y es >= 2.
+            if (($campo['clave'] ?? '') === 'a00_para_menores_de_2_anos') {
+                ?><div id="wrapMenores2A00"><?php
+            }
             $tieneDependencia = !empty($campo['depende_de']);
             if ($tieneDependencia):
                 $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);
@@ -919,6 +943,9 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             }
             if (($campo['clave'] ?? '') === 'b55_fecha_de_ultima_regla') {
                 ?></div><?php // cierra #campoFurB55
+            }
+            if (($campo['clave'] ?? '') === 'a00_para_menores_de_2_anos') {
+                ?></div><?php // cierra #wrapMenores2A00
             }
             $tipoAnterior = $campo['tipo'];
 
@@ -1320,7 +1347,16 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // "Antecedentes" (orden 4, ANTES de "Cuadro clínico") trae su propio
     // FECHA suelto (b04x_fecha_de_diagnostico_vih) que
     // extraerFechaInicioSintomas() agarraría por error como fallback. ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55', 'B04X'], true)): ?>
+    <?php // A00 (cotejo 2026-09-07): el PDF (pág. 50) no trae "Fecha de inicio
+    // de síntomas" genérica -- lo que pide es "Fecha de inicio de la diarrea"
+    // (a00_fecha_de_inicio_de_la_diarrea, ítem 2 de "Cuadro clínico"), que ya
+    // es esa misma fecha con el nombre que usa esta ficha. Mismo caso que
+    // A97/B57/A95/B04X y no como A44/A80: no basta con ocultarla, porque
+    // "Datos generales" (orden 1, ANTES de "Cuadro clínico") trae su propio
+    // FECHA suelto (a00_fecha_de_investigacion) que extraerFechaInicioSintomas()
+    // agarraría por error como fallback -- por eso A00 también se suma a
+    // $sinFechaInicioSintomasObligatoria en CasosController.php. ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55', 'B04X', 'A00'], true)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
@@ -1500,7 +1536,22 @@ foreach (array_slice($secciones, 1) as $seccion):
         $esPruebasLaboratorioB55 = trim($seccion['nombre']) === 'Pruebas de laboratorio' && ($enfermedad['cie10'] ?? '') === 'B55';
         $esLaboratorioEvolucionA44 = trim($seccion['nombre']) === 'Laboratorio y evolución' && ($enfermedad['cie10'] ?? '') === 'A44';
         $esLaboratorioB04X = trim($seccion['nombre']) === 'Laboratorio' && ($enfermedad['cie10'] ?? '') === 'B04X';
-        if (!$esLaboratorioEvolucionA44 && !$esPruebasLaboratorioB55 && !$esLaboratorioB04X): ?>
+        ?>
+
+        <?php if (trim($seccion['nombre']) === 'Laboratorio' && ($enfermedad['cie10'] ?? '') === 'A00'): ?>
+          <!-- A00 (cotejo 2026-09-07, "V. LABORATORIO" pág. 51). A diferencia
+               de A95, la tabla de muestras va ARRIBA de los campo_def de la
+               sección: el papel dibuja primero las 3 fechas y la tabla de 6
+               columnas, y recién debajo las 3 líneas sueltas ("Otro
+               microorganismo aislado", "El caso de cólera fue confirmado por
+               laboratorio", "Nexo epidemiológico de un caso confirmado"), que
+               son las que $renderizarCampos() pinta justo después. -->
+          <div class="eyebrow" style="margin-bottom:10px">Muestras</div>
+          <?php require __DIR__ . '/tablas-hijas/muestras.php'; ?>
+          <div style="margin-top: 18px; border-top: 1px solid var(--line-2); padding-top: 14px;"></div>
+        <?php endif; ?>
+
+        <?php if (!$esLaboratorioEvolucionA44 && !$esPruebasLaboratorioB55 && !$esLaboratorioB04X): ?>
           <?php $renderizarCampos((int) $seccion['id']); ?>
         <?php endif; ?>
 

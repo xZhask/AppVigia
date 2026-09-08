@@ -5351,7 +5351,8 @@
     "A00": {
       "enfermedad": "EDA grave / cólera",
       "lote": 3,
-      "pdf_paginas": "50",
+      "pdf_paginas": "50-51",
+      "_nota_cotejo": "Cotejo 2026-09-07 contra las págs. 50-51 del compendio (EDA GRAVE - CÓLERA, ficha clínico-epidemiológica de 2 páginas). Antes el manifiesto declaraba sólo la pág. 50. Las secciones romanas del papel se mapean así: I. Datos generales -> sección 'Datos generales' (pintada a medida en notificacion-fechas-a00.php, dentro de la tarjeta fija '1. Notificación'); II. Datos del paciente -> núcleo (unidades_edad + detalle_domicilio + nucleo_incluidos) más la sección 'Para los residentes en otros países'; III -> 'Antecedentes epidemiológicos — fuente de infección'; IV -> 'Cuadro clínico', 'Tratamiento' y 'Evolución del paciente'; V -> 'Laboratorio' (campo_def + widget caso_muestra inyectado, patrón A95); VI -> 'Clasificación'; VII -> 'Observaciones' + tarjeta núcleo 'Investigador'. DISA/Red/Establecimiento notificante de la sección I no se capturan como campo_def: son datos del establecimiento ya elegido (mismo criterio que A37.0/A97/B57/A95). 'Firma' (VII) no se modela: es un artefacto del papel.",
       "tablas_hijas": {
         "caso_contacto": false,
         "caso_muestra": true,
@@ -5360,82 +5361,233 @@
       },
       "columnas_tablas_hija": {
         "caso_muestra": {
+          "columnas": [
+            "establecimiento",
+            "tipo_muestra",
+            "tipo_prueba",
+            "resultado",
+            "serogrupo",
+            "serotipo",
+            "fecha_toma",
+            "fecha_envio_ins",
+            "fecha_recepcion_ins"
+          ],
           "opciones": {
             "tipo_muestra": [
               "HECES",
-              "VOMITO",
-              "SUERO"
+              "SUERO",
+              "VOMITO"
             ],
             "tipo_prueba": [
               "CULT",
-              "RAPIDA"
+              "OTROS"
+            ],
+            "resultado": [
+              "POS",
+              "NEG"
+            ],
+            "serogrupo": [
+              "O1",
+              "O139"
+            ],
+            "serotipo": [
+              "OGAWA",
+              "INABA",
+              "HIKOJIMA"
             ]
+          },
+          "depende_de_columna": {
+            "serotipo": {
+              "columna": "serogrupo",
+              "valores_activadores": [
+                "O1"
+              ]
+            }
           }
         }
       },
+      "_observaciones_tablas_hija": "V. LABORATORIO de la pág. 51. La tabla del papel tiene 6 columnas por muestra (Establecimiento de Salud | Muestra | Examen realizado | Resultado | Serogrupo | Serotipo) más 3 fechas encima (toma / envío al laboratorio / recepción en laboratorio). 'establecimiento', 'serogrupo' y 'serotipo' son columnas nuevas de caso_muestra (sql/migraciones/add_lab_colera_caso_muestra.php); 'fecha_recepcion_ins' ya existía en la BD pero sólo la pintaba la rama de B05 -- ahora es declarable. Serogrupo/serotipo estaban modelados como campo_def a nivel de CASO hasta este cotejo, lo que impedía registrar más de un aislamiento; bajan a la tabla hija por pedido explícito del usuario ('cada muestra debe manejarse como un registro independiente'). El gate 'Serogrupo = O1 -> Serotipo' usa depende_de_columna (los serotipos Ogawa/Inaba/Hikojima sólo existen dentro de O1; con O139 no se piden). 'Examen realizado' del PDF es Cultivo / Otro: se mapea a tipo_prueba CULT + OTROS (antes decía CULT + RAPIDA, que el PDF no menciona). No se declara unico_por_tipo: el papel no limita a una muestra por tipo.",
       "nucleo_omitidos": [
         "referencia_localizar",
         "pueblo_etnico",
-        "ocupacion"
+        "etnia",
+        "celular",
+        "celular_tutor",
+        "nacionalidad",
+        "direccion",
+        "gestante"
       ],
+      "_nota_nucleo": "II. DATOS DEL PACIENTE (pág. 50). 'ocupacion' salió de nucleo_omitidos en el cotejo 2026-09-07: el PDF sí la pide ('Ocupación: ____'), y desde 2026-08-06 es campo núcleo de persona, no un campo_def a crear. Se omiten en cambio celular, celular del tutor, etnia, pueblo étnico, nacionalidad, gestante y referencia para localizar (ninguno aparece en el papel), y 'direccion' (el domicilio del PDF viene desglosado en Zona/Vía/Número/Int., que es lo que cubre detalle_domicilio, no una línea de dirección libre). 'nombre_tutor' SÍ se conserva: es 'Si es menor de edad, anotar el nombre del padre, madre o apoderado'. 'localidad' también, el PDF la pide dentro de Domicilio actual.",
+      "nucleo_incluidos": [
+        "n_historia_clinica"
+      ],
+      "_nota_nucleo_incluidos": "'N° Historia Clínica' aparece en la pág. 51, arriba a la derecha del bloque 'Características de la diarrea'.",
+      "unidades_edad": [
+        "ANIOS",
+        "MESES",
+        "DIAS"
+      ],
+      "_nota_edad": "'Edad: ___ Años ( ) / Meses ( ) / Días ( )' con las glosas 'Si es menor de 1 año, anotar meses' y 'Si es menor de 1 mes, anotar días'. Mismo trío que B04X. Modo híbrido (entrada F, 2026-08-27): si hay fecha de nacimiento la edad se calcula y los dos controles quedan deshabilitados; sin fecha, quedan editables como respaldo manual.",
+      "detalle_domicilio": [
+        "TIPO_ZONA",
+        "NOMBRE_ZONA",
+        "TIPO_VIA",
+        "NOMBRE_VIA",
+        "NUMERO",
+        "MZ_LOTE"
+      ],
+      "_nota_domicilio": "Mismo bloque de domicilio MINSA que A95 y B57 (Zona° / Vía° / Número-Km-Mz / Int-Dep-Lote). 'Zona de residencia: Urbana ( ) Rural ( )' se cubre con TIPO_ZONA, cuyo vocabulario en la app es Urbano/Periurbano/Rural (superset del par del papel). Los 'Códigos de Zona' del pie de página ([1] Urbanización, [2] Villa, [3] Cooperativa, [4] Proyecto Municipal de vivienda, [5] PPJJ/AAHH, [6] Otro) NO tienen dónde vivir hoy: son un eje distinto de tipo_zona y afectan igual a A95/B57/A37.0/P35.0 -- ver PENDIENTES.md.",
       "secciones": [
         {
-          "nombre": "Antecedentes epidemiológicos — fuente de infección",
+          "nombre": "Datos generales",
           "orden": 1,
+          "_nota": "I. DATOS GENERALES (pág. 50). Se pinta a medida en notificacion-fechas-a00.php, dentro de la tarjeta fija '1. Notificación' -- mismo 4.º camino de render que A97/B57/A95/B04X. 'Fecha de notificación' es el campo núcleo fecha_notif de esa misma tarjeta; DISA/Red/Establecimiento notificante son datos del establecimiento elegido.",
           "campos": [
             {
-              "clave": "a00_de_donde_obtuvo_el_agua_en_los_ultimos_3_dias",
-              "etiqueta": "¿De dónde obtuvo el agua en los últimos 3 días?",
-              "tipo": "SELECT",
-              "orden": 1,
-              "opciones": [
-                "Caño dentro de su casa",
-                "Caño público",
-                "De un pozo",
-                "De un río",
-                "Puquial (manantial)",
-                "Camión cisterna",
-                "Fue embotellada",
-                "Otro"
-              ]
+              "clave": "a00_codigo",
+              "etiqueta": "Código",
+              "tipo": "TEXTO",
+              "orden": 1
             },
             {
-              "clave": "a00_almacena_agua_de_consumo_domestico",
-              "etiqueta": "¿Almacena agua de consumo doméstico?",
-              "tipo": "BOOLEANO",
+              "clave": "a00_fecha_de_investigacion",
+              "etiqueta": "Fecha de investigación del caso",
+              "tipo": "FECHA",
               "orden": 2
             },
             {
-              "clave": "a00_en_que_tipo_de_recipiente",
-              "etiqueta": "¿En qué tipo de recipiente?",
+              "clave": "a00_captacion_del_caso",
+              "etiqueta": "Captación del caso",
               "tipo": "SELECT",
               "orden": 3,
               "opciones": [
-                "Tanque elevado",
-                "Cilindro",
-                "Tanque bajo",
-                "Otro"
-              ]
+                "Pasiva",
+                "Activa",
+                "Vigilancia comunal",
+                "Seguimiento de contactos"
+              ],
+              "_nota": "El bloque núcleo 'Tipo/Lugar/Clasificación en la captación' (notificacion-captacion.php) sólo ofrece Activa/Pasiva; el PDF de A00 pide 4 opciones. Se oculta ese bloque para A00 (misma lista de nueva/index.php y fichas/editar.php que ya usan otras 11 fichas) y se captura acá."
+            }
+          ]
+        },
+        {
+          "nombre": "Para los residentes en otros países",
+          "orden": 2,
+          "_nota": "Bloque al pie de 'II. DATOS DEL PACIENTE' (pág. 50): 'Para los residentes en otros países: País de origen: ____ Fecha de ingreso al país: __/__/__'. No se reusa el núcleo 'nacionalidad' (que se omite en esta ficha): país de origen/residencia previa y nacionalidad no son el mismo dato, y 'Fecha de ingreso al país' no tiene equivalente en el núcleo. Tampoco se usa el mecanismo migracion_reciente (A95/B57): ése arrastra una tarjeta entera de años de residencia + domicilio anterior que este PDF no pide. El disparador Sí/No de la cabecera lo pidió el usuario (2026-09-07); ver la nota del propio campo.",
+          "campos": [
+            {
+              "clave": "a00_reside_en_otro_pais",
+              "etiqueta": "¿Reside en otro país?",
+              "tipo": "SI_NO",
+              "orden": 1,
+              "_nota": "2026-09-07, pedido del usuario. El PDF sólo imprime el rótulo 'Para los residentes en otros países:' seguido de las 2 líneas; no trae una casilla Sí/No propia. Se agrega el disparador explícito porque sin él los 2 campos quedan siempre pedidos a todo paciente, y el papel los acota a un subconjunto -- mismo criterio que el gate por edad de 3.7. No inventa dato clínico: si la respuesta es No, los 2 campos se ocultan y se guardan vacíos, que es exactamente lo que un formulario en papel dejaría en blanco."
             },
             {
-              "clave": "a00_nivel_de_cloro_verificado_con_comparador",
-              "etiqueta": "Nivel de cloro verificado con comparador",
+              "clave": "a00_pais_de_origen",
+              "etiqueta": "País de origen",
               "tipo": "TEXTO",
-              "orden": 4
+              "orden": 2,
+              "depende_de": "¿Reside en otro país?",
+              "valor_activador": "SI"
+            },
+            {
+              "clave": "a00_fecha_de_ingreso_al_pais",
+              "etiqueta": "Fecha de ingreso al país",
+              "tipo": "FECHA",
+              "orden": 3,
+              "depende_de": "¿Reside en otro país?",
+              "valor_activador": "SI"
+            }
+          ]
+        },
+        {
+          "nombre": "Antecedentes epidemiológicos — fuente de infección",
+          "orden": 3,
+          "_nota": "III. ANTECEDENTES EPIDEMIOLÓGICOS, ítems 3.1 a 3.9 (pág. 50). Los 4 campos 'Especificar otro/a...' son el texto libre que el papel dibuja junto a cada casilla 'Otro ____'; van como campo_def aparte con depende_de porque 'especificar' (config de campo_def) hoy sólo existe para SI_NO_FECHA.",
+          "campos": [
+            {
+              "clave": "a00_de_donde_obtuvo_el_agua_en_los_ultimos_3_dias",
+              "etiqueta": "¿En los últimos 3 días, el agua que tomó de dónde la obtuvo?",
+              "tipo": "MULTISELECT",
+              "orden": 1,
+              "opciones": [
+                "Del caño dentro de su casa",
+                "Del caño público",
+                "De un pozo",
+                "De un río",
+                "De un puquial (manantial)",
+                "De un camión cisterna",
+                "Fue embotellada",
+                "Otro"
+              ],
+              "_corregido_tipo": "2026-09-07, 1.a revision del usuario: era SELECT (una sola fuente). El PDF dibuja las 8 alternativas como casillas ( ) independientes, igual que 3.6 (consumo de alimentos) que ya era MULTISELECT, y en 3 dias una familia puede haber tomado agua de mas de una fuente -- restringirlo a una obligaba a elegir cual anotar. El hijo 'Especificar otra fuente de agua' sigue funcionando: el motor de depende_de admite padres MULTISELECT (mismo patron que a97_otros_sintomas_especificar, b01_otras_complicaciones_especificar y los 6 'Otro' de O95)."
+            },
+            {
+              "clave": "a00_fuente_de_agua_otro",
+              "etiqueta": "Especificar otra fuente de agua",
+              "tipo": "TEXTO",
+              "orden": 2,
+              "depende_de": "¿En los últimos 3 días, el agua que tomó de dónde la obtuvo?",
+              "valor_activador": "OTRO"
+            },
+            {
+              "clave": "a00_almacena_agua_de_consumo_domestico",
+              "etiqueta": "¿Almacena el agua de consumo doméstico?",
+              "tipo": "SI_NO",
+              "orden": 3
+            },
+            {
+              "clave": "a00_en_que_tipo_de_recipiente",
+              "etiqueta": "¿En qué tipo de recipiente lo almacena?",
+              "tipo": "SELECT",
+              "orden": 4,
+              "opciones": [
+                "Tanque elevado",
+                "Tanque bajo",
+                "Cilindro",
+                "Otro"
+              ],
+              "depende_de": "¿Almacena el agua de consumo doméstico?",
+              "valor_activador": "SI"
+            },
+            {
+              "clave": "a00_tipo_de_recipiente_otro",
+              "etiqueta": "Especificar otro tipo de recipiente",
+              "tipo": "TEXTO",
+              "orden": 5,
+              "depende_de": "¿En qué tipo de recipiente lo almacena?",
+              "valor_activador": "OTRO"
+            },
+            {
+              "clave": "a00_verificacion_agua_clorada",
+              "etiqueta": "¿Se verificó con el comparador si el agua está clorada?",
+              "tipo": "SI_NO",
+              "orden": 6,
+              "_nota": "3.4 del PDF: 'Verificar si el agua está clorada a través del comparador (anotar el nivel de cloro)'. Antes era un único TEXTO 'Nivel de cloro verificado con comparador', que mezclaba el acto de verificar con su resultado y no permitía distinguir 'no se verificó' de 'se verificó y salió vacío'."
+            },
+            {
+              "clave": "a00_nivel_de_cloro",
+              "etiqueta": "Nivel de cloro (mg/L)",
+              "tipo": "NUMERO",
+              "orden": 7,
+              "decimales": true,
+              "depende_de": "¿Se verificó con el comparador si el agua está clorada?",
+              "valor_activador": "SI"
             },
             {
               "clave": "a00_los_recipientes_tienen_tapa",
               "etiqueta": "¿Los recipientes tienen tapa?",
-              "tipo": "BOOLEANO",
-              "orden": 5
+              "tipo": "SI_NO",
+              "orden": 8,
+              "_nota": "3.5. Independiente de 3.2: el PDF no la indenta bajo '¿Almacena el agua?' y un recipiente con tapa puede verificarse igual."
             },
             {
               "clave": "a00_donde_consumio_alimentos_los_ultimos_3_dias",
-              "etiqueta": "¿Dónde consumió alimentos los últimos 3 días?",
+              "etiqueta": "¿En los últimos 3 días dónde ha consumido alimentos?",
               "tipo": "MULTISELECT",
-              "orden": 6,
+              "orden": 9,
               "opciones": [
-                "Solo los que han sido preparados en mi casa",
+                "Sólo los que han sido preparados en mi casa",
                 "En un restaurante",
                 "En un ambulante",
                 "En una pensión",
@@ -5444,44 +5596,62 @@
               ]
             },
             {
+              "clave": "a00_lugar_de_consumo_otro",
+              "etiqueta": "Especificar otro lugar de consumo de alimentos",
+              "tipo": "TEXTO",
+              "orden": 10,
+              "depende_de": "¿En los últimos 3 días dónde ha consumido alimentos?",
+              "valor_activador": "OTRO"
+            },
+            {
               "clave": "a00_para_menores_de_2_anos",
-              "etiqueta": "Para menores de 2 años",
+              "etiqueta": "Para los menores de 2 años",
               "tipo": "MULTISELECT",
-              "orden": 7,
+              "orden": 11,
               "opciones": [
                 "Ingiere leche en biberón",
-                "Consume los mismos alimentos que los adultos en la casa",
-                "Recibe lactancia materna"
-              ]
+                "Recibe lactancia materna",
+                "Consume los mismos alimentos que los adultos en la casa"
+              ],
+              "_nota": "3.7. El propio encabezado del PDF acota la pregunta a menores de 2 años; el gate por edad lo aplica actualizarBloqueMenores2A00() en ficha.js (el motor de depende_de sólo sabe mirar otros campo_def, no la edad del núcleo)."
             },
             {
               "clave": "a00_eliminacion_de_excretas",
-              "etiqueta": "Eliminación de excretas",
+              "etiqueta": "La eliminación de las excretas se hace por",
               "tipo": "SELECT",
-              "orden": 8,
+              "orden": 12,
               "opciones": [
-                "Red pública dentro de la vivienda",
-                "Red pública fuera de la vivienda",
+                "Red pública dentro de la vivienda (alcantarillado)",
+                "Red pública fuera de la vivienda, pero dentro del edificio (alcantarillado)",
                 "Pozo negro o ciego o silo/letrina",
                 "Sin servicio",
                 "Otro"
               ]
             },
             {
+              "clave": "a00_eliminacion_de_excretas_otro",
+              "etiqueta": "Especificar otra eliminación de excretas",
+              "tipo": "TEXTO",
+              "orden": 13,
+              "depende_de": "La eliminación de las excretas se hace por",
+              "valor_activador": "OTRO"
+            },
+            {
               "clave": "a00_algun_miembro_de_la_familia_con_diarrea_en_los_ulti",
-              "etiqueta": "¿Algún miembro de la familia con diarrea en los últimos 3 días?",
-              "tipo": "BOOLEANO",
-              "orden": 9
+              "etiqueta": "¿Algún miembro de su familia ha sufrido de diarrea en los últimos 3 días?",
+              "tipo": "SI_NO",
+              "orden": 14
             }
           ]
         },
         {
           "nombre": "Cuadro clínico",
-          "orden": 2,
+          "orden": 4,
+          "_nota": "IV. CUADRO CLINICO Y MANEJO, primera mitad (pags. 50-51). Desde la 1.a revision del usuario (2026-09-07) el bloque de la diarrea es una cadena de 3 niveles: el sintoma 'Diarrea' gatea fecha de inicio, dias de duracion, consistencia, las 3 caracteristicas y la clasificacion; y la clasificacion 'Con deshidratacion' gatea a su vez el grado y el shock. El motor evalua un nivel por vez, pero la cadena funciona por transitividad: al ocultarse un campo su valor se limpia, con lo que el hijo deja de ver el activador y se oculta en la pasada siguiente (evaluarDependencias() reitera hasta 10 veces).",
           "campos": [
             {
               "clave": "a00_sintomas",
-              "etiqueta": "Síntomas",
+              "etiqueta": "Síntomas y signos",
               "tipo": "MULTISELECT",
               "orden": 1,
               "opciones": [
@@ -5500,13 +5670,20 @@
               "clave": "a00_fecha_de_inicio_de_la_diarrea",
               "etiqueta": "Fecha de inicio de la diarrea",
               "tipo": "FECHA",
-              "orden": 2
+              "orden": 2,
+              "depende_de": "Síntomas y signos",
+              "valor_activador": "DIARREA",
+              "_corregido": "2026-09-07, 1.a revision del usuario: el bloque entero de la diarrea se gatea con el sintoma 'Diarrea'. Antes solo lo estaban Tipo/Presencia/N.o de deposiciones, asi que la ficha pedia fecha de inicio, dias de duracion, consistencia y clasificacion de la diarrea a un paciente que no la habia marcado como sintoma."
             },
             {
               "clave": "a00_n_de_dias_de_duracion",
-              "etiqueta": "N.° de días de duración",
+              "etiqueta": "N.º de días de duración de la diarrea",
               "tipo": "NUMERO",
-              "orden": 3
+              "orden": 3,
+              "_nota": "El PDF pide el dato escrito a mano y no trae ninguna 'fecha de evaluación' con la que calcularlo, así que queda de ingreso manual (ver PENDIENTES.md).",
+              "depende_de": "Síntomas y signos",
+              "valor_activador": "DIARREA",
+              "_corregido": "2026-09-07, 1.a revision del usuario: el bloque entero de la diarrea se gatea con el sintoma 'Diarrea'. Antes solo lo estaban Tipo/Presencia/N.o de deposiciones, asi que la ficha pedia fecha de inicio, dias de duracion, consistencia y clasificacion de la diarrea a un paciente que no la habia marcado como sintoma."
             },
             {
               "clave": "a00_consistencia_de_la_deposicion",
@@ -5517,7 +5694,10 @@
                 "Acuosa o líquida",
                 "Grumosa",
                 "Pastosa"
-              ]
+              ],
+              "depende_de": "Síntomas y signos",
+              "valor_activador": "DIARREA",
+              "_corregido": "2026-09-07, 1.a revision del usuario: el bloque entero de la diarrea se gatea con el sintoma 'Diarrea'. Antes solo lo estaban Tipo/Presencia/N.o de deposiciones, asi que la ficha pedia fecha de inicio, dias de duracion, consistencia y clasificacion de la diarrea a un paciente que no la habia marcado como sintoma."
             },
             {
               "clave": "a00_tipo_de_diarrea",
@@ -5528,7 +5708,9 @@
                 "EDA acuosa",
                 "EDA disentérica",
                 "EDA persistente"
-              ]
+              ],
+              "depende_de": "Síntomas y signos",
+              "valor_activador": "DIARREA"
             },
             {
               "clave": "a00_presencia_de",
@@ -5539,13 +5721,17 @@
                 "Moco",
                 "Sangre",
                 "Moco y sangre"
-              ]
+              ],
+              "depende_de": "Síntomas y signos",
+              "valor_activador": "DIARREA"
             },
             {
               "clave": "a00_n_de_deposiciones_por_dia",
-              "etiqueta": "N.° de deposiciones por día",
+              "etiqueta": "Número de deposiciones por día",
               "tipo": "NUMERO",
-              "orden": 7
+              "orden": 7,
+              "depende_de": "Síntomas y signos",
+              "valor_activador": "DIARREA"
             },
             {
               "clave": "a00_clasificacion_de_la_diarrea",
@@ -5553,18 +5739,42 @@
               "tipo": "SELECT",
               "orden": 8,
               "opciones": [
-                "Sin deshidratación",
-                "Con deshidratación leve",
-                "Con deshidratación moderada",
-                "Con deshidratación grave",
-                "Shock"
-              ]
+                "Con deshidratación",
+                "Sin deshidratación"
+              ],
+              "_corregido_tipo": "2026-09-07: hasta este cotejo era un SELECT único de 5 opciones (Sin deshidratación / Con deshidratación leve / moderada / grave / Shock) que fundía las DOS líneas independientes del PDF y además hacía a Shock excluyente del grado, cuando en el papel es una casilla aparte.",
+              "depende_de": "Síntomas y signos",
+              "valor_activador": "DIARREA",
+              "_corregido": "2026-09-07, 1.a revision del usuario: el bloque entero de la diarrea se gatea con el sintoma 'Diarrea'. Antes solo lo estaban Tipo/Presencia/N.o de deposiciones, asi que la ficha pedia fecha de inicio, dias de duracion, consistencia y clasificacion de la diarrea a un paciente que no la habia marcado como sintoma."
+            },
+            {
+              "clave": "a00_grado_de_deshidratacion",
+              "etiqueta": "Grado de deshidratación",
+              "tipo": "SELECT",
+              "orden": 9,
+              "opciones": [
+                "Leve",
+                "Moderada",
+                "Grave"
+              ],
+              "depende_de": "Clasificación de la diarrea",
+              "valor_activador": "CON_DESHIDRATACION"
+            },
+            {
+              "clave": "a00_shock",
+              "etiqueta": "Shock",
+              "tipo": "SI_NO",
+              "orden": 10,
+              "depende_de": "Clasificación de la diarrea",
+              "valor_activador": "CON_DESHIDRATACION",
+              "_corregido": "2026-09-07, 1.a revision del usuario: antes era independiente y siempre visible. El arbol que paso el usuario lo agrupa bajo 'Si Clasificacion = Con deshidratacion', junto con el grado -- que es tambien como lo dibuja el papel (misma linea que leve/moderada/grave). Se gatea por la CLASIFICACION, no por 'Grado = Grave': la nota del usuario dice que con grave 'puede registrarse como condicion asociada', no que sea la unica combinacion posible, y un shock con deshidratacion moderada es clinicamente posible."
             }
           ]
         },
         {
           "nombre": "Tratamiento",
-          "orden": 3,
+          "orden": 5,
+          "_nota": "IV. CUADRO CLÍNICO Y MANEJO, bloque 'Tratamiento' (pág. 51).",
           "campos": [
             {
               "clave": "a00_plan_de_tratamiento",
@@ -5580,145 +5790,184 @@
             {
               "clave": "a00_tratamiento_antibiotico",
               "etiqueta": "Tratamiento antibiótico",
-              "tipo": "BOOLEANO",
+              "tipo": "SI_NO",
               "orden": 2
             },
             {
               "clave": "a00_antibiotico_usado",
               "etiqueta": "Antibiótico usado",
-              "tipo": "SELECT",
+              "tipo": "MULTISELECT",
               "orden": 3,
               "opciones": [
                 "Tetraciclina",
+                "Cloranfenicol",
                 "Cotrimoxazol",
                 "Doxiciclina",
                 "Ciprofloxacina",
-                "Cloranfenicol",
                 "Otro"
-              ]
+              ],
+              "depende_de": "Tratamiento antibiótico",
+              "valor_activador": "SI",
+              "_corregido_tipo": "2026-09-07: era SELECT (un solo antibiótico). El usuario pidió permitir registrar más de uno, y el papel dibuja 6 casillas independientes."
+            },
+            {
+              "clave": "a00_antibiotico_otro",
+              "etiqueta": "Especificar otro antibiótico",
+              "tipo": "TEXTO",
+              "orden": 4,
+              "depende_de": "Antibiótico usado",
+              "valor_activador": "OTRO"
             }
           ]
         },
         {
-          "nombre": "Evolución",
-          "orden": 4,
+          "nombre": "Evolución del paciente",
+          "orden": 6,
+          "_nota": "IV. CUADRO CLÍNICO Y MANEJO, bloque 'Evolución del paciente' (pág. 51). Hasta este cotejo los 10 campos estaban sueltos, sin ninguna dependencia: la fecha de alta se pedía aunque no hubiera alta, la lista de complicaciones aunque no hubiera complicaciones, y los 3 datos de fallecimiento aunque el paciente estuviera vivo.",
           "campos": [
             {
               "clave": "a00_alta",
               "etiqueta": "Alta",
-              "tipo": "BOOLEANO",
+              "tipo": "SI_NO",
               "orden": 1
             },
             {
               "clave": "a00_fecha_de_alta",
               "etiqueta": "Fecha de alta",
               "tipo": "FECHA",
-              "orden": 2
+              "orden": 2,
+              "depende_de": "Alta",
+              "valor_activador": "SI"
             },
             {
               "clave": "a00_hospitalizado",
               "etiqueta": "Hospitalizado",
-              "tipo": "BOOLEANO",
+              "tipo": "SI_NO",
               "orden": 3
             },
             {
               "clave": "a00_fecha_de_hospitalizacion",
               "etiqueta": "Fecha de hospitalización",
               "tipo": "FECHA",
-              "orden": 4
+              "orden": 4,
+              "depende_de": "Hospitalizado",
+              "valor_activador": "SI"
+            },
+            {
+              "clave": "a00_presento_complicaciones",
+              "etiqueta": "¿Presentó complicaciones?",
+              "tipo": "SELECT",
+              "orden": 5,
+              "opciones": [
+                "Sí",
+                "No",
+                "Ignorado"
+              ],
+              "_nota": "El PDF trae 'Complicaciones: Sí ( ) No ( ) Ignorado ( )' -- ternario, no un Sí/No. Etiqueta distinta de la lista hija 'Complicaciones' a propósito: depende_de se resuelve por ETIQUETA, así que dos campos con el mismo texto en la misma ficha serían ambiguos."
             },
             {
               "clave": "a00_complicaciones",
               "etiqueta": "Complicaciones",
               "tipo": "MULTISELECT",
-              "orden": 5,
+              "orden": 6,
               "opciones": [
                 "Shock hipovolémico",
                 "Acidosis",
                 "Insuficiencia renal",
                 "Edema agudo de pulmón"
-              ]
+              ],
+              "depende_de": "¿Presentó complicaciones?",
+              "valor_activador": "SI"
             },
             {
               "clave": "a00_fallecido",
               "etiqueta": "Fallecido",
-              "tipo": "BOOLEANO",
-              "orden": 6
-            },
-            {
-              "clave": "a00_fecha_de_fallecimiento",
-              "etiqueta": "Fecha de fallecimiento",
-              "tipo": "FECHA",
+              "tipo": "SI_NO",
               "orden": 7
             },
             {
               "clave": "a00_hora_de_fallecimiento",
               "etiqueta": "Hora de fallecimiento",
               "tipo": "TEXTO",
-              "orden": 8
+              "orden": 8,
+              "depende_de": "Fallecido",
+              "valor_activador": "SI"
+            },
+            {
+              "clave": "a00_fecha_de_fallecimiento",
+              "etiqueta": "Fecha de fallecimiento",
+              "tipo": "FECHA",
+              "orden": 9,
+              "depende_de": "Fallecido",
+              "valor_activador": "SI"
             },
             {
               "clave": "a00_lugar_de_fallecimiento",
               "etiqueta": "Lugar de fallecimiento",
               "tipo": "SELECT",
-              "orden": 9,
+              "orden": 10,
               "opciones": [
                 "En el establecimiento de salud",
                 "En casa"
-              ]
+              ],
+              "depende_de": "Fallecido",
+              "valor_activador": "SI"
             },
             {
               "clave": "a00_transferencia",
               "etiqueta": "Transferencia",
+              "tipo": "SI_NO",
+              "orden": 11,
+              "_corregido_tipo": "2026-09-07: era un MULTISELECT con las 2 opciones del motivo, lo que perdía el 'Transferencia: Sí ( ) No ( )' del papel (no se podía registrar 'no fue transferido')."
+            },
+            {
+              "clave": "a00_motivo_de_la_transferencia",
+              "etiqueta": "Motivo de la transferencia",
               "tipo": "MULTISELECT",
-              "orden": 10,
+              "orden": 12,
               "opciones": [
                 "Para hospitalización",
                 "Para diálisis"
-              ]
+              ],
+              "depende_de": "Transferencia",
+              "valor_activador": "SI"
             }
           ]
         },
         {
           "nombre": "Laboratorio",
-          "orden": 5,
+          "orden": 7,
+          "_nota": "V. LABORATORIO (pág. 51). La tabla de muestras (caso_muestra) se inyecta dentro de esta sección desde secciones-clinicas.php -- mismo patrón que A95 -- y no en la tarjeta genérica de Laboratorio de nueva/index.php, porque ésa se dibuja después de TODAS las secciones y el PDF pone Laboratorio (V) antes de Clasificación (VI). Los 3 campo_def de acá son las 3 líneas sueltas que el papel imprime DEBAJO de la tabla, no columnas de ella.",
           "campos": [
-            {
-              "clave": "a00_serogrupo",
-              "etiqueta": "Serogrupo",
-              "tipo": "SELECT",
-              "orden": 1,
-              "opciones": [
-                "O1",
-                "O139"
-              ]
-            },
-            {
-              "clave": "a00_serotipo",
-              "etiqueta": "Serotipo",
-              "tipo": "SELECT",
-              "orden": 2,
-              "opciones": [
-                "Ogawa",
-                "Inaba",
-                "Hikojima"
-              ]
-            },
             {
               "clave": "a00_otro_microorganismo_aislado",
               "etiqueta": "Otro microorganismo aislado",
               "tipo": "TEXTO",
-              "orden": 3
+              "orden": 1
+            },
+            {
+              "clave": "a00_confirmado_por_laboratorio",
+              "etiqueta": "¿El caso de cólera fue confirmado por laboratorio?",
+              "tipo": "SI_NO",
+              "orden": 2
+            },
+            {
+              "clave": "a00_nexo_epidemiologico",
+              "etiqueta": "¿Nexo epidemiológico de un caso confirmado?",
+              "tipo": "SI_NO",
+              "orden": 3,
+              "_nota": "Registro independiente del resultado de laboratorio, como pidió el usuario: un caso puede cerrarse por nexo sin muestra positiva."
             }
           ]
         },
         {
           "nombre": "Clasificación",
-          "orden": 6,
+          "orden": 8,
+          "_nota": "VI. CLASIFICACIÓN (pág. 51): 'Clasificación final del caso probable' + Fecha, con 5 opciones. 'Compatible' no existía en CATALOGO_CLASIFICACION (app/Core/ayudantes.php) ni en el ENUM caso.clasificacion: ambos se ampliaron en este cotejo. El campo propio y los chips genéricos 'Clasificación del caso' ofrecen exactamente las mismas 5 opciones (enfermedad.opciones_clasificacion de A00), así que se sincronizan BIDIRECCIONAL en ficha.js, igual que O95/B04X.",
           "campos": [
             {
               "clave": "a00_clasificacion_final",
-              "etiqueta": "Clasificación final",
+              "etiqueta": "Clasificación final del caso probable",
               "tipo": "SELECT",
               "orden": 1,
               "opciones": [
@@ -5728,6 +5977,34 @@
                 "Compatible",
                 "Descartado"
               ]
+            },
+            {
+              "clave": "a00_causa_del_descarte",
+              "etiqueta": "Causa del descarte",
+              "tipo": "TEXTO",
+              "orden": 2,
+              "depende_de": "Clasificación final del caso probable",
+              "valor_activador": "DESCARTADO",
+              "_nota": "El papel dice literalmente 'Caso descartado [Anotar la causa]'."
+            },
+            {
+              "clave": "a00_fecha_de_clasificacion_final",
+              "etiqueta": "Fecha de la clasificación final",
+              "tipo": "FECHA",
+              "orden": 3
+            }
+          ]
+        },
+        {
+          "nombre": "Observaciones",
+          "orden": 9,
+          "_nota": "VII. OBSERVACIONES (pág. 51). 'Nombre de la persona que investiga el caso' y 'Cargo' son los campos núcleo investigador_nombre / investigador_cargo de la tarjeta fija 'Investigador'; 'Firma' no se modela.",
+          "campos": [
+            {
+              "clave": "a00_observaciones",
+              "etiqueta": "Observaciones",
+              "tipo": "TEXTAREA",
+              "orden": 1
             }
           ]
         }
