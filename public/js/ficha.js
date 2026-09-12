@@ -112,6 +112,123 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('input', evaluarDependencias);
   document.addEventListener('change', evaluarDependencias);
 
+  // ---------- vinculo_caso: datos de la ficha vinculada ----------
+  // (motor de la ficha Z21, cotejo 2026-09-11) Al elegir la ficha vinculada
+  // en select[data-vinculo-caso] (partials/vinculo-caso.php), los datos que
+  // el manifiesto declara en "copiar" se adelantan a sus campos destino y
+  // quedan de solo lectura; al desvincular vuelven a ser editables, sin
+  // borrar lo que el usuario haya escrito a mano. Es solo la vista previa:
+  // CasosController vuelve a copiarlos del caso vinculado al guardar.
+  // Corre DESPUÉS de evaluarDependencias() (se registró antes) para que, si
+  // la sección se ocultó y el motor limpió el select, los destinos vuelvan a
+  // quedar editables en vez de congelados de solo lectura.
+  function jsonDeAtributo(el, atributo) {
+    try { return JSON.parse((el && el.getAttribute(atributo)) || 'null') || null; } catch (err) { return null; }
+  }
+  function aplicarCopiaVinculo(copiar, destinos) {
+    destinos.forEach(function (nombre) {
+      var destino = document.querySelector('[name="' + nombre + '"]');
+      if (!destino) return;
+      if (Object.prototype.hasOwnProperty.call(copiar, nombre)) {
+        destino.value = copiar[nombre];
+        destino.readOnly = true;
+      } else {
+        destino.readOnly = false;
+      }
+    });
+  }
+  function aplicarVinculoCaso(sel) {
+    var opcion = sel.options[sel.selectedIndex];
+    aplicarCopiaVinculo(
+      jsonDeAtributo(opcion, 'data-copiar') || {},
+      jsonDeAtributo(sel, 'data-destinos') || []
+    );
+  }
+  function aplicarVinculosCaso() {
+    document.querySelectorAll('select[data-vinculo-caso]').forEach(aplicarVinculoCaso);
+    document.querySelectorAll('[data-vinculo-buscador]').forEach(pintarVinculoBuscador);
+  }
+
+  // ---------- vinculo_caso con "fijar_por_procedencia" ----------
+  // (pedido del usuario, 2026-09-11) Sin lista de candidatos: la ficha
+  // vinculada llega fijada desde la ficha de la madre o se identifica por
+  // código/documento EXACTO contra /casos/nuevo/vinculo. El id viaja en un
+  // <input type="hidden">, y el servidor lo revalida igual que antes -- esto
+  // es solo la vista previa.
+  function pintarVinculoBuscador(caja) {
+    var oculto = caja.querySelector('[data-vinculo-id]');
+    if (!oculto) return;
+    var vinculado = oculto.value !== '';
+    var fijado = caja.querySelector('[data-vinculo-fijado]');
+    var busqueda = caja.querySelector('[data-vinculo-busqueda]');
+    var btnBuscar = caja.querySelector('[data-vinculo-accion="buscar"]');
+    var btnQuitar = caja.querySelector('[data-vinculo-accion="quitar"]');
+    if (fijado) fijado.style.display = vinculado ? '' : 'none';
+    if (busqueda) busqueda.style.display = vinculado ? 'none' : '';
+    if (btnBuscar) btnBuscar.style.display = vinculado ? 'none' : '';
+    if (btnQuitar) btnQuitar.style.display = vinculado ? '' : 'none';
+    aplicarCopiaVinculo(
+      vinculado ? (jsonDeAtributo(oculto, 'data-copiar') || {}) : {},
+      jsonDeAtributo(caja, 'data-destinos') || []
+    );
+  }
+  function buscarVinculoCaso(caja) {
+    var entrada = caja.querySelector('[data-vinculo-consulta]');
+    var oculto = caja.querySelector('[data-vinculo-id]');
+    var hint = caja.querySelector('[data-vinculo-hint]');
+    var texto = caja.querySelector('[data-vinculo-texto]');
+    var consulta = entrada ? entrada.value.trim() : '';
+    if (!consulta) { toast('Escribe el código de la ficha o el documento.'); return; }
+
+    fetch('/casos/nuevo/vinculo?' + new URLSearchParams({
+      enfermedad_id: caja.getAttribute('data-enfermedad-id') || '',
+      caso_id: caja.getAttribute('data-caso-id') || '',
+      q: consulta
+    }).toString())
+      .then(function (r) { return r.json(); })
+      .then(function (datos) {
+        if (!datos || !datos.encontrado) {
+          if (hint) { hint.textContent = caja.getAttribute('data-no-encontrada') || 'No se encontró la ficha.'; hint.classList.add('err'); }
+          return;
+        }
+        oculto.value = datos.id;
+        oculto.setAttribute('data-copiar', JSON.stringify(datos.copiar || {}));
+        if (texto) texto.textContent = datos.texto || '';
+        if (hint) { hint.textContent = 'Ficha vinculada.'; hint.classList.remove('err'); }
+        if (entrada) entrada.value = '';
+        pintarVinculoBuscador(caja);
+      })
+      .catch(function () {
+        if (hint) { hint.textContent = 'No se pudo consultar la ficha. Intenta nuevamente.'; hint.classList.add('err'); }
+      });
+  }
+  document.addEventListener('click', function (ev) {
+    var boton = ev.target.closest ? ev.target.closest('[data-vinculo-accion]') : null;
+    if (!boton) return;
+    var caja = boton.closest('[data-vinculo-buscador]');
+    if (!caja) return;
+    ev.preventDefault();
+    if (boton.getAttribute('data-vinculo-accion') === 'quitar') {
+      var oculto = caja.querySelector('[data-vinculo-id]');
+      var hint = caja.querySelector('[data-vinculo-hint]');
+      if (oculto) { oculto.value = ''; oculto.setAttribute('data-copiar', '{}'); }
+      if (hint) hint.classList.remove('err');
+      pintarVinculoBuscador(caja);
+      return;
+    }
+    buscarVinculoCaso(caja);
+  });
+  // Enter dentro del buscador busca, no envía el formulario.
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Enter' || !ev.target.hasAttribute || !ev.target.hasAttribute('data-vinculo-consulta')) return;
+    ev.preventDefault();
+    var caja = ev.target.closest('[data-vinculo-buscador]');
+    if (caja) buscarVinculoCaso(caja);
+  });
+
+  aplicarVinculosCaso();
+  document.addEventListener('change', aplicarVinculosCaso);
+
   // ---------- MULTISELECT: opción "Ninguno"/"No" mutuamente excluyente ----------
   // Mecanismo genérico (cotejo B04X, 2026-08-29 y 2026-09-02, pedido del
   // usuario): si un MULTISELECT trae una opción de valor "NINGUNO" o "NO"

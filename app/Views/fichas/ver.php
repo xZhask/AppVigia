@@ -13,8 +13,12 @@ $estados = [
     'VALIDACION' => ['dot' => 'st-val',    'etiqueta' => 'Validación'],
     'CERRADA'    => ['dot' => 'st-closed', 'etiqueta' => 'Cerrada'],
 ];
-$c = $clasificaciones[$caso['clasificacion']];
+$c = $clasificaciones[$caso['clasificacion']] ?? ['dot' => 'dot-sos', 'etiqueta' => $caso['clasificacion']];
 $es = $estados[$caso['estado']];
+// nucleo_omitidos: 'clasificacion' (cotejo Z21, 2026-09-11) -- las fichas
+// cuyo PDF no trae "Clasificación del caso" tampoco muestran su chip acá; el
+// valor de caso.clasificacion queda en el que la ficha use por defecto.
+$mostrarClasificacionVer = !nucleoOmitido($enfermedadVer ?? [], 'clasificacion');
 $edad = edadDesdeFecha($caso['fecha_nac']);
 
 // Entrada F: si la ficha declaró unidades_edad, la edad capturada con su
@@ -57,7 +61,7 @@ $accionEtiquetas = [
     <div class="page-desc"><?= e($caso['enfermedad_nombre']) ?> · <?= e($caso['establecimiento_nombre']) ?></div>
   </div>
   <div class="spacer"></div>
-  <span class="chip"><span class="dot <?= $c['dot'] ?>"></span> <?= $c['etiqueta'] ?></span>
+  <?php if ($mostrarClasificacionVer): ?><span class="chip"><span class="dot <?= $c['dot'] ?>"></span> <?= $c['etiqueta'] ?></span><?php endif; ?>
   <?php if ($caso['anulado']): ?>
     <span class="state"><span class="dot st-closed"></span> Anulada</span>
   <?php else: ?>
@@ -207,11 +211,25 @@ $accionEtiquetas = [
     </div>
 
     <!-- Cuadro clínico (dinámico) -->
-    <?php $numeroSeccion = 3; foreach ($secciones as $seccion): ?>
+    <?php
+    // Una sección condicionada (seccion_def.depende_de) que no aplica a este
+    // caso no se pinta acá: en Z21 (cotejo 2026-09-11) la mitad de las
+    // secciones son de la otra rama de la ficha, y sin esto la ficha de un
+    // niño nacido expuesto mostraría las secciones de la gestante llenas de
+    // "—". Ninguna otra de las 24 fichas declara secciones condicionadas.
+    $numeroSeccion = 3;
+    foreach ($secciones as $seccion):
+        if (!empty($seccion['depende_de']) && !campoVisiblePorDependencia(
+            ['depende_de' => $seccion['depende_de'], 'valor_activador' => $seccion['valor_activador']],
+            $valoresCampos
+        )) {
+            continue;
+        }
+    ?>
       <div class="card section">
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3><?= e($seccion['nombre']) ?></h3></div>
         <div class="section-body">
-          <?php if ($numeroSeccion === 3): ?>
+          <?php if ($numeroSeccion === 3 && !nucleoOmitido($enfermedadVer ?? [], 'fecha_inicio_sintomas')): ?>
             <div class="fields" style="margin-bottom:16px">
               <div class="field"><label class="fl">Fecha de inicio de síntomas</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_inicio_sintomas'])) ?: '—' ?></div></div>
             </div>
@@ -557,6 +575,49 @@ $accionEtiquetas = [
             </form>
           <?php endif; ?>
         </div>
+      </div>
+    <?php endif; ?>
+
+    <?php
+    // vinculo_caso (cotejo Z21, 2026-09-11): de un lado la ficha de la madre
+    // a la que este caso está enlazado; del otro, las fichas de los niños
+    // nacidos expuestos enlazadas a esta (una por cada producto, si el
+    // embarazo fue múltiple) y el botón para registrar una más. Solo se
+    // listan las fichas que este usuario puede ver (Z21 es ficha privada:
+    // un REGISTRADOR solo ve las suyas).
+    if (!empty($vinculoVer) && ($vinculoVer['madre'] || $vinculoVer['hijos'] || $vinculoVer['puedeRegistrar'])): ?>
+      <div class="card rail-card">
+        <div class="eyebrow" style="margin-bottom:12px">Fichas vinculadas</div>
+        <?php if ($vinculoVer['madre']): ?>
+          <div style="font-size:12.5px;margin-bottom:10px">
+            <div style="color:var(--muted)"><?= e($vinculoVer['config']['titulo_madre'] ?? 'Ficha vinculada') ?></div>
+            <a class="mono" href="/casos/<?= (int) $vinculoVer['madre']['id'] ?>"><?= e($vinculoVer['madre']['codigo']) ?></a>
+            · <?= e(trim($vinculoVer['madre']['apellido_paterno'] . ' ' . $vinculoVer['madre']['nombres'])) ?>
+          </div>
+        <?php endif; ?>
+        <?php if ($vinculoVer['hijos']): ?>
+          <div style="font-size:12.5px;margin-bottom:10px">
+            <div style="color:var(--muted);margin-bottom:4px"><?= e($vinculoVer['config']['titulo_vinculados'] ?? 'Fichas vinculadas') ?></div>
+            <?php foreach ($vinculoVer['hijos'] as $hijoVinculado): ?>
+              <div><a class="mono" href="/casos/<?= (int) $hijoVinculado['id'] ?>"><?= e($hijoVinculado['codigo']) ?></a>
+                · <?= e(trim($hijoVinculado['apellido_paterno'] . ' ' . $hijoVinculado['nombres'])) ?></div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+        <?php
+        // vinculo_caso.encadenar (pedido del usuario, 2026-09-11): cuántas
+        // fichas vinculadas faltan según el campo numérico del propio caso
+        // (Z21: N.º de nacidos vivos). Solo aparece si el campo trae número;
+        // no se inventa un objetivo cuando está vacío.
+        if (!empty($vinculoVer['pendientes'])): ?>
+          <div style="font-size:12.5px;margin-bottom:10px">
+            <div style="color:var(--muted)"><?= e($vinculoVer['config']['encadenar']['titulo_pendientes'] ?? 'Fichas vinculadas por registrar') ?></div>
+            <strong><?= (int) $vinculoVer['pendientes'] ?></strong> de <?= (int) $vinculoVer['esperados'] ?>
+          </div>
+        <?php endif; ?>
+        <?php if ($vinculoVer['puedeRegistrar']): ?>
+          <a class="btn btn-ghost" style="width:100%;text-align:center" href="/casos/nuevo?enfermedad_id=<?= (int) $caso['enfermedad_id'] ?>&amp;vinculo=<?= (int) $caso['id'] ?>"><?= e($vinculoVer['config']['accion_registrar'] ?? 'Registrar ficha vinculada') ?></a>
+        <?php endif; ?>
       </div>
     <?php endif; ?>
 

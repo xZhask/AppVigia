@@ -183,6 +183,19 @@ class Caso extends Model
     }
 
     /**
+     * Ids de los casos que apuntan a este vía caso_vinculado_id -- en Z21,
+     * los niños nacidos expuestos vinculados a la ficha de su madre (uno o
+     * varios si el embarazo fue múltiple).
+     */
+    public static function idsVinculados(int $casoId): array
+    {
+        $consulta = Database::conexion()->prepare('SELECT id FROM caso WHERE caso_vinculado_id = :id ORDER BY id');
+        $consulta->execute(['id' => $casoId]);
+
+        return array_map('intval', array_column($consulta->fetchAll(), 'id'));
+    }
+
+    /**
      * Busca un caso previo de la misma enfermedad y documento dentro de una
      * ventana de ~30 días alrededor de la fecha de notificación, para el
      * aviso de posible duplicado (no bloqueante).

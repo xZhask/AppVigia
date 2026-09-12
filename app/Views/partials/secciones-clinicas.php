@@ -228,11 +228,18 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         'a00_codigo', 'a00_fecha_de_investigacion', 'a00_captacion_del_caso',
     ],
 ];
+// campos_notificacion (cotejo Z21, 2026-09-11): la versión declarativa de
+// $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA -- claves que la ficha declara en
+// el manifiesto para pintarse dentro de la tarjeta fija "1. Notificación"
+// (partials/notificacion-campos-declarados.php), sin partial propio ni
+// entrada nueva en las listas de arriba. Vacío en las 23 fichas restantes.
+$clavesEnNotificacion = jsonDeEnfermedad($enfermedad, 'campos_notificacion');
+
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
     $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA[$enfermedad['cie10'] ?? ''] ?? [],
     true
-);
+) || in_array($clave, $clavesEnNotificacion, true);
 
 $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'B05' => ['Datos de notificación e identificación del caso', 'Datos de filiación y tutor'],
@@ -250,12 +257,32 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'A00' => ['Datos generales'],
 ][$enfermedad['cie10'] ?? ''] ?? [];
 
-if ($SECCIONES_CON_PARTIAL_A_MEDIDA) {
-    $secciones = array_values(array_filter($secciones, function ($s) use ($SECCIONES_CON_PARTIAL_A_MEDIDA, $claveCubiertaPorPartial) {
+if ($SECCIONES_CON_PARTIAL_A_MEDIDA || $clavesEnNotificacion) {
+    $secciones = array_values(array_filter($secciones, function ($s) use ($SECCIONES_CON_PARTIAL_A_MEDIDA, $claveCubiertaPorPartial, $clavesEnNotificacion) {
+        $camposDeLaSeccion = CampoDef::porSeccion((int) $s['id']);
+        // campos_notificacion (cotejo Z21): una sección cuyos campos se
+        // pintan TODOS en la tarjeta "1. Notificación" no genera además su
+        // propia tarjeta -- mismo criterio que las secciones con partial a
+        // medida, pero deducido de las claves declaradas, sin lista de
+        // nombres de sección. Ojo con las secciones sin campos
+        // ("solo_tabla_hija"): "todos cubiertos" sobre una lista vacía sería
+        // true y las borraría, de ahí el && $camposDeLaSeccion.
+        if ($clavesEnNotificacion && $camposDeLaSeccion) {
+            $todosEnNotificacion = true;
+            foreach ($camposDeLaSeccion as $campoDeLaSeccion) {
+                if (!in_array($campoDeLaSeccion['clave'], $clavesEnNotificacion, true)) {
+                    $todosEnNotificacion = false;
+                    break;
+                }
+            }
+            if ($todosEnNotificacion) {
+                return false;
+            }
+        }
         if (!in_array(trim($s['nombre']), $SECCIONES_CON_PARTIAL_A_MEDIDA, true)) {
             return true;
         }
-        foreach (CampoDef::porSeccion((int) $s['id']) as $campo) {
+        foreach ($camposDeLaSeccion as $campo) {
             if (!$claveCubiertaPorPartial($campo['clave'])) {
                 return true; // al menos un campo sin cubrir -> la sección no desaparece
             }
@@ -1278,6 +1305,14 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     </span>
   </div>
   <div class="section-body">
+    <?php
+    // vinculo_caso (cotejo Z21, 2026-09-11): mismo gancho que en el bucle de
+    // más abajo, por si la sección que nombra el manifiesto quedó primera
+    // tras el filtrado de secciones.
+    if (!empty($vinculoCasoVista) && !empty($secciones) && trim($secciones[0]['nombre']) === trim($vinculoCasoVista['config']['seccion'])) {
+        require __DIR__ . '/vinculo-caso.php';
+    }
+    ?>
     <?php // Este campo fijo siempre se ancla a $secciones[0] -- para fichas
     // con una sección propia (no clínica) ANTES de "Cuadro clínico" en el
     // manifiesto (A37.0: "Datos del paciente (adicionales)" queda de
@@ -1356,7 +1391,11 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // FECHA suelto (a00_fecha_de_investigacion) que extraerFechaInicioSintomas()
     // agarraría por error como fallback -- por eso A00 también se suma a
     // $sinFechaInicioSintomasObligatoria en CasosController.php. ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55', 'B04X', 'A00'], true)): ?>
+    <?php // nucleo_omitidos: 'fecha_inicio_sintomas' (cotejo Z21,
+    // 2026-09-11) es la versión declarativa de esta lista de CIE-10 -- las
+    // 14 fichas que ya estaban siguen igual. CasosController hace lo propio
+    // del lado servidor ($sinFechaInicioSintomasObligatoria). ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55', 'B04X', 'A00'], true) && !nucleoOmitido($enfermedad, 'fecha_inicio_sintomas')): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
@@ -1440,6 +1479,15 @@ foreach (array_slice($secciones, 1) as $seccion):
       <h3><?= e($seccion['nombre']) ?></h3>
     </div>
     <div class="section-body">
+      <?php
+      // vinculo_caso (cotejo Z21, 2026-09-11): el selector de la ficha
+      // vinculada se pinta al inicio de la sección que nombra el manifiesto,
+      // así hereda su visibilidad (esa sección es condicional). Vacío en las
+      // fichas que no declaran vinculo_caso.
+      if (!empty($vinculoCasoVista) && trim($seccion['nombre']) === trim($vinculoCasoVista['config']['seccion'])) {
+          require __DIR__ . '/vinculo-caso.php';
+      }
+      ?>
       <?php if (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Antecedentes patológicos y obstétricos'): ?>
         <?php require __DIR__ . '/antecedentes-patologicos-obstetricos-o95.php'; ?>
       <?php elseif (($enfermedad['cie10'] ?? '') === 'O95' && trim($seccion['nombre']) === 'Causas de defunción (Anexo 1)'): ?>

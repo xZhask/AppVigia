@@ -42,6 +42,28 @@ class CampoDef extends Model
     }
 
     /**
+     * Un campo_def de una enfermedad por su clave (estable entre recargas, a
+     * diferencia del id) -- lo usan las declaraciones del manifiesto que
+     * apuntan a un campo por clave: campos_notificacion, vinculo_caso,
+     * nucleo_condicional (cotejo Z21, 2026-09-11). null si no existe.
+     */
+    public static function porClave(int $enfermedadId, string $clave): ?array
+    {
+        $consulta = Database::conexion()->prepare(
+            'SELECT cd.*
+               FROM campo_def cd
+               JOIN seccion_def sd ON sd.id = cd.seccion_id
+              WHERE sd.enfermedad_id = :enf AND cd.clave = :clave
+              ORDER BY sd.orden, cd.orden, cd.id
+              LIMIT 1'
+        );
+        $consulta->execute(['enf' => $enfermedadId, 'clave' => $clave]);
+        $fila = $consulta->fetch();
+
+        return $fila ?: null;
+    }
+
+    /**
      * Roles de sujeto (distintos de CASO_INDICE) que ya tienen al menos una
      * sección propia en el manifiesto de esta ficha -- usado para decidir si
      * el bloque de identidad/residencia de un rol se ancla dentro de

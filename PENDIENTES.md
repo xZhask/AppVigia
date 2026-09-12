@@ -6070,3 +6070,225 @@ Un `SHOW CREATE TABLE` textual sí mostraba diferencias, pero son de impresión:
 MySQL escribe `CHARACTER SET utf8mb4` explícito en las columnas cuando el
 charset de tabla no coincide con el de la base. Los metadatos reales son
 idénticos y todo el esquema es `utf8mb4` / `utf8mb4_unicode_ci`.
+
+---
+
+# Cotejo de Gestante con VIH y niño nacido expuesto (`Z21`) — pág. 16 del PDF (2026-09-11)
+
+La hoja del PDF tiene dos secciones (I Gestante, II Niño). Cada una trae su
+propio EE.SS., su propia fecha de notificación y su propio seguimiento (la
+gestante cierra tras el parto; el niño, a los 18 meses). **Decisión del
+usuario ("opción A"): cada una es su propio caso, y el del niño se enlaza al
+de su madre.** Así un embarazo múltiple genera varias fichas de niño colgando
+de la misma gestante, que es lo que el papel no puede expresar.
+
+Z21 pasó de **2 secciones / 42 campos** a **6 secciones / 44 campos**.
+
+## Mecanismos nuevos del motor (declarativos, sin `if ($cie10)` en código compartido)
+
+| Declaración | Qué hace | Dónde vive |
+|---|---|---|
+| `campos_notificacion` | Claves que se pintan dentro de la tarjeta fija "1. Notificación" | `enfermedad.campos_notificacion`, `partials/notificacion-campos-declarados.php` |
+| `vinculo_caso` | Enlaza un caso con otro de la misma ficha y copia datos suyos | `enfermedad.vinculo_caso`, `caso.caso_vinculado_id`, `partials/vinculo-caso.php` |
+| `nucleo_condicional` | Bloques del núcleo (`etnia`, `residencia`) que solo aplican con cierto valor | `enfermedad.nucleo_condicional`, `envolturaNucleoCondicional()` |
+| `nucleo_omitidos` con bloques | `captacion`, `clasificacion`, `investigador`, `fecha_inicio_sintomas` | `cargar_fichas.php` (NUCLEO_OMITIBLES) |
+| `depende_de` por clave | Referenciar al campo padre por clave; etiqueta repetida = error | `cargar_fichas.php`, `verificar_fichas.php` |
+| `opciones_por_fila` | MATRIZ con opciones cerradas distintas por fila | `campos/matriz.php`, `validarCamposDinamicos()` |
+| `"obligatorio": true` | El cargador por fin lo respeta (las 89 que existían son `false`) | `insertarCampo()` |
+
+`campos_notificacion` es el reemplazo declarativo de los 14
+`notificacion-fechas-<ficha>.php`: las fichas que ya los usan siguen igual,
+pero la próxima no necesita partial propio ni entrar en ninguna lista de
+CIE-10.
+
+## Lo que el PDF pide y dónde quedó
+
+- **Ítems 1-3 y 6-8 (Datos del EESS y sus fechas):** DISA/nombre/institución
+  salen del establecimiento elegido (mismo criterio que A37.0/A97/B57/A95/A00);
+  "Tipo de EESS" y "Fecha de reporte" son campo_def en la tarjeta de
+  notificación, junto con "Código".
+- **Ítems 4 y 9 (Datos de la gestante / del niño):** el núcleo de `persona` de
+  cada caso. Etnia y Residencia solo en la rama de la gestante.
+- **Ítem 9 (Código y DNI de la madre):** campos propios, que se copian solos
+  del caso vinculado cuando la madre tiene ficha; si no la tiene (notificada en
+  otra IPRESS) se escriben a mano, como en el papel.
+- **Ítems 4, 5, 10 y 11:** secciones condicionadas por "Tipo de registro".
+- **Agregados que faltaban:** DIRESA del EE.SS. del parto, y "Referido a"
+  (el `Referido:_____` del ítem 11).
+- **Quitado por no estar en el PDF:** captación, clasificación del caso,
+  investigador, fecha de inicio de síntomas, celular, nacionalidad, domicilio,
+  tutor y el bloque de gestante del núcleo.
+
+## Decisiones donde el PDF le ganó a la jerarquía propuesta
+
+- "Culminación del embarazo" **no** es opción única: son dos contadores más la
+  casilla Aborto, y pueden convivir (gemelar con un vivo y un óbito).
+- "Momento del diagnóstico" queda en dos niveles (Previo/Durante → subopción),
+  no en una lista plana de 7.
+- "ARV recibido" del niño es opción única (AZT y AZT+NVP se excluyen).
+- Los extras sin respaldo en la pág. 16 (fecha/motivo de abandono de ARV,
+  fecha de última carga viral, "Otro" en motivo de indeterminado, alerta de
+  PCR positiva, datos de cesárea, "Desconocido" en carga viral, especificar
+  otro ARV) **no se agregaron**, por indicación del usuario.
+
+## Verificación de cierre
+
+- Tres verificadores en verde: 24/24 sin diferencias, 324 claves sin
+  faltantes, **Z21 44/44 sin huérfanos**. Los 3 huérfanos totales del sistema
+  siguen siendo los preexistentes (A80, B26, B55).
+- **Vuelta completa con el controlador real:** crear la ficha de la gestante →
+  crear la del niño vinculada → intentar sacar a la madre de su rama (rechazado
+  con mensaje) → editar y desvincular → ver/editar de ambas → borrar. Cero
+  residuos en `caso`, `caso_valor` y `persona`.
+- **Prueba negativa** (POST forjado): en la ficha del niño no persistieron
+  etnia, localidad, distrito, captación, investigador, fecha de inicio de
+  síntomas ni la clasificación `CONFIRMADO`; los campos de la rama de la
+  gestante tampoco; el resultado inventado de la matriz se descartó (la fecha
+  de esa fila sí se conservó); y el código/DNI de la madre forjados fueron
+  pisados por los del caso vinculado.
+- **Sin cambios fuera de Z21:** foto del HTML de las 24 fichas y de ver/editar
+  de los casos existentes antes y después; las únicas diferencias son la hora
+  del reloj de O95 y el cache-buster `?v=` de `ficha.js`.
+
+## Bug real cometido y corregido en el camino
+
+`persona.distrito_id` tiene clave foránea: cuando la rama no pide residencia,
+guardar `''` viola la FK (error 1452) y el controlador solo responde "error
+interno". Ahora guarda `NULL`. Del mismo modo, el `<select>` de Distrito deja
+de llevar `required` cuando la residencia es condicional — un `required` en un
+bloque oculto bloquea el submit sin mostrar ningún error.
+
+## Lo que queda abierto
+
+1. **La planilla de la pág. 15** ("Registro de Búsqueda Activa", discrepancia L
+   de este documento) sigue sin modelar. Ahora encajaría mejor: su
+   "Clasificación de caso" (1 Gestante / 2 Aborto / 3 Mortinato / 4 Niño
+   expuesto) es casi el mismo discriminador que "Tipo de registro", que hoy
+   solo tiene 2 de esos 4 valores. Falta decidir si Aborto y Mortinato entran
+   como fichas mínimas enlazadas.
+2. **`caso.clasificacion` de Z21 queda en `SOSPECHOSO`** por defecto: la
+   columna es NOT NULL y el PDF no clasifica el caso. No se muestra en
+   pantalla, pero los reportes que cuentan por clasificación lo verán así.
+3. ~~**Sexo de la gestante** sigue visible en el núcleo aunque el ítem 4 del
+   PDF no lo pida~~ — **RESUELTO el 2026-09-12** (lo pidió el usuario), y sin
+   copiar el `hidden` hardcodeado de O95: ver "Sexo por rama" más abajo.
+4. El candidato a vincular se busca con una consulta por `caso_valor` y luego
+   se filtra caso por caso con `puedeVerCaso()`: correcto, pero es O(n) por
+   ficha de gestante registrada. Si Z21 crece a miles de casos, conviene
+   paginar o buscar por documento.
+
+# Z21, segunda vuelta: blindaje del vínculo madre-niño (2026-09-11)
+
+**Riesgo que reportó el usuario:** "puede ocurrir algún inconveniente, como el
+registro de niños con otra madre". Era real: el `<select>` de la ficha del niño
+listaba **todas** las gestantes visibles, y aunque se entrara por el botón
+"Registrar niño nacido expuesto" de la madre, el desplegable quedaba editable —
+un clic en la fila de al lado y el niño colgaba de otra madre.
+
+El usuario planteó anidar la Sección II dentro del formulario de la gestante
+(un interruptor que revelara los campos del niño y guardara los dos registros
+de un solo submit). Se evaluó y **se descartó por ahora**, con tres razones:
+un submit crea hoy una `persona` y un `caso` (habría que duplicar el bloque de
+identidad y correr dos veces la secuencia dentro de la transacción: el cambio
+de mayor riesgo de regresión sobre código que comparten las 24 fichas); un
+bloque anidado cubre un solo niño, no el embarazo múltiple; y sobre todo, la
+ficha de la gestante se llena durante el embarazo, cuando todavía no hay datos
+del niño. Se eligió, con acuerdo del usuario, **blindar + encadenar**.
+
+## Declaraciones nuevas de `vinculo_caso`
+
+| Declaración | Qué hace |
+|---|---|
+| `fijar_por_procedencia: true` | Quita la lista de candidatos. El vínculo llega fijado desde la ficha de la madre, o se identifica por código/documento **exacto**. El HTML ya no contiene ninguna gestante. |
+| `buscar` | Textos del buscador (`etiqueta`, `placeholder`, `ayuda`, `accion`, `no_encontrada`, `no_disponible`, `quitar`). Solo válido con `fijar_por_procedencia`. |
+| `encadenar` | Campo NUMERO que dice cuántas fichas vinculadas se esperan (Z21: `z21_n_de_nacidos_vivos`) + textos. Al guardar la gestante se abre su propia ficha con el aviso de cuántos niños faltan. |
+
+Piezas: `GET /casos/nuevo/vinculo` (`CasosController::buscarVinculo()`,
+coincidencia exacta por código de ficha o documento, nunca parcial),
+`coincideVinculoBuscado()`, `fichasVinculadasEsperadas()`, el modo de
+procedencia de `partials/vinculo-caso.php` y su JS propio en `ficha.js`
+(`pintarVinculoBuscador()` / `buscarVinculoCaso()`).
+
+## Verificación
+
+- **Encadenado:** gestante con `N.º de nacidos vivos = 2` → el flash dice
+  "falta registrar 2 de 2" y lleva a la ficha de la madre; tras crear un niño,
+  su tarjeta dice "1 de 2".
+- **Vínculo fijado:** con `?vinculo=177` el formulario trae
+  `<input type="hidden" value="177">` y **cero** `<select name="caso_vinculado_id">`.
+- **Sin fuga de datos:** el formulario sin vínculo no contiene ningún nombre,
+  DNI ni código de gestante (antes venían todos en el HTML).
+- **Buscador:** `F-00177`, `177` y el DNI encuentran; basura y un DNI truncado
+  no; y excluyendo el propio caso tampoco se encuentra a sí mismo.
+- **Tres pruebas negativas server-side:** vincular a un caso de otra ficha
+  (A95), a otro niño, y una gestante con vínculo forjado. Las dos primeras se
+  rechazan con mensaje y no crean nada; la tercera se guarda con
+  `caso_vinculado_id = NULL`. El código y el DNI de la madre siguen copiándose
+  del servidor, pisando lo forjado en el POST.
+- **Sin cambios fuera de Z21:** foto del HTML de las 24 fichas + ver/editar
+  antes y después; descontando el reloj de O95 y el cache-buster de `ficha.js`,
+  **el único archivo que cambia es `nueva_Z21.html`**.
+
+## Abierto de esta vuelta
+
+- El botón "Quitar vínculo" sigue disponible cuando el vínculo vino fijado
+  desde la ficha de la madre (por si se entró por error). Si se prefiere que
+  sea inamovible en ese caso, es un cambio de una línea en el partial.
+- La sección anidada con doble guardado queda descartada, no imposible: si más
+  adelante se quiere, el punto de ataque es el bloque de identidad de
+  `crear()`, no el mecanismo de vínculo.
+
+# Z21, tercera vuelta: Sexo por rama (2026-09-12)
+
+**Lo que pidió el usuario:** "en datos de paciente gestante aparece el campo de
+sexo, creo que no es necesario". Cierra el pendiente 3 del cotejo. Ojo al
+matiz: el ítem 9 del PDF **sí** pide el sexo del niño nacido expuesto, así que
+no se podía quitar de la ficha entera — tenía que desaparecer solo en la rama
+de la gestante.
+
+**Cómo NO se hizo:** O95 resuelve lo mismo con `$esO95Index`/`$esO95Edit` +
+`<input type="hidden" name="sexo" value="F">`. Eso es hardcodeo por CIE-10 y,
+peor, deja dos controles con el mismo `name` en la página (la clase de bug de
+B26). Además en Z21 la rama se elige en el navegador: un `hidden` fijo sería
+incorrecto para el niño.
+
+**Cómo se hizo:** `nucleo_condicional` (que ya existía para Etnia y Residencia)
+admite ahora el bloque `sexo` y una clave nueva **`valor_fijo`**, que dice qué
+guardar cuando la rama no pregunta ese bloque:
+
+```json
+{ "clave": "z21_tipo_de_registro",
+  "valores": ["NINO_NACIDO_EXPUESTO_AL_VIH"],
+  "bloques": ["sexo"],
+  "valor_fijo": { "sexo": "F" } }
+```
+
+La vista envuelve el campo en `.dep-wrap` como cualquier `depende_de`, y el
+servidor (`sanearCamposNucleo()`) fuerza el valor fijo **ignorando el POST**.
+Se guarda `F` y no vacío para que los reportes por sexo sigan cuadrando.
+`NUCLEO_VALOR_FIJO_VALIDO` acota qué bloques admiten valor fijo y con qué
+valores (hoy solo `sexo`: F o M).
+
+## Verificación
+
+- Gestante con `sexo=M` **forjado en el POST** → se guarda `F`.
+- Niño con `sexo=M` → se guarda `M` (su rama sí lo pregunta).
+- Al editar: en la ficha de la gestante el `.dep-wrap` del Sexo está `hidden`;
+  en la del niño, visible. Mismo `campo_def` disparador en ambas.
+- **Cero cambios fuera de Z21:** foto del HTML de las 24 fichas + ver/editar
+  antes y después; descontando ids, reloj y cache-buster, el único archivo que
+  difiere es `nueva_Z21.html` (4 líneas: apertura y cierre del wrap).
+
+## Dos trampas de PHP que costaron tres iteraciones
+
+Al insertar una envoltura en marcado compartido, el HTML de las otras 23 fichas
+debe quedar idéntico byte a byte, y muerden dos cosas:
+
+1. **PHP se come el salto de línea que sigue a una etiqueta de cierre.** Poner
+   el cierre al final de la línea del `</div>` pegaba dos líneas del HTML en
+   las 24 fichas. Va pegado a la etiqueta PHP siguiente, donde ese salto ya se
+   consumía antes.
+2. **Una etiqueta de cierre escrita dentro de un comentario `//` cierra el
+   bloque igual.** Un comentario mío que mencionaba `?>` terminó impreso como
+   texto visible en el formulario de las 24 fichas. Solo se ve con la foto del
+   HTML y un diff que normalice ids y cache-buster.

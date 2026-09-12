@@ -8664,48 +8664,148 @@
       "enfermedad": "Gestante con VIH y niño expuesto",
       "lote": 5,
       "pdf_paginas": "16",
-      "multi_sujeto": true,
-      "roles_sujeto": [
-        "MADRE",
-        "NINO_EXPUESTO"
-      ],
+      "_nota_cotejo": "Cotejo 2026-09-11 contra la pág. 16 del PDF (FICHA DE INVESTIGACIÓN EPIDEMIOLÓGICA DE CASO DE LA GESTANTE CON VIH Y EL NIÑO NACIDO EXPUESTO AL VIH). El papel es una sola hoja con dos secciones (I Gestante, II Niño), pero cada una tiene su propio EE.SS., su propia fecha de notificación y su propio seguimiento (la gestante cierra tras el parto; el niño, a los 18 meses). Por decisión del usuario se modela como DOS registros: cada uno es su propio caso, y el del niño se enlaza al de su madre por caso.caso_vinculado_id (ver vinculo_caso). Así un embarazo múltiple genera varias fichas de niño colgando de la misma gestante, que es lo que el papel no puede expresar.",
+      "_nota_sensible": "Antes de la recarga (RECARGA_FICHAS.md Fase 3), el 100% de los campos de esta ficha (45/45) estaban marcados campo_def.sensible=1 en la BD -- coherente con que toda la ficha trata de estado VIH de gestante y niño. La v2.1 no había trasladado esa marca al manifiesto (hallazgo de CIERRE_RECARGA_Y_FASE5.md Parte 0); se restaura aquí en todos los campos.",
       "tablas_hijas": {
         "caso_contacto": false,
         "caso_muestra": false,
         "caso_viaje": false,
         "caso_vacuna": false
       },
-      "_nota_sensible": "Antes de la recarga (RECARGA_FICHAS.md Fase 3), el 100% de los campos de esta ficha (45/45) estaban marcados campo_def.sensible=1 en la BD -- coherente con que toda la ficha trata de estado VIH de gestante y niño. La v2.1 no había trasladado esa marca al manifiesto (hallazgo de CIERRE_RECARGA_Y_FASE5.md Parte 0); se restaura aquí en todos los campos.",
+      "_nota_nucleo": "Los ítems 1-3 y 6-8 del PDF (Datos del EESS y sus dos fechas) son los mismos datos para las dos ramas: DISA/DIRESA, nombre e institución del EE.SS. salen del establecimiento elegido (red_salud.diresa/establecimiento.institucion, mismo criterio que A37.0/A97/B57/A95/A00) y la fecha de notificación es el núcleo fecha_notif; solo 'Tipo de EESS' y la fecha de reporte se capturan como campo_def. Los ítems 4 y 9 (Datos de la gestante / del niño: DNI, apellidos y nombres, fecha de nacimiento, sexo) son el núcleo de persona de cada caso. El PDF no trae captación, clasificación del caso, investigador ni fecha de inicio de síntomas: los cuatro se omiten.",
       "nucleo_omitidos": [
+        "celular",
+        "nacionalidad",
+        "direccion",
         "referencia_localizar",
         "pueblo_etnico",
-        "ocupacion"
+        "ocupacion",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "captacion",
+        "clasificacion",
+        "investigador",
+        "fecha_inicio_sintomas"
       ],
+      "nucleo_condicional": [
+        {
+          "_nota": "Etnia y Residencia habitual son ítems del bloque 4 (Datos de la gestante). El bloque 9 (Datos del niño) no los pide, así que en la rama del niño no se muestran ni se guardan.",
+          "clave": "z21_tipo_de_registro",
+          "valores": ["GESTANTE_CON_VIH"],
+          "bloques": ["etnia", "residencia"]
+        },
+        {
+          "_nota": "Sexo (pedido del usuario, 2026-09-12): el ítem 4 del PDF no lo pregunta -- la ficha es de una gestante --, pero el ítem 9 sí lo pide para el niño nacido expuesto. Se muestra solo en la rama del niño; en la de la gestante se guarda F, no vacío, para que los reportes por sexo sigan cuadrando.",
+          "clave": "z21_tipo_de_registro",
+          "valores": ["NINO_NACIDO_EXPUESTO_AL_VIH"],
+          "bloques": ["sexo"],
+          "valor_fijo": { "sexo": "F" }
+        }
+      ],
+      "campos_notificacion": [
+        "z21_tipo_de_registro",
+        "z21_tipo_de_ee_ss",
+        "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide",
+        "z21_codigo"
+      ],
+      "vinculo_caso": {
+        "_nota": "Ítem 9 del PDF: 'Código de la madre' y 'DNI de la madre'. Con la ficha de la madre enlazada, los dos se copian de ella en el servidor; sin enlace (madre notificada en otra IPRESS) se escriben a mano, como en el papel.",
+        "seccion": "Datos de la madre",
+        "etiqueta": "Ficha de la madre (gestante con VIH)",
+        "opcion_sin_vinculo": "Sin vincular (la madre no tiene ficha en el sistema)",
+        "ayuda": "Al vincularla, el código y el DNI de la madre se toman de su ficha.",
+        "titulo_madre": "Ficha de la madre",
+        "titulo_vinculados": "Niños nacidos expuestos vinculados",
+        "accion_registrar": "Registrar niño nacido expuesto",
+        "_nota_fijar": "Pedido del usuario (2026-09-11): el desplegable con TODAS las gestantes permitía enlazar al niño con la madre equivocada de un clic. Con 'fijar_por_procedencia' el vínculo no se elige de una lista: o viene fijado de la ficha de la madre (botón 'Registrar niño nacido expuesto'), o se identifica a la madre por código de ficha / DNI exacto en 'buscar'.",
+        "fijar_por_procedencia": true,
+        "buscar": {
+          "etiqueta": "Identificar a la madre",
+          "placeholder": "Código de ficha (F-00123) o DNI",
+          "ayuda": "Escribe el código de la ficha de la gestante o su DNI. Si no tiene ficha en el sistema, deja esto vacío y llena a mano el código y el DNI de la madre.",
+          "accion": "Buscar",
+          "no_encontrada": "No se encontró una ficha de gestante con VIH con ese código o DNI entre las que puedes ver.",
+          "no_disponible": "La ficha de la madre ya no está disponible para vincular. Vuelve a identificarla por código de ficha o DNI.",
+          "quitar": "Quitar vínculo"
+        },
+        "_nota_encadenar": "Flujo que pidió el usuario: '¿Hubo nacido vivo? No -> cierre; Sí -> crear niño'. Al guardar la ficha de una gestante con N.º de nacidos vivos > 0, se abre su propia ficha con el aviso de cuántos niños faltan por registrar; el botón de la tarjeta 'Fichas vinculadas' los crea uno por uno con la madre ya fijada (embarazo múltiple).",
+        "encadenar": {
+          "clave": "z21_n_de_nacidos_vivos",
+          "titulo_pendientes": "Niños nacidos expuestos por registrar",
+          "mensaje": "Ficha de la gestante registrada. Según el N.º de nacidos vivos, falta registrar {faltan} de {total}."
+        },
+        "activador": {
+          "clave": "z21_tipo_de_registro",
+          "valor": "NINO_NACIDO_EXPUESTO_AL_VIH"
+        },
+        "candidatos": {
+          "clave": "z21_tipo_de_registro",
+          "valor": "GESTANTE_CON_VIH"
+        },
+        "copiar": {
+          "z21_codigo_de_la_madre": "campo:z21_codigo",
+          "z21_dni_de_la_madre": "persona:num_doc"
+        }
+      },
       "secciones": [
         {
-          "nombre": "Sección I — Gestante con VIH",
+          "nombre": "Datos de la ficha",
           "orden": 1,
-          "rol_sujeto": "MADRE",
+          "_nota_seccion": "Ítems 1-3 (y sus gemelos 6-8 de la Sección II). Los 4 campos se pintan dentro de la tarjeta fija '1. Notificación' vía campos_notificacion, no en una tarjeta propia.",
           "campos": [
             {
-              "clave": "z21_codigo",
-              "etiqueta": "Código",
-              "tipo": "TEXTO",
+              "clave": "z21_tipo_de_registro",
+              "etiqueta": "Tipo de registro",
+              "tipo": "SELECT",
               "orden": 1,
+              "obligatorio": true,
+              "opciones": [
+                "Gestante con VIH",
+                "Niño nacido expuesto al VIH"
+              ],
+              "sensible": true
+            },
+            {
+              "clave": "z21_tipo_de_ee_ss",
+              "etiqueta": "Tipo de EESS",
+              "tipo": "SELECT",
+              "orden": 2,
+              "opciones": [
+                "Hospital",
+                "Centro de Salud",
+                "Puesto de Salud",
+                "Otro"
+              ],
               "sensible": true
             },
             {
               "clave": "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide",
               "etiqueta": "Fecha de reporte de la ficha de investigación epidemiológica",
               "tipo": "FECHA",
-              "orden": 2,
+              "orden": 3,
               "sensible": true
             },
+            {
+              "clave": "z21_codigo",
+              "etiqueta": "Código",
+              "tipo": "TEXTO",
+              "orden": 4,
+              "sensible": true
+            }
+          ]
+        },
+        {
+          "nombre": "Momento de diagnóstico de infección por VIH",
+          "orden": 2,
+          "depende_de": "z21_tipo_de_registro",
+          "valor_activador": "GESTANTE_CON_VIH",
+          "campos": [
             {
               "clave": "z21_momento_de_diagnostico_de_infeccion_por_vih",
               "etiqueta": "Momento de diagnóstico de infección por VIH",
               "tipo": "SELECT",
-              "orden": 3,
+              "orden": 1,
               "opciones": [
                 "Previo a la gestación actual",
                 "Durante la actual gestación"
@@ -8716,14 +8816,18 @@
               "clave": "z21_ano_de_diagnostico",
               "etiqueta": "Año de diagnóstico",
               "tipo": "NUMERO",
-              "orden": 4,
+              "orden": 2,
+              "depende_de": "z21_momento_de_diagnostico_de_infeccion_por_vih",
+              "valor_activador": "PREVIO",
               "sensible": true
             },
             {
               "clave": "z21_momento_durante_la_gestacion",
               "etiqueta": "Momento durante la gestación",
               "tipo": "SELECT",
-              "orden": 5,
+              "orden": 3,
+              "depende_de": "z21_momento_de_diagnostico_de_infeccion_por_vih",
+              "valor_activador": "DURANTE",
               "opciones": [
                 "Atención prenatal (APN)",
                 "Trabajo de parto",
@@ -8737,105 +8841,130 @@
               "clave": "z21_prueba_de_tamizaje_n_1",
               "etiqueta": "Prueba de tamizaje N.° 1",
               "tipo": "FECHA",
-              "orden": 6,
+              "orden": 4,
+              "depende_de": "z21_momento_de_diagnostico_de_infeccion_por_vih",
+              "valor_activador": "DURANTE",
               "sensible": true
             },
             {
               "clave": "z21_prueba_de_tamizaje_n_2",
               "etiqueta": "Prueba de tamizaje N.° 2",
               "tipo": "FECHA",
-              "orden": 7,
+              "orden": 5,
+              "depende_de": "z21_momento_de_diagnostico_de_infeccion_por_vih",
+              "valor_activador": "DURANTE",
               "sensible": true
             },
             {
               "clave": "z21_prueba_confirmatoria",
               "etiqueta": "Prueba confirmatoria",
               "tipo": "FECHA",
-              "orden": 8,
+              "orden": 6,
+              "depende_de": "z21_momento_de_diagnostico_de_infeccion_por_vih",
+              "valor_activador": "DURANTE",
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Datos de la gestación",
+          "orden": 3,
+          "depende_de": "z21_tipo_de_registro",
+          "valor_activador": "GESTANTE_CON_VIH",
+          "_nota_culminacion": "El papel NO pide 'Culminación del embarazo' como opción única: son dos contadores (N.° de nacidos vivos, N.° de óbitos fetales) más la casilla Aborto, y pueden convivir (un gemelar con un nacido vivo y un óbito).",
+          "campos": [
             {
               "clave": "z21_fur",
               "etiqueta": "FUR",
               "tipo": "FECHA",
-              "orden": 9,
+              "orden": 1,
               "sensible": true
             },
             {
               "clave": "z21_recibio_apn",
               "etiqueta": "¿Recibió APN?",
-              "tipo": "BOOLEANO",
-              "orden": 10,
+              "tipo": "SI_NO",
+              "orden": 2,
               "sensible": true
             },
             {
               "clave": "z21_embarazo_multiple",
               "etiqueta": "¿Embarazo múltiple?",
-              "tipo": "BOOLEANO",
-              "orden": 11,
+              "tipo": "SI_NO",
+              "orden": 3,
               "sensible": true
             },
             {
               "clave": "z21_recibio_arv",
               "etiqueta": "¿Recibió ARV?",
-              "tipo": "BOOLEANO",
-              "orden": 12,
+              "tipo": "SI_NO",
+              "orden": 4,
               "sensible": true
             },
             {
               "clave": "z21_fecha_de_inicio_de_arv",
               "etiqueta": "Fecha de inicio de ARV",
               "tipo": "FECHA",
-              "orden": 13,
+              "orden": 5,
+              "depende_de": "z21_recibio_arv",
+              "valor_activador": "SI",
               "sensible": true
             },
             {
               "clave": "z21_abandono_terapia_arv",
               "etiqueta": "¿Abandonó terapia ARV?",
-              "tipo": "BOOLEANO",
-              "orden": 14,
+              "tipo": "SI_NO",
+              "orden": 6,
               "sensible": true
             },
             {
               "clave": "z21_recibe_terapia_triple_targa",
               "etiqueta": "¿Recibe terapia triple / TARGA?",
-              "tipo": "BOOLEANO",
-              "orden": 15,
+              "tipo": "SI_NO",
+              "orden": 7,
               "sensible": true
             },
             {
               "clave": "z21_n_de_nacidos_vivos",
               "etiqueta": "N.° de nacidos vivos",
               "tipo": "NUMERO",
-              "orden": 16,
+              "orden": 8,
               "sensible": true
             },
             {
               "clave": "z21_n_de_obitos_fetales",
               "etiqueta": "N.° de óbitos fetales",
               "tipo": "NUMERO",
-              "orden": 17,
+              "orden": 9,
               "sensible": true
             },
             {
               "clave": "z21_aborto",
               "etiqueta": "Aborto",
               "tipo": "BOOLEANO",
-              "orden": 18,
+              "orden": 10,
               "sensible": true
             },
             {
               "clave": "z21_parto_por_cesarea",
               "etiqueta": "¿Parto por cesárea?",
-              "tipo": "BOOLEANO",
-              "orden": 19,
+              "tipo": "SI_NO",
+              "orden": 11,
+              "sensible": true
+            },
+            {
+              "clave": "z21_diresa_del_ee_ss_del_parto",
+              "etiqueta": "DIRESA del EE.SS. del parto",
+              "tipo": "TEXTO",
+              "orden": 12,
+              "_corregido": "faltaba: el PDF pide DIRESA además de Institución y Nombre del EE.SS. del parto, y el parto puede ocurrir fuera del padrón propio (todo el padrón es FFAA/FFPP).",
               "sensible": true
             },
             {
               "clave": "z21_institucion_del_ee_ss_del_parto",
               "etiqueta": "Institución del EE.SS. del parto",
               "tipo": "SELECT",
-              "orden": 20,
+              "orden": 13,
               "opciones": [
                 "MINSA",
                 "EsSalud",
@@ -8843,105 +8972,104 @@
                 "Privado",
                 "Otro"
               ],
-              "_corregido": "faltaba en v1.0 (solo tenía el nombre del EE.SS. como texto)",
               "sensible": true
             },
             {
               "clave": "z21_nombre_del_ee_ss_del_parto",
               "etiqueta": "Nombre del EE.SS. del parto",
               "tipo": "TEXTO",
-              "orden": 21,
+              "orden": 14,
               "sensible": true
             },
             {
               "clave": "z21_fecha_del_parto",
               "etiqueta": "Fecha del parto",
               "tipo": "FECHA",
-              "orden": 22,
+              "orden": 15,
               "sensible": true
             },
             {
               "clave": "z21_carga_viral_indetectable",
               "etiqueta": "¿Carga viral indetectable?",
-              "tipo": "BOOLEANO",
-              "orden": 23,
+              "tipo": "SI_NO",
+              "orden": 16,
               "sensible": true
             },
             {
               "clave": "z21_abandona_seguimiento",
               "etiqueta": "¿Abandona seguimiento?",
-              "tipo": "BOOLEANO",
-              "orden": 24,
+              "tipo": "SI_NO",
+              "orden": 17,
               "sensible": true
             },
             {
               "clave": "z21_la_gestante_fallece",
               "etiqueta": "¿La gestante fallece?",
-              "tipo": "BOOLEANO",
-              "orden": 25,
+              "tipo": "SI_NO",
+              "orden": 18,
               "sensible": true
             }
           ]
         },
         {
-          "nombre": "Sección II — Niño nacido expuesto al VIH",
-          "orden": 2,
-          "rol_sujeto": "NINO_EXPUESTO",
+          "nombre": "Datos de la madre",
+          "orden": 4,
+          "depende_de": "z21_tipo_de_registro",
+          "valor_activador": "NINO_NACIDO_EXPUESTO_AL_VIH",
+          "_nota_seccion": "Ítem 9 del PDF, la parte que identifica a la madre. El resto del ítem 9 (código, DNI, sexo, apellidos y nombres y fecha de nacimiento del niño) es el núcleo de persona de este caso más 'Código' de la tarjeta de notificación.",
           "campos": [
-            {
-              "clave": "z21_codigo_del_nino",
-              "etiqueta": "Código del niño",
-              "tipo": "TEXTO",
-              "orden": 1,
-              "sensible": true
-            },
-            {
-              "clave": "z21_dni_del_nino",
-              "etiqueta": "DNI del niño",
-              "tipo": "TEXTO",
-              "orden": 2,
-              "sensible": true
-            },
             {
               "clave": "z21_codigo_de_la_madre",
               "etiqueta": "Código de la madre",
               "tipo": "TEXTO",
-              "orden": 3,
+              "orden": 1,
               "sensible": true
             },
             {
               "clave": "z21_dni_de_la_madre",
               "etiqueta": "DNI de la madre",
               "tipo": "TEXTO",
-              "orden": 4,
+              "orden": 2,
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Datos de la exposición al VIH",
+          "orden": 5,
+          "depende_de": "z21_tipo_de_registro",
+          "valor_activador": "NINO_NACIDO_EXPUESTO_AL_VIH",
+          "campos": [
             {
               "clave": "z21_recibio_arv_nino",
               "etiqueta": "¿Recibió ARV?",
-              "tipo": "BOOLEANO",
-              "orden": 5,
+              "tipo": "SI_NO",
+              "orden": 1,
               "sensible": true
             },
             {
               "clave": "z21_fecha_de_inicio_de_arv_nino",
               "etiqueta": "Fecha de inicio de ARV",
               "tipo": "FECHA",
-              "orden": 6,
+              "orden": 2,
+              "depende_de": "z21_recibio_arv_nino",
+              "valor_activador": "SI",
               "sensible": true
             },
             {
               "clave": "z21_abandono_terapia_arv_nino",
               "etiqueta": "¿Abandonó terapia ARV?",
-              "tipo": "BOOLEANO",
-              "orden": 7,
+              "tipo": "SI_NO",
+              "orden": 3,
               "sensible": true
             },
             {
               "clave": "z21_arv_recibido",
               "etiqueta": "ARV recibido",
               "tipo": "SELECT",
-              "orden": 8,
+              "orden": 4,
+              "depende_de": "z21_recibio_arv_nino",
+              "valor_activador": "SI",
               "opciones": [
                 "AZT",
                 "AZT + NVP",
@@ -8953,42 +9081,54 @@
               "clave": "z21_n_de_dias_que_tomo_arv",
               "etiqueta": "N.° de días que tomó ARV",
               "tipo": "NUMERO",
-              "orden": 9,
+              "orden": 5,
+              "depende_de": "z21_recibio_arv_nino",
+              "valor_activador": "SI",
               "sensible": true
             },
             {
               "clave": "z21_profilaxis_arv_de_acuerdo_a_nt_vigente",
               "etiqueta": "¿Profilaxis ARV de acuerdo a NT vigente?",
-              "tipo": "BOOLEANO",
-              "orden": 10,
+              "tipo": "SI_NO",
+              "orden": 6,
               "sensible": true
             },
             {
               "clave": "z21_sucedaneos_de_leche_materna",
               "etiqueta": "¿Sucedáneos de leche materna?",
-              "tipo": "BOOLEANO",
-              "orden": 11,
+              "tipo": "SI_NO",
+              "orden": 7,
               "sensible": true
             },
             {
               "clave": "z21_n_de_meses_que_recibio_sucedaneos",
               "etiqueta": "N.° de meses que recibió sucedáneos",
               "tipo": "NUMERO",
-              "orden": 12,
+              "orden": 8,
+              "depende_de": "z21_sucedaneos_de_leche_materna",
+              "valor_activador": "SI",
               "sensible": true
             },
             {
               "clave": "z21_tomo_leche_materna",
               "etiqueta": "¿Tomó leche materna?",
-              "tipo": "BOOLEANO",
-              "orden": 13,
+              "tipo": "SI_NO",
+              "orden": 9,
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Determinación del estado serológico del niño nacido expuesto",
+          "orden": 6,
+          "depende_de": "z21_tipo_de_registro",
+          "valor_activador": "NINO_NACIDO_EXPUESTO_AL_VIH",
+          "campos": [
             {
               "clave": "z21_estado_serologico_final",
               "etiqueta": "Estado serológico final",
               "tipo": "SELECT",
-              "orden": 14,
+              "orden": 1,
               "opciones": [
                 "Infectado por VIH",
                 "No infectado por VIH",
@@ -9000,7 +9140,9 @@
               "clave": "z21_motivo_de_estado_indeterminado",
               "etiqueta": "Motivo de estado indeterminado",
               "tipo": "SELECT",
-              "orden": 15,
+              "orden": 2,
+              "depende_de": "z21_estado_serologico_final",
+              "valor_activador": "INDETERMINADO",
               "opciones": [
                 "Continúa en seguimiento",
                 "Fallecido antes de poder determinar su estado serológico",
@@ -9010,10 +9152,20 @@
               "sensible": true
             },
             {
+              "clave": "z21_referido_a",
+              "etiqueta": "Referido a",
+              "tipo": "TEXTO",
+              "orden": 3,
+              "depende_de": "z21_motivo_de_estado_indeterminado",
+              "valor_activador": "REFERIDO",
+              "_corregido": "faltaba: el PDF trae 'Referido:_____' con línea para escribir a dónde.",
+              "sensible": true
+            },
+            {
               "clave": "z21_pruebas_diagnosticas",
               "etiqueta": "Pruebas diagnósticas",
               "tipo": "MATRIZ",
-              "orden": 16,
+              "orden": 4,
               "filas": [
                 "1.er PCR",
                 "2.° PCR",
@@ -9024,13 +9176,21 @@
                 "Fecha de toma de muestra",
                 "Resultado"
               ],
+              "opciones_por_fila": {
+                "Resultado": [
+                  ["Positivo", "Negativo"],
+                  ["Positivo", "Negativo"],
+                  ["Reactivo", "No reactivo"],
+                  ["Positivo", "Negativo"]
+                ]
+              },
               "sensible": true
             },
             {
               "clave": "z21_observaciones",
               "etiqueta": "Observaciones",
               "tipo": "TEXTAREA",
-              "orden": 17,
+              "orden": 5,
               "sensible": true
             }
           ]

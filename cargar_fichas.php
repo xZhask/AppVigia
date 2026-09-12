@@ -158,7 +158,31 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // es núcleo real (persona.referencia_localizar). Para no cambiar nada
 // visualmente en las 23 fichas que no lo pedían, todas declaran esta
 // omisión salvo B05.
-const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'ocupacion', 'nombre_tutor', 'celular_tutor', 'gestante'];
+// Los 4 últimos (cotejo Z21, 2026-09-11) no son campos de `persona` sino
+// BLOQUES enteros del formulario que hasta ahora se ocultaban con listas de
+// CIE-10 escritas a mano en código compartido: 'captacion' (el bloque
+// Tipo/Lugar/Clasificación en la captación de notificacion-captacion.php),
+// 'clasificacion' (la tarjeta de chips "Clasificación del caso"),
+// 'investigador' (la tarjeta "Investigador") y 'fecha_inicio_sintomas' (el
+// campo genérico obligatorio de secciones-clinicas.php). Declararlos acá es
+// la versión declarativa de esas listas; las fichas que ya estaban en ellas
+// siguen igual, sin tocar nada.
+const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'ocupacion', 'nombre_tutor', 'celular_tutor', 'gestante', 'captacion', 'clasificacion', 'investigador', 'fecha_inicio_sintomas'];
+
+// nucleo_condicional (cotejo Z21, 2026-09-11): bloques del núcleo que una
+// ficha pide solo cuando un campo_def suyo toma cierto valor -- Z21 pide
+// Etnia y Residencia habitual en la Sección I (gestante) pero no en la II
+// (niño nacido expuesto), y ambas secciones son ahora fichas distintas de la
+// misma enfermedad. Distinto de nucleo_omitidos, que es fijo por ficha.
+// 'sexo' (pedido del usuario, 2026-09-12): el ítem 4 del PDF de Z21 (datos de
+// la gestante) no pregunta el sexo -- es una gestante --, pero el ítem 9
+// (datos del niño nacido expuesto) sí. Con "valor_fijo" la rama que no lo
+// pregunta guarda el valor que la ficha declare, en vez de dejarlo vacío.
+const NUCLEO_CONDICIONABLES = ['etnia', 'residencia', 'sexo'];
+
+// Qué valores admite "valor_fijo" por bloque: lo que se guarda cuando el
+// bloque NO aplica. Sin entrada acá, el bloque no admite valor fijo.
+const NUCLEO_VALOR_FIJO_VALIDO = ['sexo' => ['F', 'M']];
 
 // Simétrico de NUCLEO_OMITIBLES: campos del núcleo ocultos por defecto que
 // una ficha declara para MOSTRAR (opt-in), en vez de mostrados por defecto
@@ -269,12 +293,43 @@ function esCatalogoCompartido(array $opciones): bool
 function validarManifiesto(array $manifiesto): void
 {
     foreach ($manifiesto['fichas'] as $cie10 => $ficha) {
+        // Cuántas veces se repite cada etiqueta dentro de la ficha, y qué
+        // claves explícitas declara: "depende_de" admite las dos formas.
         $etiquetasFicha = [];
+        $clavesFicha = [];
+        $tiposPorClaveFicha = [];
         foreach ($ficha['secciones'] as $seccion) {
             foreach ($seccion['campos'] as $campo) {
-                $etiquetasFicha[$campo['etiqueta']] = true;
+                $etiquetasFicha[$campo['etiqueta']] = ($etiquetasFicha[$campo['etiqueta']] ?? 0) + 1;
+                $claveDeclarada = trim((string) ($campo['clave'] ?? ''));
+                if ($claveDeclarada !== '') {
+                    $clavesFicha[$claveDeclarada] = true;
+                    $tiposPorClaveFicha[$claveDeclarada] = (string) ($campo['tipo'] ?? '');
+                }
             }
         }
+
+        // "depende_de" (de un campo o de una sección) apunta a otro campo de
+        // la misma ficha por CLAVE o por etiqueta. La clave se admite desde
+        // el cotejo de Z21 (2026-09-11): esa ficha repite tres etiquetas
+        // entre sus dos ramas ("¿Recibió ARV?", "Fecha de inicio de ARV",
+        // "¿Abandonó terapia ARV?"), y resolver por etiqueta habría
+        // enganchado la dependencia al campo equivocado en silencio (gana el
+        // último insertado, ver $idPorEtiqueta en procesarFicha()). Por eso
+        // una etiqueta repetida pasa a ser un error explícito en vez de una
+        // ruleta: hoy ninguna de las 24 fichas dependía de una etiqueta
+        // repetida (verificado antes de agregar el chequeo).
+        $validarReferenciaCampo = function (string $referencia, string $contexto) use ($cie10, $etiquetasFicha, $clavesFicha): void {
+            if (isset($clavesFicha[$referencia])) {
+                return;
+            }
+            if (!isset($etiquetasFicha[$referencia])) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / {$contexto} depende de \"{$referencia}\", que no existe como campo (ni por clave ni por etiqueta) de esta misma ficha.");
+            }
+            if ($etiquetasFicha[$referencia] > 1) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / {$contexto} depende de la etiqueta \"{$referencia}\", repetida {$etiquetasFicha[$referencia]} veces en la ficha: la dependencia sería ambigua. Referenciar ese campo por su \"clave\".");
+            }
+        };
         foreach ($ficha['secciones'] as $seccion) {
             foreach ($seccion['campos'] as $campo) {
                 $tipo = $campo['tipo'] ?? null;
@@ -287,6 +342,45 @@ function validarManifiesto(array $manifiesto): void
                 }
                 if ($tipo === 'MATRIZ' && empty($campo['columnas'])) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" es MATRIZ pero no trae \"columnas\".");
+                }
+                // "opciones_por_fila" (cotejo Z21, 2026-09-11): opciones
+                // cerradas que cambian fila por fila dentro de una misma
+                // columna -- {"Resultado": [["Positivo","Negativo"], ...]},
+                // una lista por cada fila declarada. Ver campos/matriz.php.
+                if (array_key_exists('opciones_por_fila', $campo)) {
+                    if ($tipo !== 'MATRIZ') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"opciones_por_fila\" pero no es MATRIZ (es {$tipo}).");
+                    }
+                    $numFilasDeclaradas = is_array($campo['filas'] ?? null) ? count($campo['filas']) : 0;
+                    if (!is_array($campo['opciones_por_fila']) || empty($campo['opciones_por_fila'])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"opciones_por_fila\" vacío o mal formado.");
+                    }
+                    foreach ($campo['opciones_por_fila'] as $columnaOpciones => $opcionesDeCadaFila) {
+                        if (!in_array($columnaOpciones, $campo['columnas'], true)) {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" declara \"opciones_por_fila\" para \"{$columnaOpciones}\", que no es una columna de este MATRIZ.");
+                        }
+                        if (!is_array($opcionesDeCadaFila) || count($opcionesDeCadaFila) !== $numFilasDeclaradas) {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" / \"opciones_por_fila\".\"{$columnaOpciones}\" debe traer exactamente una lista de opciones por fila ({$numFilasDeclaradas}).");
+                        }
+                        foreach ($opcionesDeCadaFila as $opcionesFila) {
+                            if (!is_array($opcionesFila) || empty($opcionesFila)) {
+                                throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" / \"opciones_por_fila\".\"{$columnaOpciones}\" tiene una fila sin opciones.");
+                            }
+                            foreach ($opcionesFila as $opcionFila) {
+                                if (!is_string($opcionFila) || trim($opcionFila) === '') {
+                                    throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" / \"opciones_por_fila\".\"{$columnaOpciones}\" tiene una opción vacía.");
+                                }
+                            }
+                        }
+                    }
+                }
+                // "obligatorio" (cotejo Z21, 2026-09-11): hasta ahora este
+                // cargador insertaba SIEMPRE obligatorio=0 y las 89
+                // declaraciones que ya traía el manifiesto (82 en B05, 7 en
+                // P35.0) no las leía nadie. Son todas `false`, así que
+                // empezar a respetarlas no cambia ninguna ficha existente.
+                if (array_key_exists('obligatorio', $campo) && !is_bool($campo['obligatorio'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"obligatorio\" no booleano.");
                 }
                 if (array_key_exists('decimales', $campo)) {
                     if ($tipo !== 'NUMERO') {
@@ -313,10 +407,8 @@ function validarManifiesto(array $manifiesto): void
                     if (!isset($campo['valor_activador']) || $campo['valor_activador'] === '') {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"depende_de\" sin \"valor_activador\".");
                     }
-                    if (!isset($etiquetasFicha[$campo['depende_de']])) {
-                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" depende de \"{$campo['depende_de']}\", que no existe como campo de esta misma ficha.");
-                    }
-                    if ($campo['depende_de'] === $etiqueta) {
+                    $validarReferenciaCampo((string) $campo['depende_de'], "\"{$etiqueta}\"");
+                    if ($campo['depende_de'] === $etiqueta || $campo['depende_de'] === ($campo['clave'] ?? null)) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" depende de sí mismo.");
                     }
                 }
@@ -328,9 +420,7 @@ function validarManifiesto(array $manifiesto): void
                 if (!isset($seccion['valor_activador']) || $seccion['valor_activador'] === '') {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / sección \"{$nombreSeccion}\" trae \"depende_de\" sin \"valor_activador\".");
                 }
-                if (!isset($etiquetasFicha[$seccion['depende_de']])) {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / sección \"{$nombreSeccion}\" depende de \"{$seccion['depende_de']}\", que no existe como campo de esta misma ficha.");
-                }
+                $validarReferenciaCampo((string) $seccion['depende_de'], "sección \"{$nombreSeccion}\"");
             }
         }
 
@@ -564,6 +654,146 @@ function validarManifiesto(array $manifiesto): void
             }
         }
 
+        // campos_notificacion (cotejo Z21, 2026-09-11): claves de campo_def
+        // de esta misma ficha que se pintan dentro de la tarjeta fija "1.
+        // Notificación" (partials/notificacion-campos-declarados.php) en vez
+        // de generar su propia tarjeta.
+        if (!empty($ficha['campos_notificacion'])) {
+            if (!is_array($ficha['campos_notificacion']) || !array_is_list($ficha['campos_notificacion'])) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / campos_notificacion debe ser una lista de claves.");
+            }
+            foreach ($ficha['campos_notificacion'] as $claveNotificacion) {
+                if (!is_string($claveNotificacion) || !isset($clavesFicha[$claveNotificacion])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / campos_notificacion incluye \"{$claveNotificacion}\", que no es una \"clave\" explícita de esta ficha.");
+                }
+            }
+            foreach ($ficha['secciones'] as $seccion) {
+                foreach ($seccion['campos'] as $campo) {
+                    if (in_array($campo['clave'] ?? '', $ficha['campos_notificacion'], true) && !empty($campo['depende_de'])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / campos_notificacion incluye \"{$campo['clave']}\", que tiene \"depende_de\": la tarjeta \"1. Notificación\" no pinta envolturas condicionales.");
+                    }
+                }
+            }
+        }
+
+        // vinculo_caso (cotejo Z21, 2026-09-11): enlace de un caso con otro
+        // caso de la MISMA ficha (el niño nacido expuesto con la ficha de su
+        // madre). "activador" dice con qué valor aplica el enlace;
+        // "candidatos", qué casos se ofrecen; "copiar", qué datos del caso
+        // vinculado se copian a campos de este.
+        if (!empty($ficha['vinculo_caso'])) {
+            $vinculo = $ficha['vinculo_caso'];
+            foreach (['seccion', 'etiqueta'] as $claveTexto) {
+                if (empty($vinculo[$claveTexto]) || !is_string($vinculo[$claveTexto])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.{$claveTexto} debe ser un texto no vacío.");
+                }
+            }
+            $nombresSeccionesFicha = array_map(fn($s) => trim((string) ($s['nombre'] ?? '')), $ficha['secciones']);
+            if (!in_array(trim($vinculo['seccion']), $nombresSeccionesFicha, true)) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.seccion \"{$vinculo['seccion']}\" no es una sección de esta ficha.");
+            }
+            foreach (['activador', 'candidatos'] as $parteVinculo) {
+                if (empty($vinculo[$parteVinculo]['clave']) || !isset($clavesFicha[$vinculo[$parteVinculo]['clave']])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.{$parteVinculo}.clave debe ser una \"clave\" explícita de esta ficha.");
+                }
+                if (empty($vinculo[$parteVinculo]['valor']) || !is_string($vinculo[$parteVinculo]['valor'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.{$parteVinculo}.valor debe ser un texto no vacío (el CÓDIGO de la opción, no su etiqueta).");
+                }
+            }
+            // Mismo juego de columnas que CasosController::valorCopiadoDeVinculo().
+            $columnasPersonaCopiables = ['num_doc', 'tipo_doc', 'nombres', 'apellido_paterno', 'apellido_materno', 'fecha_nac'];
+            foreach (($vinculo['copiar'] ?? []) as $claveDestino => $origenCopia) {
+                if (!isset($clavesFicha[$claveDestino])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.copiar apunta a \"{$claveDestino}\", que no es una \"clave\" explícita de esta ficha.");
+                }
+                if (!is_string($origenCopia) || (!str_starts_with($origenCopia, 'campo:') && !str_starts_with($origenCopia, 'persona:'))) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.copiar.\"{$claveDestino}\" debe ser \"campo:<clave>\" o \"persona:<columna>\".");
+                }
+                if (str_starts_with($origenCopia, 'campo:') && !isset($clavesFicha[substr($origenCopia, 6)])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.copiar.\"{$claveDestino}\" toma \"{$origenCopia}\", cuya clave no existe en esta ficha.");
+                }
+                if (str_starts_with($origenCopia, 'persona:') && !in_array(substr($origenCopia, 8), $columnasPersonaCopiables, true)) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.copiar.\"{$claveDestino}\" toma \"{$origenCopia}\", que no es una columna copiable de persona. Válidas: " . implode(', ', $columnasPersonaCopiables) . '.');
+                }
+            }
+            // fijar_por_procedencia / buscar (pedido del usuario, 2026-09-11):
+            // el vínculo deja de elegirse en un desplegable con todos los
+            // candidatos -- viene fijado de la ficha de la madre, o se
+            // identifica por código de ficha / documento exacto.
+            if (array_key_exists('fijar_por_procedencia', $vinculo) && !is_bool($vinculo['fijar_por_procedencia'])) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.fijar_por_procedencia debe ser true o false.");
+            }
+            if (!empty($vinculo['buscar'])) {
+                if (empty($vinculo['fijar_por_procedencia'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.buscar solo aplica con \"fijar_por_procedencia\": true (sin eso el vínculo se elige de la lista de candidatos).");
+                }
+                if (!is_array($vinculo['buscar'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.buscar debe ser un objeto de textos.");
+                }
+                foreach ($vinculo['buscar'] as $claveBuscar => $textoBuscar) {
+                    if (!in_array($claveBuscar, ['etiqueta', 'placeholder', 'ayuda', 'accion', 'no_encontrada', 'no_disponible', 'quitar'], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.buscar.\"{$claveBuscar}\" no es una clave válida. Válidas: etiqueta, placeholder, ayuda, accion, no_encontrada, no_disponible, quitar.");
+                    }
+                    if (!is_string($textoBuscar) || trim($textoBuscar) === '') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.buscar.\"{$claveBuscar}\" debe ser un texto no vacío.");
+                    }
+                }
+            }
+            // encadenar: tras guardar un caso CANDIDATO (la gestante), cuántas
+            // fichas vinculadas quedan por registrar según un campo numérico
+            // suyo (N.º de nacidos vivos).
+            if (!empty($vinculo['encadenar'])) {
+                if (empty($vinculo['encadenar']['clave']) || !isset($clavesFicha[$vinculo['encadenar']['clave']])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.encadenar.clave debe ser una \"clave\" explícita de esta ficha.");
+                }
+                if (($tiposPorClaveFicha[$vinculo['encadenar']['clave']] ?? '') !== 'NUMERO') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.encadenar.clave debe apuntar a un campo NUMERO (cuántas fichas vinculadas se esperan).");
+                }
+                foreach (['titulo_pendientes', 'mensaje'] as $claveEncadenar) {
+                    if (empty($vinculo['encadenar'][$claveEncadenar]) || !is_string($vinculo['encadenar'][$claveEncadenar])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / vinculo_caso.encadenar.{$claveEncadenar} debe ser un texto no vacío.");
+                    }
+                }
+            }
+        }
+
+        // nucleo_condicional (cotejo Z21, 2026-09-11): bloques del núcleo que
+        // la ficha pide solo con cierto valor de uno de sus campo_def.
+        if (!empty($ficha['nucleo_condicional'])) {
+            if (!is_array($ficha['nucleo_condicional']) || !array_is_list($ficha['nucleo_condicional'])) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_condicional debe ser una lista de reglas.");
+            }
+            foreach ($ficha['nucleo_condicional'] as $reglaNucleo) {
+                if (empty($reglaNucleo['clave']) || !isset($clavesFicha[$reglaNucleo['clave']])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_condicional.clave debe ser una \"clave\" explícita de esta ficha.");
+                }
+                if (empty($reglaNucleo['valores']) || !is_array($reglaNucleo['valores'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_condicional.valores debe ser una lista no vacía (CÓDIGOS de opción).");
+                }
+                if (empty($reglaNucleo['bloques']) || !is_array($reglaNucleo['bloques'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_condicional.bloques debe ser una lista no vacía.");
+                }
+                foreach ($reglaNucleo['bloques'] as $bloqueNucleo) {
+                    if (!in_array($bloqueNucleo, NUCLEO_CONDICIONABLES, true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_condicional incluye el bloque \"{$bloqueNucleo}\", que no es condicionable. Válidos: " . implode(', ', NUCLEO_CONDICIONABLES) . '.');
+                    }
+                }
+                // valor_fijo: qué se guarda en los bloques de esta regla
+                // cuando NO aplican (Z21: sexo = F en la rama de la gestante).
+                foreach (($reglaNucleo['valor_fijo'] ?? []) as $bloqueFijo => $valorFijo) {
+                    if (!in_array($bloqueFijo, $reglaNucleo['bloques'], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_condicional.valor_fijo declara \"{$bloqueFijo}\", que no es uno de los bloques de esa misma regla.");
+                    }
+                    if (!isset(NUCLEO_VALOR_FIJO_VALIDO[$bloqueFijo])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_condicional.valor_fijo no aplica al bloque \"{$bloqueFijo}\". Lo admiten: " . implode(', ', array_keys(NUCLEO_VALOR_FIJO_VALIDO)) . '.');
+                    }
+                    if (!in_array($valorFijo, NUCLEO_VALOR_FIJO_VALIDO[$bloqueFijo], true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_condicional.valor_fijo.{$bloqueFijo} = \"{$valorFijo}\" no es un valor válido. Válidos: " . implode(', ', NUCLEO_VALOR_FIJO_VALIDO[$bloqueFijo]) . '.');
+                    }
+                }
+            }
+        }
+
         if (!empty($ficha['unidades_edad'])) {
             foreach ($ficha['unidades_edad'] as $unidad) {
                 if (!in_array($unidad, UNIDADES_EDAD_VALIDAS, true)) {
@@ -763,7 +993,14 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
             // único .seg (radios pegados) en vez de una columna de tabla
             // por opción -- ver matriz.php.
             'grupos_columnas' => $campo['grupos_columnas'] ?? [],
-        ], JSON_UNESCAPED_UNICODE);
+        ] + (
+            // "opciones_por_fila" (cotejo Z21, 2026-09-11): solo se serializa
+            // cuando la ficha lo declara, así el config JSON de las matrices
+            // que ya existían no cambia ni un byte.
+            array_key_exists('opciones_por_fila', $campo)
+                ? ['opciones_por_fila' => $campo['opciones_por_fila']]
+                : []
+        ), JSON_UNESCAPED_UNICODE);
     }
 
     // NUMERO: por defecto entero (bloquea e/E/./,/+/- en el cliente, mismo
@@ -794,11 +1031,18 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
         $config = json_encode(['ignorado' => $campo['ignorado']], JSON_UNESCAPED_UNICODE);
     }
 
+    // "obligatorio" (cotejo Z21, 2026-09-11): hasta acá siempre se insertaba
+    // 0 y las 89 declaraciones que ya traía el manifiesto no las leía nadie;
+    // como todas son `false`, empezar a respetarlas no cambia ninguna ficha
+    // existente. Lo estrena "Tipo de registro" de Z21, que decide qué mitad
+    // de la ficha se llena y no puede quedar sin responder.
+    $obligatorio = !empty($campo['obligatorio']) ? 1 : 0;
+
     $stmt = $pdo->prepare(
         'INSERT INTO campo_def (seccion_id, clave, etiqueta, tipo, obligatorio, rol_sujeto, sensible, catalogo_id, config, origen, orden)
-         VALUES (?,?,?,?,0,?,?,?,?,\'FICHA_MINSA\',?)'
+         VALUES (?,?,?,?,?,?,?,?,?,\'FICHA_MINSA\',?)'
     );
-    $stmt->execute([$seccionId, $clave, $etiqueta, $tipo, $rolSujeto, $sensible, $catalogoId, $config, $orden]);
+    $stmt->execute([$seccionId, $clave, $etiqueta, $tipo, $obligatorio, $rolSujeto, $sensible, $catalogoId, $config, $orden]);
     $campoId = (int) $pdo->lastInsertId();
 
     $reporte['campos_creados'][] = ['clave' => $clave, 'etiqueta' => $etiqueta, 'tipo' => $tipo];
@@ -868,7 +1112,14 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     // simple, mismo criterio que tablas_hijas -- se aplica siempre, 0 si la
     // ficha no lo declara.
     $migracionReciente = $fichaManifiesto['migracion_reciente'] ?? false;
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ?, bloques_condicionales = ?, migracion_reciente = ? WHERE id = ?')->execute([
+    // campos_notificacion / vinculo_caso / nucleo_condicional (cotejo Z21,
+    // 2026-09-11): mismo criterio que nucleo_omitidos -- se aplican siempre y
+    // quedan en NULL explícito si la ficha no los declara, para que quitar
+    // una declaración del manifiesto la borre de verdad.
+    $camposNotificacionDeclarados = $fichaManifiesto['campos_notificacion'] ?? null;
+    $vinculoCasoDeclarado = $fichaManifiesto['vinculo_caso'] ?? null;
+    $nucleoCondicionalDeclarado = $fichaManifiesto['nucleo_condicional'] ?? null;
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ?, bloques_condicionales = ?, migracion_reciente = ?, campos_notificacion = ?, vinculo_caso = ?, nucleo_condicional = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -885,6 +1136,9 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($detalleDomicilioDeclarado) ? json_encode($detalleDomicilioDeclarado, JSON_UNESCAPED_UNICODE) : null,
         !empty($bloquesCondicionalesDeclarados) ? json_encode($bloquesCondicionalesDeclarados, JSON_UNESCAPED_UNICODE) : null,
         $migracionReciente ? 1 : 0,
+        !empty($camposNotificacionDeclarados) ? json_encode($camposNotificacionDeclarados, JSON_UNESCAPED_UNICODE) : null,
+        !empty($vinculoCasoDeclarado) ? json_encode($vinculoCasoDeclarado, JSON_UNESCAPED_UNICODE) : null,
+        !empty($nucleoCondicionalDeclarado) ? json_encode($nucleoCondicionalDeclarado, JSON_UNESCAPED_UNICODE) : null,
         $enfermedadId,
     ]);
 
@@ -931,8 +1185,12 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
 
     $ordenSeccion = 1;
     $idPorEtiqueta = [];
-    $pendientesDependencia = []; // [campoId => ['depende_de' => etiqueta, 'valor_activador' => valor]]
-    $pendientesDependenciaSeccion = []; // [seccionId => ['depende_de' => etiqueta, 'valor_activador' => valor]]
+    // Índice paralelo por CLAVE (cotejo Z21, 2026-09-11): "depende_de" puede
+    // nombrar al campo padre por clave, que es única por ficha, en vez de por
+    // etiqueta, que puede repetirse entre ramas de la misma ficha.
+    $idPorClave = [];
+    $pendientesDependencia = []; // [campoId => ['depende_de' => clave|etiqueta, 'valor_activador' => valor]]
+    $pendientesDependenciaSeccion = []; // [seccionId => ['depende_de' => clave|etiqueta, 'valor_activador' => valor]]
     foreach ($fichaManifiesto['secciones'] as $seccion) {
         // "solo_tabla_hija" (2026-08-19, A44 "Laboratorio y evolución"):
         // opt-in para una sección sin NINGÚN campo_def cuyo contenido vive
@@ -969,6 +1227,10 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
             $ordenCampoReal = $campo['orden'] ?? $ordenCampo;
             $campoId = insertarCampo($pdo, $seccionId, $cie10, $campo, $ordenCampoReal, $rolSujeto, $clavesUsadas, $catalogCache, $nombresCatalogo, $reporte);
             $idPorEtiqueta[$campo['etiqueta']] = $campoId;
+            $claveDelCampo = trim((string) ($campo['clave'] ?? ''));
+            if ($claveDelCampo !== '') {
+                $idPorClave[$claveDelCampo] = $campoId;
+            }
             if (!empty($campo['depende_de'])) {
                 $pendientesDependencia[$campoId] = [
                     'depende_de' => $campo['depende_de'],
@@ -982,11 +1244,16 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
 
     // Segunda pasada: recién ahora existen los id de TODOS los campos de la
     // ficha, así que se puede resolver "depende_de" (validarManifiesto() ya
-    // garantizó que la etiqueta referenciada existe en esta misma ficha).
+    // garantizó que la referencia existe en esta misma ficha). La clave manda
+    // sobre la etiqueta: es única por ficha (cotejo Z21, 2026-09-11).
+    $resolverPadre = function (string $referencia) use ($idPorClave, $idPorEtiqueta): int {
+        return $idPorClave[$referencia] ?? $idPorEtiqueta[$referencia];
+    };
+
     if ($pendientesDependencia) {
         $stmtDep = $pdo->prepare('UPDATE campo_def SET depende_de = ?, valor_activador = ? WHERE id = ?');
         foreach ($pendientesDependencia as $campoId => $dep) {
-            $padreId = $idPorEtiqueta[$dep['depende_de']];
+            $padreId = $resolverPadre((string) $dep['depende_de']);
             $stmtDep->execute([$padreId, $dep['valor_activador'], $campoId]);
         }
     }
@@ -994,7 +1261,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
     if ($pendientesDependenciaSeccion) {
         $stmtDepSeccion = $pdo->prepare('UPDATE seccion_def SET depende_de = ?, valor_activador = ? WHERE id = ?');
         foreach ($pendientesDependenciaSeccion as $seccionId => $dep) {
-            $padreId = $idPorEtiqueta[$dep['depende_de']];
+            $padreId = $resolverPadre((string) $dep['depende_de']);
             $stmtDepSeccion->execute([$padreId, $dep['valor_activador'], $seccionId]);
         }
     }

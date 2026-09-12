@@ -25,10 +25,19 @@
     <label class="fl">Nacionalidad</label>
     <div class="control"><input type="text" name="nacionalidad" value="<?= e($valoresFijos['nacionalidad'] ?? '') ?>"></div>
   </div>
+  <?php
+  // nucleo_condicional (cotejo Z21, 2026-09-11): Localidad es parte del
+  // bloque "residencia", que solo pide una de las dos ramas de la ficha --
+  // el selector Departamento/Provincia/Distrito lleva la misma envoltura en
+  // nueva/index.php y fichas/editar.php. ['',''] en las demás fichas.
+  [$abreLocalidadCondicional, $cierraLocalidadCondicional] = envolturaNucleoCondicional($enfermedad, 'residencia', $valoresCampos ?? []);
+  ?>
+  <?= $abreLocalidadCondicional ?>
   <div class="field" data-nucleo-campo="localidad" <?= $nucleoOmite('localidad') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Localidad</label>
     <div class="control"><input type="text" name="localidad" value="<?= e($valoresFijos['localidad'] ?? '') ?>"></div>
   </div>
+  <?= $cierraLocalidadCondicional ?>
   <div class="field wide" data-nucleo-campo="direccion" <?= $nucleoOmite('direccion') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Domicilio actual</label>
     <div class="control"><input type="text" name="direccion" value="<?= e($valoresFijos['direccion'] ?? '') ?>"></div>

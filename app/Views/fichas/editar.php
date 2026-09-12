@@ -77,7 +77,9 @@ $es = $estados[$caso['estado']];
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55', 'B04X', 'A00'], true) ? 'hidden' : '' ?>>
+          <?php // nucleo_omitidos: 'captacion' -- ver el mismo comentario en
+          // nueva/index.php (cotejo Z21, 2026-09-11). ?>
+          <div id="notificacionCaptacionWrap" <?= (in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55', 'B04X', 'A00'], true) || nucleoOmitido($enfermedad, 'captacion')) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
@@ -94,6 +96,9 @@ $es = $estados[$caso['estado']];
           <?php require __DIR__ . '/../partials/notificacion-fechas-a95.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b04x.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a00.php'; ?>
+          <?php // campos_notificacion -- ver el mismo comentario en
+          // nueva/index.php (cotejo Z21, 2026-09-11). ?>
+          <?php require __DIR__ . '/../partials/notificacion-campos-declarados.php'; ?>
         </div>
       </div>
 
@@ -139,7 +144,9 @@ $es = $estados[$caso['estado']];
           </div>
           <div class="fields thirds" style="margin-top:14px">
             <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
-            <div class="field o95-hide" <?= $esO95Edit ? 'hidden style="display:none;"' : '' ?>>
+            <?php // nucleo_condicional 'sexo': ver nueva/index.php.
+            [$abreSexoCondicional, $cierraSexoCondicional] = envolturaNucleoCondicional($enfermedad, 'sexo', $valoresCampos);
+            echo $abreSexoCondicional; ?><div class="field o95-hide" <?= $esO95Edit ? 'hidden style="display:none;"' : '' ?>>
               <label class="fl">Sexo</label>
               <div class="control">
                 <select name="sexo" data-nosearch="true">
@@ -149,7 +156,8 @@ $es = $estados[$caso['estado']];
                 </select>
               </div>
             </div>
-            <?php if ($esO95Edit): ?>
+            <?php // Cierre pegado a la etiqueta siguiente: ver nueva/index.php.
+            echo $cierraSexoCondicional; ?><?php if ($esO95Edit): ?>
               <input type="hidden" name="sexo" value="F">
             <?php endif; ?>
             <div class="field">
@@ -186,6 +194,12 @@ $es = $estados[$caso['estado']];
           require __DIR__ . '/../partials/datos-paciente-nucleo.php';
           ?>
 
+          <?php
+          // nucleo_condicional -- ver el comentario largo en nueva/index.php
+          // (cotejo Z21, 2026-09-11).
+          [$abreResidenciaCondicional, $cierraResidenciaCondicional] = envolturaNucleoCondicional($enfermedad, 'residencia', $valoresCampos);
+          ?>
+          <?= $abreResidenciaCondicional ?>
           <div <?= $nucleoIncluye('nacimiento_distrito_id') ? 'style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"' : 'style="margin-top:14px"' ?>>
             <?php if ($nucleoIncluye('nacimiento_distrito_id')): ?>
               <!-- Distingue este bloque de "Lugar de nacimiento" (justo arriba, mismo
@@ -194,8 +208,15 @@ $es = $estados[$caso['estado']];
                    apariencia de las 23 fichas que no piden lugar de nacimiento. -->
               <div class="eyebrow" style="margin-bottom:10px">Residencia habitual</div>
             <?php endif; ?>
-            <?php $prefijo = 'pac-ubigeo'; $errorDistrito = $erroresFijos['distrito_id'] ?? null; require __DIR__ . '/../partials/selector-ubigeo.php'; ?>
+            <?php
+            $prefijo = 'pac-ubigeo';
+            $errorDistrito = $erroresFijos['distrito_id'] ?? null;
+            if ($abreResidenciaCondicional !== '') { $distritoRequerido = false; }
+            require __DIR__ . '/../partials/selector-ubigeo.php';
+            if ($abreResidenciaCondicional !== '') { unset($distritoRequerido); }
+            ?>
           </div>
+          <?= $cierraResidenciaCondicional ?>
 
           <?php require __DIR__ . '/../partials/datos-paciente-nucleo-residencia.php'; ?>
 
@@ -391,6 +412,8 @@ endforeach;
 ?>
 
       <!-- Investigador -->
+      <?php // nucleo_omitidos: 'investigador' -- ver nueva/index.php. ?>
+      <?php if (!nucleoOmitido($enfermedad, 'investigador')): ?>
       <div class="card section">
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Investigador</h3></div>
         <div class="section-body">
@@ -398,6 +421,7 @@ endforeach;
         </div>
       </div>
       <?php $numeroSeccion++; ?>
+      <?php endif; ?>
 
       <?php
       // B04X, sección XI del PDF (ítems 61-62): "Personal de epidemiología
@@ -409,6 +433,11 @@ endforeach;
       ?>
 
       <!-- Clasificación del caso -->
+      <?php // nucleo_omitidos: 'clasificacion' -- ver nueva/index.php. Con la
+      // tarjeta oculta tampoco llegan Hospitalizado/Fallecido en el POST, así
+      // que CasosController::actualizar() conserva los valores guardados en
+      // vez de interpretarlos como desmarcados. ?>
+      <?php if (!nucleoOmitido($enfermedad, 'clasificacion')): ?>
       <?php $esB26Clasif = (($enfermedad['cie10'] ?? '') === 'B26'); ?>
       <div class="card section" id="cardClasificacionCaso" <?= $esB26Clasif ? 'hidden style="display:none;"' : '' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Clasificación del caso</h3></div>
@@ -420,6 +449,7 @@ endforeach;
           </div>
         </div>
       </div>
+      <?php endif; ?>
     </div>
 
     <!-- Right rail -->

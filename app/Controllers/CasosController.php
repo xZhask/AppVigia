@@ -90,6 +90,29 @@ class CasosController extends Controller
         $hoyIso = (new DateTime())->format('Y-m-d');
         $semana = semanaEpidemiologica($hoyIso);
 
+        // vinculo_caso (cotejo Z21, 2026-09-11): el botón "Registrar niño
+        // nacido expuesto" de la ficha de la madre entra acá como
+        // ?vinculo=<id>. Si es un candidato real y visible para este usuario,
+        // el formulario abre directamente en la rama correcta (con el campo
+        // activador ya elegido) y con los datos de la madre copiados.
+        $configVinculoNuevo = $this->configVinculoCaso($enfermedad);
+        $vinculoSeleccionado = null;
+        $valoresCamposIniciales = [];
+        if ($configVinculoNuevo && !empty($_GET['vinculo'])) {
+            $idVinculoPedido = (int) $_GET['vinculo'];
+            foreach ($this->candidatosVinculo($enfermedad, $configVinculoNuevo, null) as $candidatoNuevo) {
+                if ($candidatoNuevo['id'] !== $idVinculoPedido) {
+                    continue;
+                }
+                $vinculoSeleccionado = $idVinculoPedido;
+                $valoresCamposIniciales[(int) $configVinculoNuevo['_activador']['id']] = (string) $configVinculoNuevo['activador']['valor'];
+                foreach ($candidatoNuevo['copiar_por_nombre'] as $nombreDestino => $valorCopiado) {
+                    $valoresCamposIniciales[(int) substr($nombreDestino, strlen('campo_'))] = $valorCopiado;
+                }
+                break;
+            }
+        }
+
         $this->vista('nueva/index', array_merge([
             'tituloVista'   => 'Nueva ficha de notificación',
             'rutaActual'    => 'casos/nuevo',
@@ -99,7 +122,7 @@ class CasosController extends Controller
             'erroresFijos'  => [],
             'semanaEpiPreview' => $semana['semana'],
             'anioEpiPreview'   => $semana['anio'],
-            'valoresCampos' => [],
+            'valoresCampos' => $valoresCamposIniciales,
             'erroresCampos' => [],
             'fechaInicioSintomas' => '',
             'errorFechaInicioSintomas' => null,
@@ -120,7 +143,7 @@ class CasosController extends Controller
             'erroresEvolucion' => [],
             'erroresExamen'  => [],
             'valoresSujetoPorRol' => [],
-        ], $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
+        ], $this->datosVinculoCasoVista($enfermedad, $vinculoSeleccionado, null), $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
     }
 
     public function crear(): void
@@ -242,8 +265,13 @@ class CasosController extends Controller
             }
         }
 
-        $distritoId = $_POST['distrito_id'] ?? '';
-        if ($distritoId === '') {
+        // nucleo_condicional: 'residencia' (cotejo Z21, 2026-09-11) -- el
+        // distrito solo es obligatorio si la rama elegida pide residencia
+        // habitual (la Sección II del PDF, el niño nacido expuesto, no la
+        // pide). Cuando no aplica, no se guarda aunque venga en el POST.
+        $residenciaActivaCrear = $this->bloqueNucleoActivoDesdePost($enfermedad, 'residencia');
+        $distritoId = $residenciaActivaCrear ? ($_POST['distrito_id'] ?? '') : '';
+        if ($distritoId === '' && $residenciaActivaCrear) {
             $erroresFijos['distrito_id'] = 'Selecciona el distrito de domicilio.';
         }
 
@@ -293,8 +321,14 @@ class CasosController extends Controller
         // clínico" (orden 5), pero "Antecedentes" (orden 4, ANTES) trae un
         // FECHA suelto (b04x_fecha_de_diagnostico_vih) que
         // extraerFechaInicioSintomas() agarraría por error como fallback.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
-        $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
+        // nucleo_omitidos: 'fecha_inicio_sintomas' (cotejo Z21, 2026-09-11) es
+        // la versión declarativa de esta lista de CIE-10. Con el bloque
+        // omitido el valor se descarta aunque venga forzado en el POST: el
+        // campo ni siquiera se pinta.
+        $fechaInicioSintomasOmitida = nucleoOmitido($enfermedad, 'fecha_inicio_sintomas');
+        $sinFechaInicioSintomasObligatoria = $fechaInicioSintomasOmitida
+            || in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
+        $fechaInicioSintomas = $fechaInicioSintomasOmitida ? '' : trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
@@ -315,9 +349,15 @@ class CasosController extends Controller
         $datosPnp = $this->leerDatosPnp();
 
         // ---------- clasificación del caso ----------
+        // nucleo_omitidos: 'clasificacion' (cotejo Z21) -- una ficha cuyo PDF
+        // no clasifica el caso no pinta la tarjeta y guarda el valor por
+        // defecto de su propia lista, sin mirar el POST.
         $opcionesClasificacion = opcionesClasificacionPara($enfermedad);
-        $clasificacionRequerida = clasificacionRequiereEleccionExplicita($enfermedad);
-        $clasificacion = $_POST['clasificacion'] ?? ($clasificacionRequerida ? '' : $opcionesClasificacion[0]);
+        $clasificacionOmitida = nucleoOmitido($enfermedad, 'clasificacion');
+        $clasificacionRequerida = !$clasificacionOmitida && clasificacionRequiereEleccionExplicita($enfermedad);
+        $clasificacion = $clasificacionOmitida
+            ? $opcionesClasificacion[0]
+            : ($_POST['clasificacion'] ?? ($clasificacionRequerida ? '' : $opcionesClasificacion[0]));
         if (!in_array($clasificacion, $opcionesClasificacion, true)) {
             if ($clasificacionRequerida) {
                 $erroresFijos['clasificacion'] = 'Selecciona Confirmado o Descartado.';
@@ -328,6 +368,11 @@ class CasosController extends Controller
 
         // ---------- dinámicos: cuadro clínico según la enfermedad ----------
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId);
+
+        // ---------- vinculo_caso (cotejo Z21, 2026-09-11) ----------
+        // Revalida contra la lista de candidatos real y copia a sus campos los
+        // datos del caso vinculado, pisando lo que haya llegado en el POST.
+        [$casoVinculadoId, $errorVinculoCaso] = $this->resolverVinculoCaso($enfermedad, $valoresCampos, $paraGuardar, null);
 
         // ---------- tablas hijas (opcionales) ----------
         $filasContactos = $this->filasContactos();
@@ -340,6 +385,7 @@ class CasosController extends Controller
         [$filasExamen, $erroresExamen] = $this->filasExamen();
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
+            || $errorVinculoCaso !== null
             || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras) || !empty($erroresLugarInfeccion)
             || !empty($erroresEvolucion) || !empty($erroresExamen);
 
@@ -377,7 +423,12 @@ class CasosController extends Controller
                 'erroresEvolucion' => $erroresEvolucion,
                 'erroresExamen'  => $erroresExamen,
                 'valoresSujetoPorRol' => $this->valoresSujetoPorRolDesdePost($enfermedad),
-            ], $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
+            ], $this->datosVinculoCasoVista(
+                $enfermedad,
+                ((int) ($_POST['caso_vinculado_id'] ?? 0)) ?: null,
+                null,
+                $errorVinculoCaso
+            ), $this->datosEstablecimiento(), $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
         }
 
@@ -397,7 +448,10 @@ class CasosController extends Controller
                 'nombres'           => $valoresFijos['nombres'],
                 'sexo'              => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null,
                 'fecha_nac'         => $fechaNacIso,
-                'distrito_id'       => $distritoId,
+                // NULL y no '' cuando la rama no pide residencia
+                // (nucleo_condicional, cotejo Z21): persona.distrito_id tiene
+                // clave foránea a distrito, y la cadena vacía la viola.
+                'distrito_id'       => $distritoId !== '' ? $distritoId : null,
             ], $nucleo['persona'], $datosPnp['datos']);
 
             $personaExistente = Persona::buscarPorDocumento($valoresFijos['tipo_doc'], $valoresFijos['num_doc']);
@@ -418,6 +472,9 @@ class CasosController extends Controller
             $casoId = Caso::crearConCodigo(array_merge([
                 'enfermedad_id'         => $enfermedadId,
                 'persona_id'            => $personaId,
+                // vinculo_caso (cotejo Z21): ya revalidado contra la lista de
+                // candidatos; null si la ficha no lo declara o no aplica.
+                'caso_vinculado_id'     => $casoVinculadoId,
                 'establecimiento_id'    => (int) $establecimiento['id'],
                 'usuario_id'            => (int) $usuario['id'],
                 'fecha_notif'           => $fechaNotifIso,
@@ -458,6 +515,30 @@ class CasosController extends Controller
             error_log('Error al registrar ficha: ' . $e->getMessage());
             Flash::set('No se pudo registrar la ficha por un error interno. Intenta nuevamente.');
             header('Location: /casos/nuevo');
+            exit;
+        }
+
+        // vinculo_caso.encadenar (pedido del usuario, 2026-09-11): al guardar
+        // la ficha de una gestante que declara nacidos vivos, se abre su
+        // propia ficha en vez de un formulario en blanco, con el aviso de
+        // cuántos niños faltan por registrar -- ahí está el botón que los crea
+        // con la madre ya fijada, uno por uno (embarazo múltiple). Sin
+        // "encadenar" declarado, o con el campo vacío, todo sigue igual.
+        $configEncadenar = $this->configVinculoCaso($enfermedad);
+        $esCandidatoEncadenable = $configEncadenar
+            && !empty($configEncadenar['encadenar'])
+            && (string) ($valoresCampos[(int) $configEncadenar['_candidato']['id']] ?? '') === (string) $configEncadenar['candidatos']['valor'];
+        $esperadosEncadenar = $esCandidatoEncadenable
+            ? $this->fichasVinculadasEsperadas($configEncadenar, $valoresCampos)
+            : null;
+
+        if ($esperadosEncadenar !== null && $esperadosEncadenar > 0) {
+            Flash::set(sprintf('Ficha registrada: F-%05d. ', $casoId) . str_replace(
+                ['{faltan}', '{total}'],
+                [(string) $esperadosEncadenar, (string) $esperadosEncadenar],
+                (string) $configEncadenar['encadenar']['mensaje']
+            ));
+            header('Location: /casos/' . $casoId);
             exit;
         }
 
@@ -570,6 +651,15 @@ class CasosController extends Controller
             'caso'        => $caso,
             'secciones'   => $secciones,
             'valoresCampos' => $valoresCampos,
+            // La fila completa de enfermedad, para que la vista de solo
+            // lectura respete nucleo_omitidos (cotejo Z21, 2026-09-11): sin
+            // esto pintaría "Fecha de inicio de síntomas" y el chip de
+            // clasificación en fichas cuyo PDF no los trae. Va como
+            // 'enfermedadVer' y no como 'enfermedad' a propósito: la vista ya
+            // usaba ese nombre para otra cosa (el bloque de Captación de
+            // A80/B05), y pisarlo cambiaría esas dos fichas ya cotejadas.
+            'enfermedadVer' => $enfermedadVer,
+            'vinculoVer'    => $this->datosVinculoVer($enfermedadVer, $caso, $valoresCampos),
             'contactos'   => CasoContacto::porCaso((int) $caso['id']),
             'viajes'      => CasoViaje::porCaso((int) $caso['id']),
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),
@@ -713,7 +803,11 @@ class CasosController extends Controller
             'erroresEvolucion' => [],
             'erroresExamen'  => [],
             'valoresSujetoPorRol' => CasoSujeto::porCaso((int) $caso['id']),
-        ], $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($caso['distrito_id'])));
+        ], $this->datosVinculoCasoVista(
+            $enfermedad,
+            $caso['caso_vinculado_id'] !== null ? (int) $caso['caso_vinculado_id'] : null,
+            (int) $caso['id']
+        ), $this->datosPnpEdicion($caso), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($caso['distrito_id'])));
     }
 
     public function actualizar(string $id): void
@@ -820,8 +914,12 @@ class CasosController extends Controller
             }
         }
 
-        $distritoId = $_POST['distrito_id'] ?? '';
-        if ($distritoId === '') {
+        // nucleo_condicional: 'residencia' (cotejo Z21, 2026-09-11) -- mismo
+        // criterio que en crear(): el distrito solo se exige (y solo se
+        // guarda) si la rama elegida pide residencia habitual.
+        $residenciaActivaEditar = $this->bloqueNucleoActivoDesdePost($enfermedad, 'residencia');
+        $distritoId = $residenciaActivaEditar ? ($_POST['distrito_id'] ?? '') : '';
+        if ($distritoId === '' && $residenciaActivaEditar) {
             $erroresFijos['distrito_id'] = 'Selecciona el distrito de domicilio.';
         }
 
@@ -846,8 +944,11 @@ class CasosController extends Controller
         // B04X (2026-08-29): ver el motivo completo en crear() -- el primer
         // campo FECHA que encontraría extraerFechaInicioSintomas() es
         // b04x_fecha_de_diagnostico_vih, no un sustituto válido.
-        $sinFechaInicioSintomasObligatoria = in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
-        $fechaInicioSintomas = trim($_POST['fecha_inicio_sintomas'] ?? '');
+        // nucleo_omitidos: 'fecha_inicio_sintomas' -- ver crear().
+        $fechaInicioSintomasOmitida = nucleoOmitido($enfermedad, 'fecha_inicio_sintomas');
+        $sinFechaInicioSintomasObligatoria = $fechaInicioSintomasOmitida
+            || in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
+        $fechaInicioSintomas = $fechaInicioSintomasOmitida ? '' : trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
@@ -867,13 +968,32 @@ class CasosController extends Controller
         $datosPnp = $this->leerDatosPnp();
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId);
 
+        // ---------- vinculo_caso (cotejo Z21, 2026-09-11) ----------
+        // Guarda de integridad: si otras fichas apuntan a esta, no se puede
+        // sacar a esta de la rama que las hace válidas (dejaría a los niños
+        // nacidos expuestos colgando de una ficha que ya no es de gestante).
+        $configVinculoEditar = $this->configVinculoCaso($enfermedad);
+        $idsVinculadosAEste = $configVinculoEditar ? Caso::idsVinculados((int) $caso['id']) : [];
+        if ($configVinculoEditar && $idsVinculadosAEste) {
+            $idCampoCandidato = (int) $configVinculoEditar['_candidato']['id'];
+            $sigueSiendoCandidato = (string) ($valoresCampos[$idCampoCandidato] ?? '') === (string) $configVinculoEditar['candidatos']['valor'];
+            if (!$sigueSiendoCandidato) {
+                $erroresCampos[$idCampoCandidato] = 'No se puede cambiar: hay ' . count($idsVinculadosAEste) . ' ficha(s) vinculada(s) a esta.';
+            }
+        }
+        [$casoVinculadoId, $errorVinculoCaso] = $this->resolverVinculoCaso($enfermedad, $valoresCampos, $paraGuardar, (int) $caso['id']);
+
+        // nucleo_omitidos: 'clasificacion' (cotejo Z21) -- con la tarjeta
+        // oculta tampoco llegan Hospitalizado/Fallecido, así que se conservan
+        // los valores guardados en vez de leerlos como desmarcados.
         $opcionesClasificacion = opcionesClasificacionPara($enfermedad);
-        $clasificacion = $_POST['clasificacion'] ?? $caso['clasificacion'];
+        $clasificacionOmitida = nucleoOmitido($enfermedad, 'clasificacion');
+        $clasificacion = $clasificacionOmitida ? $caso['clasificacion'] : ($_POST['clasificacion'] ?? $caso['clasificacion']);
         if (!in_array($clasificacion, $opcionesClasificacion, true)) {
             $clasificacion = $caso['clasificacion'];
         }
-        $hospitalizado = isset($_POST['hospitalizado']) ? 1 : 0;
-        $fallecido = isset($_POST['fallecido']) ? 1 : 0;
+        $hospitalizado = $clasificacionOmitida ? (int) $caso['hospitalizado'] : (isset($_POST['hospitalizado']) ? 1 : 0);
+        $fallecido = $clasificacionOmitida ? (int) $caso['fallecido'] : (isset($_POST['fallecido']) ? 1 : 0);
 
         $filasContactos = $this->filasContactos();
         $filasContactosDirectos = $this->filasContactosDirectos();
@@ -921,7 +1041,12 @@ class CasosController extends Controller
                 'erroresEvolucion' => $erroresEvolucion,
                 'erroresExamen'  => $erroresExamen,
                 'valoresSujetoPorRol' => $this->valoresSujetoPorRolDesdePost($enfermedad),
-            ], $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
+            ], $this->datosVinculoCasoVista(
+                $enfermedad,
+                ((int) ($_POST['caso_vinculado_id'] ?? 0)) ?: null,
+                (int) $caso['id'],
+                $errorVinculoCaso
+            ), $datosPnp['vista'], $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoId ?: null)));
             return;
         }
 
@@ -938,7 +1063,10 @@ class CasosController extends Controller
                 'nombres'           => $valoresFijos['nombres'],
                 'sexo'              => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null,
                 'fecha_nac'         => $fechaNacIso,
-                'distrito_id'       => $distritoId,
+                // NULL y no '' cuando la rama no pide residencia
+                // (nucleo_condicional, cotejo Z21): persona.distrito_id tiene
+                // clave foránea a distrito, y la cadena vacía la viola.
+                'distrito_id'       => $distritoId !== '' ? $distritoId : null,
             ], $nucleo['persona'], $datosPnp['datos']);
 
             $persona = Persona::buscarPorDocumento($caso['tipo_doc'], $caso['num_doc']);
@@ -961,6 +1089,9 @@ class CasosController extends Controller
                 'clasificacion'         => $clasificacion,
                 'hospitalizado'         => $hospitalizado,
                 'fallecido'             => $fallecido,
+                // vinculo_caso (cotejo Z21): revalidado arriba; se vuelve a
+                // escribir en cada guardado, así desvincular también persiste.
+                'caso_vinculado_id'     => $casoVinculadoId,
             ], $nucleo['caso']));
 
             CasoValor::eliminarPorCaso((int) $caso['id']);
@@ -1282,6 +1413,27 @@ class CasosController extends Controller
                 if (!is_array($valorCrudo)) {
                     $valorCrudo = [];
                 }
+                // MATRIZ con "opciones_por_fila" (cotejo Z21, 2026-09-11): esa
+                // celda es una lista cerrada y distinta en cada fila (PCR:
+                // Positivo/Negativo; ELISA: Reactivo/No reactivo), así que un
+                // valor no declarado para ESA fila se descarta acá. El resto
+                // de las matrices sigue siendo texto libre, como siempre.
+                $configDelCampo = json_decode((string) ($campo['config'] ?? '{}'), true) ?: [];
+                if ($tipo === 'MATRIZ' && !empty($configDelCampo['opciones_por_fila'])) {
+                    $columnasDelCampo = $configDelCampo['columnas'] ?? [];
+                    foreach ($configDelCampo['opciones_por_fila'] as $nombreColumna => $opcionesDeCadaFila) {
+                        $indiceColumna = array_search($nombreColumna, $columnasDelCampo, true);
+                        if ($indiceColumna === false) {
+                            continue;
+                        }
+                        foreach ($opcionesDeCadaFila as $indiceFila => $opcionesFila) {
+                            $valorCelda = $valorCrudo[$indiceFila][$indiceColumna] ?? null;
+                            if ($valorCelda !== null && !in_array((string) $valorCelda, array_map('strval', $opcionesFila), true)) {
+                                $valorCrudo[$indiceFila][$indiceColumna] = '';
+                            }
+                        }
+                    }
+                }
                 $valoresCampos[$campoId] = $valorCrudo;
                 
                 $vacio = empty(array_filter($valorCrudo, function($v) {
@@ -1489,8 +1641,26 @@ class CasosController extends Controller
             }
         }
 
+        // nucleo_condicional (cotejo Z21, 2026-09-11): los bloques que la
+        // ficha no pide para la rama elegida se descartan acá aunque vengan
+        // forzados en el POST -- que el navegador los haya ocultado no es
+        // garantía de nada (mismo criterio que detalle_domicilio/gestante).
+        $etniaActiva = $this->bloqueNucleoActivoDesdePost($enfermedad, 'etnia');
+        $residenciaActiva = $this->bloqueNucleoActivoDesdePost($enfermedad, 'residencia');
+
+        // 'sexo' condicionado (pedido del usuario, 2026-09-12): si la rama
+        // elegida no pregunta el sexo, manda el valor_fijo declarado y no lo
+        // que llegue en el POST. Se resuelve ACÁ, antes del bloque de
+        // gestante/FUR de más abajo, para que toda la función vea el mismo
+        // valor. En las 23 fichas que no lo declaran, $sexoCondicionado es
+        // false y nada cambia.
+        $sexoCondicionado = condicionNucleo($enfermedad, 'sexo') !== null;
+        if ($sexoCondicionado && !$this->bloqueNucleoActivoDesdePost($enfermedad, 'sexo')) {
+            $valoresFijos['sexo'] = valorFijoNucleo($enfermedad, 'sexo') ?? '';
+        }
+
         $etnias = ['MESTIZO', 'ANDINO', 'ASIATICO_DESCENDIENTE', 'AFRODESCENDIENTE', 'INDIGENA_AMAZONICO', 'OTRO'];
-        $etnia = in_array($valoresFijos['etnia'], $etnias, true) ? $valoresFijos['etnia'] : null;
+        $etnia = ($etniaActiva && in_array($valoresFijos['etnia'], $etnias, true)) ? $valoresFijos['etnia'] : null;
         $etniaOtra = ($etnia === 'OTRO' && $valoresFijos['etnia_otra'] !== '') ? $valoresFijos['etnia_otra'] : null;
 
         // Mismas 19 opciones que catalogo_id=537 (b05_pueblo_etnico_o_etnia,
@@ -1616,12 +1786,22 @@ class CasosController extends Controller
         $lugarContagioDistritoId = ($valoresFijos['lugar_contagio_distrito_id'] ?? '') !== '' ? $valoresFijos['lugar_contagio_distrito_id'] : null;
         $lugarContagioLocalidad = ($valoresFijos['lugar_contagio_localidad'] ?? '') !== '' ? $valoresFijos['lugar_contagio_localidad'] : null;
 
-        $tipoCaptacion = in_array($valoresFijos['tipo_captacion'], ['ACTIVA', 'PASIVA'], true) ? $valoresFijos['tipo_captacion'] : null;
-        $lugarCaptacion = in_array($valoresFijos['lugar_captacion'], ['INSTITUCIONAL', 'COMUNIDAD'], true) ? $valoresFijos['lugar_captacion'] : null;
-        $clasificacionCaptacion = in_array($valoresFijos['clasificacion_captacion'], ['CONFIRMADO', 'PROBABLE', 'SOSPECHOSO'], true) ? $valoresFijos['clasificacion_captacion'] : null;
+        // nucleo_omitidos: 'captacion' / 'investigador' (cotejo Z21,
+        // 2026-09-11): si la ficha no pide el bloque, sus columnas quedan en
+        // NULL aunque el POST venga armado a mano.
+        $captacionOmitida = nucleoOmitido($enfermedad, 'captacion');
+        $investigadorOmitido = nucleoOmitido($enfermedad, 'investigador');
+
+        $tipoCaptacion = (!$captacionOmitida && in_array($valoresFijos['tipo_captacion'], ['ACTIVA', 'PASIVA'], true)) ? $valoresFijos['tipo_captacion'] : null;
+        $lugarCaptacion = (!$captacionOmitida && in_array($valoresFijos['lugar_captacion'], ['INSTITUCIONAL', 'COMUNIDAD'], true)) ? $valoresFijos['lugar_captacion'] : null;
+        $clasificacionCaptacion = (!$captacionOmitida && in_array($valoresFijos['clasificacion_captacion'], ['CONFIRMADO', 'PROBABLE', 'SOSPECHOSO'], true)) ? $valoresFijos['clasificacion_captacion'] : null;
 
         return [
-            'persona' => [
+            // El 'sexo' se agrega al final SOLO si la ficha lo condiciona: así
+            // pisa el valor que crear()/actualizar() toman del POST. Las 23
+            // fichas que no lo declaran siguen guardándolo tal cual, sin
+            // pasar por acá.
+            'persona' => array_merge([
                 'celular'            => $valoresFijos['celular'] !== '' ? $valoresFijos['celular'] : null,
                 'nacionalidad'       => $valoresFijos['nacionalidad'] !== '' ? $valoresFijos['nacionalidad'] : null,
                 'direccion'          => $valoresFijos['direccion'] !== '' ? $valoresFijos['direccion'] : null,
@@ -1644,7 +1824,10 @@ class CasosController extends Controller
                 'anterior_mz_lote'     => $anteriorMzLote,
                 'n_historia_clinica' => $nHistoriaClinica,
                 'nacimiento_distrito_id' => $nacimientoDistritoId,
-                'localidad'          => $valoresFijos['localidad'] !== '' ? $valoresFijos['localidad'] : null,
+                // "localidad" es parte del bloque "residencia" de
+                // nucleo_condicional (cotejo Z21): si la rama elegida no lo
+                // pide, no se guarda aunque llegue en el POST.
+                'localidad'          => ($residenciaActiva && $valoresFijos['localidad'] !== '') ? $valoresFijos['localidad'] : null,
                 'etnia'              => $etnia,
                 'etnia_otra'         => $etniaOtra,
                 'pueblo_etnico'      => $puebloEtnico,
@@ -1656,7 +1839,7 @@ class CasosController extends Controller
                 'fur'                => $fur,
                 'semanas_gestacion'  => $semanasGestacion,
                 'trimestre_gestacion'=> $trimestreGestacion,
-            ],
+            ], $sexoCondicionado ? ['sexo' => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null] : []),
             'caso' => [
                 'edad_valor'              => $edadValor,
                 'edad_unidad'             => $edadUnidad,
@@ -1665,12 +1848,15 @@ class CasosController extends Controller
                 'tipo_captacion'          => $tipoCaptacion,
                 'lugar_captacion'         => $lugarCaptacion,
                 'clasificacion_captacion' => $clasificacionCaptacion,
-                'investigador_nombre'     => $valoresFijos['investigador_nombre'] !== '' ? $valoresFijos['investigador_nombre'] : null,
-                'investigador_cargo'      => $valoresFijos['investigador_cargo'] !== '' ? $valoresFijos['investigador_cargo'] : null,
-                'investigador_profesion'  => $valoresFijos['investigador_profesion'] !== '' ? $valoresFijos['investigador_profesion'] : null,
-                'investigador_telefono'   => $valoresFijos['investigador_telefono'] !== '' ? $valoresFijos['investigador_telefono'] : null,
-                'investigador_email'      => $valoresFijos['investigador_email'] !== '' ? $valoresFijos['investigador_email'] : null,
-                'fecha_investigacion'     => $valoresFijos['fecha_investigacion'] !== '' ? fechaIsoValida($valoresFijos['fecha_investigacion']) : null,
+                // nucleo_omitidos: 'investigador' (cotejo Z21) -- la ficha que
+                // no trae ese bloque en el PDF tampoco lo guarda. Incluye
+                // fecha_investigacion, que vive en esa misma tarjeta.
+                'investigador_nombre'     => (!$investigadorOmitido && $valoresFijos['investigador_nombre'] !== '') ? $valoresFijos['investigador_nombre'] : null,
+                'investigador_cargo'      => (!$investigadorOmitido && $valoresFijos['investigador_cargo'] !== '') ? $valoresFijos['investigador_cargo'] : null,
+                'investigador_profesion'  => (!$investigadorOmitido && $valoresFijos['investigador_profesion'] !== '') ? $valoresFijos['investigador_profesion'] : null,
+                'investigador_telefono'   => (!$investigadorOmitido && $valoresFijos['investigador_telefono'] !== '') ? $valoresFijos['investigador_telefono'] : null,
+                'investigador_email'      => (!$investigadorOmitido && $valoresFijos['investigador_email'] !== '') ? $valoresFijos['investigador_email'] : null,
+                'fecha_investigacion'     => (!$investigadorOmitido && $valoresFijos['fecha_investigacion'] !== '') ? fechaIsoValida($valoresFijos['fecha_investigacion']) : null,
             ],
         ];
     }
@@ -2842,6 +3028,343 @@ class CasosController extends Controller
         }
 
         return [$filas, $errores];
+    }
+
+    /**
+     * vinculo_caso (cotejo Z21, 2026-09-11): la declaración del manifiesto ya
+     * resuelta contra campo_def real. null si la ficha no la declara (23 de
+     * 24) o si alguna de las claves declaradas ya no existe.
+     */
+    private function configVinculoCaso(array $enfermedad): ?array
+    {
+        $config = jsonDeEnfermedad($enfermedad, 'vinculo_caso');
+        if (!$config) {
+            return null;
+        }
+        $enfermedadId = (int) $enfermedad['id'];
+        $activador = CampoDef::porClave($enfermedadId, (string) ($config['activador']['clave'] ?? ''));
+        $candidato = CampoDef::porClave($enfermedadId, (string) ($config['candidatos']['clave'] ?? ''));
+        if (!$activador || !$candidato) {
+            return null;
+        }
+        $copiar = [];
+        foreach (($config['copiar'] ?? []) as $claveDestino => $origen) {
+            $destino = CampoDef::porClave($enfermedadId, (string) $claveDestino);
+            if ($destino) {
+                $copiar[] = ['destino' => $destino, 'origen' => (string) $origen];
+            }
+        }
+        $config['_activador'] = $activador;
+        $config['_candidato'] = $candidato;
+        $config['_copiar'] = $copiar;
+        // encadenar (pedido del usuario, 2026-09-11): campo NUMERO del caso
+        // candidato que dice cuántas fichas vinculadas se esperan de él
+        // (Z21: "N.º de nacidos vivos").
+        $config['_encadenar'] = !empty($config['encadenar']['clave'])
+            ? CampoDef::porClave($enfermedadId, (string) $config['encadenar']['clave'])
+            : null;
+
+        return $config;
+    }
+
+    /**
+     * ¿El texto buscado identifica a este candidato? Se acepta el código de
+     * la ficha (F-00123, con o sin guion, con o sin ceros) o el documento
+     * exacto -- nunca una coincidencia parcial: el objetivo es que la madre
+     * se identifique, no que se elija de una lista donde cabe equivocarse.
+     */
+    private function coincideVinculoBuscado(array $candidato, string $consulta): bool
+    {
+        $normalizar = static fn(string $texto): string => strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $texto));
+        $buscado = $normalizar($consulta);
+        if ($buscado === '') {
+            return false;
+        }
+        $documento = $normalizar((string) ($candidato['num_doc'] ?? ''));
+        if ($documento !== '' && $documento === $buscado) {
+            return true;
+        }
+        $codigo = $normalizar((string) ($candidato['codigo'] ?? ''));
+        if ($codigo !== '' && $codigo === $buscado) {
+            return true;
+        }
+        // "123" o "00123" para la ficha F-00123.
+        $soloNumeroCodigo = ltrim(preg_replace('/^F/', '', $codigo), '0');
+        $soloNumeroBuscado = ltrim(preg_replace('/^F/', '', $buscado), '0');
+
+        return $soloNumeroCodigo !== '' && $soloNumeroCodigo === $soloNumeroBuscado;
+    }
+
+    /**
+     * Endpoint AJAX del buscador de ficha vinculada: identifica a la madre
+     * por código de ficha o documento exacto, en vez de ofrecer la lista
+     * completa de gestantes (de donde se podía elegir la equivocada). Devuelve
+     * los mismos datos que una opción del selector, así que el servidor sigue
+     * revalidando el vínculo al guardar.
+     */
+    public function buscarVinculo(): void
+    {
+        Auth::exigirRol(...self::ROLES_REGISTRO);
+        header('Content-Type: application/json; charset=utf-8');
+
+        $enfermedad = Enfermedad::buscar((int) ($_GET['enfermedad_id'] ?? 0));
+        $config = $enfermedad ? $this->configVinculoCaso($enfermedad) : null;
+        $consulta = trim((string) ($_GET['q'] ?? ''));
+        if (!$config || $consulta === '') {
+            echo json_encode(['encontrado' => false], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $excluir = !empty($_GET['caso_id']) ? (int) $_GET['caso_id'] : null;
+        foreach ($this->candidatosVinculo($enfermedad, $config, $excluir) as $candidato) {
+            if (!$this->coincideVinculoBuscado($candidato, $consulta)) {
+                continue;
+            }
+            echo json_encode([
+                'encontrado' => true,
+                'id'         => $candidato['id'],
+                'texto'      => $candidato['texto'],
+                'copiar'     => $candidato['copiar_por_nombre'],
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        echo json_encode(['encontrado' => false], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Valor que se copia desde el caso vinculado: "campo:<clave>" sale de su
+     * caso_valor, "persona:<columna>" de su persona. Mismo juego de columnas
+     * que valida cargar_fichas.php.
+     */
+    private function valorCopiadoDeVinculo(string $origen, array $casoVinculado, array $valoresVinculado, int $enfermedadId): string
+    {
+        if (str_starts_with($origen, 'campo:')) {
+            $campoOrigen = CampoDef::porClave($enfermedadId, substr($origen, 6));
+            return $campoOrigen ? (string) ($valoresVinculado[(int) $campoOrigen['id']] ?? '') : '';
+        }
+        if (str_starts_with($origen, 'persona:')) {
+            $columna = substr($origen, 8);
+            return in_array($columna, ['num_doc', 'tipo_doc', 'nombres', 'apellido_paterno', 'apellido_materno', 'fecha_nac'], true)
+                ? (string) ($casoVinculado[$columna] ?? '')
+                : '';
+        }
+
+        return '';
+    }
+
+    /**
+     * Casos que se ofrecen para vincular: los de la MISMA ficha cuyo campo
+     * "candidatos" tiene el valor declarado, no anulados y visibles para este
+     * usuario -- Z21 es ficha privada (Caso::esPrivada), así que un
+     * REGISTRADOR solo puede vincular fichas que él mismo registró.
+     */
+    private function candidatosVinculo(array $enfermedad, array $config, ?int $excluirCasoId): array
+    {
+        $consulta = Database::conexion()->prepare(
+            'SELECT c.id
+               FROM caso c
+               JOIN caso_valor cv ON cv.caso_id = c.id AND cv.campo_def_id = :campo
+              WHERE c.enfermedad_id = :enf AND c.anulado = 0 AND cv.valor = :valor
+           ORDER BY c.fecha_notif DESC, c.id DESC'
+        );
+        $consulta->execute([
+            'campo' => (int) $config['_candidato']['id'],
+            'enf'   => (int) $enfermedad['id'],
+            'valor' => (string) $config['candidatos']['valor'],
+        ]);
+
+        $candidatos = [];
+        foreach ($consulta->fetchAll() as $fila) {
+            $idCandidato = (int) $fila['id'];
+            if ($excluirCasoId !== null && $idCandidato === $excluirCasoId) {
+                continue; // un caso no se vincula a sí mismo
+            }
+            $casoCandidato = Caso::conDetalle($idCandidato);
+            if (!$casoCandidato || !$this->puedeVerCaso($casoCandidato)) {
+                continue;
+            }
+            $valoresCandidato = CasoValor::porCaso($idCandidato);
+            $copiarPorNombre = [];
+            foreach ($config['_copiar'] as $copia) {
+                $copiarPorNombre['campo_' . (int) $copia['destino']['id']] = $this->valorCopiadoDeVinculo(
+                    $copia['origen'],
+                    $casoCandidato,
+                    $valoresCandidato,
+                    (int) $enfermedad['id']
+                );
+            }
+            $candidatos[] = [
+                'id'     => $idCandidato,
+                'codigo' => (string) $casoCandidato['codigo'],
+                'num_doc' => (string) ($casoCandidato['num_doc'] ?? ''),
+                'texto' => $casoCandidato['codigo'] . ' · '
+                    . trim($casoCandidato['apellido_paterno'] . ' ' . $casoCandidato['apellido_materno'] . ', ' . $casoCandidato['nombres'])
+                    . ' · ' . $casoCandidato['tipo_doc'] . ' ' . $casoCandidato['num_doc']
+                    . ' · ' . fechaIsoADmy($casoCandidato['fecha_notif']),
+                'copiar_por_nombre' => $copiarPorNombre,
+            ];
+        }
+
+        return $candidatos;
+    }
+
+    /**
+     * Datos del selector de ficha vinculada para las vistas de formulario
+     * (partials/vinculo-caso.php). null en las fichas sin vinculo_caso.
+     */
+    private function datosVinculoCasoVista(array $enfermedad, ?int $seleccionado, ?int $casoIdActual, ?string $error = null): array
+    {
+        $config = $this->configVinculoCaso($enfermedad);
+        if (!$config) {
+            return ['vinculoCasoVista' => null];
+        }
+        $destinos = [];
+        foreach ($config['_copiar'] as $copia) {
+            $destinos[] = 'campo_' . (int) $copia['destino']['id'];
+        }
+
+        // fijar_por_procedencia (pedido del usuario, 2026-09-11): con esto
+        // declarado NO se manda al navegador la lista de candidatos -- el
+        // vínculo llega fijado desde la ficha de la madre o se identifica por
+        // código/documento exacto en el buscador. Sin declararlo, sigue el
+        // selector de siempre (mecanismo genérico, ninguna otra ficha lo usa).
+        $porProcedencia = !empty($config['fijar_por_procedencia']);
+        $candidatos = $this->candidatosVinculo($enfermedad, $config, $casoIdActual);
+        $seleccionadoDatos = null;
+        foreach ($candidatos as $candidato) {
+            if ($seleccionado !== null && $candidato['id'] === (int) $seleccionado) {
+                $seleccionadoDatos = $candidato;
+                break;
+            }
+        }
+
+        return ['vinculoCasoVista' => [
+            'config'            => $config,
+            'porProcedencia'    => $porProcedencia,
+            'candidatos'        => $porProcedencia ? [] : $candidatos,
+            'seleccionadoDatos' => $seleccionadoDatos,
+            'casoIdActual'      => $casoIdActual,
+            'destinos'          => $destinos,
+            'seleccionado'      => $seleccionado,
+            'error'             => $error,
+        ]];
+    }
+
+    /**
+     * Revalida el caso vinculado que llegó por POST y copia sus datos a los
+     * campos declarados en "copiar" -- no se confía en lo que el navegador
+     * haya dejado escrito ahí (ficha.js solo los adelanta). Si el activador
+     * no aplica, el vínculo se descarta aunque venga forzado en el POST.
+     *
+     * @return array{0: int|null, 1: string|null} [id vinculado, error]
+     */
+    private function resolverVinculoCaso(array $enfermedad, array $valoresCampos, array &$paraGuardar, ?int $casoIdActual): array
+    {
+        $config = $this->configVinculoCaso($enfermedad);
+        if (!$config) {
+            return [null, null];
+        }
+        $activo = (string) ($valoresCampos[(int) $config['_activador']['id']] ?? '') === (string) $config['activador']['valor'];
+        $idElegido = (int) ($_POST['caso_vinculado_id'] ?? 0);
+        if (!$activo || $idElegido <= 0) {
+            return [null, null];
+        }
+        foreach ($this->candidatosVinculo($enfermedad, $config, $casoIdActual) as $candidato) {
+            if ($candidato['id'] !== $idElegido) {
+                continue;
+            }
+            foreach ($candidato['copiar_por_nombre'] as $nombreDestino => $valorCopiado) {
+                $idDestino = (int) substr($nombreDestino, strlen('campo_'));
+                if ($valorCopiado !== '') {
+                    $paraGuardar[$idDestino] = $valorCopiado;
+                } else {
+                    unset($paraGuardar[$idDestino]);
+                }
+            }
+            return [$idElegido, null];
+        }
+
+        // Con "fijar_por_procedencia" no hay lista donde volver a elegir: el
+        // texto lo declara la ficha ("vuelve a identificarla por código o
+        // DNI"). Sin esa declaración queda el mensaje del selector de siempre.
+        return [null, $config['buscar']['no_disponible']
+            ?? 'La ficha elegida ya no está disponible para vincular. Vuelve a seleccionarla.'];
+    }
+
+    /**
+     * Lo que la vista de solo lectura muestra del vínculo: la ficha a la que
+     * este caso está enlazado, y las que lo apuntan a él (los niños nacidos
+     * expuestos de una gestante, uno por producto si fue embarazo múltiple).
+     */
+    private function datosVinculoVer(array $enfermedad, array $caso, array $valoresCampos): ?array
+    {
+        $config = $this->configVinculoCaso($enfermedad);
+        if (!$config) {
+            return null;
+        }
+        $vinculada = null;
+        if (!empty($caso['caso_vinculado_id'])) {
+            $posible = Caso::conDetalle((int) $caso['caso_vinculado_id']);
+            if ($posible && $this->puedeVerCaso($posible)) {
+                $vinculada = $posible;
+            }
+        }
+        $hijos = [];
+        foreach (Caso::idsVinculados((int) $caso['id']) as $idHijo) {
+            $hijo = Caso::conDetalle($idHijo);
+            if ($hijo && $this->puedeVerCaso($hijo)) {
+                $hijos[] = $hijo;
+            }
+        }
+        $esCandidato = (string) ($valoresCampos[(int) $config['_candidato']['id']] ?? '') === (string) $config['candidatos']['valor'];
+
+        // encadenar: cuántas fichas vinculadas se esperan de este caso según
+        // su propio campo numérico (Z21: N.º de nacidos vivos) y cuántas
+        // faltan por registrar. null cuando la ficha no lo declara o el campo
+        // quedó vacío -- no se inventa un objetivo.
+        $esperados = $this->fichasVinculadasEsperadas($config, $valoresCampos);
+
+        return [
+            'config'         => $config,
+            'madre'          => $vinculada,
+            'hijos'          => $hijos,
+            'esCandidato'    => $esCandidato,
+            'esperados'      => $esCandidato ? $esperados : null,
+            'pendientes'     => ($esCandidato && $esperados !== null) ? max(0, $esperados - count($hijos)) : null,
+            'puedeRegistrar' => $esCandidato && empty($caso['anulado']) && Auth::tieneRol(...self::ROLES_REGISTRO),
+        ];
+    }
+
+    /**
+     * vinculo_caso.encadenar: el valor del campo NUMERO que dice cuántas
+     * fichas vinculadas se esperan del caso candidato. null si la ficha no lo
+     * declara, el campo no existe o no trae un número.
+     */
+    private function fichasVinculadasEsperadas(array $config, array $valoresCampos): ?int
+    {
+        if (empty($config['_encadenar'])) {
+            return null;
+        }
+        $valor = trim((string) ($valoresCampos[(int) $config['_encadenar']['id']] ?? ''));
+
+        return ctype_digit($valor) ? (int) $valor : null;
+    }
+
+    /**
+     * nucleo_condicional (cotejo Z21): ¿aplica este bloque del núcleo
+     * ('etnia', 'residencia') según lo que llega en el POST? Se lee del POST
+     * crudo porque la obligatoriedad del distrito se decide antes de validar
+     * los campos dinámicos; el valor se revalida igual en su propio campo.
+     */
+    private function bloqueNucleoActivoDesdePost(array $enfermedad, string $bloque): bool
+    {
+        $condicion = condicionNucleo($enfermedad, $bloque);
+        if (!$condicion) {
+            return true;
+        }
+
+        return in_array(trim((string) ($_POST['campo_' . (int) $condicion['campo']['id']] ?? '')), $condicion['valores'], true);
     }
 
     private function puedeVerCaso(array $caso): bool

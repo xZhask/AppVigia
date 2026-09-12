@@ -75,6 +75,18 @@ $slugGrupo = function (string $texto): string {
     return trim($texto, '_');
 };
 $gruposColumnas = $config['grupos_columnas'] ?? [];
+
+// "opciones_por_fila" (cotejo Z21, 2026-09-11): una columna libre cuyas
+// opciones cerradas CAMBIAN según la fila -- "Pruebas diagnósticas" del PDF
+// de Z21 tiene una columna "Resultado" que es Positivo/Negativo en las dos
+// PCR y en la confirmatoria, pero Reactivo/No reactivo en el ELISA. Ninguna
+// de las otras formas de declarar opciones servía: $columnasRadio es por
+// COLUMNA (misma opción para todas las filas) y "grupos_columnas" fusiona
+// columnas, no las cambia por fila. Formato:
+// {"Resultado": [["Positivo","Negativo"], ...una lista por fila...]}.
+// Sin esta clave (23 de 24 fichas) la columna sigue siendo texto libre,
+// exactamente como antes.
+$opcionesPorFila = $config['opciones_por_fila'] ?? [];
 $grupoDeColumna = [];
 $indicesGrupoYaAsignados = [];
 foreach ($gruposColumnas as $nombreGrupo => $miembros) {
@@ -270,8 +282,28 @@ $filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_m
                           ? ($filaEsNegativo || (string) $valFilaRadio === '')
                           : ($gateCualquierRadio && (string) $valFilaRadio === ''));
                   $tieneGate = $gateSi || $gateNegativo || $gateCualquierRadio;
+                  // Opciones cerradas propias de esta fila (ver
+                  // $opcionesPorFila arriba): la celda deja de ser texto
+                  // libre y se pinta con el mismo control segmentado .seg
+                  // que usan las columnas radio.
+                  $opcionesCelda = $opcionesPorFila[(string) $col][$fIdx] ?? null;
+                  $opcionesCelda = is_array($opcionesCelda)
+                      ? array_values(array_filter(array_map('strval', $opcionesCelda), fn ($o) => trim($o) !== ''))
+                      : [];
+                  $valorCelda = (string) ($valores[$fIdx][$cIdx] ?? '');
                 ?>
+                <?php if ($opcionesCelda): ?>
+                  <div class="seg" style="display:inline-flex; width: 100%;">
+                    <?php foreach ($opcionesCelda as $opcionCelda): ?>
+                      <label class="seg-label <?= $valorCelda === $opcionCelda ? 'on' : '' ?>" style="flex:1; text-align:center; cursor:pointer; padding: 4px 8px; border-radius:6px;" title="<?= e($opcionCelda) ?>">
+                        <input type="radio" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($opcionCelda) ?>" class="sr-only" <?= $valorCelda === $opcionCelda ? 'checked' : '' ?>>
+                        <?= e($opcionCelda) ?>
+                      </label>
+                    <?php endforeach; ?>
+                  </div>
+                <?php else: ?>
                   <input type="<?= $esFechaCelda ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaCelda ? '' : '—' ?>" <?= $esFechaCelda ? 'max="' . date('Y-m-d') . '"' : '' ?> <?= $tieneGate ? 'data-gated-por-si="1"' : '' ?> <?= $deshabilitada ? 'disabled' : '' ?> style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;<?= $deshabilitada ? ' opacity:.55; cursor:not-allowed;' : '' ?>">
+                <?php endif; ?>
                 <?php endif; ?>
               </td>
             <?php endforeach; ?>

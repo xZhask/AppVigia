@@ -108,7 +108,11 @@ if ($puedeElegirEstablecimiento) {
               <?php endif; ?>
             </div>
           </div>
-          <div id="notificacionCaptacionWrap" <?= in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55', 'B04X', 'A00'], true) ? 'hidden' : '' ?>>
+          <?php // nucleo_omitidos: 'captacion' (cotejo Z21, 2026-09-11) es la
+          // versión declarativa de esta misma lista de CIE-10, para no
+          // seguir agregando fichas a mano en código compartido. Las 12 que
+          // ya estaban siguen igual. ?>
+          <div id="notificacionCaptacionWrap" <?= (in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55', 'B04X', 'A00'], true) || nucleoOmitido($enfermedad, 'captacion')) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
           <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
@@ -125,6 +129,11 @@ if ($puedeElegirEstablecimiento) {
           <?php require __DIR__ . '/../partials/notificacion-fechas-a95.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b04x.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a00.php'; ?>
+          <?php // campos_notificacion (cotejo Z21, 2026-09-11): reemplazo
+          // declarativo de los 14 partials de arriba -- la ficha declara por
+          // clave qué campo_def suyos se pintan acá dentro. No imprime nada
+          // en las fichas que no lo declaran. ?>
+          <?php require __DIR__ . '/../partials/notificacion-campos-declarados.php'; ?>
         </div>
       </div>
 
@@ -194,7 +203,18 @@ if ($puedeElegirEstablecimiento) {
           </div>
 
           <div class="fields thirds" style="margin-top:14px">
-            <div class="field o95-hide" <?= $esO95Index ? 'hidden style="display:none;"' : '' ?>>
+            <?php
+            // nucleo_condicional 'sexo' (pedido del usuario, 2026-09-12): hay
+            // fichas donde una rama no pregunta el sexo (Z21: la gestante lo
+            // es por definición) y otra sí (el niño nacido expuesto). Se
+            // envuelve como cualquier otro bloque condicionado; el valor que
+            // se guarda cuando el bloque no aplica lo decide el servidor
+            // (valor_fijo), no un <input hidden> con el mismo name.
+            // Las etiquetas van PEGADAS al marcado: en las 23 fichas que no
+            // lo declaran la envoltura es '' y el HTML debe quedar idéntico,
+            // sin siquiera un espacio de más.
+            [$abreSexoCondicional, $cierraSexoCondicional] = envolturaNucleoCondicional($enfermedad, 'sexo', $valoresCampos);
+            echo $abreSexoCondicional; ?><div class="field o95-hide" <?= $esO95Index ? 'hidden style="display:none;"' : '' ?>>
               <label class="fl">Sexo</label>
               <div class="control">
                 <select id="sexo" name="sexo" data-nosearch="true">
@@ -204,7 +224,13 @@ if ($puedeElegirEstablecimiento) {
                 </select>
               </div>
             </div>
-            <?php if ($esO95Index): ?>
+            <?php // El cierre se emite pegado a la etiqueta PHP siguiente, y
+            // no al final de la línea del div: PHP se come el salto de línea
+            // que va inmediatamente después de una etiqueta de cierre, y eso
+            // pegaría dos líneas del HTML en las 23 fichas donde esta
+            // envoltura es cadena vacía. (Ojo: nunca escribir una etiqueta de
+            // cierre dentro de un comentario, PHP la interpreta igual.)
+            echo $cierraSexoCondicional; ?><?php if ($esO95Index): ?>
               <input type="hidden" name="sexo" value="F">
             <?php endif; ?>
             <div class="field">
@@ -244,6 +270,17 @@ if ($puedeElegirEstablecimiento) {
           require __DIR__ . '/../partials/datos-paciente-nucleo.php';
           ?>
 
+          <?php
+          // nucleo_condicional (cotejo Z21, 2026-09-11): la residencia
+          // habitual solo la pide una de las dos ramas de la ficha. Cuando
+          // está condicionada, el <select> de Distrito NO lleva `required`:
+          // un required dentro de un bloque oculto bloquea el submit sin
+          // mostrar ningún error (bug real de B26, memoria
+          // bug_b26_fecha_inicio_sintomas_bloquea_submit). El servidor lo
+          // sigue exigiendo cuando la rama está activa.
+          [$abreResidenciaCondicional, $cierraResidenciaCondicional] = envolturaNucleoCondicional($enfermedad, 'residencia', $valoresCampos);
+          ?>
+          <?= $abreResidenciaCondicional ?>
           <div <?= $nucleoIncluye('nacimiento_distrito_id') ? 'style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"' : 'style="margin-top:14px"' ?>>
             <?php if ($nucleoIncluye('nacimiento_distrito_id')): ?>
               <!-- Distingue este bloque de "Lugar de nacimiento" (justo arriba, mismo
@@ -252,8 +289,15 @@ if ($puedeElegirEstablecimiento) {
                    apariencia de las 23 fichas que no piden lugar de nacimiento. -->
               <div class="eyebrow" style="margin-bottom:10px">Residencia habitual</div>
             <?php endif; ?>
-            <?php $prefijo = 'pac-ubigeo'; $errorDistrito = $erroresFijos['distrito_id'] ?? null; require __DIR__ . '/../partials/selector-ubigeo.php'; ?>
+            <?php
+            $prefijo = 'pac-ubigeo';
+            $errorDistrito = $erroresFijos['distrito_id'] ?? null;
+            if ($abreResidenciaCondicional !== '') { $distritoRequerido = false; }
+            require __DIR__ . '/../partials/selector-ubigeo.php';
+            if ($abreResidenciaCondicional !== '') { unset($distritoRequerido); }
+            ?>
           </div>
+          <?= $cierraResidenciaCondicional ?>
 
           <?php require __DIR__ . '/../partials/datos-paciente-nucleo-residencia.php'; ?>
 
@@ -466,6 +510,10 @@ endforeach;
 ?>
 
       <!-- Investigador -->
+      <?php // nucleo_omitidos: 'investigador' (cotejo Z21, 2026-09-11) -- una
+      // ficha cuyo PDF no trae el bloque de quién investiga no lo pinta, y
+      // así tampoco llega nada suyo en el POST. ?>
+      <?php if (!nucleoOmitido($enfermedad, 'investigador')): ?>
       <div class="card section">
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Investigador</h3></div>
         <div class="section-body">
@@ -473,6 +521,7 @@ endforeach;
         </div>
       </div>
       <?php $numeroSeccion++; ?>
+      <?php endif; ?>
 
       <?php
       // B04X, sección XI del PDF (ítems 61-62): "Personal de epidemiología
@@ -484,6 +533,11 @@ endforeach;
       ?>
 
       <!-- Clasificación del caso -->
+      <?php // nucleo_omitidos: 'clasificacion' (cotejo Z21, 2026-09-11) -- la
+      // versión declarativa del `if` de B26 de al lado: una ficha cuyo PDF no
+      // clasifica el caso no pinta la tarjeta y su caso.clasificacion queda
+      // en el valor por defecto de la ficha. ?>
+      <?php if (!nucleoOmitido($enfermedad, 'clasificacion')): ?>
       <?php $esB26Clasif = (($enfermedad['cie10'] ?? '') === 'B26'); ?>
       <div class="card section" id="cardClasificacionCaso" <?= $esB26Clasif ? 'hidden style="display:none;"' : '' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Clasificación del caso</h3></div>
@@ -491,6 +545,7 @@ endforeach;
           <?php require __DIR__ . '/../partials/clasificacion-chips.php'; ?>
         </div>
       </div>
+      <?php endif; ?>
     </div>
 
     <!-- Right rail -->

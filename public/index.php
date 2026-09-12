@@ -124,6 +124,10 @@ $router->get('/casos/nuevo/titular', function () {
     (new CasosController())->buscarTitular();
 });
 
+$router->get('/casos/nuevo/vinculo', function () {
+    (new CasosController())->buscarVinculo();
+});
+
 $router->get('/casos/importar', function () {
     (new ImportacionController())->formulario();
 });

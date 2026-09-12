@@ -231,6 +231,15 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
     </div>
   </div>
 
+  <?php
+  // nucleo_condicional (cotejo Z21, 2026-09-11): Etnia solo la pide una de
+  // las dos ramas de la ficha (la gestante, no el niño nacido expuesto), así
+  // que se envuelve en un .dep-wrap igual que cualquier campo con
+  // depende_de. Devuelve ['',''] -- y no cambia una coma del HTML -- en las
+  // 23 fichas que no declaran nucleo_condicional.
+  [$abreEtniaCondicional, $cierraEtniaCondicional] = envolturaNucleoCondicional($enfermedad, 'etnia', $valoresCampos ?? []);
+  ?>
+  <?= $abreEtniaCondicional ?>
   <!-- Etnia / raza (Enfermedades Generales) -->
   <div class="field" id="campoEtniaRazaGral" data-nucleo-campo="etnia" <?= $nucleoOmite('etnia') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Etnia / raza</label>
@@ -254,6 +263,7 @@ require __DIR__ . '/datos-paciente-b05-loader.php';
       <input type="text" id="etniaOtraInput" name="etnia_otra" value="<?= e($valoresFijos['etnia_otra'] ?? '') ?>" placeholder="Especificar etnia / raza…" <?= (($valoresFijos['etnia'] ?? '') === 'OTRO') ? '' : 'disabled' ?>>
     </div>
   </div>
+  <?= $cierraEtniaCondicional ?>
 
   <div class="field" data-nucleo-campo="pueblo_etnico" <?= $nucleoOmite('pueblo_etnico') ? 'hidden style="display:none;"' : '' ?>>
     <label class="fl">Pueblo étnico o etnia</label>

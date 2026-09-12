@@ -145,8 +145,14 @@ foreach ($secciones as $s) {
 
 $campos = $pdo->query('SELECT id, seccion_id, clave, etiqueta, tipo, catalogo_id, sensible, depende_de, valor_activador, orden FROM campo_def ORDER BY seccion_id, orden, id')->fetchAll();
 $etiquetaPorCampoId = [];
+// Desde el cotejo de Z21 (2026-09-11), "depende_de" del manifiesto puede
+// nombrar al campo padre por CLAVE (además de por etiqueta): Z21 repite tres
+// etiquetas entre sus dos ramas y por etiqueta la dependencia sería ambigua.
+// Este índice permite comparar contra lo mismo que declara el manifiesto.
+$clavePorCampoId = [];
 foreach ($campos as $c) {
     $etiquetaPorCampoId[$c['id']] = $c['etiqueta'];
+    $clavePorCampoId[$c['id']] = $c['clave'];
 }
 $camposPorSeccion = [];
 foreach ($campos as $c) {
@@ -345,7 +351,25 @@ foreach ($manifiesto['fichas'] as $cie10 => $fichaManifiesto) {
             $dependeDeEsperado = $campoManifiesto['depende_de'] ?? null;
             $valorActivadorEsperado = $campoManifiesto['valor_activador'] ?? null;
             $dependeDeEncontradoId = $campoBd['depende_de'];
-            $dependeDeEncontrado = $dependeDeEncontradoId !== null ? ($etiquetaPorCampoId[$dependeDeEncontradoId] ?? "(campo_def.id={$dependeDeEncontradoId}, no encontrado)") : null;
+            // Desde el cotejo de Z21 (2026-09-11) el manifiesto puede nombrar
+            // al campo padre por CLAVE en vez de por etiqueta (ver
+            // cargar_fichas.php): se compara contra la misma forma que
+            // declaró, o esto reportaría una diferencia inexistente.
+            $dependePorClave = false;
+            if ($dependeDeEsperado !== null) {
+                foreach ($fichaManifiesto['secciones'] as $seccionRef) {
+                    foreach ($seccionRef['campos'] as $campoRef) {
+                        if (($campoRef['clave'] ?? null) === $dependeDeEsperado) {
+                            $dependePorClave = true;
+                            break 2;
+                        }
+                    }
+                }
+            }
+            $dependeDeEncontrado = $dependeDeEncontradoId !== null
+                ? (($dependePorClave ? ($clavePorCampoId[$dependeDeEncontradoId] ?? null) : ($etiquetaPorCampoId[$dependeDeEncontradoId] ?? null))
+                    ?? "(campo_def.id={$dependeDeEncontradoId}, no encontrado)")
+                : null;
             $valorActivadorEncontrado = $campoBd['valor_activador'];
             if ($dependeDeEsperado !== $dependeDeEncontrado || $valorActivadorEsperado !== $valorActivadorEncontrado) {
                 $diffSeccion['dependencia_incorrecta'][] = [

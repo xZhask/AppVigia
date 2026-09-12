@@ -263,6 +263,96 @@ function campoVisiblePorDependencia(array $campo, array $valoresCampos): bool
 }
 
 /**
+ * Lista u objeto JSON declarado en una columna de `enfermedad`
+ * (nucleo_omitidos, campos_notificacion, vinculo_caso, nucleo_condicional...),
+ * ya decodificado; [] si la ficha no declara nada o el JSON no es válido.
+ */
+function jsonDeEnfermedad(array $enfermedad, string $columna): array
+{
+    $crudo = $enfermedad[$columna] ?? null;
+    if (empty($crudo)) {
+        return [];
+    }
+    $decodificado = json_decode((string) $crudo, true);
+    return is_array($decodificado) ? $decodificado : [];
+}
+
+/**
+ * ¿La ficha declara este campo/bloque en nucleo_omitidos? Además de los
+ * campos de persona de siempre (celular, etnia...), desde el cotejo de Z21
+ * (2026-09-11) admite 4 bloques enteros del formulario: 'captacion',
+ * 'clasificacion', 'investigador' y 'fecha_inicio_sintomas' -- la versión
+ * declarativa de las listas de CIE-10 que ya ocultaban esos bloques en
+ * nueva/index.php, fichas/editar.php, secciones-clinicas.php y
+ * CasosController (esas listas siguen igual para las fichas que ya las usan).
+ */
+function nucleoOmitido(array $enfermedad, string $campoNucleo): bool
+{
+    return in_array($campoNucleo, jsonDeEnfermedad($enfermedad, 'nucleo_omitidos'), true);
+}
+
+/**
+ * nucleo_condicional (cotejo Z21, 2026-09-11): un bloque del núcleo
+ * ('etnia', 'residencia') que solo aplica cuando un campo_def de la misma
+ * ficha toma uno de ciertos valores -- en Z21, Etnia y Residencia habitual
+ * solo los pide la Sección I (gestante), no la II (niño). null si el bloque
+ * no está condicionado (o si la clave declarada ya no existe).
+ *
+ * @return array{campo: array, valores: string[]}|null
+ */
+function condicionNucleo(array $enfermedad, string $bloque): ?array
+{
+    foreach (jsonDeEnfermedad($enfermedad, 'nucleo_condicional') as $regla) {
+        if (!in_array($bloque, $regla['bloques'] ?? [], true)) {
+            continue;
+        }
+        $campoDisparador = CampoDef::porClave((int) $enfermedad['id'], (string) ($regla['clave'] ?? ''));
+        return $campoDisparador ? ['campo' => $campoDisparador, 'valores' => array_map('strval', $regla['valores'] ?? [])] : null;
+    }
+    return null;
+}
+
+/**
+ * nucleo_condicional.valor_fijo (pedido del usuario, 2026-09-12): qué se
+ * guarda en un bloque del núcleo cuando la rama elegida NO lo pregunta --
+ * en Z21, sexo = F en la ficha de la gestante, que por definición es mujer.
+ * null si la ficha no declara un valor fijo para ese bloque.
+ */
+function valorFijoNucleo(array $enfermedad, string $bloque): ?string
+{
+    foreach (jsonDeEnfermedad($enfermedad, 'nucleo_condicional') as $regla) {
+        if (!in_array($bloque, $regla['bloques'] ?? [], true)) {
+            continue;
+        }
+        $fijo = $regla['valor_fijo'][$bloque] ?? null;
+        return is_string($fijo) && $fijo !== '' ? $fijo : null;
+    }
+
+    return null;
+}
+
+/**
+ * Envoltura .dep-wrap para un bloque del núcleo condicionado: misma mecánica
+ * que cualquier depende_de (ficha.js lo muestra/oculta y limpia sus valores
+ * al ocultarse). ['', ''] si el bloque no está condicionado, así el HTML de
+ * las fichas que no lo declaran no cambia.
+ *
+ * @return array{0: string, 1: string}
+ */
+function envolturaNucleoCondicional(array $enfermedad, string $bloque, array $valoresCampos): array
+{
+    $condicion = condicionNucleo($enfermedad, $bloque);
+    if (!$condicion) {
+        return ['', ''];
+    }
+    $idDisparador = (int) $condicion['campo']['id'];
+    $visible = in_array((string) ($valoresCampos[$idDisparador] ?? ''), $condicion['valores'], true);
+    $abre = '<div class="dep-wrap" data-depende-de="campo_' . $idDisparador . '" data-valor-activador="'
+        . e(implode(',', $condicion['valores'])) . '"' . ($visible ? '' : ' hidden') . '>';
+    return [$abre, '</div>'];
+}
+
+/**
  * Normaliza un nombre propio guardado en mayúsculas sostenidas (ej. nombres
  * de establecimiento en el padrón RENIPRESS) a capitalización de título,
  * para no mostrarlo "GRITANDO" en la interfaz.
@@ -453,6 +543,41 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
                     }
                 }
                 return $afectadas ? implode('; ', $afectadas) : 'Sin compromiso de estructuras mucosas';
+            }
+            // MATRIZ con "opciones_por_fila" (cotejo Z21, 2026-09-11): acá sí
+            // se puede armar una línea legible por fila -- cada fila tiene
+            // nombre propio y pocas columnas ("1.er PCR: 01/09/2026,
+            // Positivo"). El resto de las matrices (A80, B26...) conserva el
+            // resumen de siempre, para no cambiar lo que ya se revisó.
+            $configMatrizTexto = json_decode((string) ($campo['config'] ?? '{}'), true) ?: [];
+            if (!empty($configMatrizTexto['opciones_por_fila'])) {
+                $filasMatrizTexto = $configMatrizTexto['filas'] ?? [];
+                $columnasMatrizTexto = $configMatrizTexto['columnas'] ?? [];
+                $lineasMatrizTexto = [];
+                foreach ($decoded as $indiceFila => $celdasFila) {
+                    if (!is_array($celdasFila)) {
+                        continue;
+                    }
+                    $partesFila = [];
+                    foreach ($celdasFila as $indiceColumna => $valorCelda) {
+                        if (!ctype_digit((string) $indiceColumna)) {
+                            continue; // subclaves internas (_radio y compañía)
+                        }
+                        $valorCelda = trim((string) $valorCelda);
+                        if ($valorCelda === '') {
+                            continue;
+                        }
+                        $etiquetaColumna = (string) ($columnasMatrizTexto[(int) $indiceColumna] ?? '');
+                        $partesFila[] = str_contains(mb_strtoupper($etiquetaColumna), 'FECHA')
+                            ? (fechaIsoADmy($valorCelda) ?: $valorCelda)
+                            : $valorCelda;
+                    }
+                    if ($partesFila) {
+                        $lineasMatrizTexto[] = ($filasMatrizTexto[$indiceFila] ?? ('#' . ((int) $indiceFila + 1)))
+                            . ': ' . implode(', ', $partesFila);
+                    }
+                }
+                return $lineasMatrizTexto ? implode(' | ', $lineasMatrizTexto) : '—';
             }
             return is_array($decoded) ? 'Registrado (' . count($decoded) . ' ítems)' : $valorCrudo;
         default:
