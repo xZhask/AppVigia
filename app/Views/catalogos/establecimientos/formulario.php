@@ -52,6 +52,18 @@ $prefijoUbigeo = 'est-ubigeo';
             </select>
           </div>
         </div>
+        <div class="field">
+          <label class="fl">Categoría</label>
+          <div class="control <?= isset($errores['categoria']) ? 'err' : '' ?>">
+            <select name="categoria">
+              <option value="">Sin categoría</option>
+              <?php foreach (CATEGORIAS_ESTABLECIMIENTO as $categoria => $tipo): ?>
+                <option value="<?= e($categoria) ?>" <?= seleccionado($establecimiento['categoria'] ?? '', $categoria) ?>><?= e($categoria) ?> · <?= e($tipo) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <?php if (isset($errores['categoria'])): ?><span class="hint err"><?= e($errores['categoria']) ?></span><?php else: ?><span class="hint">Las fichas toman de aquí el tipo de EE.SS.</span><?php endif; ?>
+        </div>
       </div>
 
       <div class="eyebrow" style="margin:20px 0 12px">Ubicación</div>

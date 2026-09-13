@@ -103,16 +103,22 @@ $es = $estados[$caso['estado']];
       </div>
 
       <!-- 2. persona -->
-      <div class="card section">
-        <div class="section-head"><span class="section-num">2</span><h3>Datos del persona</h3></div>
+      <?php // nucleo_condicional 'persona': ver nueva/index.php.
+      $tarjetaPersona = tarjetaPersonaCondicional($enfermedad, $valoresCampos);
+      echo $tarjetaPersona['aviso']; ?><div class="card section"<?= $tarjetaPersona['atributos'] ?>>
+        <div class="section-head"><span class="section-num">2</span><h3><?= $tarjetaPersona['titulo'] ?></h3></div>
         <div class="section-body">
           <div class="fields thirds">
             <div class="field">
               <label class="fl">Documento</label>
               <div class="control mono" style="color:var(--muted)"><?= e($valoresFijos['tipo_doc']) ?> <?= e($valoresFijos['num_doc']) ?></div>
-              <span class="hint">No editable: es la identidad del persona</span>
+              <span class="hint">No editable: es la identidad de la persona</span>
             </div>
-            <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
+            <?php // campos_persona (Z21, 2026-09-12): campo_def que la ficha declara
+            // para esta tarjeta, junto al documento -- ver
+            // persona-campos-declarados.php. No imprime nada en las demás fichas.
+            require __DIR__ . '/../partials/persona-campos-declarados.php';
+            $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
             <div class="field" data-nucleo-incluido="n_historia_clinica" <?= $nucleoIncluye('n_historia_clinica') ? '' : 'hidden style="display:none;"' ?>>
               <label class="fl">N.° de historia clínica</label>
               <div class="control mono">
@@ -228,9 +234,9 @@ $es = $estados[$caso['estado']];
 
       <!-- 3. Migración (cotejo B57, 2026-08-21, sección "IV. Migración" del
            PDF pág. 40; sumado A95, cotejo 2026-08-22, "III. MIGRACION" pág.
-           26) -- tarjeta propia entre "Datos del persona" y "Antecedentes
+           26) -- tarjeta propia entre "Datos de la persona" y "Antecedentes
            epidemiológicos", no dentro de datos-paciente-nucleo.php (pedido
-           del usuario: Migración no es parte de "Datos del persona"). -->
+           del usuario: Migración no es parte de "Datos de la persona"). -->
       <?php if (!empty($enfermedad['migracion_reciente'])): ?>
       <div class="card section">
         <div class="section-head"><span class="section-num">3</span><h3>Migración</h3></div>

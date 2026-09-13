@@ -8,7 +8,7 @@
  * número de tarjeta.
  *
  * Extraído de datos-paciente-nucleo.php (2026-08-21, pedido del usuario:
- * Migración no es parte de "Datos del persona", va en su propia tarjeta
+ * Migración no es parte de "Datos de la persona", va en su propia tarjeta
  * entre esa y "Antecedentes epidemiológicos") -- requiere las mismas
  * variables que ya están en scope ahí: $enfermedad, $valoresFijos,
  * $detalleDomicilio, $resolvedorPara.

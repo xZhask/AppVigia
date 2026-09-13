@@ -1460,8 +1460,13 @@ class CasosController extends Controller
 
             switch ($tipo) {
                 case 'NUMERO':
+                    // "minimo" (Z21, 2026-09-13): piso declarado en el
+                    // manifiesto (conteos que no pueden ser negativos).
+                    $minimoNumero = (json_decode((string) ($campo['config'] ?? ''), true) ?: [])['minimo'] ?? null;
                     if (!is_numeric($valor)) {
                         $erroresCampos[$campoId] = 'Ingresa un número válido.';
+                    } elseif ($minimoNumero !== null && (float) $valor < (float) $minimoNumero) {
+                        $erroresCampos[$campoId] = 'No puede ser menor que ' . $minimoNumero . '.';
                     } else {
                         $paraGuardar[$campoId] = $valor;
                     }
@@ -1486,6 +1491,108 @@ class CasosController extends Controller
                     break;
                 default: // TEXTO, TEXTAREA
                     $paraGuardar[$campoId] = $valor;
+            }
+        }
+
+        $reglasCampos = jsonDeEnfermedad(Enfermedad::buscar($enfermedadId) ?? [], 'reglas_campos');
+        if ($reglasCampos) {
+            [$valoresCampos, $erroresCampos, $paraGuardar] = $this->aplicarReglasCampos($reglasCampos, $campos, $valoresCampos, $erroresCampos, $paraGuardar);
+        }
+
+        return [$valoresCampos, $erroresCampos, $paraGuardar];
+    }
+
+    /**
+     * reglas_campos (Z21, 2026-09-13, "Culminación del embarazo"): se aplican
+     * DESPUÉS de leer todos los campos, así el orden del manifiesto no importa
+     * (la condición puede estar debajo del campo que condiciona: "¿Aborto?"
+     * va después de los N.º de nacidos vivos/óbitos fetales). No se confía en
+     * que el navegador ya lo haya hecho:
+     *   1. "fijar": con la condición cumplida, el valor declarado reemplaza lo
+     *      que llegó (aborto -> 0 nacidos vivos y 0 óbitos fetales).
+     *   2. "mostrar": con la condición sin cumplir, esos campos se guardan
+     *      vacíos y sin error de obligatorio, y también sus hijos por
+     *      depende_de (parto por cesárea y EE.SS. del parto sin nacidos vivos
+     *      ni óbitos fetales).
+     *   3. "suma_maxima": con la condición cumplida, la suma no puede pasar el
+     *      tope; el mensaje del manifiesto va en el último campo de la suma.
+     * Un campo oculto por su sección o su propio depende_de no se toca.
+     */
+    private function aplicarReglasCampos(array $reglas, array $campos, array $valoresCampos, array $erroresCampos, array $paraGuardar): array
+    {
+        $idPorClave = [];
+        foreach ($campos as $campoId => $campo) {
+            $idPorClave[$campo['clave']] = (int) $campoId;
+        }
+        $valorPorClave = function (string $clave) use (&$valoresCampos, $idPorClave) {
+            return $valoresCampos[$idPorClave[$clave] ?? 0] ?? '';
+        };
+        $ocultoPorDependencia = function (int $campoId) use ($campos, &$valoresCampos): bool {
+            $campo = $campos[$campoId];
+            $seccionOculta = !empty($campo['seccion_depende_de']) && !campoVisiblePorDependencia(
+                ['depende_de' => $campo['seccion_depende_de'], 'valor_activador' => $campo['seccion_valor_activador']],
+                $valoresCampos
+            );
+            return $seccionOculta || (!empty($campo['depende_de']) && !campoVisiblePorDependencia($campo, $valoresCampos));
+        };
+        $vaciar = function (int $campoId) use ($campos, &$valoresCampos, &$erroresCampos, &$paraGuardar): void {
+            $tiposLista = ['MULTISELECT', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'SI_NO', 'MATRIZ', 'CRONOLOGIA'];
+            $valoresCampos[$campoId] = in_array($campos[$campoId]['tipo'], $tiposLista, true) ? [] : '';
+            unset($erroresCampos[$campoId], $paraGuardar[$campoId]);
+        };
+
+        foreach ($reglas as $regla) {
+            if (empty($regla['fijar']) || !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                continue;
+            }
+            foreach ($regla['fijar'] as $clave => $valorFijo) {
+                $campoId = $idPorClave[$clave] ?? null;
+                if ($campoId === null || $ocultoPorDependencia($campoId)) {
+                    continue;
+                }
+                $valoresCampos[$campoId] = (string) $valorFijo;
+                $paraGuardar[$campoId] = (string) $valorFijo;
+                unset($erroresCampos[$campoId]);
+            }
+        }
+
+        foreach ($reglas as $regla) {
+            if (empty($regla['mostrar']) || condicionReglaCampos($regla['si'], $valorPorClave)) {
+                continue;
+            }
+            foreach ($regla['mostrar'] as $clave) {
+                if (isset($idPorClave[$clave])) {
+                    $vaciar($idPorClave[$clave]);
+                }
+            }
+        }
+        do {
+            $huboCambio = false;
+            foreach ($campos as $campoId => $campo) {
+                if (!empty($campo['depende_de']) && isset($paraGuardar[$campoId]) && !campoVisiblePorDependencia($campo, $valoresCampos)) {
+                    $vaciar((int) $campoId);
+                    $huboCambio = true;
+                }
+            }
+        } while ($huboCambio);
+
+        foreach ($reglas as $regla) {
+            if (empty($regla['suma_maxima']) || !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                continue;
+            }
+            $suma = 0;
+            $ultimoId = null;
+            foreach ($regla['suma_maxima']['claves'] as $clave) {
+                $campoId = $idPorClave[$clave] ?? null;
+                if ($campoId === null) {
+                    continue;
+                }
+                $ultimoId = $campoId;
+                $valor = $valoresCampos[$campoId] ?? '';
+                $suma += is_numeric($valor) ? (float) $valor : 0;
+            }
+            if ($ultimoId !== null && $suma > (float) $regla['suma_maxima']['valor']) {
+                $erroresCampos[$ultimoId] = $regla['mensaje'];
             }
         }
 
@@ -3332,7 +3439,10 @@ class CasosController extends Controller
             'esCandidato'    => $esCandidato,
             'esperados'      => $esCandidato ? $esperados : null,
             'pendientes'     => ($esCandidato && $esperados !== null) ? max(0, $esperados - count($hijos)) : null,
-            'puedeRegistrar' => $esCandidato && empty($caso['anulado']) && Auth::tieneRol(...self::ROLES_REGISTRO),
+            // Con 0 declarado (aborto, o solo óbitos fetales) no hay niños que
+            // registrar; vacío sigue permitido: la ficha pudo registrarse
+            // durante la gestación y todavía no dice cómo terminó.
+            'puedeRegistrar' => $esCandidato && $esperados !== 0 && empty($caso['anulado']) && Auth::tieneRol(...self::ROLES_REGISTRO),
         ];
     }
 

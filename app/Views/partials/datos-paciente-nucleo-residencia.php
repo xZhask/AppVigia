@@ -1,6 +1,6 @@
 <?php
 /**
- * Campos núcleo de "Datos del persona" relacionados a residencia: se
+ * Campos núcleo de "Datos de la persona" relacionados a residencia: se
  * requiere DESPUÉS del selector de Departamento/Provincia/Distrito
  * ("Residencia habitual", pac-ubigeo) en el shell (nueva/index.php,
  * fichas/editar.php), para que ese trío quede junto con el resto de datos

@@ -157,6 +157,35 @@ function marcado(mixed $valor): string
 }
 
 /**
+ * Categorías de establecimiento de RENIPRESS (NTS N.° 021-MINSA/DGSP) y el
+ * tipo de EE.SS. que les corresponde en las fichas en papel ("Hospital /
+ * Centro de Salud / Puesto de Salud"). Es la lista válida de
+ * establecimiento.categoria (sql/migraciones/add_categoria_establecimiento.php):
+ * el tipo no se captura en la ficha, se toma del establecimiento elegido,
+ * igual que DISA/DIRESA e institución.
+ */
+const CATEGORIAS_ESTABLECIMIENTO = [
+    'I-1'   => 'Puesto de Salud',
+    'I-2'   => 'Puesto de Salud',
+    'I-3'   => 'Centro de Salud',
+    'I-4'   => 'Centro de Salud',
+    'II-1'  => 'Hospital',
+    'II-2'  => 'Hospital',
+    'II-E'  => 'Hospital',
+    'III-1' => 'Hospital',
+    'III-E' => 'Hospital',
+    // La norma llama a III-2 "instituto de salud especializado", no hospital:
+    // cae en el "Otro" del papel. Ninguna IPRESS PNP del padrón es III-2.
+    'III-2' => 'Otro',
+];
+
+/** Tipo de EE.SS. de una categoría RENIPRESS; null si no tiene categoría. */
+function tipoEstablecimientoPorCategoria(?string $categoria): ?string
+{
+    return CATEGORIAS_ESTABLECIMIENTO[(string) $categoria] ?? null;
+}
+
+/**
  * Catálogo único de valores de clasificación final que puede mostrar el chip
  * "Clasificación del caso" (clasificacion-chips.php), con su etiqueta y color
  * de punto. Cada ficha filtra/ordena un subconjunto vía
@@ -263,6 +292,37 @@ function campoVisiblePorDependencia(array $campo, array $valoresCampos): bool
 }
 
 /**
+ * reglas_campos (Z21, 2026-09-13, "Culminación del embarazo"): ¿se cumple la
+ * condición "si" de una regla? Dos formas, las que valida cargar_fichas.php:
+ *   {"clave": ..., "valores": [...]}             el valor del campo es uno de esos
+ *   {"claves": [...], "alguno_mayor_que": N}     algún NUMERO de la lista supera N
+ * $valorPorClave(clave) devuelve el valor crudo del campo; un SI_NO llega como
+ * ['marcado' => 'SI'|'NO'] y se compara por su marca. La misma lógica vive en
+ * condicionReglaCumplida() de ficha.js.
+ */
+function condicionReglaCampos(array $si, callable $valorPorClave): bool
+{
+    $escalar = function (mixed $valor): string {
+        if (is_array($valor)) {
+            $valor = $valor['marcado'] ?? '';
+        }
+        return trim((string) $valor);
+    };
+
+    if (isset($si['clave'])) {
+        return in_array($escalar($valorPorClave($si['clave'])), array_map('strval', $si['valores'] ?? []), true);
+    }
+
+    foreach ($si['claves'] ?? [] as $clave) {
+        $valor = $escalar($valorPorClave($clave));
+        if (is_numeric($valor) && (float) $valor > (float) ($si['alguno_mayor_que'] ?? 0)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Lista u objeto JSON declarado en una columna de `enfermedad`
  * (nucleo_omitidos, campos_notificacion, vinculo_caso, nucleo_condicional...),
  * ya decodificado; [] si la ficha no declara nada o el JSON no es válido.
@@ -329,6 +389,62 @@ function valorFijoNucleo(array $enfermedad, string $bloque): ?string
     }
 
     return null;
+}
+
+/**
+ * nucleo_condicional, bloque 'persona' (pedido del usuario, 2026-09-12): la
+ * tarjeta "Datos de la persona" solo tiene sentido cuando ya se sabe DE QUIÉN
+ * son esos datos -- en Z21, la gestante o el niño nacido expuesto. Devuelve los
+ * trozos de HTML de esa tarjeta: un aviso que la reemplaza mientras no hay
+ * valor elegido, los atributos que la ocultan, y su título según la rama.
+ * En las fichas que no lo declaran, aviso y atributos son '' y el título es el
+ * genérico: su HTML no cambia.
+ *
+ * No usa .dep-wrap a propósito: evaluarDependencias() (ficha.js) BORRA los
+ * valores de todo lo que oculta, y al abrir la ficha sin rama elegida dejaría
+ * en blanco el tipo de documento y la condición del paciente. El conmutador
+ * propio, actualizarTarjetaPersona(), solo muestra u oculta.
+ *
+ * @return array{aviso: string, atributos: string, titulo: string}
+ */
+function tarjetaPersonaCondicional(array $enfermedad, array $valoresCampos, string $numeroSeccion = '2'): array
+{
+    $tituloGenerico = 'Datos de la persona';
+    $regla = null;
+    foreach (jsonDeEnfermedad($enfermedad, 'nucleo_condicional') as $candidata) {
+        if (in_array('persona', $candidata['bloques'] ?? [], true)) {
+            $regla = $candidata;
+            break;
+        }
+    }
+    $campoDisparador = $regla ? CampoDef::porClave((int) $enfermedad['id'], (string) ($regla['clave'] ?? '')) : null;
+    if (!$campoDisparador) {
+        return ['aviso' => '', 'atributos' => '', 'titulo' => e($tituloGenerico)];
+    }
+
+    $valores = array_map('strval', $regla['valores'] ?? []);
+    $titulos = is_array($regla['titulos'] ?? null) ? $regla['titulos'] : [];
+    $valorActual = (string) ($valoresCampos[(int) $campoDisparador['id']] ?? '');
+    $visible = in_array($valorActual, $valores, true);
+
+    $titulo = '';
+    foreach ($titulos as $valorTitulo => $textoTitulo) {
+        $esActual = $visible && (string) $valorTitulo === $valorActual;
+        $titulo .= '<span data-titulo-para="' . e((string) $valorTitulo) . '"' . ($esActual ? '' : ' hidden') . '>' . e((string) $textoTitulo) . '</span>';
+    }
+    $hayTituloActual = $visible && array_key_exists($valorActual, $titulos);
+    $titulo .= '<span data-titulo-para=""' . ($hayTituloActual ? ' hidden' : '') . '>' . e($tituloGenerico) . '</span>';
+
+    $atributos = ' data-tarjeta-persona="campo_' . (int) $campoDisparador['id'] . '" data-valores="' . e(implode(',', $valores)) . '"'
+        . ($visible ? '' : ' hidden');
+
+    $aviso = '<div class="card section" data-tarjeta-persona-aviso' . ($visible ? ' hidden' : '') . '>'
+        . '<div class="section-head"><span class="section-num">' . e($numeroSeccion) . '</span><h3>' . e($tituloGenerico) . '</h3></div>'
+        . '<div class="section-body"><p style="color:var(--muted);font-size:13px;margin:0">'
+        . e((string) ($regla['aviso'] ?? 'Completa primero el campo que indica de quién son estos datos.'))
+        . '</p></div></div>';
+
+    return ['aviso' => $aviso, 'atributos' => $atributos, 'titulo' => $titulo];
 }
 
 /**

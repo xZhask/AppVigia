@@ -33,7 +33,7 @@ class EstablecimientosController extends Controller
             'rutaActual'    => self::RUTA,
             'establecimiento' => [
                 'id' => null, 'cod_renipress' => '', 'nombre' => '', 'red_id' => '',
-                'institucion' => 'FFAA_SANIDAD', 'distrito_id' => null, 'activo' => 1,
+                'institucion' => 'FFAA_SANIDAD', 'categoria' => null, 'distrito_id' => null, 'activo' => 1,
             ],
             'redes'    => RedSalud::todos('nombre'),
             'errores'  => [],
@@ -130,6 +130,7 @@ class EstablecimientosController extends Controller
             'nombre'        => trim($entrada['nombre'] ?? ''),
             'red_id'        => $entrada['red_id'] !== '' ? (int) $entrada['red_id'] : null,
             'institucion'   => $entrada['institucion'] ?? '',
+            'categoria'     => ($entrada['categoria'] ?? '') !== '' ? $entrada['categoria'] : null,
             'distrito_id'   => $entrada['distrito_id'] !== '' ? $entrada['distrito_id'] : null,
             'activo'        => isset($entrada['activo']) ? 1 : 0,
         ];
@@ -140,6 +141,9 @@ class EstablecimientosController extends Controller
         }
         if (!in_array($datos['institucion'], self::INSTITUCIONES, true)) {
             $errores['institucion'] = 'Selecciona una institución válida.';
+        }
+        if ($datos['categoria'] !== null && !array_key_exists($datos['categoria'], CATEGORIAS_ESTABLECIMIENTO)) {
+            $errores['categoria'] = 'Selecciona una categoría válida.';
         }
 
         return [$datos, $errores];

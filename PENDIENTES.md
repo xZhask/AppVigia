@@ -6292,3 +6292,270 @@ debe quedar idéntico byte a byte, y muerden dos cosas:
    bloque igual.** Un comentario mío que mencionaba `?>` terminó impreso como
    texto visible en el formulario de las 24 fichas. Solo se ve con la foto del
    HTML y un diff que normalice ids y cache-buster.
+
+# Z21, cuarta vuelta: la tarjeta de identidad espera a la rama (2026-09-12)
+
+**Pregunta del usuario:** "¿es recomendable que aparezca la sección de datos al
+cargar la enfermedad, sin haber seleccionado un tipo de registro?". No: antes
+de elegir la rama no se sabe de quién son esos datos. Escribir el DNI de la
+madre (el autocompletado trae los suyos) y después elegir "Niño" dejaba la
+identidad de la madre guardada como la del niño. Además la tarjeta cambiaba de
+forma tras elegir (Sexo, Etnia, Residencia), y el PDF titula distinto cada
+bloque: ítem 4 "Datos de la gestante", ítem 9 "Datos del niño".
+
+**Cómo quedó:** `nucleo_condicional` admite el bloque `persona` con `titulos`
+(uno por valor) y `aviso`. Sin rama elegida, la tarjeta se reemplaza por un
+aviso ("Elige primero el Tipo de registro…"); con rama, aparece con el título
+de esa rama. `tarjetaPersonaCondicional()` (ayudantes.php) arma los trozos de
+HTML y `actualizarTarjetaPersona()` (ficha.js) los alterna.
+
+**Por qué NO usa `.dep-wrap`:** `evaluarDependencias()` **borra los valores**
+de todo lo que oculta. Envolver la tarjeta dejaba en blanco el "DNI" por
+defecto y la condición del paciente al abrir la ficha sin rama. El conmutador
+propio solo muestra u oculta; qué se guarda lo sigue decidiendo el servidor
+(y "Tipo de registro" es obligatorio, así que sin rama no se guarda nada).
+
+## De paso, tres arreglos compartidos (aprobados por el usuario)
+
+1. **"Datos del persona" → "Datos de la persona"**, en las 24 fichas (y el
+   hint "identidad del persona" de editar).
+2. **El separador "Sujeto: …" solo en fichas `multi_sujeto`** (A33, P35.0, A50,
+   Y07, V99, P96). En las otras 18 siempre decía "Sujeto: Caso Indice" sin
+   aportar nada. El anclaje del bloque de identidad de roles secundarios no
+   dependía del encabezado y sigue igual.
+3. **Comilla suelta en las secciones condicionadas de Z21** (única ficha que
+   usa dependencias de sección): el helper se metía dentro de `class="…"` y el
+   HTML salía `hidden">`. El navegador leía un atributo llamado `hidden"`, así
+   que esas 5 tarjetas se veían hasta que corría ficha.js. Ahora clase y
+   atributos van por separado.
+
+## Verificación
+
+- **Navegador real (Playwright + Chromium, login real):** Z21 sin rama →
+  tarjeta oculta, aviso visible, 0/5 secciones; Gestante → "Datos de la
+  gestante", Sexo oculto, Etnia visible, 2/5; Niño → "Datos del niño nacido
+  expuesto", Sexo visible, Etnia oculta, 3/5; vuelta a "Seleccionar…" → aviso
+  otra vez. En todo el recorrido el "DNI" por defecto y el apellido ya escrito
+  **se conservan**. Sin errores de JS en las fichas.
+- **Editar** un caso de cada rama: tarjeta visible, título correcto, aviso oculto.
+- **Controles:** A36 sin rastro del mecanismo y sin separador; A50 conserva sus
+  tres separadores (Caso Índice, Madre, Recién Nacido).
+- **Foto del HTML antes/después**, clasificando cada línea que cambia: en las
+  24 fichas solo el título y el separador; en las páginas `ver`, solo el
+  cache-buster; en Z21, además el aviso, los títulos y las 5 comillas.
+- Verificadores 24/24, 324 claves, Z21 44/44. Dump regenerado y probado.
+
+## Observado, sin tocar
+
+- Queda un **hueco vertical** entre "Fecha de nacimiento" y "Condición del
+  paciente" cuando una rama oculta Etnia y Residencia: los contenedores de
+  `datos-paciente-nucleo.php` conservan su margen aunque todo su contenido esté
+  oculto. Es compartido por las 24 fichas; conviene tratarlo aparte.
+
+# Z21, quinta vuelta: el tipo de EE.SS. sale del padrón (2026-09-12)
+
+**Pedido del usuario:** "el tipo de establecimiento, ¿no podría ser un dato que
+también se maneje internamente dependiendo de la IPRESS seleccionada?", y
+luego: que no se muestre, que se tome de la BD como DISA/DIRESA e institución,
+creando la columna si no existe y editable desde el módulo de establecimientos.
+
+**Cómo quedó:**
+- **`establecimiento.categoria`** (`sql/migraciones/add_categoria_establecimiento.php`,
+  idempotente): categoría RENIPRESS (I-1 … III-E, NTS 021-MINSA). La migración
+  trae las 82 categorías del listado RENIPRESS del usuario ("Listado de
+  IPRESS.xlsx", código único + categoría), cruzadas por código: 82 de 82. Solo
+  llena donde la categoría sigue vacía, así que no pisa correcciones del admin.
+  Distribución: I-1 = 2, I-2 = 37, I-3 = 38, II-1 = 2, II-E = 2, III-1 = 1.
+- **Catálogos > Establecimientos:** select "Categoría" (opcional, con el tipo
+  que le corresponde en cada opción) y columna en el listado. El servidor
+  rechaza valores fuera de la lista.
+- **Z21:** se quita el campo_def `z21_tipo_de_ee_ss` del manifiesto y de
+  `campos_notificacion` (43 campos). No se muestra en ningún lado del formulario.
+- **Regla del tipo**, una sola vez en `CATEGORIAS_ESTABLECIMIENTO` /
+  `tipoEstablecimientoPorCategoria()` (ayudantes.php): I-1/I-2 Puesto de Salud,
+  I-3/I-4 Centro de Salud, II-x/III-1/III-E Hospital, III-2 Otro (la norma lo
+  llama instituto especializado).
+
+**Por qué la categoría y no el tipo:** es el dato oficial de RENIPRESS (el que
+trae el listado) y del que se deduce el tipo sin ambigüedad; además es lo que
+piden A50 y O95 (ver abajo), que con una columna "tipo" no habrían podido
+reutilizarlo.
+
+## Pendientes que abre
+
+1. **Revisar las categorías antes de producción** desde el módulo. Resultado
+   dudoso: el *Centro de Salud Mental Comunitario PNP* figura como **I-2**, así
+   que su tipo sale "Puesto de Salud"; el *Centro Odontológico Angamos* (I-3)
+   sale "Centro de Salud".
+2. **A50 "Nivel del establecimiento"** (I-1 … III-1, encabezado) es la misma
+   categoría: podría tomarse del padrón con este mecanismo.
+3. **O95 "Categoría del EE.SS."** (`o95_categoria_del_ee_ss`, del EE.SS.
+   notificante o que investiga) también. O95 es ficha revisada: no se toca sin
+   visto bueno del usuario. `o95_categoria_eess_apn` NO aplica (es otro EE.SS.).
+4. Hoy nada lee el tipo derivado fuera del catálogo: cuando exista una
+   exportación o reporte por ficha, Z21 debe sacar "Tipo de EESS" de
+   `caso.establecimiento_id` → `establecimiento.categoria`.
+
+## Verificación
+
+- Migración corrida dos veces: 82 llenados la primera, 0 la segunda.
+- Guardado real por `EstablecimientosController::actualizar()`: I-3 se guarda,
+  "IV-9" se rechaza con "Selecciona una categoría válida.", vacío guarda NULL;
+  el CSMC quedó restaurado en I-2 y el resto de sus datos intactos.
+- Foto del HTML antes/después: las otras 23 fichas y las páginas ver/editar
+  solo difieren en la hora del reloj de O95; Z21 pierde el campo y su entrada
+  en `mapaCampos`; el catálogo gana el select y la columna.
+- Chromium real con login: la tarjeta "1. Notificación" de Z21 queda con Tipo
+  de registro · Fecha de reporte · Código, sin "Tipo de EESS"; el formulario
+  del establecimiento marca la categoría guardada.
+- Verificadores: 24/24 fichas sin diferencias, 324 claves, Z21 43/43 en render
+  (los 3 huérfanos de A80/B26/B55 son los de siempre). Dump regenerado y
+  restaurado en una BD temporal: 30 tablas, 381 columnas, 48 FK, 82 categorías.
+
+# Z21, sexta vuelta: el Código va en los datos de la persona (2026-09-12)
+
+**Observación del usuario:** el PDF pide "Código" dentro de "4. Datos de la
+gestante" y de "9. Datos del niño" (en la misma línea que el DNI), pero el
+formulario lo mostraba en la tarjeta "1. Notificación".
+
+**Cómo quedó:**
+- Declaración nueva **`campos_persona`** (columna `enfermedad.campos_persona`,
+  `sql/migraciones/add_campos_persona_enfermedad.php`): hermana de
+  `campos_notificacion`, lista de claves que se pintan dentro de la tarjeta de
+  identidad. La pinta `partials/persona-campos-declarados.php`, en la fila del
+  documento (el mismo lugar que "N.° de historia clínica"), en nueva y editar.
+- Z21 mueve `z21_codigo` de `campos_notificacion` a `campos_persona`. Es el
+  mismo campo_def: **no se mueve ningún dato**. Como cada caso es una sola
+  persona, el campo queda bajo el título de la rama ("Datos de la gestante" /
+  "Datos del niño nacido expuesto") y aparece recién al elegirla.
+- `secciones-clinicas.php` cuenta las dos listas como campos ya pintados (la
+  sección "Datos de la ficha" sigue sin tarjeta propia en el formulario).
+- `fichas/ver.php` muestra estos campos en "Datos del paciente", después del
+  documento, y no los repite en la tarjeta de su sección.
+- El cargador valida `campos_persona` igual que `campos_notificacion` y además
+  rechaza una clave declarada en las dos (probado en simulacro con dos
+  manifiestos inválidos, sin `--apply`).
+
+**Verificación:** foto del HTML antes/después, con las otras 23 fichas y las
+páginas ver/editar existentes idénticas byte a byte. Casos de prueba (gestante
++ niño vinculado): el Código se guarda en los dos; el "Código de la madre" del
+niño se copia del de la gestante ignorando el valor forjado; editar cambia el
+Código; ver lo muestra en "Datos del paciente". En Chromium, sin rama no se ve,
+y con cualquiera de las dos ramas queda en la fila de "Documento de identidad".
+Verificadores 24/24, 324 claves, Z21 43/43. Dump regenerado y restaurado.
+Casos de prueba borrados.
+
+## Observado, sin tocar
+
+- **El "Código de la madre" es una copia tomada al guardar la ficha del niño.**
+  Si después se edita el Código de la gestante, la ficha del niño conserva el
+  valor anterior hasta que se vuelva a guardar. Ya era así desde la segunda
+  vuelta (`vinculo_caso.copiar`); habría que decidir si la vista del niño lo
+  lee en vivo de la ficha de la madre.
+- En `ver.php`, "Tipo de registro" y la fecha de reporte siguen en una tarjeta
+  "Datos de la ficha" propia: la vista nunca aplicó `campos_notificacion` (el
+  formulario sí los pinta dentro de "1. Notificación").
+
+# Z21, séptima vuelta: "Abandonó terapia ARV" depende de "Recibió ARV" (2026-09-13)
+
+**Observación del usuario:** "¿Abandonó terapia ARV?" debería aparecer solo si
+"¿Recibió ARV?" = Sí, igual que "Fecha de inicio de ARV". En el PDF las tres
+van en la misma línea, en el ítem 5 (gestante) y en el ítem 10 (niño).
+
+**Cómo quedó:** `depende_de` + `valor_activador: "SI"` en
+`z21_abandono_terapia_arv` y en `z21_abandono_terapia_arv_nino` (la rama del
+niño tenía el mismo hueco: su fecha, "ARV recibido" y "N.° de días" ya
+dependían, el abandono no). Solo manifiesto.
+
+**Verificación:** Chromium con clics reales en las dos ramas: sin responder y
+con "No" la pregunta queda oculta; con "Sí" aparece; al volver a "No" se oculta
+y se limpia su valor. Por POST, "Abandonó = Sí" forjado con "Recibió ARV = No"
+no se guarda, y con "Sí" sí (casos de prueba borrados). Foto del HTML: fuera de
+Z21 solo cambió la fecha del día. Verificadores 24/24, 324 claves, Z21 43/43.
+Dump regenerado y restaurado.
+
+## Observado, sin tocar
+
+- **"Aborto" sale bajo el rótulo "Signos y síntomas"** al final de "Datos de la
+  gestación". Es `z21_aborto` (BOOLEANO): `secciones-clinicas.php` junta todo
+  BOOLEANO que no esté en `$clavesBooleanoJuntoASuCampo` en un bloque de chips
+  "Signos y síntomas". En el PDF es "Culminación del embarazo: N.° de nacidos
+  vivos / N.° de óbitos fetales / Aborto". Arreglo propuesto, solo manifiesto:
+  pasarlo a SI_NO ("¿Aborto?") junto a los N.° de nacidos vivos/óbitos, como las
+  demás preguntas Sí/No de la sección; no hace falta agregar otra clave a la
+  lista del código compartido.
+- **Posibles dependencias del mismo tipo, sin confirmar:** "¿Recibe terapia
+  triple / TARGA?" (gestante) y "¿Profilaxis ARV de acuerdo a NT vigente?"
+  (niño) también hablan de ARV, pero el PDF no las pone en la línea de
+  "Recibió ARV"; no se tocaron.
+
+# Z21, octava vuelta: "Culminación del embarazo" con reglas (2026-09-13)
+
+**Pedido del usuario ("Dependencias recomendadas"):** agrupar N.º de nacidos
+vivos, N.º de óbitos fetales y ¿Aborto?; embarazo único → cada uno 0 o 1 y no
+los dos a la vez; múltiple → mayores que 1 y los dos a la vez; aborto = Sí → los
+dos en 0; datos del parto solo si hubo nacidos vivos; "Fecha del parto" →
+"Fecha de culminación del embarazo".
+
+**Mecanismos nuevos (declarativos, sin `if` por ficha en código compartido):**
+- **`reglas_campos`** (columna `enfermedad.reglas_campos`,
+  `sql/migraciones/add_reglas_campos_enfermedad.php`). Cada regla trae `si`
+  (`clave`+`valores`, o `claves`+`alguno_mayor_que`) y uno o más efectos:
+  `mostrar` (campos visibles solo si se cumple, vaciados si no), `fijar`
+  (valores forzados mientras se cumple) y `suma_maxima` (tope con `mensaje`).
+  El cargador valida todo (probado en simulacro con 5 manifiestos inválidos).
+  El servidor las aplica después de leer todos los campos
+  (`CasosController::aplicarReglasCampos()`: primero fijar, después mostrar
+  con cascada a hijos por depende_de, al final la suma). El navegador adelanta
+  lo mismo (`aplicarReglasCampos()` en ficha.js: readonly, `.dep-wrap
+  [data-regla-mostrar]`, `max=` y `setCustomValidity`). `condicionReglaCampos()`
+  en ayudantes.php es la condición compartida.
+- **`"minimo"`** en NUMERO (config): `min=` en el input y error "No puede ser
+  menor que 0." en el servidor.
+- **`"grupo"`** en cualquier campo (config): los consecutivos con el mismo grupo
+  van bajo su rótulo con el borde de acento de Sangre/Suero (B57); el bloque
+  termina en el primer campo sin grupo.
+
+**Z21:**
+- Grupo "Culminación del embarazo": N.º de nacidos vivos, N.º de óbitos fetales
+  (ambos `minimo: 0`), **¿Aborto?** (BOOLEANO → SI_NO: sale del bloque de chips
+  "Signos y síntomas"), **Fecha de culminación del embarazo** (clave
+  renombrada, no había casos), ¿Parto por cesárea? y los 3 datos del EE.SS. del
+  parto. Carga viral / abandona seguimiento / fallece quedan fuera del grupo.
+- Reglas: único → nacidos vivos + óbitos ≤ 1; aborto = Sí → ambos 0; cesárea y
+  EE.SS. del parto solo con algún nacido vivo **u óbito fetal**.
+- Con 0 nacidos vivos declarados, la ficha de la madre ya no ofrece "Registrar
+  niño nacido expuesto" (vacío sigue permitido: la ficha pudo registrarse
+  durante la gestación).
+
+**Decisiones propias, a confirmar con el usuario:**
+1. **Datos del parto también con óbito fetal**, no solo con nacidos vivos: un
+   óbito fetal también se pare (vía y EE.SS.). Si se quiere solo con nacidos
+   vivos, es cambiar `claves` de la 3.ª regla.
+2. **Sin validación contra "número total de productos"**: el PDF no trae ese
+   dato; habría que agregar un campo que la ficha en papel no tiene.
+3. Con "¿Embarazo múltiple?" sin responder no se aplica tope.
+4. La fecha de culminación queda visible siempre (también en aborto).
+
+**Verificación:**
+- Chromium con clics y tecleo reales, 9 pasos: inicio (datos del parto
+  ocultos), vivos=1 (aparecen), único 1+1 (mensaje en los dos campos, `max=1`,
+  el formulario no se envía), múltiple 2+1 (válido), aborto = Sí (0 y 0 en
+  solo lectura, datos del parto ocultos y vaciados), aborto = No (se
+  liberan), solo óbito = 1 (aparecen). Editar arranca con el estado guardado
+  (aborto: 0 🔒, parto oculto). Sin errores de JS.
+- POST directo: único 1+1 rechazado con el mensaje; aborto con 2+1, cesárea y
+  DIRESA forjados → guarda 0/0 y descarta los datos del parto; 0+0 con parto
+  forjado → lo descarta; solo óbito → guarda el parto; −1 → "No puede ser menor
+  que 0."; múltiple 2+1 → guarda y encadena "faltan 2 de 2". Botón "Registrar
+  niño" ausente con 0 nacidos vivos y presente con 2. Casos de prueba borrados.
+- Foto del HTML: fuera de Z21, 31 páginas sin diferencias reales (solo el
+  cache-buster de ficha.js). Verificadores 24/24, 324 claves, Z21 43/43. Dump
+  regenerado y restaurado (383 columnas).
+
+## Observado, sin tocar
+
+- Los N.º fijados en 0 por aborto quedan en solo lectura pero sin estilo
+  "deshabilitado": no hay regla CSS para `input[readonly]` en theme.css.
+- Una ficha de niño se puede seguir vinculando por búsqueda (código/DNI) a una
+  madre que declaró 0 nacidos vivos: solo se quitó el botón de su tarjeta.

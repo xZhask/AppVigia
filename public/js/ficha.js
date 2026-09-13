@@ -112,6 +112,148 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('input', evaluarDependencias);
   document.addEventListener('change', evaluarDependencias);
 
+  // ---------- reglas_campos (Z21, 2026-09-13, "Culminación del embarazo") ----------
+  // Reglas entre campos que depende_de no expresa, declaradas en el manifiesto
+  // y validadas por cargar_fichas.php. secciones-clinicas.php deja el JSON en
+  // #reglasCampos y envuelve los campos de "mostrar" en
+  // .dep-wrap[data-regla-mostrar]. Orden: primero "fijar" (con aborto, 0
+  // nacidos vivos), después "mostrar" (que ya ve esos ceros) y al final
+  // "suma_maxima". El servidor aplica lo mismo en
+  // CasosController::aplicarReglasCampos(); acá solo se adelanta la vista.
+  var nodoReglasCampos = document.getElementById('reglasCampos');
+  var reglasCampos = nodoReglasCampos ? JSON.parse(nodoReglasCampos.textContent) : [];
+
+  function valorReglaPorClave(clave) {
+    var valor = leerValorCampoPorNombre(campoPorClave(clave));
+    if (Array.isArray(valor)) valor = valor[0] || '';
+    return valor === null || valor === undefined ? '' : String(valor).trim();
+  }
+
+  // Misma lógica que condicionReglaCampos() de app/Core/ayudantes.php.
+  function condicionReglaCumplida(si) {
+    if (si.clave) return (si.valores || []).indexOf(valorReglaPorClave(si.clave)) !== -1;
+    return (si.claves || []).some(function (clave) {
+      var valor = valorReglaPorClave(clave);
+      return valor !== '' && !isNaN(valor) && Number(valor) > Number(si.alguno_mayor_que);
+    });
+  }
+
+  function inputReglaPorClave(clave) {
+    var nombre = campoPorClave(clave);
+    return nombre ? document.querySelector('input[name="' + nombre + '"]') : null;
+  }
+
+  function aplicarReglasCampos() {
+    if (!reglasCampos.length) return;
+
+    reglasCampos.forEach(function (regla) {
+      if (!regla.fijar) return;
+      var cumple = condicionReglaCumplida(regla.si);
+      Object.keys(regla.fijar).forEach(function (clave) {
+        var input = inputReglaPorClave(clave);
+        if (!input) return;
+        if (cumple) {
+          input.value = regla.fijar[clave];
+          input.readOnly = true;
+          input.setAttribute('data-regla-fijado', '1');
+        } else if (input.getAttribute('data-regla-fijado') === '1') {
+          input.readOnly = false;
+          input.removeAttribute('data-regla-fijado');
+        }
+      });
+    });
+
+    var cambioVisibilidad = false;
+    document.querySelectorAll('.dep-wrap[data-regla-mostrar]').forEach(function (wrap) {
+      var clave = wrap.getAttribute('data-regla-mostrar');
+      var regla = reglasCampos.filter(function (r) { return (r.mostrar || []).indexOf(clave) !== -1; })[0];
+      var visible = regla ? condicionReglaCumplida(regla.si) : true;
+      if (visible === !wrap.hidden) return;
+      wrap.hidden = !visible;
+      cambioVisibilidad = true;
+      if (!visible) {
+        wrap.querySelectorAll('input, select, textarea').forEach(function (el) {
+          if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = false;
+          } else {
+            el.value = '';
+          }
+          if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(el);
+        });
+      }
+    });
+    // Un campo recién oculto puede ser padre de un depende_de.
+    if (cambioVisibilidad) evaluarDependencias();
+
+    // suma_maxima: tope por campo (max=) y mensaje del manifiesto si la suma lo
+    // supera. Se junta por input por si dos reglas tocan el mismo campo.
+    var topes = [];
+    reglasCampos.forEach(function (regla) {
+      if (!regla.suma_maxima) return;
+      var cumple = condicionReglaCumplida(regla.si);
+      var inputs = regla.suma_maxima.claves.map(inputReglaPorClave).filter(Boolean);
+      var suma = inputs.reduce(function (total, input) {
+        return total + (input.value !== '' && !isNaN(input.value) ? Number(input.value) : 0);
+      }, 0);
+      inputs.forEach(function (input) {
+        var tope = topes.filter(function (t) { return t.input === input; })[0];
+        if (!tope) { tope = { input: input, max: null, mensaje: '' }; topes.push(tope); }
+        if (!cumple) return;
+        tope.max = tope.max === null ? regla.suma_maxima.valor : Math.min(tope.max, regla.suma_maxima.valor);
+        if (suma > regla.suma_maxima.valor && !tope.mensaje) tope.mensaje = regla.mensaje;
+      });
+    });
+    topes.forEach(function (tope) {
+      if (tope.max === null) {
+        tope.input.removeAttribute('max');
+        tope.input.removeAttribute('data-regla-tope');
+      } else {
+        tope.input.max = tope.max;
+        tope.input.setAttribute('data-regla-tope', '1');
+      }
+      tope.input.setCustomValidity(tope.mensaje);
+    });
+  }
+  aplicarReglasCampos();
+  document.addEventListener('input', aplicarReglasCampos);
+  document.addEventListener('change', aplicarReglasCampos);
+  // Al salir de un campo que quedó fuera de tope, el navegador muestra el
+  // mensaje ahí mismo en vez de esperar al "Registrar ficha".
+  document.addEventListener('change', function (e) {
+    var input = e.target;
+    if (input && input.validationMessage && input.hasAttribute('data-regla-tope')) input.reportValidity();
+  });
+
+  // ---------- nucleo_condicional 'persona': tarjeta "Datos de la persona" ----------
+  // (pedido del usuario, 2026-09-12) En las fichas que lo declaran (Z21), la
+  // tarjeta de identidad solo se muestra cuando ya se eligió de quién son los
+  // datos, con el título de esa rama; mientras tanto la reemplaza un aviso.
+  // NO pasa por evaluarDependencias() a propósito: ese motor borra los valores
+  // de lo que oculta, y al abrir la ficha sin rama dejaría en blanco el tipo
+  // de documento y la condición del paciente. Acá solo se muestra u oculta.
+  function actualizarTarjetaPersona() {
+    document.querySelectorAll('[data-tarjeta-persona]').forEach(function (tarjeta) {
+      var valor = leerValorCampoPorNombre(tarjeta.getAttribute('data-tarjeta-persona'));
+      var valores = (tarjeta.getAttribute('data-valores') || '').split(',');
+      var visible = valores.indexOf(valor) !== -1;
+      tarjeta.hidden = !visible;
+      var hayTitulo = false;
+      tarjeta.querySelectorAll('[data-titulo-para]').forEach(function (titulo) {
+        var para = titulo.getAttribute('data-titulo-para');
+        if (para === '') return;
+        titulo.hidden = !(visible && para === valor);
+        if (!titulo.hidden) hayTitulo = true;
+      });
+      var generico = tarjeta.querySelector('[data-titulo-para=""]');
+      if (generico) generico.hidden = hayTitulo;
+      document.querySelectorAll('[data-tarjeta-persona-aviso]').forEach(function (aviso) {
+        aviso.hidden = visible;
+      });
+    });
+  }
+  actualizarTarjetaPersona();
+  document.addEventListener('change', actualizarTarjetaPersona);
+
   // ---------- vinculo_caso: datos de la ficha vinculada ----------
   // (motor de la ficha Z21, cotejo 2026-09-11) Al elegir la ficha vinculada
   // en select[data-vinculo-caso] (partials/vinculo-caso.php), los datos que

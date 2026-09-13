@@ -6,7 +6,7 @@ require __DIR__ . '/../partials/campos-por-clave.php';
 // nucleo_incluidos (PETICION_HC_Y_LABORATORIO.md, Parte 1): mismo mecanismo
 // que nucleo_omitidos, polaridad invertida -- campos del núcleo ocultos por
 // defecto que una ficha declara para mostrar. "N.° de historia clínica"
-// vive acá (junto al documento de identidad, card "Datos del persona") y
+// vive acá (junto al documento de identidad, card "Datos de la persona") y
 // no en datos-paciente-nucleo.php porque esa es la ubicación exacta que ya
 // tenía validada visualmente el hardcodeo de O95 que reemplaza.
 $nucleoIncluidos = [];
@@ -138,8 +138,15 @@ if ($puedeElegirEstablecimiento) {
       </div>
 
       <!-- 2. persona -->
-      <div class="card section">
-        <div class="section-head"><span class="section-num">2</span><h3>Datos del persona</h3></div>
+      <?php
+      // nucleo_condicional 'persona' (pedido del usuario, 2026-09-12): en las
+      // fichas que lo declaran (Z21), la tarjeta aparece recién cuando se
+      // eligió de quién son los datos, y con el título de esa rama; mientras
+      // tanto la reemplaza un aviso. Etiquetas pegadas al marcado para que el
+      // HTML de las demás fichas quede idéntico -- ver tarjetaPersonaCondicional().
+      $tarjetaPersona = tarjetaPersonaCondicional($enfermedad, $valoresCampos);
+      echo $tarjetaPersona['aviso']; ?><div class="card section"<?= $tarjetaPersona['atributos'] ?>>
+        <div class="section-head"><span class="section-num">2</span><h3><?= $tarjetaPersona['titulo'] ?></h3></div>
         <div class="section-body">
           <div class="lookup">
             <div class="field" style="flex:0 0 200px">
@@ -158,7 +165,11 @@ if ($puedeElegirEstablecimiento) {
               </div>
               <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span><?php endif; ?>
             </div>
-            <?php $esO95Index = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
+            <?php // campos_persona (Z21, 2026-09-12): campo_def que la ficha declara
+            // para esta tarjeta, junto al documento -- ver
+            // persona-campos-declarados.php. No imprime nada en las demás fichas.
+            require __DIR__ . '/../partials/persona-campos-declarados.php';
+            $esO95Index = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
             <div class="field" data-nucleo-incluido="n_historia_clinica" <?= $nucleoIncluye('n_historia_clinica') ? '' : 'hidden style="display:none;"' ?>>
               <label class="fl">N.° de historia clínica</label>
               <div class="control mono">
@@ -309,9 +320,9 @@ if ($puedeElegirEstablecimiento) {
 
       <!-- 3. Migración (cotejo B57, 2026-08-21, sección "IV. Migración" del
            PDF pág. 40; sumado A95, cotejo 2026-08-22, "III. MIGRACION" pág.
-           26) -- tarjeta propia entre "Datos del persona" y "Antecedentes
+           26) -- tarjeta propia entre "Datos de la persona" y "Antecedentes
            epidemiológicos", no dentro de datos-paciente-nucleo.php (pedido
-           del usuario: Migración no es parte de "Datos del persona"). -->
+           del usuario: Migración no es parte de "Datos de la persona"). -->
       <?php if (!empty($enfermedad['migracion_reciente'])): ?>
       <div class="card section">
         <div class="section-head"><span class="section-num">3</span><h3>Migración</h3></div>

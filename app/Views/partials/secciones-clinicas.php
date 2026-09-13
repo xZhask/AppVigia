@@ -233,7 +233,13 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
 // el manifiesto para pintarse dentro de la tarjeta fija "1. Notificación"
 // (partials/notificacion-campos-declarados.php), sin partial propio ni
 // entrada nueva en las listas de arriba. Vacío en las 23 fichas restantes.
-$clavesEnNotificacion = jsonDeEnfermedad($enfermedad, 'campos_notificacion');
+// campos_persona (Z21, 2026-09-12) es lo mismo para la tarjeta de identidad
+// (partials/persona-campos-declarados.php): para esta vista ambas listas
+// cuentan igual -- campos que ya se pintaron arriba, en una tarjeta fija.
+$clavesEnNotificacion = array_merge(
+    jsonDeEnfermedad($enfermedad, 'campos_notificacion'),
+    jsonDeEnfermedad($enfermedad, 'campos_persona')
+);
 
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
     $clave,
@@ -261,8 +267,8 @@ if ($SECCIONES_CON_PARTIAL_A_MEDIDA || $clavesEnNotificacion) {
     $secciones = array_values(array_filter($secciones, function ($s) use ($SECCIONES_CON_PARTIAL_A_MEDIDA, $claveCubiertaPorPartial, $clavesEnNotificacion) {
         $camposDeLaSeccion = CampoDef::porSeccion((int) $s['id']);
         // campos_notificacion (cotejo Z21): una sección cuyos campos se
-        // pintan TODOS en la tarjeta "1. Notificación" no genera además su
-        // propia tarjeta -- mismo criterio que las secciones con partial a
+        // pintan TODOS en la tarjeta "1. Notificación" (o en la de identidad,
+        // campos_persona) no genera además su propia tarjeta -- mismo criterio que las secciones con partial a
         // medida, pero deducido de las claves declaradas, sin lista de
         // nombres de sección. Ojo con las secciones sin campos
         // ("solo_tabla_hija"): "todos cubiertos" sobre una lista vacía sería
@@ -441,7 +447,28 @@ $camposContactosDirectosB04X = (($enfermedad['cie10'] ?? '') === 'B04X')
     ? ['parejas' => $campo('b04x_contactos_directos_parejas_sexuales')['val'], 'domiciliarios' => $campo('b04x_contactos_directos_domiciliarios')['val']]
     : ['parejas' => 0, 'domiciliarios' => 0];
 
-$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $campoHospitalizadoA44, $nombreRadioOtrosLabA97, $valorOtrosLabA97, $campoGradoPalidezA44, $campoLocPetequiasA44, $campoLocEquimosisA44, $campoGradoPalidezConjuntivalA44, $campoGradoIctericiaEscleralA44, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto, $camposContactosDirectosB04X, $filasContactosDirectos): void {
+// reglas_campos (Z21, 2026-09-13, "Culminación del embarazo"): reglas entre
+// campos que depende_de no expresa (ver cargar_fichas.php). Acá solo importa
+// "mostrar": cada campo condicionado va en un .dep-wrap[data-regla-mostrar]
+// que arranca oculto si la condición no se cumple con los valores ya
+// cargados. "fijar" y "suma_maxima" los aplica aplicarReglasCampos() de
+// ficha.js con el JSON de abajo, y el servidor los vuelve a exigir en
+// CasosController::aplicarReglasCampos(). No imprime nada en las fichas que
+// no declaran reglas.
+$reglasCamposFicha = jsonDeEnfermedad($enfermedad, 'reglas_campos');
+$reglaMostrarPorClave = [];
+foreach ($reglasCamposFicha as $indiceReglaCampos => $reglaCamposFicha) {
+    foreach ($reglaCamposFicha['mostrar'] ?? [] as $claveMostradaPorRegla) {
+        $reglaMostrarPorClave[$claveMostradaPorRegla] = $reglaCamposFicha['si'];
+    }
+    unset($reglasCamposFicha[$indiceReglaCampos]['_nota']);
+}
+$valorReglaPorClave = fn(string $clave) => $campo($clave)['val'];
+if ($reglasCamposFicha) {
+    echo '<script type="application/json" id="reglasCampos">' . json_encode(array_values($reglasCamposFicha), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) . '</script>';
+}
+
+$renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valoresCampos, $erroresCampos, $enfermedad, $campoFechaUltSeg, $campoDistritoInfeccionA35, $campoHospitalizadoA33, $campoHospitalizadoA35, $campoHospitalizadoA44, $nombreRadioOtrosLabA97, $valorOtrosLabA97, $campoGradoPalidezA44, $campoLocPetequiasA44, $campoLocEquimosisA44, $campoGradoPalidezConjuntivalA44, $campoGradoIctericiaEscleralA44, $claveCubiertaPorPartial, $filasViajes, $erroresViajes, $columnasViaje, $filasContactos, $columnasContacto, $camposContactosDirectosB04X, $filasContactosDirectos, $reglaMostrarPorClave, $valorReglaPorClave): void {
     $campos = CampoDef::porSeccion($seccionId);
     // Ruta 2: si esta sección sobrevivió el filtro de arriba por tener al
     // menos un campo sin cubrir, los campos que SÍ están cubiertos por un
@@ -553,6 +580,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
         <div class="fields<?= $esFilaEstadosA44 ? ' thirds' : '' ?>" style="margin-bottom:<?= empty($camposBooleanos) ? '0' : '16px' ?>">
           <?php
           $tipoAnterior = null;
+          $grupoAbierto = null;
           foreach ($camposOtros as $campo):
             if (($campo['clave'] ?? '') === 'b05_fecha_de_ultimo_dia_de_seguimiento_de_contactos') {
                 continue;
@@ -579,6 +607,21 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 $opciones = $opcionesPorCatalogo[$campo['catalogo_id']];
             }
             $esSubgrupo = ($campo['tipo'] === 'GRUPO_SI_NO' && $tipoAnterior === 'GRUPO_SI_NO');
+            // "grupo" del manifiesto (Z21, 2026-09-13, "Culminación del
+            // embarazo"): campos CONSECUTIVOS con el mismo grupo van bajo su
+            // rótulo, con el borde de acento de Sangre/Suero (B57, abajo); el
+            // bloque se cierra en el primer campo sin ese grupo. Mismo idiom
+            // que los eyebrows a medida de esta plantilla (cerrar el .fields
+            // en curso y abrir otro), pero declarado, sin lista de claves.
+            $grupoCampo = (json_decode((string) ($campo['config'] ?? ''), true) ?: [])['grupo'] ?? null;
+            if ($grupoCampo !== $grupoAbierto) {
+                if ($grupoCampo !== null) {
+                    ?></div><div class="eyebrow" style="margin:16px 0 10px"><?= e($grupoCampo) ?></div><div class="fields" style="margin-bottom:16px; border-left:3px solid var(--accent); padding:14px 0 4px 14px;"><?php
+                } else {
+                    ?></div><div class="fields" style="margin-bottom:16px"><?php
+                }
+                $grupoAbierto = $grupoCampo;
+            }
             if (($campo['clave'] ?? '') === 'b05_hospitalizado') {
                 ?></div><div class="eyebrow" style="margin-bottom:12px">Condición del paciente</div><div class="fields" style="margin-bottom:16px"><?php
             }
@@ -783,6 +826,10 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             if (($campo['clave'] ?? '') === 'a00_para_menores_de_2_anos') {
                 ?><div id="wrapMenores2A00"><?php
             }
+            $mostradoPorRegla = isset($reglaMostrarPorClave[$campo['clave'] ?? '']);
+            if ($mostradoPorRegla):
+                ?><div class="dep-wrap" data-regla-mostrar="<?= e($campo['clave']) ?>" <?= condicionReglaCampos($reglaMostrarPorClave[$campo['clave']], $valorReglaPorClave) ? '' : 'hidden' ?>><?php
+            endif;
             $tieneDependencia = !empty($campo['depende_de']);
             if ($tieneDependencia):
                 $oculto = !campoVisiblePorDependencia($campo, $valoresCampos);
@@ -956,6 +1003,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
             endif;
             if ($tieneDependencia): ?></div><?php endif;
             if ($abreWrapOtrosLabA97): ?></div><?php endif;
+            if ($mostradoPorRegla): ?></div><?php endif;
             if (in_array($campo['clave'] ?? '', ['a33_fecha_de_alta', 'a35_fecha_de_alta'], true)) {
                 ?></div><?php // cierra el .dep-wrap de Hospitalizado=Sí abierto arriba
             }
@@ -1244,10 +1292,17 @@ $mostrarSeparadorSujeto = function(int $seccionId) use (&$rolPrevio, $enfermedad
     $rolActual = !empty($campos) ? $campos[0]['rol_sujeto'] : 'CASO_INDICE';
 
     if ($rolActual !== $rolPrevio) {
-        $nombreRol = ucwords(strtolower(str_replace('_', ' ', $rolActual)));
-        echo '<div style="margin: 24px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 600; font-size: 16px;">';
-        echo '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: text-bottom; margin-right: 6px;"><circle cx="12" cy="7" r="4"></circle><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path></svg>';
-        echo 'Sujeto: ' . htmlspecialchars($nombreRol) . '</div>';
+        // El encabezado "Sujeto: ..." solo orienta en las fichas que registran
+        // a más de una persona (multi_sujeto: A33, P35.0, A50, Y07, V99, P96).
+        // En las demás siempre decía "Sujeto: Caso Indice" sin aportar nada
+        // (pedido del usuario, 2026-09-12). El anclaje del bloque de identidad
+        // de más abajo no depende de esto y sigue igual.
+        if (!empty($enfermedad['multi_sujeto'])) {
+            $nombreRol = ucwords(strtolower(str_replace('_', ' ', $rolActual)));
+            echo '<div style="margin: 24px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 600; font-size: 16px;">';
+            echo '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: text-bottom; margin-right: 6px;"><circle cx="12" cy="7" r="4"></circle><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path></svg>';
+            echo 'Sujeto: ' . htmlspecialchars($nombreRol) . '</div>';
+        }
 
         // Ancla el bloque de identidad/residencia justo antes de la primera
         // sección de este rol -- solo si la ficha lo declara. P96 no llega
@@ -1274,6 +1329,15 @@ $mostrarSeparadorSujeto = function(int $seccionId) use (&$rolPrevio, $enfermedad
  * public/js/ficha.js ya aplica a campos individuales, pero envolviendo la
  * tarjeta entera de la sección en vez de un campo.
  */
+// Clase y atributos van por separado (corregido 2026-09-12): antes una sola
+// función devolvía ' dep-wrap" data-...' metiéndose dentro de las comillas de
+// class="..", y la plantilla le sumaba su propia comilla de cierre -- el HTML
+// salía con 'hidden">', una comilla suelta. El navegador leía un atributo
+// llamado 'hidden"' (no 'hidden'), así que las secciones condicionadas de Z21
+// (única ficha que las usa) se veían hasta que corría ficha.js.
+$claseDependenciaSeccion = function (array $seccion): string {
+    return empty($seccion['depende_de']) ? '' : ' dep-wrap';
+};
 $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): string {
     if (empty($seccion['depende_de'])) {
         return '';
@@ -1282,7 +1346,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
         ['depende_de' => $seccion['depende_de'], 'valor_activador' => $seccion['valor_activador']],
         $valoresCampos
     );
-    return ' dep-wrap" data-depende-de="campo_' . (int) $seccion['depende_de'] . '" data-valor-activador="' . e($seccion['valor_activador']) . '"' . ($oculto ? ' hidden' : '');
+    return ' data-depende-de="campo_' . (int) $seccion['depende_de'] . '" data-valor-activador="' . e($seccion['valor_activador']) . '"' . ($oculto ? ' hidden' : '');
 };
 ?>
 
@@ -1295,7 +1359,7 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
   <?php return; ?>
 <?php endif; ?>
 
-<div class="card section<?= $atributosDependenciaSeccion($secciones[0] ?? []) ?>">
+<div class="card section<?= $claseDependenciaSeccion($secciones[0] ?? []) ?>"<?= $atributosDependenciaSeccion($secciones[0] ?? []) ?>>
   <div class="section-head">
     <span class="section-num"><?= $numeroSeccion ?></span>
     <h3><?= e($secciones[0]['nombre'] ?? 'Cuadro clínico') ?></h3>
@@ -1473,7 +1537,7 @@ foreach (array_slice($secciones, 1) as $seccion):
   $claseAnexo2O95 = $esAnexo2O95 ? ' o95-anexo-2-section' : '';
   $ocultoAnexo2O95 = ($esAnexo2O95 && $valTipoFichaO95 !== 'ANEXO_2') ? ' hidden style="display:none;"' : '';
 ?>
-  <div class="card section<?= $claseAnexo2O95 ?><?= $atributosDependenciaSeccion($seccion) ?>" <?= $ocultoAnexo2O95 ?>>
+  <div class="card section<?= $claseAnexo2O95 ?><?= $claseDependenciaSeccion($seccion) ?>"<?= $atributosDependenciaSeccion($seccion) ?> <?= $ocultoAnexo2O95 ?>>
     <div class="section-head">
       <span class="section-num"><?= $numeroSeccion ?></span>
       <h3><?= e($seccion['nombre']) ?></h3>

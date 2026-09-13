@@ -8672,7 +8672,7 @@
         "caso_viaje": false,
         "caso_vacuna": false
       },
-      "_nota_nucleo": "Los ítems 1-3 y 6-8 del PDF (Datos del EESS y sus dos fechas) son los mismos datos para las dos ramas: DISA/DIRESA, nombre e institución del EE.SS. salen del establecimiento elegido (red_salud.diresa/establecimiento.institucion, mismo criterio que A37.0/A97/B57/A95/A00) y la fecha de notificación es el núcleo fecha_notif; solo 'Tipo de EESS' y la fecha de reporte se capturan como campo_def. Los ítems 4 y 9 (Datos de la gestante / del niño: DNI, apellidos y nombres, fecha de nacimiento, sexo) son el núcleo de persona de cada caso. El PDF no trae captación, clasificación del caso, investigador ni fecha de inicio de síntomas: los cuatro se omiten.",
+      "_nota_nucleo": "Los ítems 1-3 y 6-8 del PDF (Datos del EESS y sus dos fechas) son los mismos datos para las dos ramas: DISA/DIRESA, nombre, institución y tipo del EE.SS. salen del establecimiento elegido (red_salud.diresa/establecimiento.institucion, mismo criterio que A37.0/A97/B57/A95/A00) y la fecha de notificación es el núcleo fecha_notif; solo la fecha de reporte y el código se capturan como campo_def. 'Tipo de EESS' fue campo_def hasta el 2026-09-12: el usuario pidió que no se capture sino que se tome del establecimiento, y como el padrón no guardaba la categoría se creó establecimiento.categoria (sql/migraciones/add_categoria_establecimiento.php, llenada desde el listado RENIPRESS); el tipo sale de ahí con tipoEstablecimientoPorCategoria() (I-1/I-2 Puesto de Salud, I-3/I-4 Centro de Salud, II-x/III-1/III-E Hospital). Los ítems 4 y 9 (Datos de la gestante / del niño: DNI, apellidos y nombres, fecha de nacimiento, sexo) son el núcleo de persona de cada caso. El PDF no trae captación, clasificación del caso, investigador ni fecha de inicio de síntomas: los cuatro se omiten.",
       "nucleo_omitidos": [
         "celular",
         "nacionalidad",
@@ -8701,13 +8701,42 @@
           "valores": ["NINO_NACIDO_EXPUESTO_AL_VIH"],
           "bloques": ["sexo"],
           "valor_fijo": { "sexo": "F" }
+        },
+        {
+          "_nota": "Tarjeta 'Datos de la persona' (pedido del usuario, 2026-09-12): antes de elegir el Tipo de registro no se sabe de quién son esos datos, y escribir los de la madre para después elegir 'Niño' dejaba su identidad guardada como la del niño. La tarjeta aparece recién con una rama elegida y se titula como el PDF (ítem 4 'Datos de la gestante', ítem 9 'Datos del niño'). Solo se muestra u oculta: no borra lo escrito.",
+          "clave": "z21_tipo_de_registro",
+          "valores": ["GESTANTE_CON_VIH", "NINO_NACIDO_EXPUESTO_AL_VIH"],
+          "bloques": ["persona"],
+          "titulos": {
+            "GESTANTE_CON_VIH": "Datos de la gestante",
+            "NINO_NACIDO_EXPUESTO_AL_VIH": "Datos del niño nacido expuesto"
+          },
+          "aviso": "Elige primero el Tipo de registro (Gestante con VIH o Niño nacido expuesto) para completar los datos de la persona."
         }
       ],
       "campos_notificacion": [
         "z21_tipo_de_registro",
-        "z21_tipo_de_ee_ss",
-        "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide",
+        "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide"
+      ],
+      "_nota_campos_persona": "Pedido del usuario 2026-09-12: el PDF pide 'Código' dentro de '4. Datos de la gestante' y de '9. Datos del niño' (junto al DNI), no en los datos del EE.SS.; hasta entonces se pintaba en la tarjeta '1. Notificación'. Cada caso es una sola persona (la gestante o un niño), así que el mismo campo sirve a las dos ramas y queda bajo el título de la rama elegida. El 'Código de la madre' del niño se sigue copiando de este campo en la ficha de la madre (vinculo_caso.copiar).",
+      "campos_persona": [
         "z21_codigo"
+      ],
+      "_nota_reglas_campos": "Pedido del usuario 2026-09-13 ('Dependencias recomendadas' de Culminación del embarazo). Embarazo único: nacidos vivos + óbitos fetales <= 1 (cada uno 0 o 1 y no los dos a la vez); múltiple: sin tope y los dos a la vez. Aborto = Sí: los dos quedan en 0. Parto por cesárea y EE.SS. del parto solo con algún nacido vivo u óbito fetal: un óbito fetal también se pare, así que no se limitan a los nacidos vivos. La validación contra el 'número total de productos' que sugería el usuario no se hace: el PDF no trae ese dato. Con 0 nacidos vivos la ficha de la madre no ofrece 'Registrar niño nacido expuesto' (CasosController::datosVinculoVer).",
+      "reglas_campos": [
+        {
+          "si": {"clave": "z21_embarazo_multiple", "valores": ["NO"]},
+          "suma_maxima": {"claves": ["z21_n_de_nacidos_vivos", "z21_n_de_obitos_fetales"], "valor": 1},
+          "mensaje": "Embarazo único: entre nacidos vivos y óbitos fetales puede haber como máximo 1."
+        },
+        {
+          "si": {"clave": "z21_aborto", "valores": ["SI"]},
+          "fijar": {"z21_n_de_nacidos_vivos": "0", "z21_n_de_obitos_fetales": "0"}
+        },
+        {
+          "si": {"claves": ["z21_n_de_nacidos_vivos", "z21_n_de_obitos_fetales"], "alguno_mayor_que": 0},
+          "mostrar": ["z21_parto_por_cesarea", "z21_diresa_del_ee_ss_del_parto", "z21_institucion_del_ee_ss_del_parto", "z21_nombre_del_ee_ss_del_parto"]
+        }
       ],
       "vinculo_caso": {
         "_nota": "Ítem 9 del PDF: 'Código de la madre' y 'DNI de la madre'. Con la ficha de la madre enlazada, los dos se copian de ella en el servidor; sin enlace (madre notificada en otra IPRESS) se escriben a mano, como en el papel.",
@@ -8752,7 +8781,7 @@
         {
           "nombre": "Datos de la ficha",
           "orden": 1,
-          "_nota_seccion": "Ítems 1-3 (y sus gemelos 6-8 de la Sección II). Los 4 campos se pintan dentro de la tarjeta fija '1. Notificación' vía campos_notificacion, no en una tarjeta propia.",
+          "_nota_seccion": "Ítems 1-3 (y sus gemelos 6-8 de la Sección II). No genera tarjeta propia: 'Tipo de registro' y la fecha de reporte se pintan dentro de la tarjeta fija '1. Notificación' (campos_notificacion) y 'Código' dentro de la tarjeta de identidad (campos_persona, ítems 4 y 9).",
           "campos": [
             {
               "clave": "z21_tipo_de_registro",
@@ -8767,30 +8796,17 @@
               "sensible": true
             },
             {
-              "clave": "z21_tipo_de_ee_ss",
-              "etiqueta": "Tipo de EESS",
-              "tipo": "SELECT",
-              "orden": 2,
-              "opciones": [
-                "Hospital",
-                "Centro de Salud",
-                "Puesto de Salud",
-                "Otro"
-              ],
-              "sensible": true
-            },
-            {
               "clave": "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide",
               "etiqueta": "Fecha de reporte de la ficha de investigación epidemiológica",
               "tipo": "FECHA",
-              "orden": 3,
+              "orden": 2,
               "sensible": true
             },
             {
               "clave": "z21_codigo",
               "etiqueta": "Código",
               "tipo": "TEXTO",
-              "orden": 4,
+              "orden": 3,
               "sensible": true
             }
           ]
@@ -8915,6 +8931,9 @@
               "etiqueta": "¿Abandonó terapia ARV?",
               "tipo": "SI_NO",
               "orden": 6,
+              "depende_de": "z21_recibio_arv",
+              "valor_activador": "SI",
+              "_nota": "Pedido del usuario 2026-09-13: solo se pregunta si recibió ARV, igual que la fecha de inicio (misma línea del PDF: 'Recibió ARV / Fecha de inicio ARV / Abandonó terapia ARV').",
               "sensible": true
             },
             {
@@ -8929,6 +8948,8 @@
               "etiqueta": "N.° de nacidos vivos",
               "tipo": "NUMERO",
               "orden": 8,
+              "grupo": "Culminación del embarazo",
+              "minimo": 0,
               "sensible": true
             },
             {
@@ -8936,27 +8957,42 @@
               "etiqueta": "N.° de óbitos fetales",
               "tipo": "NUMERO",
               "orden": 9,
+              "grupo": "Culminación del embarazo",
+              "minimo": 0,
               "sensible": true
             },
             {
               "clave": "z21_aborto",
-              "etiqueta": "Aborto",
-              "tipo": "BOOLEANO",
+              "etiqueta": "¿Aborto?",
+              "tipo": "SI_NO",
               "orden": 10,
+              "grupo": "Culminación del embarazo",
+              "_nota": "Pedido del usuario 2026-09-13: era BOOLEANO y el render genérico lo mandaba al bloque de chips 'Signos y síntomas' del final de la sección. Como Sí/No queda en su lugar, junto a los N.° de nacidos vivos y óbitos fetales ('Culminación del embarazo' del PDF). Con Sí, reglas_campos fija esos dos en 0.",
+              "sensible": true
+            },
+            {
+              "clave": "z21_fecha_de_culminacion_del_embarazo",
+              "etiqueta": "Fecha de culminación del embarazo",
+              "tipo": "FECHA",
+              "orden": 11,
+              "grupo": "Culminación del embarazo",
+              "_nota": "Pedido del usuario 2026-09-13: el PDF dice 'Fecha del parto', pero el embarazo también puede terminar en aborto; se renombra (clave incluida: Z21 no tenía casos) y queda visible en los tres desenlaces.",
               "sensible": true
             },
             {
               "clave": "z21_parto_por_cesarea",
               "etiqueta": "¿Parto por cesárea?",
               "tipo": "SI_NO",
-              "orden": 11,
+              "orden": 12,
+              "grupo": "Culminación del embarazo",
               "sensible": true
             },
             {
               "clave": "z21_diresa_del_ee_ss_del_parto",
               "etiqueta": "DIRESA del EE.SS. del parto",
               "tipo": "TEXTO",
-              "orden": 12,
+              "orden": 13,
+              "grupo": "Culminación del embarazo",
               "_corregido": "faltaba: el PDF pide DIRESA además de Institución y Nombre del EE.SS. del parto, y el parto puede ocurrir fuera del padrón propio (todo el padrón es FFAA/FFPP).",
               "sensible": true
             },
@@ -8964,7 +9000,8 @@
               "clave": "z21_institucion_del_ee_ss_del_parto",
               "etiqueta": "Institución del EE.SS. del parto",
               "tipo": "SELECT",
-              "orden": 13,
+              "orden": 14,
+              "grupo": "Culminación del embarazo",
               "opciones": [
                 "MINSA",
                 "EsSalud",
@@ -8978,14 +9015,8 @@
               "clave": "z21_nombre_del_ee_ss_del_parto",
               "etiqueta": "Nombre del EE.SS. del parto",
               "tipo": "TEXTO",
-              "orden": 14,
-              "sensible": true
-            },
-            {
-              "clave": "z21_fecha_del_parto",
-              "etiqueta": "Fecha del parto",
-              "tipo": "FECHA",
               "orden": 15,
+              "grupo": "Culminación del embarazo",
               "sensible": true
             },
             {
@@ -9061,6 +9092,9 @@
               "etiqueta": "¿Abandonó terapia ARV?",
               "tipo": "SI_NO",
               "orden": 3,
+              "depende_de": "z21_recibio_arv_nino",
+              "valor_activador": "SI",
+              "_nota": "Pedido del usuario 2026-09-13: solo se pregunta si recibió ARV, igual que la fecha de inicio (misma línea del PDF: 'Recibió ARV / Fecha de inicio ARV / Abandonó terapia ARV').",
               "sensible": true
             },
             {

@@ -30,10 +30,10 @@ $etiquetasInstitucion = [
   </div>
   <div style="overflow-x:auto">
   <table id="tabla-establecimientos">
-    <thead><tr><th>Establecimiento</th><th>Cód. RENIPRESS</th><th>Red</th><th>Institución</th><th>Distrito</th><th>Estado</th><th></th></tr></thead>
+    <thead><tr><th>Establecimiento</th><th>Cód. RENIPRESS</th><th>Red</th><th>Institución</th><th>Categoría</th><th>Distrito</th><th>Estado</th><th></th></tr></thead>
     <tbody>
       <?php if (empty($establecimientos)): ?>
-        <tr><td colspan="7" style="color:var(--muted);text-align:center;padding:32px 16px">No hay establecimientos registrados todavía.</td></tr>
+        <tr><td colspan="8" style="color:var(--muted);text-align:center;padding:32px 16px">No hay establecimientos registrados todavía.</td></tr>
       <?php endif; ?>
       <?php foreach ($establecimientos as $est): ?>
         <tr>
@@ -41,6 +41,7 @@ $etiquetasInstitucion = [
           <td class="mono"><?= e($est['cod_renipress'] ?? '—') ?></td>
           <td><?= e($est['red_nombre'] ?? '—') ?></td>
           <td><?= e($etiquetasInstitucion[$est['institucion']] ?? $est['institucion']) ?></td>
+          <td><?php if ($est['categoria']): ?><span class="mono"><?= e($est['categoria']) ?></span> · <?= e(tipoEstablecimientoPorCategoria($est['categoria']) ?? '') ?><?php else: ?><span style="color:var(--muted)">Sin categoría</span><?php endif; ?></td>
           <td><?= e($est['distrito_nombre'] ?? '—') ?></td>
           <td><span class="state"><span class="dot <?= $est['activo'] ? 'st-open' : 'st-closed' ?>"></span> <?= $est['activo'] ? 'Activo' : 'Inactivo' ?></span></td>
           <td>

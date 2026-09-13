@@ -19,6 +19,14 @@ $es = $estados[$caso['estado']];
 // cuyo PDF no trae "Clasificación del caso" tampoco muestran su chip acá; el
 // valor de caso.clasificacion queda en el que la ficha use por defecto.
 $mostrarClasificacionVer = !nucleoOmitido($enfermedadVer ?? [], 'clasificacion');
+// campos_persona (Z21, 2026-09-12): campo_def que el formulario pinta dentro
+// de la tarjeta de identidad (el "Código" de la gestante o del niño). Acá van
+// en "Datos del paciente" y no se repiten en la tarjeta de su sección.
+$clavesCamposPersonaVer = jsonDeEnfermedad($enfermedadVer ?? [], 'campos_persona');
+$camposPersonaVer = array_filter(array_map(
+    fn(string $clave) => CampoDef::porClave((int) ($enfermedadVer['id'] ?? 0), $clave),
+    $clavesCamposPersonaVer
+));
 $edad = edadDesdeFecha($caso['fecha_nac']);
 
 // Entrada F: si la ficha declaró unidades_edad, la edad capturada con su
@@ -112,7 +120,7 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Documento</label><div class="control mono" style="background:var(--paper)"><?= e($caso['tipo_doc']) ?> <?= e($caso['num_doc']) ?></div></div>
           <?php if (!empty($caso['n_historia_clinica'])): ?>
             <div class="field"><label class="fl">N.° de historia clínica</label><div class="control mono" style="background:var(--paper)"><?= e($caso['n_historia_clinica']) ?></div></div>
-          <?php endif; ?>
+          <?php endif; foreach ($camposPersonaVer as $campoPersonaVer): ?><div class="field"><label class="fl"><?= e($campoPersonaVer['etiqueta']) ?></label><div class="control mono" style="background:var(--paper)"><?= e(campoValorTexto($campoPersonaVer, $valoresCampos[$campoPersonaVer['id']] ?? null)) ?></div></div><?php endforeach; ?>
           <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
           <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= e($edadTexto) ?></div></div>
           <?php if (!empty($caso['nacimiento_distrito_nombre'])): ?>
@@ -225,6 +233,13 @@ $accionEtiquetas = [
         )) {
             continue;
         }
+        $camposSeccionVer = array_values(array_filter(
+            CampoDef::porSeccion((int) $seccion['id']),
+            fn(array $campoSeccion) => !in_array($campoSeccion['clave'], $clavesCamposPersonaVer, true)
+        ));
+        if (!$camposSeccionVer && $clavesCamposPersonaVer && CampoDef::porSeccion((int) $seccion['id'])) {
+            continue; // todos sus campos ya están en "Datos del paciente"
+        }
     ?>
       <div class="card section">
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3><?= e($seccion['nombre']) ?></h3></div>
@@ -235,7 +250,7 @@ $accionEtiquetas = [
             </div>
           <?php endif; ?>
           <div class="fields thirds">
-            <?php foreach (CampoDef::porSeccion((int) $seccion['id']) as $campo): ?>
+            <?php foreach ($camposSeccionVer as $campo): ?>
               <div class="field">
                 <label class="fl"><?= e($campo['etiqueta']) ?></label>
                 <div class="control" style="background:var(--paper)"><?= e(campoValorTexto($campo, $valoresCampos[$campo['id']] ?? null)) ?></div>
