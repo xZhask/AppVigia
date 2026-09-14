@@ -11,8 +11,9 @@ $usuarioActual = Auth::usuario();
 
 $totalFichas = (int) Database::conexion()->query('SELECT COUNT(*) FROM caso')->fetchColumn();
 
-$anioEpi = (int) date('Y');
-$semanaEpi = (int) date('W');
+// Semana del calendario del MINSA (domingo a sábado), la misma que se guarda en
+// cada caso: date('W') es la semana ISO y en 2026 marcaba una de más.
+['anio' => $anioEpi, 'semana' => $semanaEpi] = semanaEpidemiologica(date('Y-m-d'));
 
 $rolesEtiqueta = [
     'ADMIN'       => 'Administrador',

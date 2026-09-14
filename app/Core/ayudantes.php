@@ -609,18 +609,49 @@ function fechaIsoADmy(?string $iso): string
 }
 
 /**
- * Semana epidemiológica (aproximación ISO-8601: semana de lunes a domingo,
- * año de la semana en los bordes de diciembre/enero). MINSA usa un calendario
- * epidemiológico propio con pequeñas diferencias; ajustar aquí si se necesita
- * el cálculo oficial exacto.
+ * Primer día (domingo) de una semana epidemiológica del calendario del MINSA
+ * (CDC Perú): las semanas van de domingo a sábado y la SE 1 de un año es la que
+ * contiene el 4 de enero, es decir, la primera con al menos 4 días de ese año.
+ * Así la SE 1 de 2025 empieza el 29/12/2024 y la de 2026 el 04/01/2026, como
+ * en los calendarios epidemiológicos de pared de la DGE. Una semana mayor que
+ * las que tiene el año sigue contando en el siguiente.
+ */
+function inicioSemanaEpidemiologica(int $anio, int $semana = 1): DateTimeImmutable
+{
+    $cuatroDeEnero = new DateTimeImmutable(sprintf('%04d-01-04', $anio), new DateTimeZone('UTC'));
+    $domingoSemana1 = $cuatroDeEnero->modify('-' . $cuatroDeEnero->format('w') . ' days');
+
+    return $domingoSemana1->modify('+' . (($semana - 1) * 7) . ' days');
+}
+
+/** Semanas epidemiológicas del año: 52, o 53 cuando le toca (2025 tiene 53). */
+function semanasEpidemiologicasDelAnio(int $anio): int
+{
+    return intdiv(inicioSemanaEpidemiologica($anio)->diff(inicioSemanaEpidemiologica($anio + 1))->days, 7);
+}
+
+/**
+ * Semana epidemiológica de una fecha, según el calendario del MINSA (ver
+ * inicioSemanaEpidemiologica()). El año es el de la semana, no el de la fecha:
+ * el 01/01/2026 es SE 53 de 2025.
+ *
+ * Hasta el 2026-09-14 se usaba la semana ISO-8601 (lunes a domingo), que en
+ * 2026 numeraba casi todos los días una semana de más; los casos guardados se
+ * recalcularon con sql/migraciones/recalcular_semana_epidemiologica_minsa.php.
  */
 function semanaEpidemiologica(string $fechaIso): array
 {
-    $dt = new DateTime($fechaIso);
+    $fecha = new DateTimeImmutable((new DateTime($fechaIso))->format('Y-m-d'), new DateTimeZone('UTC'));
+    $anio = (int) $fecha->format('Y');
+    if ($fecha >= inicioSemanaEpidemiologica($anio + 1)) {
+        $anio++;
+    } elseif ($fecha < inicioSemanaEpidemiologica($anio)) {
+        $anio--;
+    }
 
     return [
-        'anio'   => (int) $dt->format('o'),
-        'semana' => (int) $dt->format('W'),
+        'anio'   => $anio,
+        'semana' => intdiv(inicioSemanaEpidemiologica($anio)->diff($fecha)->days, 7) + 1,
     ];
 }
 
@@ -765,17 +796,16 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
  */
 function semanasEnRango(int $anioDesde, int $seDesde, int $anioHasta, int $seHasta): array
 {
-    // Cualquier día de esa semana ISO sirve como ancla; el jueves siempre
-    // cae dentro de la semana correcta (regla ISO-8601).
-    $cursor = new DateTime();
-    $cursor->setISODate($anioDesde, $seDesde, 4);
-    $fin = new DateTime();
-    $fin->setISODate($anioHasta, $seHasta, 4);
+    // Se avanza de domingo en domingo (calendario del MINSA) y cada semana se
+    // vuelve a numerar con semanaEpidemiologica(): así los años de 53 semanas
+    // salen solos.
+    $cursor = inicioSemanaEpidemiologica($anioDesde, $seDesde);
+    $fin = inicioSemanaEpidemiologica($anioHasta, $seHasta);
 
     $semanas = [];
     while ($cursor <= $fin) {
-        $semanas[] = ['anio' => (int) $cursor->format('o'), 'semana' => (int) $cursor->format('W')];
-        $cursor->modify('+7 days');
+        $semanas[] = semanaEpidemiologica($cursor->format('Y-m-d'));
+        $cursor = $cursor->modify('+7 days');
     }
 
     return $semanas;
