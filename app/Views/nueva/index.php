@@ -115,7 +115,6 @@ if ($puedeElegirEstablecimiento) {
           <div id="notificacionCaptacionWrap" <?= (in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55', 'B04X', 'A00'], true) || nucleoOmitido($enfermedad, 'captacion')) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
-          <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b05.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-o95.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b26.php'; ?>
@@ -130,7 +129,7 @@ if ($puedeElegirEstablecimiento) {
           <?php require __DIR__ . '/../partials/notificacion-fechas-b04x.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-a00.php'; ?>
           <?php // campos_notificacion (cotejo Z21, 2026-09-11): reemplazo
-          // declarativo de los 14 partials de arriba -- la ficha declara por
+          // declarativo de los 13 partials de arriba -- la ficha declara por
           // clave qué campo_def suyos se pintan acá dentro. No imprime nada
           // en las fichas que no lo declaran. ?>
           <?php require __DIR__ . '/../partials/notificacion-campos-declarados.php'; ?>

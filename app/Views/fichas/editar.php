@@ -82,7 +82,6 @@ $es = $estados[$caso['estado']];
           <div id="notificacionCaptacionWrap" <?= (in_array($enfermedad['cie10'] ?? null, ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A33', 'A37.0', 'A97', 'A44', 'B55', 'B04X', 'A00'], true) || nucleoOmitido($enfermedad, 'captacion')) ? 'hidden' : '' ?>>
             <?php require __DIR__ . '/../partials/notificacion-captacion.php'; ?>
           </div>
-          <?php require __DIR__ . '/../partials/notificacion-fechas-pfa.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b05.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-o95.php'; ?>
           <?php require __DIR__ . '/../partials/notificacion-fechas-b26.php'; ?>

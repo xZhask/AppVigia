@@ -6783,10 +6783,61 @@
         "pueblo_etnico",
         "ocupacion"
       ],
+      "campos_notificacion": [
+        "a80_nro_ficha",
+        "a80_fecha_conocimiento_local",
+        "a80_fecha_de_investigacion",
+        "a80_fecha_notificacion_eess_red",
+        "a80_fecha_notificacion_red_disa",
+        "a80_fecha_notificacion_disa_dge"
+      ],
       "secciones": [
         {
-          "nombre": "Registro",
+          "nombre": "Fechas de notificación",
           "orden": 1,
+          "_nota": "Encabezado de la ficha (pág. 34 del PDF): 'Nro. ficha / Fecha de conocimiento local / Fecha de investigación / Fecha notificación EE SS a Red/Microred / Fecha notificación Red/Microred a DISA / Fecha de notificación de DISA a DGE'. Se pintan en la tarjeta fija '1. Notificación' (campos_notificacion). Hasta el 2026-09-14 los pintaba notificacion-fechas-pfa.php con name= sueltos que el controlador no leía (no se guardaban) y su 'Fecha de investigación' chocaba con la de la tarjeta Investigador (al guardar ganaba esa). La tarjeta Investigador conserva su fecha: es la del ítem 18 (INVESTIGADOR / CARGO / FIRMA / Fecha), mismo criterio que A95 y B57.",
+          "campos": [
+            {
+              "clave": "a80_nro_ficha",
+              "etiqueta": "N.° de ficha",
+              "tipo": "TEXTO",
+              "orden": 1
+            },
+            {
+              "clave": "a80_fecha_conocimiento_local",
+              "etiqueta": "Fecha de conocimiento local",
+              "tipo": "FECHA",
+              "orden": 2
+            },
+            {
+              "clave": "a80_fecha_de_investigacion",
+              "etiqueta": "Fecha de investigación",
+              "tipo": "FECHA",
+              "orden": 3
+            },
+            {
+              "clave": "a80_fecha_notificacion_eess_red",
+              "etiqueta": "Fecha de notificación EE.SS. a Red/Microred",
+              "tipo": "FECHA",
+              "orden": 4
+            },
+            {
+              "clave": "a80_fecha_notificacion_red_disa",
+              "etiqueta": "Fecha de notificación Red/Microred a DISA",
+              "tipo": "FECHA",
+              "orden": 5
+            },
+            {
+              "clave": "a80_fecha_notificacion_disa_dge",
+              "etiqueta": "Fecha de notificación de DISA a DGE",
+              "tipo": "FECHA",
+              "orden": 6
+            }
+          ]
+        },
+        {
+          "nombre": "Registro",
+          "orden": 2,
           "campos": [
             {
               "clave": "a80_n_de_orden_nacional",
@@ -6798,7 +6849,7 @@
         },
         {
           "nombre": "Datos de filiación y tutores",
-          "orden": 2,
+          "orden": 3,
           "campos": [
             {
               "clave": "a80_nombre_del_padre",
@@ -6828,7 +6879,7 @@
         },
         {
           "nombre": "Conocimiento del caso y primer notificante",
-          "orden": 3,
+          "orden": 4,
           "campos": [
             {
               "clave": "a80_conocimiento_del_caso",
@@ -6868,7 +6919,7 @@
         },
         {
           "nombre": "Cuadro clínico",
-          "orden": 4,
+          "orden": 5,
           "campos": [
             {
               "clave": "a80_fecha_de_inicio_de_sintomas_generales_prodromos",
@@ -7007,7 +7058,7 @@
         },
         {
           "nombre": "Examen físico",
-          "orden": 5,
+          "orden": 6,
           "campos": [
             {
               "clave": "a80_fecha_de_examen_fisico",
@@ -7109,7 +7160,7 @@
         },
         {
           "nombre": "Hospitalización y defunción",
-          "orden": 6,
+          "orden": 7,
           "campos": [
             {
               "clave": "a80_hospitalizacion",
@@ -7209,7 +7260,7 @@
         },
         {
           "nombre": "Antecedentes de vacuna antipolio",
-          "orden": 7,
+          "orden": 8,
           "campos": [
             {
               "clave": "a80_vacunado_contra_polio",
@@ -7278,7 +7329,7 @@
         },
         {
           "nombre": "Fuente probable de infección",
-          "orden": 8,
+          "orden": 9,
           "campos": [
             {
               "clave": "a80_viajes_realizados_en_los_30_dias_antes",
@@ -7331,7 +7382,7 @@
         },
         {
           "nombre": "Cadena de transmisión",
-          "orden": 9,
+          "orden": 10,
           "campos": [
             {
               "clave": "a80_notas_de_investigacion_de_la_cadena_de_transmision",
@@ -7343,7 +7394,7 @@
         },
         {
           "nombre": "Acciones de control",
-          "orden": 10,
+          "orden": 11,
           "campos": [
             {
               "clave": "a80_bloqueo_de_vacunacion_operacion_barrido",
@@ -7463,7 +7514,7 @@
         },
         {
           "nombre": "Seguimiento de secuelas",
-          "orden": 11,
+          "orden": 12,
           "campos": [
             {
               "clave": "a80_fechas_de_seguimiento_30_60_90_180_dias",
@@ -7540,7 +7591,7 @@
         },
         {
           "nombre": "Evaluación final de secuelas",
-          "orden": 12,
+          "orden": 13,
           "campos": [
             {
               "clave": "a80_fecha_de_evaluacion_final_de_secuelas",
@@ -7579,7 +7630,7 @@
         },
         {
           "nombre": "Electromiografía",
-          "orden": 13,
+          "orden": 14,
           "campos": [
             {
               "clave": "a80_realizado_por_electromiografia",
@@ -7603,7 +7654,7 @@
         },
         {
           "nombre": "Clasificación final y criterios",
-          "orden": 14,
+          "orden": 15,
           "campos": [
             {
               "clave": "a80_clasificacion_final",
