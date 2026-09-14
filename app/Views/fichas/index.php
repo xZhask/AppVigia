@@ -99,7 +99,7 @@ $abreviaturasUnidadEdad = ['ANIOS' => 'a', 'MESES' => 'm', 'DIAS' => 'd', 'HORAS
           <tr><td colspan="9" style="color:var(--muted);text-align:center;padding:32px 16px">No se encontraron fichas con estos filtros.</td></tr>
         <?php endif; ?>
         <?php foreach ($fichas as $ficha):
-          $c = $clasificaciones[$ficha['clasificacion']];
+          $c = datosClasificacion((string) $ficha['clasificacion']); // incluye O95/A00/Z21, no solo las 4 genéricas
           $es = $estados[$ficha['estado']];
           $unidadesEdadDeclaradasFicha = [];
           if (!empty($ficha['enfermedad_unidades_edad'])) {

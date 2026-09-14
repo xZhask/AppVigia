@@ -213,7 +213,61 @@ const CATALOGO_CLASIFICACION = [
     'INDIRECTA'      => ['etiqueta' => 'Indirecta',       'dot' => 'dot-pro'],
     'INCIDENTAL'     => ['etiqueta' => 'Incidental',      'dot' => 'dot-sos'],
     'POR_DETERMINAR' => ['etiqueta' => 'Por determinar',  'dot' => 'dot-des'],
+    // Z21 (2026-09-13): "Clasificación de caso" del registro por búsqueda
+    // activa (pág. 15 del PDF). No se elige: la calculan las reglas
+    // "clasificar" de enfermedad.reglas_campos (ver clasificacionDerivada()).
+    'GESTANTE_CON_VIH'  => ['etiqueta' => 'Gestante con VIH',             'dot' => 'dot-con'],
+    'ABORTO'            => ['etiqueta' => 'Aborto',                       'dot' => 'dot-des'],
+    'MORTINATO'         => ['etiqueta' => 'Mortinato',                    'dot' => 'dot-des'],
+    'NINO_EXPUESTO_VIH' => ['etiqueta' => 'Niño nacido expuesto al VIH',  'dot' => 'dot-pro'],
 ];
+
+/**
+ * Etiqueta y punto de color de una clasificación guardada, para las vistas
+ * que la muestran fuera de la ficha (listado, panel, reportes, ver). Antes
+ * cada una tenía su propio mapa con solo las 4 genéricas, y los valores de
+ * O95/A00 (y ahora Z21) salían sin etiqueta y con avisos de índice
+ * inexistente. Un código desconocido se muestra tal cual.
+ *
+ * @return array{etiqueta: string, dot: string, color: string}
+ */
+function datosClasificacion(string $codigo): array
+{
+    $coloresPorDot = [
+        'dot-sos' => 'var(--s-sospechoso)', 'dot-pro' => 'var(--s-probable)',
+        'dot-con' => 'var(--s-confirmado)', 'dot-des' => 'var(--s-descartado)',
+    ];
+    $datos = CATALOGO_CLASIFICACION[$codigo] ?? ['etiqueta' => $codigo, 'dot' => 'dot-sos'];
+
+    return $datos + ['color' => $coloresPorDot[$datos['dot']] ?? 'var(--s-sospechoso)'];
+}
+
+/**
+ * reglas_campos "clasificar" (Z21, 2026-09-13): la clasificación del caso que
+ * corresponde a los valores capturados -- la de la PRIMERA regla cuya
+ * condición se cumple, en el orden del manifiesto. null si la ficha no
+ * declara reglas "clasificar" o ninguna se cumple.
+ */
+function clasificacionDerivada(array $enfermedad, callable $valorPorClave): ?string
+{
+    foreach (jsonDeEnfermedad($enfermedad, 'reglas_campos') as $regla) {
+        if (isset($regla['clasificar']) && condicionReglaCampos($regla['si'], $valorPorClave)) {
+            return $regla['clasificar'];
+        }
+    }
+    return null;
+}
+
+/** ¿La ficha calcula la clasificación del caso en vez de pedirla? */
+function fichaDerivaClasificacion(array $enfermedad): bool
+{
+    foreach (jsonDeEnfermedad($enfermedad, 'reglas_campos') as $regla) {
+        if (isset($regla['clasificar'])) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Valores de clasificación final permitidos para una ficha: por defecto las

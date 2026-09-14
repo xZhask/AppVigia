@@ -1,9 +1,12 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Models\Caso;
 use App\Models\Enfermedad;
+use App\Models\Establecimiento;
+use App\Models\RegistroBusquedaActivaVih;
 
 class ReportesController extends Controller
 {
@@ -74,6 +77,112 @@ class ReportesController extends Controller
 
         fclose($salida);
         exit;
+    }
+
+    /**
+     * "Formulario de registro de casos de gestantes con VIH y niños nacidos
+     * expuestos al VIH identificados por búsqueda activa institucional" (pág.
+     * 15 del PDF), armado con las fichas Z21 del periodo. Ver
+     * RegistroBusquedaActivaVih.
+     */
+    public function busquedaActivaVih(): void
+    {
+        $filtros = $this->leerFiltrosBusquedaActivaVih();
+        $casos = RegistroBusquedaActivaVih::casos($filtros);
+
+        $this->vista('reportes/busqueda-activa-vih', [
+            'tituloVista'      => RegistroBusquedaActivaVih::NOMBRE,
+            'rutaActual'       => 'reportes',
+            'filtros'          => $filtros,
+            'establecimientos' => Establecimiento::todos('nombre'),
+            'puedeElegirEstablecimiento' => !Auth::tieneRol('REGISTRADOR'),
+            'encabezado'       => RegistroBusquedaActivaVih::encabezado($filtros['establecimiento_id']),
+            'casos'            => $casos,
+            'resumen'          => RegistroBusquedaActivaVih::resumen($casos),
+        ]);
+    }
+
+    /**
+     * El mismo formato en CSV (; y BOM UTF-8, como exportarExcel()): encabezado,
+     * resumen y tabla de casos. Solo lo que trae el formato en papel: código del
+     * paciente e historia clínica, sin nombres ni documento.
+     */
+    public function exportarBusquedaActivaVih(): void
+    {
+        $filtros = $this->leerFiltrosBusquedaActivaVih();
+        $casos = RegistroBusquedaActivaVih::casos($filtros);
+        $resumen = RegistroBusquedaActivaVih::resumen($casos);
+        $encabezado = RegistroBusquedaActivaVih::encabezado($filtros['establecimiento_id']);
+        $servicios = RegistroBusquedaActivaVih::SERVICIOS;
+        $institucion = ['MINSA' => 'MINSA', 'ESSALUD' => 'EsSalud', 'FFAA_SANIDAD' => 'FFAA/FFPP', 'PRIVADO' => 'Privado'];
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="formulario_registro_gestantes_vih_ninos_expuestos_busqueda_activa_' . $filtros['desde'] . '_' . $filtros['hasta'] . '.csv"');
+        $salida = fopen('php://output', 'w');
+        fwrite($salida, "\xEF\xBB\xBF");
+        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
+
+        $linea([RegistroBusquedaActivaVih::NOMBRE]);
+        $linea(['DISA/DIRESA/GERESA', $encabezado['diresa'], 'Red', $encabezado['red'], 'Microrred', '']);
+        $linea(['Establecimiento de salud', $encabezado['establecimiento'] ?: 'Todos', 'Institución', $institucion[$encabezado['institucion']] ?? $encabezado['institucion']]);
+        $linea(['Departamento', $encabezado['departamento'], 'Provincia', $encabezado['provincia'], 'Distrito', $encabezado['distrito']]);
+        $linea(['Periodo de búsqueda activa', 'Desde', fechaIsoADmy($filtros['desde']), 'Hasta', fechaIsoADmy($filtros['hasta'])]);
+        $linea([]);
+
+        $linea(array_merge(['Casos', 'Total'], array_map(fn($codigo) => $servicios[$codigo]['larga'], RegistroBusquedaActivaVih::ORDEN_SERVICIOS_RESUMEN), ['Servicio sin dato', 'Notificados', 'No notificados', 'Notificación sin dato']));
+        foreach (['GESTANTE' => 'Gestantes con VIH', 'NINO' => 'Niños nacidos expuestos'] as $tipo => $etiqueta) {
+            $fila = $resumen[$tipo];
+            $linea(array_merge(
+                [$etiqueta, $fila['total']],
+                array_values($fila['servicio']),
+                [$fila['notificado']['SI'], $fila['notificado']['NO'], $fila['notificado']['SIN_DATO']]
+            ));
+        }
+        $linea([]);
+
+        $linea(['N.°', 'Código del paciente', 'N.° de historia clínica', 'Edad', 'Tipo de edad', 'Sexo', 'Servicio', 'Clasificación de caso', 'Fecha de defunción', 'Notificado', 'Observaciones', 'Ficha VIGÍA']);
+        foreach ($casos as $indice => $caso) {
+            $linea([
+                $indice + 1,
+                $caso['codigo'],
+                $caso['historia_clinica'],
+                $caso['edad'],
+                $caso['tipo_edad'],
+                $caso['sexo'],
+                $servicios[$caso['servicio']]['corta'] ?? '',
+                $caso['clasificacion'],
+                fechaIsoADmy($caso['fecha_defuncion']),
+                ['SI' => 'Sí', 'NO' => 'No'][$caso['notificado']] ?? '',
+                $caso['observaciones'],
+                $caso['codigo_ficha'],
+            ]);
+        }
+        $linea([]);
+        $linea(['1 Tipo de edad: días (d), meses (m), años (a); 2 Clasificación de caso: Gestante con VIH (1), Aborto (2), Mortinato (3), Niño nacido expuesto al VIH (4); 3 Fecha de defunción de gestante, niño expuesto, de aborto o mortinato']);
+
+        fclose($salida);
+        exit;
+    }
+
+    /**
+     * Periodo (por fecha de notificación; por defecto, del 1 del mes a hoy) y
+     * establecimiento. Un REGISTRADOR queda fijo en el suyo.
+     *
+     * @return array{desde: string, hasta: string, establecimiento_id: ?int, usuario: array}
+     */
+    private function leerFiltrosBusquedaActivaVih(): array
+    {
+        $usuario = Auth::usuario();
+        $desde = fechaIsoValida((string) ($_GET['desde'] ?? '')) ?: date('Y-m-01');
+        $hasta = fechaIsoValida((string) ($_GET['hasta'] ?? '')) ?: date('Y-m-d');
+        if ($desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
+        }
+        $establecimientoId = Auth::tieneRol('REGISTRADOR')
+            ? (int) $usuario['establecimiento_id']
+            : (!empty($_GET['establecimiento_id']) ? (int) $_GET['establecimiento_id'] : null);
+
+        return ['desde' => $desde, 'hasta' => $hasta, 'establecimiento_id' => $establecimientoId ?: null, 'usuario' => $usuario];
     }
 
     /**

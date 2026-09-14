@@ -72,6 +72,9 @@
  */
 
 require __DIR__ . '/app/Core/Autoload.php';
+// CATALOGO_CLASIFICACION: reglas_campos "clasificar" solo admite códigos que
+// la app sabe mostrar (Z21, 2026-09-13).
+require __DIR__ . '/app/Core/ayudantes.php';
 
 use App\Core\Database;
 
@@ -847,8 +850,9 @@ function validarManifiesto(array $manifiesto): void
         // reglas_campos (Z21, 2026-09-13): reglas entre campos que depende_de
         // no expresa. Cada regla tiene una condición "si" y al menos un
         // efecto: "mostrar" (campos visibles solo si se cumple), "fijar"
-        // (valores forzados mientras se cumple) o "suma_maxima" (tope de una
-        // suma de NUMERO, con su "mensaje").
+        // (valores forzados mientras se cumple), "suma_maxima" (tope de una
+        // suma de NUMERO, con su "mensaje") o "clasificar" (la clasificación
+        // del caso; gana la primera regla que se cumple).
         if (!empty($ficha['reglas_campos'])) {
             if (!is_array($ficha['reglas_campos']) || !array_is_list($ficha['reglas_campos'])) {
                 throw new RuntimeException("Manifiesto inválido: {$cie10} / reglas_campos debe ser una lista de reglas.");
@@ -873,9 +877,9 @@ function validarManifiesto(array $manifiesto): void
                 if (!is_array($reglaCampos) || array_is_list($reglaCampos)) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} debe ser un objeto.");
                 }
-                $clavesDesconocidas = array_diff(array_keys($reglaCampos), ['si', 'mostrar', 'fijar', 'suma_maxima', 'mensaje', '_nota']);
+                $clavesDesconocidas = array_diff(array_keys($reglaCampos), ['si', 'mostrar', 'fijar', 'suma_maxima', 'clasificar', 'mensaje', '_nota']);
                 if ($clavesDesconocidas) {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} trae \"" . implode('", "', $clavesDesconocidas) . "\". Válidas: si, mostrar, fijar, suma_maxima, mensaje.");
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} trae \"" . implode('", "', $clavesDesconocidas) . "\". Válidas: si, mostrar, fijar, suma_maxima, clasificar, mensaje.");
                 }
                 $si = $reglaCampos['si'] ?? null;
                 if (!is_array($si)) {
@@ -899,8 +903,12 @@ function validarManifiesto(array $manifiesto): void
                 } else {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si debe traer \"clave\"+\"valores\" o \"claves\"+\"alguno_mayor_que\".");
                 }
-                if (!array_intersect(array_keys($reglaCampos), ['mostrar', 'fijar', 'suma_maxima'])) {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} no declara ningún efecto (mostrar, fijar o suma_maxima).");
+                if (!array_intersect(array_keys($reglaCampos), ['mostrar', 'fijar', 'suma_maxima', 'clasificar'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} no declara ningún efecto (mostrar, fijar, suma_maxima o clasificar).");
+                }
+                if (array_key_exists('clasificar', $reglaCampos)
+                    && (!is_string($reglaCampos['clasificar']) || !array_key_exists($reglaCampos['clasificar'], CATALOGO_CLASIFICACION))) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.clasificar = " . json_encode($reglaCampos['clasificar']) . " no está en CATALOGO_CLASIFICACION (app/Core/ayudantes.php); agrégalo ahí y al ENUM de caso.clasificacion primero.");
                 }
                 if (array_key_exists('mostrar', $reglaCampos)) {
                     if (!is_array($reglaCampos['mostrar']) || !array_is_list($reglaCampos['mostrar']) || !$reglaCampos['mostrar']) {

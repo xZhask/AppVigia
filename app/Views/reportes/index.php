@@ -1,4 +1,6 @@
 <?php
+use App\Models\RegistroBusquedaActivaVih;
+
 $agrupaciones = [
     'establecimiento' => 'Establecimiento',
     'red'             => 'Red',
@@ -15,9 +17,8 @@ $queryFiltros = http_build_query([
     'anio_hasta'    => $rangoSe['anio_hasta'],
     'se_hasta'      => $rangoSe['se_hasta'],
 ]);
-$dotsClasificacion = ['SOSPECHOSO' => 'dot-sos', 'PROBABLE' => 'dot-pro', 'CONFIRMADO' => 'dot-con', 'DESCARTADO' => 'dot-des'];
-$etiquetasClasificacion = ['SOSPECHOSO' => 'Sospechoso', 'PROBABLE' => 'Probable', 'CONFIRMADO' => 'Confirmado', 'DESCARTADO' => 'Descartado'];
-$coloresClasificacion = ['SOSPECHOSO' => 'var(--s-sospechoso)', 'PROBABLE' => 'var(--s-probable)', 'CONFIRMADO' => 'var(--s-confirmado)', 'DESCARTADO' => 'var(--s-descartado)'];
+// Etiqueta, punto y color salen de datosClasificacion() (CATALOGO_CLASIFICACION):
+// la distribución y la agrupación también traen los valores de O95/A00/Z21.
 $maxClasificacion = !empty($distribucionClasificacion) ? max($distribucionClasificacion) : 0;
 ?>
 <div class="page-head">
@@ -25,6 +26,12 @@ $maxClasificacion = !empty($distribucionClasificacion) ? max($distribucionClasif
     <div class="page-title">Reportes</div>
     <div class="page-desc">Consolidados dinámicos para el área — sin re-digitar Excel</div>
   </div>
+</div>
+
+<div class="card" style="margin-bottom:16px;padding:14px 18px">
+  <div class="eyebrow" style="margin-bottom:8px">Formularios del PDF</div>
+  <a href="/reportes/busqueda-activa-vih" style="font-size:13.5px;font-weight:500;color:var(--accent)"><?= e(RegistroBusquedaActivaVih::NOMBRE) ?></a>
+  <div style="font-size:12px;color:var(--muted);margin-top:3px">Ficha «Gestante con VIH y niño expuesto» (Z21)</div>
 </div>
 
 <div class="card" style="margin-bottom:16px">
@@ -103,7 +110,7 @@ $maxClasificacion = !empty($distribucionClasificacion) ? max($distribucionClasif
         <tbody>
           <?php foreach ($filas as $fila): ?>
             <tr>
-              <td class="pt-name"><?= e($agrupacion === 'clasificacion' ? ($etiquetasClasificacion[$fila['etiqueta']] ?? $fila['etiqueta']) : $fila['etiqueta']) ?></td>
+              <td class="pt-name"><?= e($agrupacion === 'clasificacion' ? datosClasificacion((string) $fila['etiqueta'])['etiqueta'] : $fila['etiqueta']) ?></td>
               <td class="mono" style="text-align:right"><?= (int) $fila['sospechoso'] ?></td>
               <td class="mono" style="text-align:right"><?= (int) $fila['probable'] ?></td>
               <td class="mono" style="text-align:right"><?= (int) $fila['confirmado'] ?></td>
@@ -119,8 +126,8 @@ $maxClasificacion = !empty($distribucionClasificacion) ? max($distribucionClasif
         <div class="mini-bars">
           <?php foreach ($distribucionClasificacion as $clasificacion => $total): ?>
             <div class="mb-row">
-              <div class="mb-top"><span><?= $etiquetasClasificacion[$clasificacion] ?></span><span class="mono"><?= (int) $total ?></span></div>
-              <span class="cd-track"><span class="cd-fill" style="width:<?= $maxClasificacion > 0 ? round($total / $maxClasificacion * 100) : 0 ?>%;background:<?= $coloresClasificacion[$clasificacion] ?>"></span></span>
+              <div class="mb-top"><span><?= e(datosClasificacion($clasificacion)['etiqueta']) ?></span><span class="mono"><?= (int) $total ?></span></div>
+              <span class="cd-track"><span class="cd-fill" style="width:<?= $maxClasificacion > 0 ? round($total / $maxClasificacion * 100) : 0 ?>%;background:<?= datosClasificacion($clasificacion)['color'] ?>"></span></span>
             </div>
           <?php endforeach; ?>
         </div>

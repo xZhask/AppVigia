@@ -369,6 +369,15 @@ class CasosController extends Controller
         // ---------- dinámicos: cuadro clínico según la enfermedad ----------
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId);
 
+        // reglas_campos "clasificar" (Z21, 2026-09-13): en las fichas que la
+        // calculan, la clasificación sale de los campos ya validados y no del
+        // POST (no pintan la tarjeta de chips).
+        $clasificacionCalculada = $this->clasificacionCalculada($enfermedad, $valoresCampos);
+        if ($clasificacionCalculada !== null) {
+            $clasificacion = $clasificacionCalculada;
+            unset($erroresFijos['clasificacion']);
+        }
+
         // ---------- vinculo_caso (cotejo Z21, 2026-09-11) ----------
         // Revalida contra la lista de candidatos real y copia a sus campos los
         // datos del caso vinculado, pisando lo que haya llegado en el POST.
@@ -992,6 +1001,8 @@ class CasosController extends Controller
         if (!in_array($clasificacion, $opcionesClasificacion, true)) {
             $clasificacion = $caso['clasificacion'];
         }
+        // reglas_campos "clasificar": se recalcula en cada edición.
+        $clasificacion = $this->clasificacionCalculada($enfermedad, $valoresCampos) ?? $clasificacion;
         $hospitalizado = $clasificacionOmitida ? (int) $caso['hospitalizado'] : (isset($_POST['hospitalizado']) ? 1 : 0);
         $fallecido = $clasificacionOmitida ? (int) $caso['fallecido'] : (isset($_POST['fallecido']) ? 1 : 0);
 
@@ -1500,6 +1511,27 @@ class CasosController extends Controller
         }
 
         return [$valoresCampos, $erroresCampos, $paraGuardar];
+    }
+
+    /**
+     * reglas_campos "clasificar" (Z21, 2026-09-13): la clasificación del caso
+     * según los valores ya validados (clasificacionDerivada() en
+     * ayudantes.php). null si la ficha no la calcula.
+     */
+    private function clasificacionCalculada(array $enfermedad, array $valoresCampos): ?string
+    {
+        if (!fichaDerivaClasificacion($enfermedad)) {
+            return null;
+        }
+        $idPorClave = [];
+        foreach (CampoDef::porEnfermedad((int) $enfermedad['id']) as $campoId => $campo) {
+            $idPorClave[$campo['clave']] = (int) $campoId;
+        }
+
+        return clasificacionDerivada(
+            $enfermedad,
+            fn(string $clave) => $valoresCampos[$idPorClave[$clave] ?? 0] ?? ''
+        );
     }
 
     /**

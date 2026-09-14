@@ -6559,3 +6559,120 @@ dos en 0; datos del parto solo si hubo nacidos vivos; "Fecha del parto" →
   "deshabilitado": no hay regla CSS para `input[readonly]` en theme.css.
 - Una ficha de niño se puede seguir vinculando por búsqueda (código/DNI) a una
   madre que declaró 0 nacidos vivos: solo se quitó el botón de su tarjeta.
+
+# Z21, novena vuelta: lo que pide el registro por búsqueda activa (2026-09-13)
+
+**Pedido del usuario:** falta "la clasificación", que pide el "Formulario de
+registro de casos de gestantes con VIH y niños nacidos expuestos al VIH
+identificados por búsqueda activa institucional" (pág. 15 del PDF) para poder
+generar ese cuadro. Eligió (1) clasificación **calculada**, no preguntada, y (2)
+agregar también las otras columnas del cuadro que Z21 no capturaba.
+
+**Cómo quedó:**
+- **Clasificación de caso** (1 Gestante con VIH, 2 Aborto, 3 Mortinato, 4 Niño
+  nacido expuesto al VIH): efecto nuevo `clasificar` en `reglas_campos`, gana la
+  primera regla que se cumple. Z21: niño → 4; ¿Aborto? = Sí → 2; algún nacido
+  vivo → 1; algún óbito fetal (sin nacidos vivos) → 3; resto de gestantes → 1.
+  `CasosController::clasificacionCalculada()` la aplica al crear y al editar
+  (se recalcula), ignorando lo que llegue en el POST. Los chips siguen ocultos
+  en el formulario (`nucleo_omitidos: clasificacion`); la vista de la ficha sí
+  muestra el chip (`fichaDerivaClasificacion()`).
+  Esquema: `sql/migraciones/set_clasificacion_z21.php` amplía el ENUM de
+  `caso.clasificacion` y fija `opciones_clasificacion` de Z21. El cargador
+  rechaza un código que no esté en `CATALOGO_CLASIFICACION` (ahora carga
+  ayudantes.php).
+- **N.º de historia clínica:** `nucleo_incluidos` (campo opcional del núcleo).
+- **Servicio de captación** (Consultorio externo / Emergencia /
+  Hospitalización) y **¿Notificado al sistema de vigilancia?** (Sí/No): campos
+  nuevos en "1. Notificación" (`campos_notificacion`), para las dos ramas.
+- **Fecha de defunción de la gestante** (si "¿La gestante fallece?" = Sí) y
+  **del niño** (si el motivo de estado indeterminado es "Fallecido antes de
+  poder determinar su estado serológico"). Para aborto y mortinato el cuadro
+  usa la fecha de culminación del embarazo.
+- Z21 pasa de 43 a 47 campos.
+
+**Bug compartido corregido de paso (preexistente):** el listado de fichas, el
+panel, los reportes y la vista de una ficha tenían cada uno su mapa de
+clasificaciones con solo Sospechoso/Probable/Confirmado/Descartado. Los casos
+de O95 (Directa…) y A00 (Compatible) salían sin etiqueta y con avisos de índice
+inexistente, y Z21 no se habría podido mostrar. Ahora todas leen
+`datosClasificacion()` (CATALOGO_CLASIFICACION). Con las 4 genéricas el HTML
+queda idéntico (verificado).
+
+**Verificación:** 6 casos por POST, uno por camino (embarazada 1, aborto 2,
+nacido vivo 1, mortinato 3, gemelar vivo+óbito 1, niño 4), con clasificación
+forjada en el POST ignorada; editar embarazada → aborto recalcula a 2; HC,
+servicio y notificado guardados; fecha de defunción forjada con "fallece = No"
+descartada. Listado, panel y reportes (también agrupado por clasificación)
+muestran las 4 etiquetas sin avisos de PHP. Chromium: Notificación con los dos
+campos nuevos, sin chips de clasificación, HC junto al documento, las dos
+fechas de defunción aparecen y se ocultan según su pregunta, chip "Niño nacido
+expuesto al VIH" en la vista. Foto del HTML: fuera de Z21 nada cambia (24
+fichas, ver/editar, listado, panel, reportes). Verificadores 24/24, 324
+claves, Z21 47/47. Dump regenerado y restaurado. Casos de prueba borrados.
+
+## Pendiente / observado
+
+- ~~El cuadro de la pág. 15 en sí no existe todavía~~ RESUELTO en la décima
+  vuelta (Reportes > Formularios del PDF).
+- Reportes: el ORDER BY de la agrupación por clasificación solo conoce las 4
+  genéricas, así que los valores de Z21/O95/A00 salen primero; y las columnas
+  sospechoso/probable/confirmado/descartado quedan en 0 para esas filas (el
+  total sí cuenta).
+- El filtro de clasificación del listado de fichas sigue ofreciendo solo las 4
+  genéricas.
+- "Observaciones" del cuadro: la rama de la gestante no tiene campo de
+  observaciones (solo el niño).
+
+# Z21, décima vuelta: el registro de búsqueda activa (pág. 15) (2026-09-13)
+
+**Pedido del usuario:** construir el cuadro de la pág. 15 para cerrar Z21, con el mismo nombre que el PDF.
+
+**Cómo quedó:** Reportes > "Formularios del PDF" > **Formulario de registro de
+casos de gestantes con VIH y niños nacidos expuestos al VIH identificados por
+búsqueda activa institucional** (`/reportes/busqueda-activa-vih`). El nombre es
+el exacto del PDF (pedido del usuario, para no confundirlo con otros reportes
+sobre VIH como B24): `RegistroBusquedaActivaVih::NOMBRE` lo usa la pantalla, la
+pestaña, el enlace, el título de la hoja y el Excel
+(`formulario_registro_gestantes_vih_ninos_expuestos_busqueda_activa_<desde>_<hasta>.csv`).
+- Filtros: establecimiento (un REGISTRADOR queda fijo en el suyo) y periodo
+  desde/hasta por **fecha de notificación** (por defecto, del 1 del mes a hoy).
+- El formato calcado del papel: título; encabezado DISA/DIRESA, Red,
+  Institución (casilla marcada), EE.SS., departamento/provincia/distrito, todo
+  del padrón; resumen "Total de casos identificados" (gestantes / niños × total,
+  servicio de captación, estado de notificación) y "Periodo de búsqueda
+  activa"; tabla N.°, código del paciente, N.° HC, edad y tipo de edad
+  (d/m/a a la fecha de notificación), sexo, servicio (C. Ext./Hosp./EMG),
+  clasificación 1-4, fecha de defunción, notificado Sí/No, observaciones; y las
+  3 notas al pie.
+- Botones **Excel** (CSV ; con BOM, como el resto de Reportes, más la columna
+  "Ficha VIGÍA") e **Imprimir / PDF** (A4 apaisado, sin menú ni filtros; el
+  encabezado de la tabla se repite en cada página). El N.° de cada fila abre la
+  ficha.
+- Código: `App\Models\RegistroBusquedaActivaVih` (lee las fichas Z21 por
+  CLAVE, nunca por id), `ReportesController::busquedaActivaVih()` /
+  `exportarBusquedaActivaVih()`, vista `reportes/busqueda-activa-vih.php`.
+
+**Decisiones propias, a confirmar:**
+1. Fecha de defunción: gestante → su fecha de defunción; niño → la suya;
+   aborto/mortinato → fecha de culminación del embarazo. Si en un aborto o
+   mortinato la gestante también falleció, va en Observaciones ("Gestante
+   fallecida el …").
+2. Observaciones: las del niño (la gestante no tiene campo) más esa nota.
+3. Columnas "Sin dato" en el resumen solo cuando alguna ficha no tiene servicio
+   o notificación registrados, para que los totales cuadren.
+4. "Microrred" queda en blanco: el padrón de establecimientos no la registra.
+5. Mismos permisos que la ficha: un REGISTRADOR solo ve sus fichas Z21 de su
+   establecimiento (aunque pida otro por URL); ADMIN, todas. Sin nombres ni
+   DNI, como el papel.
+
+**Verificación:** 6 fichas de prueba (una por clasificación, con servicios y
+notificación variados, una sin esos datos): resumen 5 gestantes (C. Ext. 1, EMG
+1, Hosp. 2, sin dato 1; notificadas 3, no 1, sin dato 1) y 1 niño; tabla con
+clasificaciones 1/2/1/3/1/4, fechas de defunción correctas y edad del niño en
+días. Encabezado lleno al elegir establecimiento; periodo sin fichas muestra el
+formato en cero. CSV con el mismo contenido. REGISTRADOR: 6 / 0 / 0 según
+usuario y establecimiento. Chromium: enlace desde Reportes, filtros, vista de
+impresión sin menú/filtros/botones, PDF A4 apaisado de 2 páginas. Sin avisos
+de PHP ni errores de JS. Listado y panel idénticos; Reportes solo gana el
+enlace; 24 fichas sin cambios. Casos de prueba borrados.

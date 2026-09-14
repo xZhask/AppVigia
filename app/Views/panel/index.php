@@ -36,9 +36,8 @@
   $maxEnfermedad = !empty($distribucionEnfermedad) ? max(array_column($distribucionEnfermedad, 'total')) : 0;
   $maxClasificacion = !empty($distribucionClasificacion) ? max($distribucionClasificacion) : 0;
 
-  $dotsClasificacion = ['SOSPECHOSO' => 'dot-sos', 'PROBABLE' => 'dot-pro', 'CONFIRMADO' => 'dot-con', 'DESCARTADO' => 'dot-des'];
-  $etiquetasClasificacion = ['SOSPECHOSO' => 'Sospechoso', 'PROBABLE' => 'Probable', 'CONFIRMADO' => 'Confirmado', 'DESCARTADO' => 'Descartado'];
-  $coloresClasificacion = ['SOSPECHOSO' => 'var(--s-sospechoso)', 'PROBABLE' => 'var(--s-probable)', 'CONFIRMADO' => 'var(--s-confirmado)', 'DESCARTADO' => 'var(--s-descartado)'];
+  // Etiqueta, punto y color salen de datosClasificacion() (CATALOGO_CLASIFICACION):
+  // la distribución también trae los valores de O95/A00/Z21.
   ?>
   <div class="grid metrics" style="margin-bottom:16px">
     <div class="card metric">
@@ -97,8 +96,8 @@
         <div class="class-dist">
           <?php foreach ($distribucionClasificacion as $clasificacion => $total): ?>
             <div class="cd-row">
-              <span class="chip"><span class="dot <?= $dotsClasificacion[$clasificacion] ?>"></span> <?= $etiquetasClasificacion[$clasificacion] ?></span>
-              <span class="cd-track"><span class="cd-fill" style="width:<?= $maxClasificacion > 0 ? round($total / $maxClasificacion * 100) : 0 ?>%;background:<?= $coloresClasificacion[$clasificacion] ?>"></span></span>
+              <span class="chip"><span class="dot <?= datosClasificacion($clasificacion)['dot'] ?>"></span> <?= e(datosClasificacion($clasificacion)['etiqueta']) ?></span>
+              <span class="cd-track"><span class="cd-fill" style="width:<?= $maxClasificacion > 0 ? round($total / $maxClasificacion * 100) : 0 ?>%;background:<?= datosClasificacion($clasificacion)['color'] ?>"></span></span>
               <span class="cd-num"><?= (int) $total ?></span>
             </div>
           <?php endforeach; ?>

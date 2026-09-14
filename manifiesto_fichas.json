@@ -8672,7 +8672,7 @@
         "caso_viaje": false,
         "caso_vacuna": false
       },
-      "_nota_nucleo": "Los ítems 1-3 y 6-8 del PDF (Datos del EESS y sus dos fechas) son los mismos datos para las dos ramas: DISA/DIRESA, nombre, institución y tipo del EE.SS. salen del establecimiento elegido (red_salud.diresa/establecimiento.institucion, mismo criterio que A37.0/A97/B57/A95/A00) y la fecha de notificación es el núcleo fecha_notif; solo la fecha de reporte y el código se capturan como campo_def. 'Tipo de EESS' fue campo_def hasta el 2026-09-12: el usuario pidió que no se capture sino que se tome del establecimiento, y como el padrón no guardaba la categoría se creó establecimiento.categoria (sql/migraciones/add_categoria_establecimiento.php, llenada desde el listado RENIPRESS); el tipo sale de ahí con tipoEstablecimientoPorCategoria() (I-1/I-2 Puesto de Salud, I-3/I-4 Centro de Salud, II-x/III-1/III-E Hospital). Los ítems 4 y 9 (Datos de la gestante / del niño: DNI, apellidos y nombres, fecha de nacimiento, sexo) son el núcleo de persona de cada caso. El PDF no trae captación, clasificación del caso, investigador ni fecha de inicio de síntomas: los cuatro se omiten.",
+      "_nota_nucleo": "Los ítems 1-3 y 6-8 del PDF (Datos del EESS y sus dos fechas) son los mismos datos para las dos ramas: DISA/DIRESA, nombre, institución y tipo del EE.SS. salen del establecimiento elegido (red_salud.diresa/establecimiento.institucion, mismo criterio que A37.0/A97/B57/A95/A00) y la fecha de notificación es el núcleo fecha_notif; solo la fecha de reporte y el código se capturan como campo_def. 'Tipo de EESS' fue campo_def hasta el 2026-09-12: el usuario pidió que no se capture sino que se tome del establecimiento, y como el padrón no guardaba la categoría se creó establecimiento.categoria (sql/migraciones/add_categoria_establecimiento.php, llenada desde el listado RENIPRESS); el tipo sale de ahí con tipoEstablecimientoPorCategoria() (I-1/I-2 Puesto de Salud, I-3/I-4 Centro de Salud, II-x/III-1/III-E Hospital). Los ítems 4 y 9 (Datos de la gestante / del niño: DNI, apellidos y nombres, fecha de nacimiento, sexo) son el núcleo de persona de cada caso. El PDF no trae captación, clasificación del caso, investigador ni fecha de inicio de síntomas: los cuatro se omiten del formulario. La clasificación igual se guarda (2026-09-13): la calculan las reglas 'clasificar' de reglas_campos para el registro por búsqueda activa de la pág. 15 (Gestante con VIH / Aborto / Mortinato / Niño nacido expuesto).",
       "nucleo_omitidos": [
         "celular",
         "nacionalidad",
@@ -8687,6 +8687,10 @@
         "clasificacion",
         "investigador",
         "fecha_inicio_sintomas"
+      ],
+      "_nota_nucleo_incluidos": "Pedido del usuario 2026-09-13: el registro por búsqueda activa (pág. 15 del PDF) pide 'N.° de Historia clínica' por caso. Se activa el campo opcional del núcleo, junto al documento y al Código.",
+      "nucleo_incluidos": [
+        "n_historia_clinica"
       ],
       "nucleo_condicional": [
         {
@@ -8716,7 +8720,9 @@
       ],
       "campos_notificacion": [
         "z21_tipo_de_registro",
-        "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide"
+        "z21_servicio_de_captacion",
+        "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide",
+        "z21_notificado_al_sistema_de_vigilancia"
       ],
       "_nota_campos_persona": "Pedido del usuario 2026-09-12: el PDF pide 'Código' dentro de '4. Datos de la gestante' y de '9. Datos del niño' (junto al DNI), no en los datos del EE.SS.; hasta entonces se pintaba en la tarjeta '1. Notificación'. Cada caso es una sola persona (la gestante o un niño), así que el mismo campo sirve a las dos ramas y queda bajo el título de la rama elegida. El 'Código de la madre' del niño se sigue copiando de este campo en la ficha de la madre (vinculo_caso.copiar).",
       "campos_persona": [
@@ -8736,6 +8742,27 @@
         {
           "si": {"claves": ["z21_n_de_nacidos_vivos", "z21_n_de_obitos_fetales"], "alguno_mayor_que": 0},
           "mostrar": ["z21_parto_por_cesarea", "z21_diresa_del_ee_ss_del_parto", "z21_institucion_del_ee_ss_del_parto", "z21_nombre_del_ee_ss_del_parto"]
+        },
+        {
+          "_nota": "Clasificación de caso del registro por búsqueda activa (pág. 15 del PDF), calculada y no preguntada (elección del usuario 2026-09-13). Gana la PRIMERA regla que se cumple: niño expuesto (4), aborto (2), gestante con algún nacido vivo (1; en un gemelar con un óbito el niño vivo tiene su propia ficha), gestante con óbito fetal y sin nacidos vivos = mortinato (3), resto de gestantes (1). Se recalcula en cada edición.",
+          "si": {"clave": "z21_tipo_de_registro", "valores": ["NINO_NACIDO_EXPUESTO_AL_VIH"]},
+          "clasificar": "NINO_EXPUESTO_VIH"
+        },
+        {
+          "si": {"clave": "z21_aborto", "valores": ["SI"]},
+          "clasificar": "ABORTO"
+        },
+        {
+          "si": {"claves": ["z21_n_de_nacidos_vivos"], "alguno_mayor_que": 0},
+          "clasificar": "GESTANTE_CON_VIH"
+        },
+        {
+          "si": {"claves": ["z21_n_de_obitos_fetales"], "alguno_mayor_que": 0},
+          "clasificar": "MORTINATO"
+        },
+        {
+          "si": {"clave": "z21_tipo_de_registro", "valores": ["GESTANTE_CON_VIH"]},
+          "clasificar": "GESTANTE_CON_VIH"
         }
       ],
       "vinculo_caso": {
@@ -8796,17 +8823,38 @@
               "sensible": true
             },
             {
+              "clave": "z21_servicio_de_captacion",
+              "etiqueta": "Servicio de captación",
+              "tipo": "SELECT",
+              "orden": 2,
+              "opciones": [
+                "Consultorio externo",
+                "Emergencia",
+                "Hospitalización"
+              ],
+              "_nota": "Pedido del usuario 2026-09-13: columna 'Servicio' (C. Ext. / Hosp. / EMG) y resumen 'Según servicio de captación' del registro por búsqueda activa (pág. 15). La ficha de la pág. 16 no la trae.",
+              "sensible": true
+            },
+            {
               "clave": "z21_fecha_de_reporte_de_la_ficha_de_investigacion_epide",
               "etiqueta": "Fecha de reporte de la ficha de investigación epidemiológica",
               "tipo": "FECHA",
-              "orden": 2,
+              "orden": 3,
+              "sensible": true
+            },
+            {
+              "clave": "z21_notificado_al_sistema_de_vigilancia",
+              "etiqueta": "¿Notificado al sistema de vigilancia?",
+              "tipo": "SI_NO",
+              "orden": 4,
+              "_nota": "Pedido del usuario 2026-09-13: columna 'Notificado Sí/No' y resumen 'Según estado de notificación al sistema de vigilancia' del registro por búsqueda activa (pág. 15): si el caso hallado ya estaba notificado.",
               "sensible": true
             },
             {
               "clave": "z21_codigo",
               "etiqueta": "Código",
               "tipo": "TEXTO",
-              "orden": 3,
+              "orden": 5,
               "sensible": true
             }
           ]
@@ -9039,6 +9087,16 @@
               "tipo": "SI_NO",
               "orden": 18,
               "sensible": true
+            },
+            {
+              "clave": "z21_fecha_de_defuncion_de_la_gestante",
+              "etiqueta": "Fecha de defunción de la gestante",
+              "tipo": "FECHA",
+              "orden": 19,
+              "depende_de": "z21_la_gestante_fallece",
+              "valor_activador": "SI",
+              "_nota": "Pedido del usuario 2026-09-13: 'Fecha de defunción' del registro por búsqueda activa (pág. 15). La de aborto o mortinato es la fecha de culminación del embarazo.",
+              "sensible": true
             }
           ]
         },
@@ -9186,10 +9244,20 @@
               "sensible": true
             },
             {
+              "clave": "z21_fecha_de_defuncion_del_nino",
+              "etiqueta": "Fecha de defunción del niño",
+              "tipo": "FECHA",
+              "orden": 3,
+              "depende_de": "z21_motivo_de_estado_indeterminado",
+              "valor_activador": "FALLECIDO_ANTES_DE_PODER_DETERMINAR_SU_ESTADO_SEROLOGICO",
+              "_nota": "Pedido del usuario 2026-09-13: 'Fecha de defunción' del niño expuesto en el registro por búsqueda activa (pág. 15). La ficha solo registra el fallecimiento como motivo de estado indeterminado, así que la fecha cuelga de ese motivo.",
+              "sensible": true
+            },
+            {
               "clave": "z21_referido_a",
               "etiqueta": "Referido a",
               "tipo": "TEXTO",
-              "orden": 3,
+              "orden": 4,
               "depende_de": "z21_motivo_de_estado_indeterminado",
               "valor_activador": "REFERIDO",
               "_corregido": "faltaba: el PDF trae 'Referido:_____' con línea para escribir a dónde.",
@@ -9199,7 +9267,7 @@
               "clave": "z21_pruebas_diagnosticas",
               "etiqueta": "Pruebas diagnósticas",
               "tipo": "MATRIZ",
-              "orden": 4,
+              "orden": 5,
               "filas": [
                 "1.er PCR",
                 "2.° PCR",
@@ -9224,7 +9292,7 @@
               "clave": "z21_observaciones",
               "etiqueta": "Observaciones",
               "tipo": "TEXTAREA",
-              "orden": 5,
+              "orden": 6,
               "sensible": true
             }
           ]

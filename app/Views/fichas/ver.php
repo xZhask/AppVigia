@@ -2,23 +2,21 @@
 use App\Core\Csrf;
 use App\Models\CampoDef;
 
-$clasificaciones = [
-    'SOSPECHOSO' => ['dot' => 'dot-sos', 'etiqueta' => 'Sospechoso'],
-    'PROBABLE'   => ['dot' => 'dot-pro', 'etiqueta' => 'Probable'],
-    'CONFIRMADO' => ['dot' => 'dot-con', 'etiqueta' => 'Confirmado'],
-    'DESCARTADO' => ['dot' => 'dot-des', 'etiqueta' => 'Descartado'],
-];
 $estados = [
     'ABIERTA'    => ['dot' => 'st-open',   'etiqueta' => 'Abierta'],
     'VALIDACION' => ['dot' => 'st-val',    'etiqueta' => 'Validación'],
     'CERRADA'    => ['dot' => 'st-closed', 'etiqueta' => 'Cerrada'],
 ];
-$c = $clasificaciones[$caso['clasificacion']] ?? ['dot' => 'dot-sos', 'etiqueta' => $caso['clasificacion']];
+// Etiqueta desde CATALOGO_CLASIFICACION: antes un mapa propio con solo las
+// 4 genéricas mostraba el código crudo de O95/A00/Z21 ("DIRECTA").
+$c = datosClasificacion((string) $caso['clasificacion']);
 $es = $estados[$caso['estado']];
 // nucleo_omitidos: 'clasificacion' (cotejo Z21, 2026-09-11) -- las fichas
 // cuyo PDF no trae "Clasificación del caso" tampoco muestran su chip acá; el
 // valor de caso.clasificacion queda en el que la ficha use por defecto.
-$mostrarClasificacionVer = !nucleoOmitido($enfermedadVer ?? [], 'clasificacion');
+// reglas_campos "clasificar" (Z21, 2026-09-13): la ficha no pide la
+// clasificación pero la calcula, así que el chip sí se muestra.
+$mostrarClasificacionVer = !nucleoOmitido($enfermedadVer ?? [], 'clasificacion') || fichaDerivaClasificacion($enfermedadVer ?? []);
 // campos_persona (Z21, 2026-09-12): campo_def que el formulario pinta dentro
 // de la tarjeta de identidad (el "Código" de la gestante o del niño). Acá van
 // en "Datos del paciente" y no se repiten en la tarjeta de su sección.

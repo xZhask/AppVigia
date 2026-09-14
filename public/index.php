@@ -172,6 +172,14 @@ $router->get('/reportes/exportar', function () {
     (new ReportesController())->exportarExcel();
 });
 
+// Registro de búsqueda activa de gestantes con VIH y niños expuestos (pág. 15 del PDF, Z21)
+$router->get('/reportes/busqueda-activa-vih', function () {
+    (new ReportesController())->busquedaActivaVih();
+});
+$router->get('/reportes/busqueda-activa-vih/exportar', function () {
+    (new ReportesController())->exportarBusquedaActivaVih();
+});
+
 // ---------- Catálogo: enfermedades ----------
 $router->get('/catalogos/enfermedades', function () {
     (new EnfermedadesController())->index();
