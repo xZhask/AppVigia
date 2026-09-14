@@ -608,7 +608,9 @@
    Condición del paciente (CAMBIOS_CONDICION_PACIENTE.md)
    ============================================================ */
 .field.half{grid-column:span 2}
-.cond-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+/* --cond-opciones: fichas que no admiten las tres condiciones (P96 no admite
+   efectivo PNP, nucleo_ajustes.condiciones_paciente). */
+.cond-pick{display:grid;grid-template-columns:repeat(var(--cond-opciones,3),1fr);gap:10px;margin-bottom:4px}
 .cond-opt{position:relative}
 .cond-opt input{position:absolute;opacity:0;width:0;height:0}
 .cond-opt label{

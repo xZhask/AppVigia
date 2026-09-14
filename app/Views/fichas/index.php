@@ -119,7 +119,7 @@ $abreviaturasUnidadEdad = ['ANIOS' => 'a', 'MESES' => 'm', 'DIAS' => 'd', 'HORAS
             <td class="mono"><?= e($ficha['codigo']) ?></td>
             <td>
               <div class="pt-name"><?= e(Persona::nombreCompletoPnp($ficha)) ?></div>
-              <div class="pt-doc"><?= e($ficha['tipo_doc']) ?> <?= e(enmascararDocumento($ficha['num_doc'])) ?> · <?= e($ficha['sexo'] ?? '—') ?><?= $edadCompacta !== null ? ' · ' . $edadCompacta : '' ?></div>
+              <div class="pt-doc"><?= e(documentoParaMostrar($ficha['tipo_doc'], $ficha['num_doc'], true)) ?> · <?= e($ficha['sexo'] ?? '—') ?><?= $edadCompacta !== null ? ' · ' . $edadCompacta : '' ?></div>
             </td>
             <td><?= e($ficha['enfermedad_nombre']) ?><div class="cell-sub"><?= e($ficha['cie10'] ?? '—') ?></div></td>
             <td><?= e($ficha['establecimiento_nombre']) ?><div class="cell-sub"><?= e($ficha['red_nombre'] ?? '—') ?></div></td>

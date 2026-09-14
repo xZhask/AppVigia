@@ -20,7 +20,7 @@ $mostrarClasificacionVer = !nucleoOmitido($enfermedadVer ?? [], 'clasificacion')
 // campos_persona (Z21, 2026-09-12): campo_def que el formulario pinta dentro
 // de la tarjeta de identidad (el "Código" de la gestante o del niño). Acá van
 // en "Datos del paciente" y no se repiten en la tarjeta de su sección.
-$clavesCamposPersonaVer = jsonDeEnfermedad($enfermedadVer ?? [], 'campos_persona');
+$clavesCamposPersonaVer = clavesCamposPersona($enfermedadVer ?? []);
 $camposPersonaVer = array_filter(array_map(
     fn(string $clave) => CampoDef::porClave((int) ($enfermedadVer['id'] ?? 0), $clave),
     $clavesCamposPersonaVer
@@ -109,22 +109,26 @@ $accionEtiquetas = [
 
     <!-- Paciente -->
     <div class="card section">
-      <div class="section-head"><span class="section-num">2</span><h3>Datos del paciente</h3></div>
+      <div class="section-head"><span class="section-num">2</span><h3><?= e(nucleoAjuste($enfermedadVer ?? [], 'titulo_persona') ?? 'Datos del paciente') ?></h3></div>
       <div class="section-body">
         <div class="fields thirds">
           <div class="field"><label class="fl">Apellido paterno</label><div class="control" style="background:var(--paper)"><?= e($caso['apellido_paterno'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Apellido materno</label><div class="control" style="background:var(--paper)"><?= e($caso['apellido_materno'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Nombres</label><div class="control" style="background:var(--paper)"><?= e($caso['nombres'] ?: '—') ?></div></div>
-          <div class="field"><label class="fl">Documento</label><div class="control mono" style="background:var(--paper)"><?= e($caso['tipo_doc']) ?> <?= e($caso['num_doc']) ?></div></div>
+          <div class="field"><label class="fl">Documento</label><div class="control mono" style="background:var(--paper)"><?= e(documentoParaMostrar($caso['tipo_doc'], $caso['num_doc'])) ?></div></div>
           <?php if (!empty($caso['n_historia_clinica'])): ?>
             <div class="field"><label class="fl">N.° de historia clínica</label><div class="control mono" style="background:var(--paper)"><?= e($caso['n_historia_clinica']) ?></div></div>
           <?php endif; foreach ($camposPersonaVer as $campoPersonaVer): ?><div class="field"><label class="fl"><?= e($campoPersonaVer['etiqueta']) ?></label><div class="control mono" style="background:var(--paper)"><?= e(campoValorTexto($campoPersonaVer, $valoresCampos[$campoPersonaVer['id']] ?? null)) ?></div></div><?php endforeach; ?>
           <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
           <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= e($edadTexto) ?></div></div>
+<?php // fecha_nac_desconocida (A50, 2026-09-14): la ficha que ofrece "Desconocido" muestra la fecha (con la etiqueta de su rama) o esa marca. ?>
+<?php if (fichaAdmiteFechaNacDesconocida($enfermedadVer ?? [])): ?>
+          <div class="field"><label class="fl"><?= e(nucleoAjuste($enfermedadVer, 'etiqueta_fecha_nac', $valoresCampos) ?? 'Fecha de nacimiento') ?></label><div class="control mono" style="background:var(--paper)"><?= e(!empty($caso['fecha_nac_desconocida']) ? 'Desconocido' : (fechaIsoADmy($caso['fecha_nac']) ?: '—')) ?></div></div>
+<?php endif; ?>
           <?php if (!empty($caso['nacimiento_distrito_nombre'])): ?>
             <div class="field"><label class="fl">Distrito de nacimiento</label><div class="control" style="background:var(--paper)"><?= e($caso['nacimiento_distrito_nombre']) ?></div></div>
           <?php endif; ?>
-          <div class="field"><label class="fl">Distrito de domicilio</label><div class="control" style="background:var(--paper)"><?= e($caso['distrito_nombre'] ?? '—') ?></div></div>
+          <div class="field"><label class="fl"><?= e(nucleoAjuste($enfermedadVer ?? [], 'titulo_residencia') ?? 'Distrito de domicilio') ?></label><div class="control" style="background:var(--paper)"><?= e($caso['distrito_nombre'] ?? '—') ?></div></div>
           <div class="field"><label class="fl">N.° de celular</label><div class="control mono" style="background:var(--paper)"><?= e($caso['celular'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Nacionalidad</label><div class="control" style="background:var(--paper)"><?= e($caso['nacionalidad'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Localidad</label><div class="control" style="background:var(--paper)"><?= e($caso['localidad'] ?: '—') ?></div></div>
@@ -528,7 +532,30 @@ $accionEtiquetas = [
     <?php endif; ?>
 
     <!-- Investigador -->
-    <?php if ($caso['investigador_nombre'] || $caso['investigador_cargo'] || ($caso['investigador_profesion'] ?? '') || ($caso['investigador_telefono'] ?? '') || ($caso['investigador_email'] ?? '') || $caso['fecha_investigacion']): ?>
+<?php // nucleo_ajustes.investigador (A50, 2026-09-14): la tarjeta con su título y solo los campos que la ficha declara. ?>
+<?php if (is_array(nucleoAjuste($enfermedadVer ?? [], 'investigador'))):
+    $camposInvestigadorVer = [
+        'nombre'              => $caso['investigador_nombre'] ?? '',
+        'cargo'               => $caso['investigador_cargo'] ?? '',
+        'profesion'           => $caso['investigador_profesion'] ?? '',
+        'fecha_investigacion' => fechaIsoADmy($caso['fecha_investigacion'] ?? null),
+        'telefono'            => $caso['investigador_telefono'] ?? '',
+        'email'               => $caso['investigador_email'] ?? '',
+    ];
+    $camposInvestigadorVer = array_filter($camposInvestigadorVer, fn($valorInv, $campoInv) => campoInvestigador($enfermedadVer, $campoInv) !== null, ARRAY_FILTER_USE_BOTH);
+    if (array_filter($camposInvestigadorVer, fn($valorInv) => (string) $valorInv !== '')): ?>
+    <div class="card section">
+      <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3><?= e(tituloInvestigador($enfermedadVer)) ?></h3></div>
+      <div class="section-body">
+        <div class="fields quarters">
+          <?php foreach ($camposInvestigadorVer as $campoInv => $valorInv): ?><div class="field"><label class="fl"><?= e(campoInvestigador($enfermedadVer, $campoInv)) ?></label><div class="control<?= in_array($campoInv, ['fecha_investigacion', 'telefono'], true) ? ' mono' : '' ?>" style="background:var(--paper)"><?= e((string) $valorInv !== '' ? (string) $valorInv : '—') ?></div></div><?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+    <?php $numeroSeccion++; ?>
+    <?php endif; ?>
+<?php else: ?>
+    <?php if ($caso['investigador_nombre'] ||$caso['investigador_cargo'] || ($caso['investigador_profesion'] ?? '') || ($caso['investigador_telefono'] ?? '') || ($caso['investigador_email'] ?? '') || $caso['fecha_investigacion']): ?>
     <div class="card section">
       <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Investigador</h3></div>
       <div class="section-body">
@@ -544,6 +571,7 @@ $accionEtiquetas = [
     </div>
     <?php $numeroSeccion++; ?>
     <?php endif; ?>
+<?php endif; ?>
   </div>
 
   <!-- Right rail -->

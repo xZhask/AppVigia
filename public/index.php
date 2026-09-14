@@ -180,6 +180,20 @@ $router->get('/reportes/busqueda-activa-vih/exportar', function () {
     (new ReportesController())->exportarBusquedaActivaVih();
 });
 
+// Ficha de notificación de muerte fetal y neonatal (pág. 28 del PDF, P96): listado semanal y semana sin casos
+$router->get('/reportes/muerte-fetal-neonatal', function () {
+    (new ReportesController())->muerteFetalNeonatal();
+});
+$router->get('/reportes/muerte-fetal-neonatal/exportar', function () {
+    (new ReportesController())->exportarMuerteFetalNeonatal();
+});
+$router->post('/reportes/muerte-fetal-neonatal/sin-casos', function () {
+    (new ReportesController())->notificarSinCasosMuerteFetalNeonatal();
+});
+$router->post('/reportes/muerte-fetal-neonatal/sin-casos/anular', function () {
+    (new ReportesController())->anularSinCasosMuerteFetalNeonatal();
+});
+
 // ---------- Catálogo: enfermedades ----------
 $router->get('/catalogos/enfermedades', function () {
     (new EnfermedadesController())->index();

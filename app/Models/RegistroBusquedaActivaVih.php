@@ -149,23 +149,7 @@ class RegistroBusquedaActivaVih
      */
     public static function encabezado(?int $establecimientoId): array
     {
-        $vacio = ['diresa' => '', 'red' => '', 'institucion' => '', 'establecimiento' => '', 'departamento' => '', 'provincia' => '', 'distrito' => ''];
-        if (!$establecimientoId) {
-            return $vacio;
-        }
-        $consulta = Database::conexion()->prepare(
-            'SELECT es.nombre AS establecimiento, es.institucion, r.nombre AS red, r.diresa,
-                    d.nombre AS distrito, pr.nombre AS provincia, dep.nombre AS departamento
-               FROM establecimiento es
-          LEFT JOIN red_salud r      ON r.id = es.red_id
-          LEFT JOIN distrito d       ON d.id = es.distrito_id
-          LEFT JOIN provincia pr     ON pr.id = d.provincia_id
-          LEFT JOIN departamento dep ON dep.id = d.departamento_id
-              WHERE es.id = :id'
-        );
-        $consulta->execute(['id' => $establecimientoId]);
-
-        return ($consulta->fetch() ?: []) + $vacio;
+        return Establecimiento::encabezadoFormulario($establecimientoId);
     }
 
     private static function filaDelFormato(array $fila): array

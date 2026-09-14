@@ -9689,11 +9689,9 @@
       "enfermedad": "Sífilis materna y congénita",
       "lote": 5,
       "pdf_paginas": "18-19",
-      "multi_sujeto": true,
-      "roles_sujeto": [
-        "MADRE",
-        "RECIEN_NACIDO"
-      ],
+      "multi_sujeto": false,
+      "_nota_general": "Cotejo 2026-09-14 (págs. 18-19 del PDF: Anexo 4 de la Directiva Sanitaria N.° 062-MINSA/DGE-V.01, R.M. 127-2015/MINSA). La hoja tiene dos partes (6.3.5): la gestante o madre y el producto de la gestación (niño, mortinato o aborto), con plazos distintos (6.3.8), y la directiva notifica aparte la sífilis materna (O98.1) y la congénita (A50, 6.1.3). Decisión del usuario: DOS registros de esta misma ficha, igual que Z21. 'Investigación de' elige la rama; cada producto es su propio caso, enlazado a la ficha de su madre por caso.caso_vinculado_id (un gemelar son dos). multi_sujeto y opciones_clasificacion los fija sql/migraciones/set_a50_sifilis.php.",
+      "_nota_encabezado": "Datos generales del PDF: establecimiento, institución, nivel, DISA/DIRESA, red y microrred salen del establecimiento elegido (padrón); la fecha de notificación e investigación es la del núcleo y la semana epidemiológica se calcula. El 'Código' es el DNI de la madre: en su ficha, su documento; en la del producto, 'DNI de la madre'. El notificador ('Nombres y Apellidos del notificador', pie de la ficha) va en una tarjeta 'Notificador' con solo ese campo, prellenado con el usuario que registra y editable (pedido del usuario 2026-09-14: antes no se veía). 'Firma y sello' no aplica a un registro digital.",
       "tablas_hijas": {
         "caso_contacto": false,
         "caso_muestra": false,
@@ -9701,53 +9699,291 @@
         "caso_vacuna": false
       },
       "nucleo_omitidos": [
+        "celular",
+        "nacionalidad",
+        "direccion",
         "referencia_localizar",
+        "etnia",
         "pueblo_etnico",
-        "ocupacion"
+        "ocupacion",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "captacion",
+        "clasificacion",
+        "fecha_inicio_sintomas"
+      ],
+      "nucleo_condicional": [
+        {
+          "_nota": "Sin rama elegida no se sabe de quién son los datos de identidad (mismo criterio que Z21). Títulos según el PDF: 'Apellidos y nombres de la madre' / 'Apellidos y nombres del niño'.",
+          "clave": "a50_investigacion_de",
+          "valores": [
+            "MATERNA",
+            "CONGENITA"
+          ],
+          "bloques": [
+            "persona"
+          ],
+          "titulos": {
+            "MATERNA": "Datos de la gestante o madre",
+            "CONGENITA": "Datos del niño, mortinato o aborto"
+          },
+          "aviso": "Elige primero en Notificación qué se investiga (sífilis materna o sífilis congénita) para completar los datos de la persona."
+        },
+        {
+          "_nota": "Ítem 3: lugar de residencia habitual de la madre (últimos 6 meses, Anexo 5), con su localidad. La parte del producto no la pide.",
+          "clave": "a50_investigacion_de",
+          "valores": [
+            "MATERNA"
+          ],
+          "bloques": [
+            "residencia"
+          ]
+        },
+        {
+          "_nota": "Sexo: la madre es mujer por definición (se guarda F); el del producto se pregunta, opcional -- el registro de notificación individual lo pide (Anexo 3, en blanco para mortinato y aborto).",
+          "clave": "a50_investigacion_de",
+          "valores": [
+            "CONGENITA"
+          ],
+          "bloques": [
+            "sexo"
+          ],
+          "valor_fijo": {
+            "sexo": "F"
+          }
+        },
+        {
+          "_nota": "Producto de la gestación: un mortinato o un aborto no tienen documento ni nombre (el Anexo 5 usa RN, MT o AB con los apellidos), no puede ser efectivo PNP y su 'fecha de nacimiento' es la del ítem 13, fecha de parto o culminación del embarazo. Ítem 13 con la casilla 'Desconocido' del PDF (pedido del usuario 2026-09-14): caso.fecha_nac_desconocida.",
+          "clave": "a50_investigacion_de",
+          "valores": [
+            "CONGENITA"
+          ],
+          "ajustes": {
+            "sin_documento": true,
+            "nombres_opcionales": true,
+            "condiciones_paciente": [
+              "DERECHOHABIENTE",
+              "PARTICULAR"
+            ],
+            "etiqueta_fecha_nac": "Fecha de parto / culminación del embarazo",
+            "fecha_nac_desconocida": true
+          }
+        }
+      ],
+      "nucleo_ajustes": {
+        "_nota": "Pie de la ficha: 'Nombres y Apellidos del notificador'. Solo ese campo de la tarjeta núcleo, retitulada; se prellena con el usuario que registra.",
+        "investigador": {
+          "titulo": "Notificador",
+          "campos": {
+            "nombre": "Nombres y apellidos del notificador"
+          }
+        }
+      },
+      "campos_notificacion": [
+        "a50_investigacion_de"
+      ],
+      "vinculo_caso": {
+        "_nota": "El producto se enlaza a la ficha de sífilis materna de su madre: llega fijado desde ella ('Registrar producto de la gestación') o se identifica por código de ficha o DNI. Sin ficha de la madre en el sistema, sus apellidos y nombres y su DNI se escriben a mano, como en el papel.",
+        "seccion": "Datos de la madre",
+        "etiqueta": "Ficha de la madre (sífilis materna)",
+        "opcion_sin_vinculo": "Sin vincular (la madre no tiene ficha en el sistema)",
+        "ayuda": "Al vincularla, los apellidos y nombres y el DNI de la madre se toman de su ficha.",
+        "titulo_madre": "Ficha de la madre",
+        "titulo_vinculados": "Productos de la gestación vinculados",
+        "accion_registrar": "Registrar producto de la gestación",
+        "fijar_por_procedencia": true,
+        "buscar": {
+          "etiqueta": "Identificar a la madre",
+          "placeholder": "Código de ficha (F-00123) o DNI de la madre",
+          "ayuda": "Escribe el código de la ficha de sífilis materna o el DNI de la madre. Si no tiene ficha en el sistema, deja esto vacío y llena a mano sus apellidos y nombres y su DNI.",
+          "accion": "Buscar",
+          "no_encontrada": "No se encontró una ficha de sífilis materna con ese código o DNI entre las que puedes ver.",
+          "no_disponible": "La ficha de la madre ya no está disponible para vincular. Vuelve a identificarla por código de ficha o DNI.",
+          "quitar": "Quitar vínculo"
+        },
+        "activador": {
+          "clave": "a50_investigacion_de",
+          "valor": "CONGENITA"
+        },
+        "candidatos": {
+          "clave": "a50_investigacion_de",
+          "valor": "MATERNA"
+        },
+        "copiar": {
+          "a50_apellidos_y_nombres_de_la_madre": "persona:nombre_completo",
+          "a50_dni_de_la_madre": "persona:num_doc"
+        }
+      },
+      "_nota_reglas_campos": "Clasificación calculada (decisión del usuario) con los valores Probable/Confirmado/Descartado del sistema, como el tipo de diagnóstico C/P/D del Anexo 3: ítem 12 de la madre (los dos 'Descartado' -> Descartado) o ítem 21 del producto ('Sífilis congénita' -> Confirmado, 'Niño expuesto a sífilis, no infectado' -> Descartado); sin clasificar todavía -> Probable. Gana la primera regla que se cumple. Validaciones de la Directiva 062: mortinato con 22 semanas o más, o 500 g o más (5.1.6); aborto con menos de 22 semanas o menos de 500 g (5.1.5); con algún criterio de caso marcado (5.1.4) la clasificación final solo puede ser Sífilis congénita.",
+      "reglas_campos": [
+        {
+          "si": {
+            "clave": "a50_clasificacion_de_caso_de_sifilis_en_la_gestante",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a50_clasificacion_de_caso_de_sifilis_en_la_gestante",
+            "valores": [
+              "DESCARTADO_FALSO_POSITIVO",
+              "DESCARTADO_SIFILIS_MEMORIA"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "si": {
+            "clave": "a50_clasificacion_final_del_nino_mortinato_o_aborto",
+            "valores": [
+              "CONGENITA"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a50_clasificacion_final_del_nino_mortinato_o_aborto",
+            "valores": [
+              "EXPUESTO_NO_INFECTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "si": {
+            "clave": "a50_investigacion_de",
+            "valores": [
+              "MATERNA",
+              "CONGENITA"
+            ]
+          },
+          "clasificar": "PROBABLE"
+        },
+        {
+          "si": {
+            "clave": "a50_recibio_atencion_prenatal",
+            "valores": [
+              "SI"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "a50_fur",
+            "hasta": "a50_fecha_de_primer_control_prenatal",
+            "dias_minimo": 0,
+            "mensaje": "La fecha del primer control prenatal no puede ser anterior a la del último periodo menstrual (FUR)."
+          }
+        },
+        {
+          "si": {
+            "clave": "a50_estado_vital",
+            "valores": [
+              "NACIO_VIVO_FALLECIO",
+              "MORTINATO",
+              "ABORTO"
+            ]
+          },
+          "fallecido": true
+        },
+        {
+          "si": {
+            "clave": "a50_estado_vital",
+            "valores": [
+              "NACIO_VIVO_FALLECIO"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "nucleo:fecha_nac",
+            "hasta": "a50_fecha_de_fallecimiento",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de fallecimiento no puede ser anterior a la de parto."
+          }
+        },
+        {
+          "si": {
+            "clave": "a50_estado_vital",
+            "valores": [
+              "MORTINATO"
+            ]
+          },
+          "alguno_minimo": {
+            "claves": {
+              "a50_edad_gestacional_estimada_semanas": 22,
+              "a50_peso_al_nacimiento_gramos": 500
+            },
+            "mensaje": "Un mortinato tiene 22 semanas o más, o pesa 500 g o más (Directiva 062, 5.1.6). Con menos es un aborto."
+          }
+        },
+        {
+          "si": {
+            "clave": "a50_estado_vital",
+            "valores": [
+              "ABORTO"
+            ]
+          },
+          "alguno_menor_que": {
+            "claves": {
+              "a50_edad_gestacional_estimada_semanas": 22,
+              "a50_peso_al_nacimiento_gramos": 500
+            },
+            "mensaje": "Un aborto tiene menos de 22 semanas o pesa menos de 500 g (Directiva 062, 5.1.5). Con más es un mortinato."
+          }
+        },
+        {
+          "si": {
+            "clave": "a50_criterios_de_caso_de_sifilis_congenita",
+            "valores": [
+              "MADRE_CON_SIFILIS_QUE_NO_RECIBIO_TRATAMIENTO_O_FUE_TRATADA_I",
+              "TITULOS_NO_TREPONEMICOS_CUATRO_VECES_MAYORES_QUE_LOS_DE_LA_M",
+              "NINO_CON_MANIFESTACIONES_CLINICAS_SUGESTIVAS_DE_SIFILIS_CONG",
+              "DEMOSTRACION_DE_TREPONEMA_PALLIDUM_EN_LESIONES_PLACENTA_CORD",
+              "NINO_MAYOR_DE_2_ANOS_CON_SIGNOS_DE_SIFILIS_SECUNDARIA_DESCAR"
+            ]
+          },
+          "opciones": {
+            "a50_clasificacion_final_del_nino_mortinato_o_aborto": [
+              "CONGENITA"
+            ]
+          }
+        }
       ],
       "secciones": [
         {
-          "nombre": "Encabezado",
+          "nombre": "Datos de la investigación",
           "orden": 1,
+          "_nota_seccion": "'Investigación de' se pinta dentro de la tarjeta '1. Notificación' (campos_notificacion): no genera tarjeta propia.",
           "campos": [
             {
               "clave": "a50_investigacion_de",
               "etiqueta": "Investigación de",
-              "tipo": "MULTISELECT",
+              "tipo": "SELECT",
               "orden": 1,
+              "obligatorio": true,
               "opciones": [
                 "Sífilis materna",
                 "Sífilis congénita"
-              ]
-            },
-            {
-              "clave": "a50_nivel_del_establecimiento",
-              "etiqueta": "Nivel del establecimiento",
-              "tipo": "SELECT",
-              "orden": 2,
-              "opciones": [
-                "I-1",
-                "I-2",
-                "I-3",
-                "I-4",
-                "II-1",
-                "II-2",
-                "III-1"
-              ]
+              ],
+              "sensible": true
             }
           ]
         },
         {
-          "nombre": "Sección II — Sífilis materna",
+          "nombre": "Embarazo actual",
           "orden": 2,
-          "rol_sujeto": "MADRE",
-          "_corregido": "PENDIENTES_POST_FASE5.md punto 1: DEFINICION_FICHAS_B_C_D.md sección 0.b exige sensible=1 para sífilis, igual que VIH/violencia. Se marca toda esta sección y la de sífilis congénita (clínicas); el 'Encabezado' (investigación de / nivel del establecimiento) queda fuera por ser clasificación administrativa, no dato clínico ni identificatorio.",
+          "depende_de": "a50_investigacion_de",
+          "valor_activador": "MATERNA",
+          "_nota_seccion": "Ítems 4 a 7. La fecha de nacimiento, la edad y la residencia (ítems 1 a 3) son el núcleo de persona de la madre.",
           "campos": [
             {
               "clave": "a50_fur",
-              "etiqueta": "FUR",
+              "etiqueta": "Fecha de inicio del último periodo menstrual (FUR)",
               "tipo": "FECHA",
               "orden": 1,
+              "desconocido": true,
               "sensible": true
             },
             {
@@ -9764,57 +10000,151 @@
             },
             {
               "clave": "a50_fecha_de_primer_control_prenatal",
-              "etiqueta": "Fecha de primer control prenatal",
+              "etiqueta": "Fecha del primer control prenatal",
               "tipo": "FECHA",
               "orden": 3,
+              "depende_de": "a50_recibio_atencion_prenatal",
+              "valor_activador": "SI",
+              "desconocido": true,
               "sensible": true
             },
             {
               "clave": "a50_edad_gestacional_en_el_primer_control_prenatal",
-              "etiqueta": "Edad gestacional en el primer control prenatal",
+              "etiqueta": "Edad gestacional en el primer control prenatal (semanas)",
               "tipo": "NUMERO",
               "orden": 4,
+              "depende_de": "a50_recibio_atencion_prenatal",
+              "valor_activador": "SI",
+              "minimo": 0,
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Pruebas para sífilis",
+          "orden": 3,
+          "depende_de": "a50_investigacion_de",
+          "valor_activador": "MATERNA",
+          "_nota_seccion": "Ítems 8 y 9: la primera (a) y la más reciente (b) prueba realizada durante la gestación, parto o puerperio.",
+          "campos": [
             {
-              "clave": "a50_pruebas_no_treponemicas_rpr_vdrl",
-              "etiqueta": "Pruebas no treponémicas (RPR, VDRL)",
+              "clave": "a50_pruebas_no_treponemicas",
+              "etiqueta": "Prueba no treponémica (RPR, VDRL)",
               "tipo": "MATRIZ",
-              "orden": 5,
+              "orden": 1,
               "filas": [
-                "Primera (a)",
-                "Más reciente (b)"
+                "a. Primera",
+                "b. Más reciente"
               ],
               "columnas": [
                 "Fecha",
-                "Resultado (Reactivo/No reactivo/Desconocido)",
-                "Título",
-                "Momento (Gestación/Parto/Puerperio)"
+                "Resultado",
+                "Título (1:__)",
+                "Momento"
               ],
+              "opciones_por_fila": {
+                "Resultado": [
+                  [
+                    "Reactivo",
+                    "No reactivo",
+                    "Desconocido"
+                  ],
+                  [
+                    "Reactivo",
+                    "No reactivo",
+                    "Desconocido"
+                  ]
+                ],
+                "Momento": [
+                  [
+                    "Gestación",
+                    "Parto",
+                    "Puerperio"
+                  ],
+                  [
+                    "Gestación",
+                    "Parto",
+                    "Puerperio"
+                  ]
+                ]
+              },
               "sensible": true
             },
             {
-              "clave": "a50_pruebas_treponemicas_tpha_tppa_fta_abs_elisa_rapida",
-              "etiqueta": "Pruebas treponémicas (TPHA, TPPA, FTA Abs, ELISA, Rápida o Dual)",
+              "clave": "a50_pruebas_treponemicas",
+              "etiqueta": "Prueba treponémica (TPHA, TPPA, FTA-Abs, ELISA, prueba rápida o dual)",
               "tipo": "MATRIZ",
-              "orden": 6,
+              "orden": 2,
               "filas": [
-                "Primera (a)",
-                "Más reciente (b)"
+                "a. Primera",
+                "b. Más reciente"
               ],
               "columnas": [
                 "Fecha",
                 "Tipo de prueba",
+                "Otra prueba (cuál)",
                 "Resultado",
                 "Momento"
               ],
+              "opciones_por_fila": {
+                "Tipo de prueba": [
+                  [
+                    "Prueba rápida / dual",
+                    "Otra"
+                  ],
+                  [
+                    "Prueba rápida / dual",
+                    "Otra"
+                  ]
+                ],
+                "Resultado": [
+                  [
+                    "Reactivo",
+                    "No reactivo",
+                    "Desconocido"
+                  ],
+                  [
+                    "Reactivo",
+                    "No reactivo",
+                    "Desconocido"
+                  ]
+                ],
+                "Momento": [
+                  [
+                    "Gestación",
+                    "Parto",
+                    "Puerperio"
+                  ],
+                  [
+                    "Gestación",
+                    "Parto",
+                    "Puerperio"
+                  ]
+                ]
+              },
+              "columnas_condicionadas": {
+                "Otra prueba (cuál)": {
+                  "columna": "Tipo de prueba",
+                  "valor": "Otra"
+                }
+              },
+              "_nota_otra": "Pedido del usuario 2026-09-14: 'Otra prueba (cuál)' solo se habilita con Tipo de prueba = Otra.",
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Tratamiento y clasificación de la gestante",
+          "orden": 4,
+          "depende_de": "a50_investigacion_de",
+          "valor_activador": "MATERNA",
+          "_nota_seccion": "Ítems 10 a 12. Tratamiento adecuado (Anexo 5): 3 dosis de penicilina benzatínica, la última más de 30 días antes del parto.",
+          "campos": [
             {
-              "clave": "a50_fue_la_madre_adecuadamente_tratada_durante_el_embar",
-              "etiqueta": "¿Fue la madre adecuadamente tratada durante el embarazo?",
+              "clave": "a50_adecuadamente_tratada",
+              "etiqueta": "Durante el embarazo, ¿fue la madre adecuadamente tratada?",
               "tipo": "SELECT",
-              "orden": 7,
+              "orden": 1,
               "opciones": [
                 "Sí",
                 "No",
@@ -9823,10 +10153,12 @@
               "sensible": true
             },
             {
-              "clave": "a50_motivo_si_no_fue_tratada",
-              "etiqueta": "Motivo (si no fue tratada)",
-              "tipo": "SELECT",
-              "orden": 8,
+              "clave": "a50_motivo_tratamiento_inadecuado",
+              "etiqueta": "Motivo por el que no fue adecuadamente tratada",
+              "tipo": "MULTISELECT",
+              "orden": 2,
+              "depende_de": "a50_adecuadamente_tratada",
+              "valor_activador": "NO",
               "opciones": [
                 "Tratamiento sin penicilina",
                 "Tratamiento durante los 30 días previos al parto",
@@ -9836,10 +10168,10 @@
               "sensible": true
             },
             {
-              "clave": "a50_contacto_s_sexual_es_tratado_s",
-              "etiqueta": "Contacto(s) sexual(es) tratado(s)",
+              "clave": "a50_contactos_sexuales_tratados",
+              "etiqueta": "¿Contacto(s) sexual(es) tratado(s)?",
               "tipo": "SELECT",
-              "orden": 9,
+              "orden": 3,
               "opciones": [
                 "Sí",
                 "No",
@@ -9848,17 +10180,21 @@
               "sensible": true
             },
             {
-              "clave": "a50_n_de_contactos_sexuales_tratados",
+              "clave": "a50_n_de_contactos_sexuales",
               "etiqueta": "N.° de contactos sexuales tratados",
               "tipo": "NUMERO",
-              "orden": 10,
-              "sensible": true
+              "orden": 4,
+              "depende_de": "a50_contactos_sexuales_tratados",
+              "valor_activador": "SI",
+              "minimo": 0,
+              "sensible": true,
+              "_nota": "Pedido del usuario 2026-09-14: solo con '¿Contacto(s) sexual(es) tratado(s)?' = Sí (antes también con No)."
             },
             {
               "clave": "a50_clasificacion_de_caso_de_sifilis_en_la_gestante",
               "etiqueta": "Clasificación de caso de sífilis en la gestante",
               "tipo": "SELECT",
-              "orden": 11,
+              "orden": 5,
               "opciones": [
                 "Probable",
                 "Confirmado",
@@ -9870,22 +10206,40 @@
           ]
         },
         {
-          "nombre": "Sección III — Sífilis congénita",
-          "orden": 3,
-          "rol_sujeto": "RECIEN_NACIDO",
+          "nombre": "Datos de la madre",
+          "orden": 5,
+          "depende_de": "a50_investigacion_de",
+          "valor_activador": "CONGENITA",
+          "_nota_seccion": "Datos generales del PDF: 'Apellidos y nombres de la madre' y 'Código (DNI madre)', en la ficha del producto. Se copian de la ficha de la madre si está vinculada (vinculo_caso).",
           "campos": [
             {
-              "clave": "a50_fecha_de_parto_culminacion_del_embarazo",
-              "etiqueta": "Fecha de parto / culminación del embarazo",
-              "tipo": "FECHA",
+              "clave": "a50_apellidos_y_nombres_de_la_madre",
+              "etiqueta": "Apellidos y nombres de la madre",
+              "tipo": "TEXTO",
               "orden": 1,
               "sensible": true
             },
             {
-              "clave": "a50_lugar_del_parto",
-              "etiqueta": "Lugar del parto",
-              "tipo": "SELECT",
+              "clave": "a50_dni_de_la_madre",
+              "etiqueta": "DNI de la madre (código de la ficha)",
+              "tipo": "TEXTO",
               "orden": 2,
+              "sensible": true
+            }
+          ]
+        },
+        {
+          "nombre": "Parto y estado vital",
+          "orden": 6,
+          "depende_de": "a50_investigacion_de",
+          "valor_activador": "CONGENITA",
+          "_nota_seccion": "Ítems 14 a 18. La fecha de parto o culminación del embarazo (ítem 13) es la fecha de nacimiento del núcleo, con su propia etiqueta en esta rama.",
+          "campos": [
+            {
+              "clave": "a50_lugar_del_parto",
+              "etiqueta": "Lugar del parto o culminación del embarazo",
+              "tipo": "SELECT",
+              "orden": 1,
               "opciones": [
                 "Establecimiento de salud",
                 "Domicilio"
@@ -9893,10 +10247,38 @@
               "sensible": true
             },
             {
+              "clave": "a50_establecimiento_del_parto",
+              "etiqueta": "Establecimiento de salud",
+              "tipo": "TEXTO",
+              "orden": 2,
+              "depende_de": "a50_lugar_del_parto",
+              "valor_activador": "EESS",
+              "sensible": true
+            },
+            {
+              "clave": "a50_nivel_del_establecimiento_del_parto",
+              "etiqueta": "Nivel del establecimiento",
+              "tipo": "SELECT",
+              "orden": 3,
+              "depende_de": "a50_lugar_del_parto",
+              "valor_activador": "EESS",
+              "opciones": [
+                "I-1",
+                "I-2",
+                "I-3",
+                "I-4",
+                "II-1",
+                "II-2",
+                "III-1"
+              ],
+              "sensible": true
+            },
+            {
               "clave": "a50_estado_vital",
               "etiqueta": "Estado vital",
               "tipo": "SELECT",
-              "orden": 3,
+              "orden": 4,
+              "obligatorio": true,
               "opciones": [
                 "Vivo",
                 "Nació vivo, luego falleció",
@@ -9909,28 +10291,44 @@
               "clave": "a50_fecha_de_fallecimiento",
               "etiqueta": "Fecha de fallecimiento",
               "tipo": "FECHA",
-              "orden": 4,
+              "orden": 5,
+              "depende_de": "a50_estado_vital",
+              "valor_activador": "NACIO_VIVO_FALLECIO",
+              "desconocido": true,
               "sensible": true
             },
             {
               "clave": "a50_peso_al_nacimiento_gramos",
               "etiqueta": "Peso al nacimiento (gramos)",
               "tipo": "NUMERO",
-              "orden": 5,
+              "orden": 6,
+              "minimo": 0,
+              "desconocido": true,
               "sensible": true
             },
             {
               "clave": "a50_edad_gestacional_estimada_semanas",
               "etiqueta": "Edad gestacional estimada (semanas)",
               "tipo": "NUMERO",
-              "orden": 6,
+              "orden": 7,
+              "minimo": 0,
+              "desconocido": true,
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Criterios de caso y tratamiento del niño",
+          "orden": 7,
+          "depende_de": "a50_estado_vital",
+          "valor_activador": "VIVO,NACIO_VIVO_FALLECIO",
+          "_nota_seccion": "Ítems 19 y 20. El PDF salta a la clasificación final (ítem 21) si el producto fue mortinato o aborto; como 'Estado vital' solo existe en la rama del producto, esta sección tampoco aparece en la de la madre.",
+          "campos": [
             {
               "clave": "a50_criterios_de_caso_de_sifilis_congenita",
-              "etiqueta": "Criterios de caso de sífilis congénita",
+              "etiqueta": "Criterios que cumple el producto de la gestación para ser caso de sífilis congénita (marque todos los que apliquen)",
               "tipo": "MULTISELECT",
-              "orden": 7,
+              "orden": 1,
               "opciones": [
                 "Madre con sífilis, que no recibió tratamiento o fue tratada inadecuadamente",
                 "Títulos no treponémicos cuatro veces mayores que los de la madre",
@@ -9941,31 +10339,38 @@
               "sensible": true
             },
             {
-              "clave": "a50_fecha_de_los_test_titulo_4x_madre",
-              "etiqueta": "Fecha de los test (título 4x madre)",
+              "clave": "a50_fecha_de_los_test",
+              "etiqueta": "Fecha de los test (títulos de la madre y del niño)",
               "tipo": "FECHA",
-              "orden": 8,
+              "orden": 2,
+              "depende_de": "a50_criterios_de_caso_de_sifilis_congenita",
+              "valor_activador": "TITULOS_NO_TREPONEMICOS_CUATRO_VECES_MAYORES_QUE_LOS_DE_LA_M",
+              "desconocido": true,
               "sensible": true
             },
             {
               "clave": "a50_titulo_de_la_madre",
-              "etiqueta": "Título de la madre",
+              "etiqueta": "Título de la madre (1:__)",
               "tipo": "TEXTO",
-              "orden": 9,
+              "orden": 3,
+              "depende_de": "a50_criterios_de_caso_de_sifilis_congenita",
+              "valor_activador": "TITULOS_NO_TREPONEMICOS_CUATRO_VECES_MAYORES_QUE_LOS_DE_LA_M",
               "sensible": true
             },
             {
               "clave": "a50_titulo_del_nino",
-              "etiqueta": "Título del niño",
+              "etiqueta": "Título del niño (1:__)",
               "tipo": "TEXTO",
-              "orden": 10,
+              "orden": 4,
+              "depende_de": "a50_criterios_de_caso_de_sifilis_congenita",
+              "valor_activador": "TITULOS_NO_TREPONEMICOS_CUATRO_VECES_MAYORES_QUE_LOS_DE_LA_M",
               "sensible": true
             },
             {
               "clave": "a50_tratamiento_del_nino",
-              "etiqueta": "Tratamiento del niño",
+              "etiqueta": "¿Fue el niño tratado?",
               "tipo": "SELECT",
-              "orden": 11,
+              "orden": 5,
               "opciones": [
                 "Sí, con penicilina G sódica o procaínica por ≥10 días",
                 "Sí, con penicilina benzatínica x 1 dosis",
@@ -9974,12 +10379,20 @@
                 "Desconocido"
               ],
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Clasificación final",
+          "orden": 8,
+          "depende_de": "a50_investigacion_de",
+          "valor_activador": "CONGENITA",
+          "campos": [
             {
               "clave": "a50_clasificacion_final_del_nino_mortinato_o_aborto",
               "etiqueta": "Clasificación final del niño, mortinato o aborto",
               "tipo": "SELECT",
-              "orden": 12,
+              "orden": 1,
               "opciones": [
                 "Sífilis congénita",
                 "Niño expuesto a sífilis, no infectado"
@@ -13202,119 +13615,222 @@
       "enfermedad": "Muerte fetal y neonatal",
       "lote": 8,
       "pdf_paginas": "28",
-      "multi_sujeto": true,
-      "roles_sujeto": [
-        "CASO_INDICE",
-        "MADRE"
-      ],
-      "_nota_general": "Modelar un caso por fallecimiento (no una hoja con varias filas).",
-      "columnas_sujeto": {
-        "MADRE": [
-          "direccion",
-          "distrito_id"
-        ]
-      },
-      "titulo_sujeto": {
-        "MADRE": "Residencia habitual de la madre"
-      },
+      "multi_sujeto": false,
+      "_nota_general": "Cotejo 2026-09-13 (pág. 28 del PDF: Anexo 1 de la R.M. 279-2009/MINSA, NTS N.° 078-MINSA/DGE-V.01). La hoja es un listado semanal: cada fila es un fallecido y el encabezado (DISA/DIRESA, establecimiento notificante, distrito, responsable, semana epidemiológica) es del envío, no del caso. Se modela una ficha por defunción -- la NTS dice 'los casos se notifican en forma obligatoria e individual, y con periodicidad semanal' -- y el listado se arma en Reportes > Formularios del PDF, donde también se notifica la semana sin casos. Decisiones del usuario: apellidos obligatorios y nombres opcionales (NN en el listado); la semana es la de notificación; el Responsable es quien genera el listado; el código CIE-10 se valida solo por su forma hasta que llegue el catálogo CIE-10.",
       "tablas_hijas": {
         "caso_contacto": false,
         "caso_muestra": false,
         "caso_viaje": false,
         "caso_vacuna": false
       },
-      "_nota_residencia_madre": "PENDIENTES_POST_FASE5.md punto 4: 'Residencia habitual de la madre' (PDF pág. 28) ya no vive en campo_def -- se captura en caso_sujeto (rol MADRE: distrito_id + direccion, con selector de UBIGEO), fuera del manifiesto/cargador. Ver app/Views/partials/tablas-hijas/residencia-madre.php y CasosController::datosResidenciaMadre().",
+      "_nota_residencia_madre": "La residencia habitual de un feto o de un neonato es la de su madre, así que es UNA sola: la residencia del núcleo, con el título del PDF (nucleo_ajustes.titulo_residencia). Antes había dos (la del núcleo y un bloque MADRE en caso_sujeto que además pedía una dirección que el PDF no trae). P96 deja de ser multi_sujeto: sql/migraciones/set_p96_muerte_fetal_neonatal.php.",
       "nucleo_omitidos": [
+        "celular",
+        "nacionalidad",
+        "localidad",
+        "direccion",
         "referencia_localizar",
+        "etnia",
         "pueblo_etnico",
-        "ocupacion"
+        "ocupacion",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "captacion",
+        "clasificacion",
+        "investigador",
+        "fecha_inicio_sintomas"
+      ],
+      "nucleo_ajustes": {
+        "_nota": "Un óbito fetal no tiene documento ni, casi nunca, nombre: se exigen los apellidos (los de la madre o los padres) y el documento y los nombres son opcionales. Todo caso de esta ficha es una defunción. 'Investigador' no se pide: el Responsable del listado es quien lo genera.",
+        "sin_documento": true,
+        "nombres_opcionales": true,
+        "fallecido": true,
+        "titulo_persona": "Datos del fallecido",
+        "titulo_residencia": "Residencia habitual de la madre",
+        "_nota_condicion": "Un fallecido fetal o neonatal no puede ser efectivo PNP (titular): solo derechohabiente o particular.",
+        "condiciones_paciente": [
+          "DERECHOHABIENTE",
+          "PARTICULAR"
+        ],
+        "_nota_agregar_otra": "La hoja es un listado semanal: 'Registrar y agregar otra' abre la siguiente ficha con el mismo establecimiento y fecha de notificación.",
+        "registrar_y_agregar_otra": true
+      },
+      "_nota_campos_persona": "Nacimiento (fecha y hora) va junto en la tarjeta de identidad: la fecha es la del núcleo y la hora se pinta a su lado.",
+      "campos_persona": {
+        "nacimiento": [
+          "p96_hora_de_nacimiento"
+        ]
+      },
+      "reglas_campos": [
+        {
+          "_nota": "Clasificación calculada, no preguntada: el 'Tipo de muerte' del Anexo 1.",
+          "si": {
+            "clave": "p96_tipo_de_muerte",
+            "valores": [
+              "FETAL"
+            ]
+          },
+          "clasificar": "MUERTE_FETAL"
+        },
+        {
+          "si": {
+            "clave": "p96_tipo_de_muerte",
+            "valores": [
+              "NEONATAL"
+            ]
+          },
+          "clasificar": "MUERTE_NEONATAL"
+        },
+        {
+          "_nota": "Muerte fetal (NTS 078, 5.1.9): 'defunción de un producto de la concepción, antes de su expulsión o su extracción completa del cuerpo de su madre, a partir de las 22 semanas de gestación o peso igual o mayor a 500 gramos'. El Anexo 1 original de la NTS titula la columna 'Momento de ocurrencia de la muerte fetal' con solo Anteparto e Intraparto; la hoja de la pág. 28 agrega Post-parto, que corresponde a la muerte neonatal.",
+          "si": {
+            "clave": "p96_tipo_de_muerte",
+            "valores": [
+              "FETAL"
+            ]
+          },
+          "opciones": {
+            "p96_momento_de_ocurrencia_del_fallecimiento": [
+              "ANTEPARTO",
+              "INTRAPARTO"
+            ]
+          },
+          "alguno_minimo": {
+            "claves": {
+              "p96_peso_al_nacer_gramos": 500,
+              "p96_edad_gestacional_semanas": 22
+            },
+            "mensaje": "La muerte fetal se notifica desde las 22 semanas de gestación o con un peso de 500 g o más (NTS 078, 5.1.9). Revisa el peso y la edad gestacional."
+          },
+          "comparar_fechas": {
+            "desde": "p96_fecha_de_muerte",
+            "hora_desde": "p96_hora_de_muerte",
+            "hasta": "nucleo:fecha_nac",
+            "hora_hasta": "p96_hora_de_nacimiento",
+            "dias_minimo": 0,
+            "mensaje": "En una muerte fetal el feto fallece antes de su expulsión o extracción: la muerte no puede ser posterior al nacimiento (NTS 078, 5.1.9)."
+          }
+        },
+        {
+          "_nota": "Muerte neonatal (NTS 078, 5.1.10): 'defunción de un recién nacido vivo, que ocurre en el intervalo comprendido desde su nacimiento hasta cumplidos los 28 días de vida'. Nació vivo, así que el momento es Post-parto. Los días de estancia (nota * del PDF: solo muerte neonatal) no pueden pasar sus días de vida.",
+          "si": {
+            "clave": "p96_tipo_de_muerte",
+            "valores": [
+              "NEONATAL"
+            ]
+          },
+          "opciones": {
+            "p96_momento_de_ocurrencia_del_fallecimiento": [
+              "POSTPARTO"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "nucleo:fecha_nac",
+            "hora_desde": "p96_hora_de_nacimiento",
+            "hasta": "p96_fecha_de_muerte",
+            "hora_hasta": "p96_hora_de_muerte",
+            "dias_minimo": 0,
+            "dias_maximo": 28,
+            "mensaje": "Una muerte neonatal ocurre desde el nacimiento hasta cumplidos los 28 días de vida (NTS 078, 5.1.10). Revisa la fecha de nacimiento y la de muerte."
+          },
+          "maximo_dias_entre": {
+            "clave": "p96_n_de_dias_de_estancia_hospitalaria",
+            "desde": "nucleo:fecha_nac",
+            "hasta": "p96_fecha_de_muerte",
+            "mensaje": "Los días de estancia hospitalaria no pueden ser más que los días de vida del recién nacido."
+          }
+        }
       ],
       "secciones": [
         {
-          "nombre": "Datos del fallecido",
+          "nombre": "Datos de la defunción",
           "orden": 1,
-          "campos": [
-            {
-              "clave": "p96_edad_gestacional_semanas",
-              "etiqueta": "Edad gestacional (semanas)",
-              "tipo": "NUMERO",
-              "orden": 1
-            },
-            {
-              "clave": "p96_fecha_de_nacimiento",
-              "etiqueta": "Fecha de nacimiento",
-              "tipo": "FECHA",
-              "orden": 2
-            },
-            {
-              "clave": "p96_hora_de_nacimiento",
-              "etiqueta": "Hora de nacimiento",
-              "tipo": "TEXTO",
-              "orden": 3
-            },
-            {
-              "clave": "p96_fecha_de_muerte",
-              "etiqueta": "Fecha de muerte",
-              "tipo": "FECHA",
-              "orden": 4
-            },
-            {
-              "clave": "p96_hora_de_muerte",
-              "etiqueta": "Hora de muerte",
-              "tipo": "TEXTO",
-              "orden": 5
-            },
-            {
-              "clave": "p96_peso_al_nacer_gramos",
-              "etiqueta": "Peso al nacer (gramos)",
-              "tipo": "NUMERO",
-              "orden": 6
-            }
-          ]
-        },
-        {
-          "nombre": "Tipo de muerte",
-          "orden": 2,
           "campos": [
             {
               "clave": "p96_tipo_de_muerte",
               "etiqueta": "Tipo de muerte",
               "tipo": "SELECT",
               "orden": 1,
+              "obligatorio": true,
               "opciones": [
                 "Fetal",
                 "Neonatal"
-              ]
+              ],
+              "_nota": "Va primero aunque en el PDF está después del peso: decide qué más aplica (momento de ocurrencia, días de estancia) y clasifica el caso."
+            },
+            {
+              "clave": "p96_edad_gestacional_semanas",
+              "etiqueta": "Edad gestacional (semanas)",
+              "tipo": "NUMERO",
+              "orden": 2,
+              "minimo": 0
+            },
+            {
+              "clave": "p96_hora_de_nacimiento",
+              "etiqueta": "Hora de nacimiento",
+              "tipo": "TEXTO",
+              "formato": "hora",
+              "orden": 3,
+              "_nota": "Se pinta en la tarjeta de identidad, junto a la fecha de nacimiento del núcleo (campos_persona.nacimiento)."
+            },
+            {
+              "clave": "p96_fecha_de_muerte",
+              "etiqueta": "Fecha de muerte",
+              "tipo": "FECHA",
+              "orden": 4,
+              "obligatorio": true
+            },
+            {
+              "clave": "p96_hora_de_muerte",
+              "etiqueta": "Hora de muerte",
+              "tipo": "TEXTO",
+              "formato": "hora",
+              "orden": 5
+            },
+            {
+              "clave": "p96_peso_al_nacer_gramos",
+              "etiqueta": "Peso al nacer (gramos)",
+              "tipo": "NUMERO",
+              "orden": 6,
+              "minimo": 0
             }
           ]
         },
         {
-          "nombre": "Causa y diagnóstico",
-          "orden": 3,
+          "nombre": "Causa básica de muerte",
+          "orden": 2,
           "campos": [
             {
               "clave": "p96_causa_basica_de_muerte",
               "etiqueta": "Causa básica de muerte",
               "tipo": "TEXTO",
-              "orden": 1
+              "orden": 1,
+              "_nota": "Nota (2) del PDF: la entidad que inicia la cadena de acontecimientos que conducen a la muerte fetal o neonatal. Una sola causa: la que aparece como causa básica en el certificado de defunción."
             },
             {
-              "clave": "p96_diagnostico_cie_10",
-              "etiqueta": "Diagnóstico CIE-10",
+              "clave": "p96_cie10_causa_basica",
+              "etiqueta": "Diagnóstico CIE-10 (código de la causa básica)",
               "tipo": "TEXTO",
-              "orden": 2
+              "formato": "cie10",
+              "orden": 2,
+              "_nota": "Columna 'Diagnóstico CIE10' del PDF: el código de la causa básica. Antes clave p96_diagnostico_cie_10, texto libre. Se valida la forma (P21.9) hasta que el catálogo CIE-10 esté en el sistema."
             }
           ]
         },
         {
-          "nombre": "Circunstancias",
-          "orden": 4,
+          "nombre": "Parto y lugar de la muerte",
+          "orden": 3,
           "campos": [
             {
               "clave": "p96_n_de_dias_de_estancia_hospitalaria",
               "etiqueta": "N.° de días de estancia hospitalaria",
               "tipo": "NUMERO",
-              "orden": 1
+              "orden": 1,
+              "minimo": 0,
+              "depende_de": "p96_tipo_de_muerte",
+              "valor_activador": "NEONATAL",
+              "_nota": "Nota * del PDF: consignar solo para los casos de muerte neonatal."
             },
             {
               "clave": "p96_lugar_del_parto",

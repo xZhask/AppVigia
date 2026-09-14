@@ -6676,3 +6676,387 @@ usuario y establecimiento. Chromium: enlace desde Reportes, filtros, vista de
 impresión sin menú/filtros/botones, PDF A4 apaisado de 2 páginas. Sin avisos
 de PHP ni errores de JS. Listado y panel idénticos; Reportes solo gana el
 enlace; 24 fichas sin cambios. Casos de prueba borrados.
+
+# P96, Muerte fetal y neonatal: ficha por defunción y listado semanal (2026-09-13/14)
+
+**Pedido del usuario:** analizar la pág. 28 del PDF (Anexo 1 de la R.M.
+279-2009/MINSA, NTS N.° 078-MINSA/DGE-V.01) y abordarla. La hoja es un
+**listado semanal**: cada fila es un fallecido y el encabezado (DISA/DIRESA,
+establecimiento notificante, distrito, responsable, semana) es del envío.
+
+**Decisiones del usuario:**
+1. Un óbito fetal no tiene documento ni nombre: apellidos obligatorios,
+   documento y nombres opcionales; en el listado, "NN".
+2. "Diagnóstico CIE10" = código de la causa básica. Llegará un catálogo CIE-10;
+   mientras tanto se valida solo la forma (P21.9).
+3. La semana del listado es la de **notificación** (caso.semana_epi, como las
+   24 fichas).
+4. Responsable = el usuario que genera el listado; sin tarjeta Investigador.
+5. Validación de caso de la NTS: muerte fetal desde 22 semanas **o** 500 g
+   (5.1.9); neonatal hasta cumplidos los 28 días de vida (5.1.10).
+6. Hace falta notificar la semana sin casos.
+
+**Cómo quedó la ficha** (4 secciones/13 campos → 3 secciones/12 campos):
+- Tarjeta "Datos del fallecido": casilla **Sin documento de identidad**
+  (SIN_DOCUMENTO, num_doc NULL, persona nueva siempre), nombres sin `*`,
+  **Hora de nacimiento** junto a la fecha de nacimiento del núcleo (antes la
+  fecha estaba duplicada), y la residencia del núcleo titulada **Residencia
+  habitual de la madre** (antes también un bloque MADRE en caso_sujeto con una
+  dirección que el PDF no pide; P96 deja de ser multi_sujeto).
+- Núcleo omitido: celular, nacionalidad, localidad, domicilio, referencia,
+  etnia, pueblo étnico, ocupación, tutor, gestante, captación, fecha de inicio
+  de síntomas, Investigador y la tarjeta de clasificación. Queda la Condición
+  del paciente (PNP), como en todas.
+- "Datos de la defunción": Tipo de muerte (obligatorio, primero porque decide
+  el resto), edad gestacional, fecha (obligatoria) y hora de muerte, peso.
+  "Causa básica de muerte": causa y su código CIE-10
+  (`p96_cie10_causa_basica`, antes `p96_diagnostico_cie_10`). "Parto y lugar de
+  la muerte": días de estancia (solo neonatal, nota * del PDF), lugar del parto
+  PI/PD, momento de ocurrencia, lugar de la muerte ES/CC.
+- Clasificación calculada: MUERTE_FETAL / MUERTE_NEONATAL. `caso.fallecido`
+  siempre 1.
+- Reglas: fetal → momento solo Anteparto/Intraparto (el Anexo 1 original de la
+  NTS titula la columna "momento de ocurrencia de la muerte fetal" con esas dos),
+  22 semanas o 500 g, muerte no posterior al nacimiento (con hora si hay);
+  neonatal → momento Post-parto automático, muerte entre el nacimiento y 28
+  días, estancia ≤ días de vida + 1.
+
+**Cómo quedó el listado:** Reportes > Formularios del PDF > **Ficha de
+notificación de muerte fetal y neonatal** (`/reportes/muerte-fetal-neonatal`).
+Filtros año + semana epidemiológica + establecimiento (REGISTRADOR fijo en el
+suyo). Calca la hoja: título y subsistema, encabezado del padrón, las 22
+columnas con X en tipo y momento, PI/PD, ES/CC, NN, residencia de la madre
+(Dpto./Prov./Distrito) y las notas (1)-(4) y *. Excel (CSV) e Imprimir/PDF (A4
+apaisado, una página con las 22 columnas). El N.° abre la ficha.
+- **Semana sin casos** (`notificacion_negativa`): con un establecimiento y
+  ninguna ficha P96 en la semana aparece "Notificar semana sin casos"; la hoja y
+  el CSV imprimen "SIN CASOS". Se rechaza con casos en la semana, en una semana
+  futura o inexistente. La anula quien la notificó o un ADMIN (queda quién y
+  cuándo); volver a notificar reutiliza la fila. Si después de notificarla se
+  registra un caso en esa semana, la pantalla avisa y ofrece anularla.
+
+**Mecanismos nuevos (declarativos, para las fichas que vengan):**
+- `enfermedad.nucleo_ajustes`: `sin_documento`, `nombres_opcionales`,
+  `fallecido`, `titulo_persona`, `titulo_residencia`.
+- `campo_def.config.formato` en TEXTO: `hora` (input time, HH:MM) y `cie10`.
+- `reglas_campos`: `opciones` (restringe un SELECT; con una sola, la fija),
+  `comparar_fechas` (acepta `nucleo:fecha_nac` y horas), `maximo_dias_entre`,
+  `alguno_minimo`. Cada uno con su `mensaje`. El cargador verifica los códigos
+  de `opciones` contra el catálogo real (el de "Momento" es POSTPARTO, no el
+  slug POST_PARTO).
+- `campos_persona` como objeto por fila (`documento` / `nacimiento`).
+- `notificacion_negativa`, genérica por enfermedad.
+- `Establecimiento::encabezadoFormulario()` (lo usan también el registro de Z21).
+
+**Código compartido tocado** (verificado con la foto del HTML: las otras 23
+fichas en Nueva ficha y ver/editar de los 4 casos existentes, idénticos byte a
+byte salvo fecha del día/SE/hora de O95/cache-buster): nueva/index.php,
+fichas/editar.php, fichas/ver.php, fichas/index.php (documento para mostrar),
+campos/texto.php, persona-campos-declarados.php, secciones-clinicas.php,
+CasosController (crear, actualizar, validarCamposDinamicos, aplicarReglasCampos,
+sanearCamposNucleo), ficha.js, ayudantes.php, cargar_fichas.php. En
+`actualizar()` la persona se toma por `caso.persona_id` en vez de buscarla por
+documento (misma persona; con SIN_DOCUMENTO la búsqueda no funcionaba).
+
+**Verificación:** controlador real con 3 fichas positivas y 13 negativas (cada
+regla, formatos, obligatorios, documento vacío sin casilla), casilla forjada en
+A36 (sigue exigiendo documento y nombres), edición fetal→neonatal y edición de
+una A36; listado/ver/editar con documento NULL sin errores; listado semanal y
+CSV; semana sin casos (notificar, rechazos, permisos, anular, reactivar, aviso
+con caso posterior). Chromium con login real: casilla, momento/estancia según
+tipo, hora junto a la fecha, ficha registrada desde el formulario, enlace en
+Reportes, vista de impresión y PDF. verificar_fichas P96 3/3 · 12/12,
+verificar_render 12/12 sin huérfanos, verificar_claves 0 faltantes. Esquema
+regenerado e instalado en una base limpia: 31 tablas, 393 columnas, 112
+índices, 52 FK iguales a la real. Datos de prueba borrados.
+
+## Observado, sin tocar
+- **"OTRO" en tipo de documento** rompe el guardado en las 24 fichas: el ENUM
+  de persona.tipo_doc no lo tiene (error 1265 comprobado en la BD).
+- Los campos del núcleo omitidos (celular, dirección, etnia...) se guardan si
+  llegan forjados en el POST: nucleo_omitidos solo los oculta en la vista.
+- ~~**La semana epidemiológica de la app no coincide con la del MINSA.**~~
+  Corregido el 2026-09-14 con autorización del usuario: ver "Semana
+  epidemiológica según el calendario del MINSA" al final de este archivo.
+- El número de un caso y el de su listado sí son coherentes entre sí (los dos
+  salen de la misma función).
+- Una persona SIN_DOCUMENTO no puede recibir documento después (el documento no
+  es editable en ninguna ficha).
+- El tag de edad junto a la fecha de nacimiento muestra "0 años" en P96.
+- Registrar un caso en una semana ya notificada sin casos no avisa en la ficha
+  (solo en el listado).
+- verificar_render muestra 3 huérfanos que ya existían: A80
+  `a80_notas_de_investigacion_de_la_cadena_de_transmision`, B26
+  `b26_fecha_de_inicio_de_sintomas` y B55 `b55_lesiones`.
+
+## Pendientes que abre
+- Catálogo CIE-10 para "Diagnóstico CIE-10" (hoy solo forma).
+- ~~Opcional: botón "Registrar y agregar otra"~~ hecho el 2026-09-14, ver abajo.
+
+## Segunda vuelta (2026-09-14): sin "Efectivo PNP" y "Registrar y agregar otra"
+
+Pedido del usuario: el botón de guardar y agregar otra, y que un fallecido
+fetal o neonatal no pueda registrarse como efectivo policial (bloquear la
+opción o no mostrarla).
+
+**Condición del paciente.** `nucleo_ajustes.condiciones_paciente` (lista de
+`CONDICIONES_PACIENTE`, ayudantes.php): P96 declara `["DERECHOHABIENTE",
+"PARTICULAR"]`. Se eligió no mostrar la opción (no deshabilitarla): la tarjeta
+y el panel "Datos del efectivo" no se pintan y las dos tarjetas restantes
+ocupan todo el ancho (`--cond-opciones` en theme.css; en teléfono, una
+columna). Servidor: una condición no admitida llegada en el POST es error
+("En esta ficha la condición del paciente solo puede ser Derechohabiente o
+Particular.") en crear y en actualizar; y si el documento ya es de una
+persona registrada con una condición no admitida (un efectivo), es error en el
+documento, porque guardar sobrescribiría a esa persona. En el navegador, al
+autocompletar ese documento el aviso bajo el documento lo dice en rojo. El
+cargador rechaza la lista vacía, con repetidos, con códigos desconocidos o con
+las tres condiciones.
+
+**Registrar y agregar otra.** `nucleo_ajustes.registrar_y_agregar_otra`. En
+P96 hay dos botones: "Registrar ficha" abre la ficha recién registrada y
+"Registrar y agregar otra" abre la siguiente con el mismo establecimiento (solo
+ADMIN lo elige; REGISTRADOR tiene el suyo) y la misma fecha de notificación,
+con el aviso "Ficha registrada: F-00216 (SE 37 · 2026). Registra la
+siguiente...". `nuevo()` solo precarga esos valores en las fichas con el ajuste,
+y solo si son válidos (fecha no futura, establecimiento existente). Las demás
+fichas siguen igual: un solo botón, que vuelve a un formulario en blanco.
+
+**Verificación:** foto del HTML: solo cambia Nueva ficha de P96 (otras 23 y
+ver/editar de los 4 casos idénticos). Controlador real: efectivo forjado al
+crear y al editar (rechazado), documento de un efectivo registrado (rechazado,
+la persona queda intacta), condición inválida o ausente (Particular), A36 con
+efectivo y el botón forjado (se guarda igual que antes). `nuevo()` con
+parámetros como ADMIN, REGISTRADOR, fecha futura, establecimiento inexistente,
+arreglos y A36. Chromium con login real: dos tarjetas a 370 px (330 px a 400 px
+de ancho, sin scroll horizontal), aviso con el DNI de un efectivo, "Registrar y
+agregar otra" → formulario con establecimiento 3 y fecha 10/09 (SE 37),
+"Registrar ficha" → /casos/{id}; A36 sigue con tres tarjetas y un botón.
+Cargador: 6 manifiestos inválidos rechazados en seco. P96 recargada (ids
+nuevos), verificadores iguales, esquema regenerado e instalado en limpio (31
+tablas, 393 columnas, 112 índices, 52 FK). Datos de prueba borrados.
+
+### Hallados y corregidos (código compartido, 24 fichas; autorizado por el usuario)
+- **Editar una ficha borraba la condición del paciente.** Los radios de
+  condicion-paciente.php usaban `seleccionado()`, que imprime `selected`, un
+  atributo que no marca un radio: al abrir "Editar" ninguna tarjeta quedaba
+  marcada, ficha.js mostraba el panel de Particular y, al guardar, el POST no
+  traía `condicion` y el servidor guardaba PARTICULAR, borrando grado, CIP,
+  situación, vínculo y titular (comprobado en Chromium con una ficha de
+  prueba Derechohabiente/Hijo). Ahora usan `marcado()` (`checked`). En "Nueva
+  ficha" Particular aparece marcada desde el inicio.
+- **El aviso de búsqueda por documento nunca se veía** ("Consultando padrón y
+  RENIEC…", "✓ Datos obtenidos correctamente.", "No se encontraron datos de
+  paciente, registre manualmente."): la vista le ponía `id="buscandopersonaHint"`
+  desde el commit da67f18 y ficha.js busca `buscandoPacienteHint`. Se corrigió
+  el id de la vista. El botón `btnBuscarPaciente` que ficha.js también busca no
+  existe, pero no hace falta: la búsqueda es automática al completar el DNI.
+
+**Verificación de los dos arreglos:** foto del HTML: en las 24 fichas (Nueva
+ficha) y en editar de los 3 casos editables cambian solo esas dos líneas
+(`selected`→`checked` en Particular, el id del aviso); ver no cambia.
+Chromium: editar y guardar sin tocar un efectivo de A36 (grado, CIP,
+situación y categoría intactos) y un derechohabiente de P96 (vínculo Hijo
+intacto); Nueva ficha con Particular marcada; aviso "Consultando…" mientras
+busca, verde al encontrar, rojo al no encontrar (respuesta simulada, sin
+consultar RENIEC) con los nombres liberados, rojo en P96 con el DNI de un
+efectivo, y oculto al marcar "Sin documento". Sin errores de JS ni HTTP. Datos
+de prueba borrados.
+
+# Semana epidemiológica según el calendario del MINSA (2026-09-14)
+
+Pedido del usuario al proponer A50 (el encabezado de la ficha pide la semana
+"según calendario epidemiológico"). Hasta ahora `semanaEpidemiologica()` usaba
+la semana ISO-8601 (lunes a domingo, semana 1 = la del primer jueves) y en 2026
+numeraba casi todos los días una semana de más: el 14/09/2026 la app decía SE
+38 y el MINSA SE 37.
+
+**Regla del MINSA** (verificada en los calendarios epidemiológicos de pared
+2025 y 2026 de la DGE): semanas de domingo a sábado; la SE 1 es la que contiene
+el 4 de enero, es decir, la primera con al menos 4 días del año. La SE 1 de 2025
+empieza el 29/12/2024 y 2025 tiene 53 semanas; en 2026 los días 1 a 3 de enero
+son la SE 53 de 2025, la SE 1 va del 04/01 al 10/01 y el año tiene 52 semanas.
+
+**Qué cambió:**
+- `app/Core/ayudantes.php`: `semanaEpidemiologica()` con la regla del MINSA y
+  dos funciones nuevas, `inicioSemanaEpidemiologica(año, semana)` (domingo de la
+  semana) y `semanasEpidemiologicasDelAnio(año)` (52 o 53). `semanasEnRango()`
+  (curva de Reportes) avanza de domingo en domingo.
+- `ListadoMuerteFetalNeonatal`: la semana 53 solo es válida en los años que la
+  tienen y el periodo que se muestra va de domingo a sábado.
+- `sql/migraciones/recalcular_semana_epidemiologica_minsa.php`: recalcula
+  `caso.anio_epi`/`semana_epi` desde `fecha_notif` con la misma función, sin
+  tocar `actualizado_en`; idempotente. En la base local cambiaron los 4 casos
+  (F-00003: SE 29 -> 28; F-00108, F-00117, F-00118: SE 34 -> 33). En la otra PC
+  hay que correrla después de traer el código. `notificacion_negativa` no se
+  toca: se creó en esta misma tanda y está vacía.
+
+**Verificación:** la función coincide con una implementación independiente en
+Python en los 13 149 días de 2000 a 2035, y con 22 fechas leídas de los
+calendarios de la DGE (bordes de año, SE 37 = 13-19/09/2026, SE 48, SE 52 y 53).
+Foto del HTML antes y después, sin normalizar la semana: en las 24 fichas solo
+cambia el distintivo "SE 38 · 2026" -> "SE 37 · 2026"; en ver/editar de los
+casos, el listado de fichas, el panel (tarjetas y ejes de la curva), Reportes
+(rango por defecto) y el listado de P96 solo cambian los números de semana y el
+periodo (del 13/09 al 19/09/2026). Listado de P96: SE 53 de 2025 válida (del
+28/12/2025 al 03/01/2026), SE 53 de 2026 rechazada. Guardado real: una ficha
+notificada el 02/01/2026 queda en la SE 53 de 2025 (caso de prueba borrado).
+
+**Completado al commitear:** la barra superior (`app/Views/layouts/shell.php`,
+"Semana SE n · año") calculaba su propia semana con `date('W')` y seguía
+diciendo SE 38; las fotos del HTML no la cubrían porque solo capturan la vista,
+sin el layout. Ahora usa `semanaEpidemiologica()` (SE 37 · 2026, igual que el
+distintivo de la ficha).
+
+# A50, Sífilis materna y congénita: dos registros enlazados (2026-09-14)
+
+Págs. 18-19 del PDF: Anexo 4 de la Directiva Sanitaria N.° 062-MINSA/DGE-V.01
+(R.M. 127-2015/MINSA). Decisiones del usuario (las 5 recomendaciones de la
+propuesta): dos registros enlazados, clasificación calculada con los valores
+del sistema, ficha privada, notificador = usuario que registra, sin
+notificación negativa ni búsqueda activa (no están en el PDF del aplicativo).
+
+**Por qué dos registros:** la directiva notifica aparte la sífilis materna
+(O98.1) y la congénita (A50) (6.1.3, Anexo 3), la ficha tiene dos partes con
+plazos distintos (6.3.5, 6.3.8) y cada producto de la gestación (recién
+nacido, mortinato o aborto) es su propio caso (5.1.4): un gemelar son dos.
+
+**Cómo quedó** (8 secciones, 27 campos; carga anterior: 1 caso con dos
+sujetos, 3 secciones, 25 campos, sin casos guardados):
+- "Investigación de" (en Notificación) elige la rama. Sin rama, la tarjeta de
+  identidad espera, como en Z21.
+- Rama "Sífilis materna": Datos de la gestante o madre (DNI = Código; fecha de
+  nacimiento con edad; residencia y localidad; sexo F fijo; admite efectivo
+  PNP), Embarazo actual (ítems 4-7), Pruebas para sífilis (ítems 8-9: dos
+  tablas a/b con fecha, resultado, título o tipo, y momento), Tratamiento y
+  clasificación de la gestante (ítems 10-12).
+- Rama "Sífilis congénita", una por producto: Datos del niño, mortinato o aborto
+  (apellidos obligatorios; nombres y documento opcionales; sexo opcional; sin
+  efectivo PNP; la fecha de nacimiento se llama "Fecha de parto / culminación
+  del embarazo"; sin residencia), Datos de la madre (nombre y DNI copiados de su
+  ficha o a mano), Parto y estado vital (ítems 14-18), Criterios de caso y
+  tratamiento del niño (ítems 19-20, solo con Vivo o Nació vivo luego falleció,
+  como el salto del PDF), Clasificación final (ítem 21).
+- Desde la ficha de la madre, "Registrar producto de la gestación" abre la
+  rama congénita con la madre fijada; la ficha de la madre lista sus productos.
+  No se puede cambiar de rama a una madre con productos vinculados.
+- Clasificación del caso: ítem 12 (Confirmado; los dos Descartado ->
+  Descartado) o ítem 21 (Sífilis congénita -> Confirmado; Niño expuesto, no
+  infectado -> Descartado); sin clasificar -> Probable. caso.fallecido sale del
+  estado vital.
+- Validaciones de la directiva: mortinato con 22 semanas o más, o 500 g o más
+  (5.1.6); aborto con menos de 22 semanas o menos de 500 g (5.1.5); fecha de
+  fallecimiento no anterior al parto; primer control prenatal no anterior a la
+  FUR; con algún criterio marcado la clasificación final queda en Sífilis
+  congénita (5.1.4).
+- "Desconocido" junto a FUR, fecha del primer control, fecha de fallecimiento,
+  peso, edad gestacional y fecha de los test.
+- Privada (Caso::CIE10_PRIVADOS): un registrador solo lista y ve las suyas.
+  El filtro SQL del listado ahora se arma desde esa constante.
+
+**Mecanismos nuevos del motor** (declarativos, validados por cargar_fichas.php):
+- `nucleo_condicional[].ajustes`: `sin_documento`, `nombres_opcionales`,
+  `condiciones_paciente` y `etiqueta_fecha_nac` por rama. `nucleoAjuste()` y
+  `condicionesPacientePermitidas()` aceptan los valores de la ficha (POST o
+  guardados); la vista pinta las variantes con `atributosRama()` y ficha.js
+  (`actualizarPorRama()`, `actualizarCondicionesPorRama()`) las muestra u oculta.
+- Campo `"desconocido": true` en FECHA y NUMERO (casilla con el mismo name;
+  guarda `DESCONOCIDO`; Ver lo muestra como "Desconocido").
+- `reglas_campos`: efecto `fallecido` y efecto `alguno_menor_que` (espejo de
+  `alguno_minimo`); una condición `si` sobre un MULTISELECT se cumple si alguna
+  opción marcada está en `valores`.
+- `vinculo_caso.copiar`: `persona:nombre_completo`.
+
+**Verificación:** foto del HTML: solo cambia Nueva ficha de A50 (otras 23
+fichas, ver/editar de los casos existentes, panel, listado, Reportes y listado
+de P96 idénticos). Controlador real: madre (efectivo, sexo forjado M -> F,
+campos forjados de la otra rama descartados), producto vinculado (nombre y DNI
+de la madre recopiados sobre un valor forjado, sin documento, "Desconocido",
+Confirmado, fallecido), mortinato Descartado sin criterios, producto sin
+clasificar Probable; rechazos: efectivo en el producto, "sin documento" forjado
+en la madre, madre sin nombres, producto sin apellido, mortinato bajo el
+umbral, aborto sobre el umbral, fallecimiento antes del parto, "Desconocido" en
+un campo que no lo admite, control antes de la FUR, sin rama. Edición: producto
+a Vivo (deja de ser fallecido), cambio de rama bloqueado en una madre con
+productos, madre efectivo conserva grado. Privacidad: registrador ajeno 0
+casos y 403 al ver. Chromium: cambio de rama (títulos, casilla, asterisco,
+etiqueta, Efectivo PNP oculto y paso a Particular), "Desconocido", saltos,
+criterios, producto registrado desde la ficha de la madre (gemelo), 400 px sin
+scroll horizontal, sin errores de JS. Regresión: P96 sin documento y efectivo
+forjado, A36 con efectivo. Verificadores: A50 8/8 · 27/27, render 27/27,
+claves 0 faltantes. Esquema regenerado e instalado en limpio. Datos de prueba
+borrados.
+
+**Decisiones de modelado tomadas al implementar:**
+- El criterio 1 ("madre no tratada") se marca a mano, como en el papel: el
+  motor no copia una respuesta de la ficha de la madre a una opción de lista.
+  Lo que sí se valida es que, con cualquier criterio marcado, la clasificación
+  final sea Sífilis congénita.
+- ~~La fecha de parto (fecha de nacimiento del núcleo) no lleva "Desconocido":
+  vacía significa que no se conoce.~~ Cambiado a pedido del usuario: lleva la
+  casilla del PDF (ver "Segundo ajuste" más abajo).
+- "N.° de contactos sexuales tratados" es un solo número y aparece solo con
+  Sí (pedido del usuario tras revisarlo en el navegador; antes también con No).
+
+**Ajuste pedido por el usuario (mismo día):** en la prueba treponémica, "Otra
+prueba (cuál)" solo se habilita en la fila cuyo Tipo de prueba es "Otra" (se
+vacía al cambiar). Mecanismo nuevo y genérico de MATRIZ:
+`"columnas_condicionadas": {"<columna libre>": {"columna": "<otra columna>",
+"valor": "<opción>"}}`; campos/matriz.php la pinta deshabilitada, ficha.js
+(`aplicarColumnasCondicionadas()`) la alterna y el servidor la vacía si la
+fila no cumple. Verificado: foto del HTML (solo cambia Nueva ficha de A50),
+guardado real (texto forjado en una fila sin "Otra" se descarta; con "No" en
+contactos no se guarda el número), Chromium (habilitar, deshabilitar y vaciar
+por fila; edición de una ficha guardada) y 3 manifiestos inválidos rechazados.
+A50 recargada y esquema regenerado.
+
+**Segundo ajuste pedido por el usuario (mismo día):**
+- Fecha de parto / culminación del embarazo (ítem 13) con la casilla
+  "Desconocido" del PDF, solo en la rama congénita. Ajuste nuevo
+  `fecha_nac_desconocida` (para toda la ficha en `nucleo_ajustes` o por rama en
+  `nucleo_condicional.ajustes`); columna nueva `caso.fecha_nac_desconocida`, que
+  solo escriben las fichas que lo declaran. Marcada, la fecha queda NULL aunque
+  llegue en el POST; en otra rama la marca no se guarda. Ver muestra la fecha
+  con la etiqueta de la rama o "Desconocido". ficha.js reusa
+  `aplicarDesconocidos()`, que ahora avisa el cambio al vaciar el input (la
+  edad junto a la fecha quedaba con el valor anterior).
+- El notificador no se veía: la tarjeta núcleo vuelve como "Notificador" con
+  solo "Nombres y apellidos del notificador" (pie del PDF), prellenada con el
+  usuario que registra y editable. Ajuste nuevo `nucleo_ajustes.investigador`:
+  `{"titulo": ..., "campos": {campo: etiqueta o true}}` con los campos de
+  `CAMPOS_INVESTIGADOR`; los no declarados no se pintan, no se guardan (aunque
+  lleguen forjados) ni se muestran en Ver.
+- Verificado: foto del HTML (solo cambia Nueva ficha de A50: casilla,
+  atributo del input y tarjeta); guardado real (marca forjada en la madre
+  ignorada; fecha forjada con "Desconocido" descartada; valor raro de la casilla
+  no marca; editar marca y desmarca; cargo, profesión, teléfono, email y fecha
+  de investigación forjados en A50 quedan NULL; regresión A36 guarda los 6
+  datos del investigador y P96 ninguno); render de Ver/Editar; Chromium
+  (casilla solo en congénita, deshabilita y vacía la fecha, la edad pasa a "—",
+  se desmarca al cambiar a materna, tarjeta con un solo campo, edición enviada
+  desde el navegador en los dos sentidos, sin errores de JS); 7 manifiestos
+  inválidos rechazados; verificadores iguales; esquema regenerado e instalado en
+  limpio. Datos de prueba borrados.
+
+Para la otra PC: `php sql/migraciones/set_a50_sifilis.php`,
+`php sql/migraciones/add_fecha_nac_desconocida_caso.php` y
+`php cargar_fichas.php --apply --confirmo-apply --cie10=A50`.
+
+**Hallado de paso y corregido con visto bueno del usuario (A80, revisada):** la
+cabecera de la ficha de PFA (pág. 34: N.° de ficha, fecha de conocimiento local,
+fecha de investigación y las 3 fechas de notificación EE.SS.→Red→DISA→DGE) la
+pintaba `notificacion-fechas-pfa.php` con `name=` sueltos que el controlador no
+leía: 5 de los 6 datos nunca se guardaban, y su "Fecha de investigación" chocaba
+con la de la tarjeta Investigador (mismo `name`; al guardar ganaba la de abajo).
+Ahora son 6 campo_def de A80 (sección "Fechas de notificación", orden 1) en
+`campos_notificacion`, igual que Z21; el partial se borró (en las otras 23 fichas
+era un bloque oculto que no hacía nada). La tarjeta Investigador conserva su
+fecha: es la del ítem 18, mismo criterio que A95 y B57. Verificado: foto del
+HTML (en las 23 fichas y en editar solo desaparece el bloque oculto; en A80 el
+bloque viejo se reemplaza por los 6 campos, mismo aspecto), guardado real
+(crear y editar guardan los 6; la fecha de Investigador queda aparte; fecha
+futura rechazada; los `name=` viejos se ignoran), Chromium (edición enviada
+desde el navegador, sin errores de JS), verificadores (A80 15/15 · 94/94; el
+huérfano "Notas de investigación de la cadena de transmisión" ya existía),
+esquema regenerado e instalado en limpio. Para la otra PC:
+`php cargar_fichas.php --apply --confirmo-apply --cie10=A80`.

@@ -110,7 +110,7 @@ $es = $estados[$caso['estado']];
           <div class="fields thirds">
             <div class="field">
               <label class="fl">Documento</label>
-              <div class="control mono" style="color:var(--muted)"><?= e($valoresFijos['tipo_doc']) ?> <?= e($valoresFijos['num_doc']) ?></div>
+              <div class="control mono" style="color:var(--muted)"><?= e(documentoParaMostrar($valoresFijos['tipo_doc'], $valoresFijos['num_doc'])) ?></div>
               <span class="hint">No editable: es la identidad de la persona</span>
             </div>
             <?php // campos_persona (Z21, 2026-09-12): campo_def que la ficha declara
@@ -140,7 +140,7 @@ $es = $estados[$caso['estado']];
               </div>
             </div>
             <div class="field">
-              <label class="fl">Nombres <span class="req">*</span></label>
+              <label class="fl">Nombres<?= marcaObligatorioNombres($enfermedad, $valoresCampos) ?></label>
               <div class="control <?= isset($erroresFijos['nombres']) ? 'err' : '' ?>">
                 <input type="text" name="nombres" value="<?= e($valoresFijos['nombres']) ?>">
               </div>
@@ -166,13 +166,16 @@ $es = $estados[$caso['estado']];
               <input type="hidden" name="sexo" value="F">
             <?php endif; ?>
             <div class="field">
-              <label class="fl">Fecha de nacimiento</label>
+              <label class="fl"><?= etiquetaFechaNacimiento($enfermedad, $valoresCampos) ?></label>
               <div class="control mono <?= isset($erroresFijos['fecha_nac']) ? 'err' : '' ?>">
-                <input type="date" id="fechaNac" name="fecha_nac" value="<?= e($valoresFijos['fecha_nac']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
+                <input type="date" id="fechaNac" name="fecha_nac" value="<?= e($valoresFijos['fecha_nac']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"<?= atributosFechaNacDesconocida($enfermedad, ($valoresFijos['fecha_nac_desconocida'] ?? '') === '1') ?>>
               </div>
+<?php // fecha_nac_desconocida: ver nueva/index.php. ?>
+<?= casillaFechaNacDesconocida($enfermedad, $valoresCampos, ($valoresFijos['fecha_nac_desconocida'] ?? '') === '1') ?>
               <?php if (isset($erroresFijos['fecha_nac'])): ?><span class="hint err"><?= e($erroresFijos['fecha_nac']) ?></span><?php endif; ?>
             </div>
-          </div>
+          <?php // campos_persona.nacimiento: ver nueva/index.php.
+          $filaCamposPersona = 'nacimiento'; require __DIR__ . '/../partials/persona-campos-declarados.php'; unset($filaCamposPersona); ?></div>
           <div data-nucleo-incluido="nacimiento_distrito_id" <?= $nucleoIncluye('nacimiento_distrito_id') ? '' : 'hidden style="display:none;"' ?> style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
             <div class="eyebrow" style="margin-bottom:10px">Lugar de nacimiento</div>
             <?php
@@ -206,12 +209,13 @@ $es = $estados[$caso['estado']];
           ?>
           <?= $abreResidenciaCondicional ?>
           <div <?= $nucleoIncluye('nacimiento_distrito_id') ? 'style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"' : 'style="margin-top:14px"' ?>>
-            <?php if ($nucleoIncluye('nacimiento_distrito_id')): ?>
+            <?php // nucleo_ajustes.titulo_residencia (P96): ver nueva/index.php.
+            if ($nucleoIncluye('nacimiento_distrito_id') || nucleoAjuste($enfermedad, 'titulo_residencia')): ?>
               <!-- Distingue este bloque de "Lugar de nacimiento" (justo arriba, mismo
                    patrón de 3 selects) -- sin esto quedan visualmente indistinguibles.
                    Solo se pinta cuando ambos coexisten (opt-in), para no cambiar la
                    apariencia de las 23 fichas que no piden lugar de nacimiento. -->
-              <div class="eyebrow" style="margin-bottom:10px">Residencia habitual</div>
+              <div class="eyebrow" style="margin-bottom:10px"><?= e(nucleoAjuste($enfermedad, 'titulo_residencia') ?? 'Residencia habitual') ?></div>
             <?php endif; ?>
             <?php
             $prefijo = 'pac-ubigeo';
@@ -420,7 +424,7 @@ endforeach;
       <?php // nucleo_omitidos: 'investigador' -- ver nueva/index.php. ?>
       <?php if (!nucleoOmitido($enfermedad, 'investigador')): ?>
       <div class="card section">
-        <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Investigador</h3></div>
+        <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3><?= e(tituloInvestigador($enfermedad)) ?></h3></div>
         <div class="section-body">
           <?php require __DIR__ . '/../partials/investigador.php'; ?>
         </div>

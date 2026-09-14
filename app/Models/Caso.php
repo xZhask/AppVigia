@@ -10,10 +10,12 @@ class Caso extends Model
 
     /**
      * CIE-10 de las fichas de confidencialidad reforzada (VIH/SIDA, gestante
-     * con VIH). Debe coincidir con el literal SQL usado en listarPaginado().
-     * Violencia familiar se identifica por nombre, no tiene CIE-10 fijo aquí.
+     * con VIH y, desde el 2026-09-14, sífilis materna y congénita: la Ley
+     * 26626 cubre VIH e ITS). listarPaginado() arma su filtro SQL con esta
+     * misma lista. Violencia familiar se identifica por nombre, no tiene
+     * CIE-10 fijo aquí.
      */
-    public const CIE10_PRIVADOS = ['B24', 'Z21'];
+    public const CIE10_PRIVADOS = ['B24', 'Z21', 'A50'];
 
     /**
      * Una ficha es "privada": un REGISTRADOR solo puede listar, ver o editar
@@ -89,7 +91,7 @@ class Caso extends Model
         }
         
         if (($filtros['privacidad_rol'] ?? '') === 'REGISTRADOR') {
-            $condiciones[] = '(e.cie10 NOT IN ("B24", "Z21") AND e.nombre NOT LIKE "%Violencia%" OR c.usuario_id = :priv_uid)';
+            $condiciones[] = '(e.cie10 NOT IN (' . implode(', ', array_map(fn(string $cie10): string => '"' . $cie10 . '"', self::CIE10_PRIVADOS)) . ') AND e.nombre NOT LIKE "%Violencia%" OR c.usuario_id = :priv_uid)';
             $parametros['priv_uid'] = (int) $filtros['privacidad_usuario_id'];
         }
 

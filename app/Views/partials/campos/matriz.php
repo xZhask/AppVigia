@@ -87,6 +87,13 @@ $gruposColumnas = $config['grupos_columnas'] ?? [];
 // Sin esta clave (23 de 24 fichas) la columna sigue siendo texto libre,
 // exactamente como antes.
 $opcionesPorFila = $config['opciones_por_fila'] ?? [];
+
+// "columnas_condicionadas" (A50, 2026-09-14): una columna libre que solo se
+// habilita cuando OTRA columna de la misma fila tiene cierto valor -- "Otra
+// prueba (cuál)" con "Tipo de prueba" = Otra. Formato:
+// {"Otra prueba (cuál)": {"columna": "Tipo de prueba", "valor": "Otra"}}.
+// Deshabilitada se vacía (ficha.js, aplicarColumnasCondicionadas()) y el
+// servidor la descarta igual. Sin esta clave, ninguna celda cambia.
 $grupoDeColumna = [];
 $indicesGrupoYaAsignados = [];
 foreach ($gruposColumnas as $nombreGrupo => $miembros) {
@@ -291,6 +298,15 @@ $filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_m
                       ? array_values(array_filter(array_map('strval', $opcionesCelda), fn ($o) => trim($o) !== ''))
                       : [];
                   $valorCelda = (string) ($valores[$fIdx][$cIdx] ?? '');
+                  $condicionCelda = $config['columnas_condicionadas'][(string) $col] ?? null;
+                  $atributoCondicion = '';
+                  if (is_array($condicionCelda)) {
+                      $idxColumnaCondicion = array_search((string) ($condicionCelda['columna'] ?? ''), array_map('strval', $columnas), true);
+                      $cumpleCondicion = $idxColumnaCondicion !== false
+                          && (string) ($valores[$fIdx][$idxColumnaCondicion] ?? '') === (string) ($condicionCelda['valor'] ?? '');
+                      $deshabilitada = $deshabilitada || !$cumpleCondicion;
+                      $atributoCondicion = ' data-condicion-columna="' . (int) $idxColumnaCondicion . '" data-condicion-valor="' . e((string) ($condicionCelda['valor'] ?? '')) . '"';
+                  }
                 ?>
                 <?php if ($opcionesCelda): ?>
                   <div class="seg" style="display:inline-flex; width: 100%;">
@@ -302,7 +318,7 @@ $filasSonSoloIndice = !empty($filas) && !array_filter($filas, fn ($f) => !preg_m
                     <?php endforeach; ?>
                   </div>
                 <?php else: ?>
-                  <input type="<?= $esFechaCelda ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaCelda ? '' : '—' ?>" <?= $esFechaCelda ? 'max="' . date('Y-m-d') . '"' : '' ?> <?= $tieneGate ? 'data-gated-por-si="1"' : '' ?> <?= $deshabilitada ? 'disabled' : '' ?> style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;<?= $deshabilitada ? ' opacity:.55; cursor:not-allowed;' : '' ?>">
+                  <input type="<?= $esFechaCelda ? 'date' : 'text' ?>" name="<?= e($nombreCampo) ?>[<?= $fIdx ?>][<?= $cIdx ?>]" value="<?= e($valores[$fIdx][$cIdx] ?? '') ?>" placeholder="<?= $esFechaCelda ? '' : '—' ?>" <?= $esFechaCelda ? 'max="' . date('Y-m-d') . '"' : '' ?> <?= $tieneGate ? 'data-gated-por-si="1"' : '' ?> <?= $deshabilitada ? 'disabled' : '' ?><?= $atributoCondicion ?> style="width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none;<?= $deshabilitada ? ' opacity:.55; cursor:not-allowed;' : '' ?>">
                 <?php endif; ?>
                 <?php endif; ?>
               </td>

@@ -220,6 +220,10 @@ const CATALOGO_CLASIFICACION = [
     'ABORTO'            => ['etiqueta' => 'Aborto',                       'dot' => 'dot-des'],
     'MORTINATO'         => ['etiqueta' => 'Mortinato',                    'dot' => 'dot-des'],
     'NINO_EXPUESTO_VIH' => ['etiqueta' => 'Niño nacido expuesto al VIH',  'dot' => 'dot-pro'],
+    // P96 (2026-09-13): "Tipo de muerte" del Anexo 1 de la R.M.
+    // 279-2009/MINSA. Tampoco se elige: la calcula la regla "clasificar".
+    'MUERTE_FETAL'      => ['etiqueta' => 'Muerte fetal',                 'dot' => 'dot-des'],
+    'MUERTE_NEONATAL'   => ['etiqueta' => 'Muerte neonatal',              'dot' => 'dot-con'],
 ];
 
 /**
@@ -256,6 +260,27 @@ function clasificacionDerivada(array $enfermedad, callable $valorPorClave): ?str
         }
     }
     return null;
+}
+
+/**
+ * reglas_campos "fallecido" (A50, 2026-09-14): el caso es una defunción cuando
+ * se cumple alguna de estas reglas (estado vital "Nació vivo, luego falleció",
+ * "Mortinato" o "Aborto"). 1 o 0; null si la ficha no declara ninguna, así
+ * las demás siguen guardando caso.fallecido como antes.
+ */
+function fallecidoDerivado(array $enfermedad, callable $valorPorClave): ?int
+{
+    $declara = false;
+    foreach (jsonDeEnfermedad($enfermedad, 'reglas_campos') as $regla) {
+        if (empty($regla['fallecido'])) {
+            continue;
+        }
+        $declara = true;
+        if (condicionReglaCampos($regla['si'], $valorPorClave)) {
+            return 1;
+        }
+    }
+    return $declara ? 0 : null;
 }
 
 /** ¿La ficha calcula la clasificación del caso en vez de pedirla? */
@@ -351,8 +376,9 @@ function campoVisiblePorDependencia(array $campo, array $valoresCampos): bool
  *   {"clave": ..., "valores": [...]}             el valor del campo es uno de esos
  *   {"claves": [...], "alguno_mayor_que": N}     algún NUMERO de la lista supera N
  * $valorPorClave(clave) devuelve el valor crudo del campo; un SI_NO llega como
- * ['marcado' => 'SI'|'NO'] y se compara por su marca. La misma lógica vive en
- * condicionReglaCumplida() de ficha.js.
+ * ['marcado' => 'SI'|'NO'] y se compara por su marca. Un MULTISELECT (A50,
+ * 2026-09-14) llega como lista y cumple si alguna opción marcada está en
+ * "valores". La misma lógica vive en condicionReglaCumplida() de ficha.js.
  */
 function condicionReglaCampos(array $si, callable $valorPorClave): bool
 {
@@ -364,7 +390,12 @@ function condicionReglaCampos(array $si, callable $valorPorClave): bool
     };
 
     if (isset($si['clave'])) {
-        return in_array($escalar($valorPorClave($si['clave'])), array_map('strval', $si['valores'] ?? []), true);
+        $valores = array_map('strval', $si['valores'] ?? []);
+        $valor = $valorPorClave($si['clave']);
+        if (is_array($valor) && array_is_list($valor)) {
+            return (bool) array_intersect(array_map('strval', $valor), $valores);
+        }
+        return in_array($escalar($valor), $valores, true);
     }
 
     foreach ($si['claves'] ?? [] as $clave) {
@@ -403,6 +434,311 @@ function jsonDeEnfermedad(array $enfermedad, string $columna): array
 function nucleoOmitido(array $enfermedad, string $campoNucleo): bool
 {
     return in_array($campoNucleo, jsonDeEnfermedad($enfermedad, 'nucleo_omitidos'), true);
+}
+
+/**
+ * nucleo_ajustes (P96, muerte fetal y neonatal, 2026-09-13): valor de un
+ * ajuste de la tarjeta de identidad o del caso que la ficha declara en el
+ * manifiesto -- "sin_documento", "nombres_opcionales", "fallecido",
+ * "registrar_y_agregar_otra" (bool), "titulo_persona", "titulo_residencia"
+ * (texto) o "condiciones_paciente" (lista). null si no lo declara, así las
+ * fichas que no lo usan siguen igual. cargar_fichas.php valida las claves.
+ *
+ * Ajustes por rama (A50, 2026-09-14): una regla de nucleo_condicional puede
+ * declarar "ajustes" que solo valen con cierto valor de su campo (en A50, la
+ * rama "Sífilis congénita" admite persona sin documento y sin nombres, y no
+ * admite efectivo PNP; la de la madre, no). Con $valoresCampos (id de campo =>
+ * valor: el POST o lo guardado) gana el ajuste de la rama elegida; sin rama que
+ * lo declare, el de toda la ficha.
+ */
+function nucleoAjuste(array $enfermedad, string $clave, ?array $valoresCampos = null): mixed
+{
+    if ($valoresCampos !== null) {
+        foreach (reglasAjusteNucleo($enfermedad, $clave) as $regla) {
+            if (in_array((string) ($valoresCampos[$regla['campo_id']] ?? ''), $regla['valores'], true)) {
+                return $regla['valor'];
+            }
+        }
+    }
+
+    return jsonDeEnfermedad($enfermedad, 'nucleo_ajustes')[$clave] ?? null;
+}
+
+/**
+ * Reglas de nucleo_condicional que declaran este ajuste por rama: campo que
+ * decide la rama, valores con los que aplica y valor del ajuste. [] en las
+ * fichas que no lo declaran.
+ *
+ * @return array<int, array{campo_id: int, valores: string[], valor: mixed}>
+ */
+function reglasAjusteNucleo(array $enfermedad, string $clave): array
+{
+    $reglas = [];
+    foreach (jsonDeEnfermedad($enfermedad, 'nucleo_condicional') as $regla) {
+        if (!is_array($regla['ajustes'] ?? null) || !array_key_exists($clave, $regla['ajustes'])) {
+            continue;
+        }
+        $campo = CampoDef::porClave((int) $enfermedad['id'], (string) ($regla['clave'] ?? ''));
+        if ($campo) {
+            $reglas[] = [
+                'campo_id' => (int) $campo['id'],
+                'valores'  => array_map('strval', $regla['valores'] ?? []),
+                'valor'    => $regla['ajustes'][$clave],
+            ];
+        }
+    }
+
+    return $reglas;
+}
+
+/**
+ * Atributos de un trozo de la tarjeta de identidad que se muestra u oculta
+ * según la rama (ficha.js, actualizarPorRama()): la casilla "Sin documento",
+ * el asterisco de Nombres, la etiqueta de la fecha de nacimiento, una tarjeta
+ * de condición del paciente. $excepto: se ve cuando el campo NO tiene ninguno
+ * de esos valores. $visible: estado con el que se pinta.
+ */
+function atributosRama(int $campoId, array $valores, bool $excepto, bool $visible): string
+{
+    return ' data-rama-campo="campo_' . $campoId . '" data-rama-valores="' . e(implode(',', $valores)) . '"'
+        . ($excepto ? ' data-rama-excepto' : '') . ($visible ? '' : ' hidden');
+}
+
+/**
+ * Asterisco de "Nombres" en la tarjeta de identidad: no va con
+ * nucleo_ajustes.nombres_opcionales (P96) y, si el ajuste es por rama (A50),
+ * se muestra u oculta según la rama. Sin ajuste, el de siempre.
+ */
+function marcaObligatorioNombres(array $enfermedad, array $valoresCampos): string
+{
+    $reglas = reglasAjusteNucleo($enfermedad, 'nombres_opcionales');
+    if (!$reglas) {
+        return nucleoAjuste($enfermedad, 'nombres_opcionales') ? '' : ' <span class="req">*</span>';
+    }
+    $valoresOpcionales = array_merge(...array_column($reglas, 'valores'));
+    $actual = (string) ($valoresCampos[$reglas[0]['campo_id']] ?? '');
+
+    return ' <span class="req"' . atributosRama($reglas[0]['campo_id'], $valoresOpcionales, true, !in_array($actual, $valoresOpcionales, true)) . '>*</span>';
+}
+
+/**
+ * Etiqueta de la fecha de nacimiento del núcleo. Con
+ * nucleo_condicional.ajustes.etiqueta_fecha_nac (A50: "Fecha de parto /
+ * culminación del embarazo" en la rama del producto) se pintan las dos
+ * etiquetas y la rama decide cuál se ve. Sin ajuste, el texto de siempre.
+ */
+function etiquetaFechaNacimiento(array $enfermedad, array $valoresCampos): string
+{
+    $reglas = reglasAjusteNucleo($enfermedad, 'etiqueta_fecha_nac');
+    if (!$reglas) {
+        return 'Fecha de nacimiento';
+    }
+    $actual = (string) ($valoresCampos[$reglas[0]['campo_id']] ?? '');
+    $html = '';
+    $valoresConEtiqueta = [];
+    foreach ($reglas as $regla) {
+        $html .= '<span' . atributosRama($regla['campo_id'], $regla['valores'], false, in_array($actual, $regla['valores'], true)) . '>'
+            . e((string) $regla['valor']) . '</span>';
+        $valoresConEtiqueta = array_merge($valoresConEtiqueta, $regla['valores']);
+    }
+
+    return $html . '<span' . atributosRama($reglas[0]['campo_id'], $valoresConEtiqueta, true, !in_array($actual, $valoresConEtiqueta, true)) . '>Fecha de nacimiento</span>';
+}
+
+/** Valor que se guarda en una FECHA o NUMERO con "desconocido": true cuando se marca "Desconocido" (A50). */
+const VALOR_DESCONOCIDO = 'DESCONOCIDO';
+
+/**
+ * La ficha ofrece la casilla "Desconocido" junto a la fecha de nacimiento del
+ * núcleo (nucleo_ajustes.fecha_nac_desconocida, o por rama en
+ * nucleo_condicional.ajustes). A50, 2026-09-14: ítem 13, la fecha de parto o
+ * culminación del embarazo del producto. Marcada, el caso guarda
+ * caso.fecha_nac_desconocida = 1 y la persona queda sin fecha de nacimiento.
+ */
+function fichaAdmiteFechaNacDesconocida(array $enfermedad): bool
+{
+    return nucleoAjuste($enfermedad, 'fecha_nac_desconocida') === true
+        || reglasAjusteNucleo($enfermedad, 'fecha_nac_desconocida') !== [];
+}
+
+/**
+ * Casilla "Desconocido" de la fecha de nacimiento, con el mismo aspecto que la
+ * de campos/fecha.php y el mismo manejo en ficha.js (aplicarDesconocidos():
+ * deshabilita y vacía el input marcado con data-con-desconocido). Por rama, se
+ * ve solo en esa rama y ficha.js la desmarca al cambiar a otra; va envuelta en
+ * un div porque .sym (display:flex) ganaría al atributo hidden. '' en las
+ * fichas que no la declaran.
+ */
+function casillaFechaNacDesconocida(array $enfermedad, array $valoresCampos, bool $marcada): string
+{
+    if (!fichaAdmiteFechaNacDesconocida($enfermedad)) {
+        return '';
+    }
+    $atributos = '';
+    $reglas = reglasAjusteNucleo($enfermedad, 'fecha_nac_desconocida');
+    if ($reglas) {
+        $valores = array_merge(...array_column($reglas, 'valores'));
+        $atributos = atributosRama($reglas[0]['campo_id'], $valores, false, in_array((string) ($valoresCampos[$reglas[0]['campo_id']] ?? ''), $valores, true));
+    }
+
+    return '<div' . $atributos . ' style="margin-top:4px"><label class="sym"><input type="checkbox" name="fecha_nac_desconocida" value="1" data-casilla-desconocido'
+        . ($marcada ? ' checked' : '') . '> Desconocido</label></div>';
+}
+
+/** Atributos del input de la fecha de nacimiento cuando la ficha admite "Desconocido" ('' si no). */
+function atributosFechaNacDesconocida(array $enfermedad, bool $marcada): string
+{
+    return fichaAdmiteFechaNacDesconocida($enfermedad) ? ' data-con-desconocido' . ($marcada ? ' disabled' : '') : '';
+}
+
+/**
+ * Campos de la tarjeta núcleo "Investigador" (partials/investigador.php), en
+ * su orden y con su etiqueta de siempre.
+ */
+const CAMPOS_INVESTIGADOR = [
+    'nombre'              => 'Nombres y apellidos de quién investiga',
+    'cargo'               => 'Cargo',
+    'profesion'           => 'Profesión',
+    'fecha_investigacion' => 'Fecha de investigación',
+    'telefono'            => 'Teléfono',
+    'email'               => 'Email',
+];
+
+/**
+ * Etiqueta con la que se pinta un campo de la tarjeta "Investigador", o null
+ * si la ficha no lo pide (y entonces tampoco se guarda). Con
+ * nucleo_ajustes.investigador la ficha declara qué campos lleva la tarjeta,
+ * con su etiqueta o true para la de siempre (A50, 2026-09-14: solo "Nombres y
+ * apellidos del notificador", lo que pide el PDF). Sin ajuste, los seis; si
+ * la ficha omite la tarjeta (nucleo_omitidos), ninguno.
+ */
+function campoInvestigador(array $enfermedad, string $campo): ?string
+{
+    if (nucleoOmitido($enfermedad, 'investigador')) {
+        return null;
+    }
+    $ajuste = nucleoAjuste($enfermedad, 'investigador');
+    if (!is_array($ajuste)) {
+        return CAMPOS_INVESTIGADOR[$campo] ?? null;
+    }
+    $declarado = $ajuste['campos'][$campo] ?? null;
+    if ($declarado === null) {
+        return null;
+    }
+
+    return is_string($declarado) ? $declarado : (CAMPOS_INVESTIGADOR[$campo] ?? null);
+}
+
+/** Título de la tarjeta "Investigador" (nucleo_ajustes.investigador.titulo: "Notificador" en A50). */
+function tituloInvestigador(array $enfermedad): string
+{
+    $ajuste = nucleoAjuste($enfermedad, 'investigador');
+
+    return is_array($ajuste) && is_string($ajuste['titulo'] ?? null) ? $ajuste['titulo'] : 'Investigador';
+}
+
+/**
+ * Condición del paciente (partials/condicion-paciente.php), en el orden en que
+ * se pintan las tarjetas.
+ */
+const CONDICIONES_PACIENTE = [
+    'EFECTIVO'        => 'Efectivo PNP',
+    'DERECHOHABIENTE' => 'Derechohabiente',
+    'PARTICULAR'      => 'Particular',
+];
+
+/**
+ * nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): condiciones que la
+ * ficha admite, siempre en el orden de CONDICIONES_PACIENTE. Un fallecido
+ * fetal o neonatal no puede ser efectivo PNP. Sin el ajuste, las tres. Con
+ * $valoresCampos, las de la rama elegida (ver nucleoAjuste()).
+ */
+function condicionesPacientePermitidas(array $enfermedad, ?array $valoresCampos = null): array
+{
+    $declaradas = nucleoAjuste($enfermedad, 'condiciones_paciente', $valoresCampos);
+    $todas = array_keys(CONDICIONES_PACIENTE);
+    return is_array($declaradas) ? array_values(array_intersect($todas, $declaradas)) : $todas;
+}
+
+/**
+ * Condición con la que abre una ficha nueva: Particular, o la primera que la
+ * ficha admita si no admite Particular.
+ */
+function condicionPacientePorDefecto(array $enfermedad, ?array $valoresCampos = null): string
+{
+    $permitidas = condicionesPacientePermitidas($enfermedad, $valoresCampos);
+    return in_array('PARTICULAR', $permitidas, true) ? 'PARTICULAR' : $permitidas[0];
+}
+
+/**
+ * Documento de una persona para mostrar ("DNI 76540319"). Con
+ * nucleo_ajustes.sin_documento una persona puede no tener documento (tipo
+ * SIN_DOCUMENTO, número NULL): antes todas lo tenían y enmascararDocumento()
+ * recibía siempre un texto.
+ */
+function documentoParaMostrar(?string $tipoDoc, ?string $numDoc, bool $enmascarar = false): string
+{
+    if ($tipoDoc === 'SIN_DOCUMENTO') {
+        return 'Sin documento';
+    }
+    $numero = (string) $numDoc;
+
+    return $tipoDoc . ' ' . ($enmascarar ? enmascararDocumento($numero) : $numero);
+}
+
+/**
+ * campos_persona (Z21, 2026-09-12): claves de campo_def que se pintan dentro
+ * de la tarjeta de identidad. Admite dos formas: una lista (van en la fila del
+ * documento, como en Z21) o, desde P96 (2026-09-13), un objeto por fila:
+ * {"documento": [...], "nacimiento": [...]} -- "nacimiento" es la fila de Sexo
+ * y Fecha de nacimiento ("Hora de nacimiento" junto a su fecha). Sin $fila
+ * devuelve todas, para quien solo necesita saber qué campos ya se pintaron.
+ *
+ * @return string[]
+ */
+function clavesCamposPersona(array $enfermedad, ?string $fila = null): array
+{
+    $declarados = jsonDeEnfermedad($enfermedad, 'campos_persona');
+    $porFila = array_is_list($declarados) ? ['documento' => $declarados] : $declarados;
+    if ($fila !== null) {
+        return array_values($porFila[$fila] ?? []);
+    }
+    $todas = [];
+    foreach ($porFila as $clavesDeLaFila) {
+        $todas = array_merge($todas, array_values((array) $clavesDeLaFila));
+    }
+
+    return $todas;
+}
+
+/**
+ * Hora "HH:MM" de 24 horas (campo TEXTO con "formato": "hora"), normalizada
+ * con cero a la izquierda ("7:05" -> "07:05"). null si no es una hora válida.
+ */
+function horaValida(string $hora): ?string
+{
+    if (!preg_match('/^([01]?\d|2[0-3]):([0-5]\d)$/', trim($hora), $partes)) {
+        return null;
+    }
+
+    return sprintf('%02d:%s', (int) $partes[1], $partes[2]);
+}
+
+/**
+ * Código CIE-10 (campo TEXTO con "formato": "cie10"): letra, dos dígitos y,
+ * opcional, un punto con uno o dos caracteres ("P21.9", "P95"). Se normaliza
+ * a mayúsculas y sin espacios, y se agrega el punto si falta ("p219" ->
+ * "P21.9"). null si no tiene forma de código. Solo valida la forma: el
+ * catálogo CIE-10 todavía no está en el sistema.
+ */
+function codigoCie10Normalizado(string $codigo): ?string
+{
+    $limpio = strtoupper(preg_replace('/\s+/', '', $codigo));
+    if (!preg_match('/^([A-Z]\d{2})\.?([0-9A-Z]{1,2})?$/', $limpio, $partes)) {
+        return null;
+    }
+
+    return $partes[1] . (isset($partes[2]) && $partes[2] !== '' ? '.' . $partes[2] : '');
 }
 
 /**
@@ -463,7 +799,8 @@ function valorFijoNucleo(array $enfermedad, string $bloque): ?string
  */
 function tarjetaPersonaCondicional(array $enfermedad, array $valoresCampos, string $numeroSeccion = '2'): array
 {
-    $tituloGenerico = 'Datos de la persona';
+    // nucleo_ajustes.titulo_persona (P96, 2026-09-13): "Datos del fallecido".
+    $tituloGenerico = nucleoAjuste($enfermedad, 'titulo_persona') ?? 'Datos de la persona';
     $regla = null;
     foreach (jsonDeEnfermedad($enfermedad, 'nucleo_condicional') as $candidata) {
         if (in_array('persona', $candidata['bloques'] ?? [], true)) {
@@ -686,6 +1023,10 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
 {
     if ($valorCrudo === null || $valorCrudo === '') {
         return '—';
+    }
+    // "desconocido" (A50, 2026-09-14): FECHA o NUMERO marcado "Desconocido".
+    if ($valorCrudo === VALOR_DESCONOCIDO && in_array($campo['tipo'], ['FECHA', 'NUMERO'], true)) {
+        return 'Desconocido';
     }
     switch ($campo['tipo']) {
         case 'BOOLEANO':

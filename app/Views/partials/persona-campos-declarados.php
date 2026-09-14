@@ -17,8 +17,12 @@
  *
  * Usa el resolvedor AMBIENTE $campo (campos-por-clave.php) sin reasignarlo
  * (memoria partial_a_medida_no_debe_pisar_campo_ambiente).
+ *
+ * $filaCamposPersona (opcional, P96 2026-09-13): qué fila de la tarjeta se
+ * pinta -- 'documento' (por defecto) o 'nacimiento' (junto a Sexo y Fecha de
+ * nacimiento). Ver clavesCamposPersona() en ayudantes.php.
  */
-foreach (jsonDeEnfermedad($enfermedad, 'campos_persona') as $claveCampoPersona) {
+foreach (clavesCamposPersona($enfermedad, $filaCamposPersona ?? 'documento') as $claveCampoPersona) {
     (function (array $resuelto): void {
         $campo = $resuelto['campo'];
         $valor = $resuelto['val'];

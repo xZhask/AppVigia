@@ -238,7 +238,7 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
 // cuentan igual -- campos que ya se pintaron arriba, en una tarjeta fija.
 $clavesEnNotificacion = array_merge(
     jsonDeEnfermedad($enfermedad, 'campos_notificacion'),
-    jsonDeEnfermedad($enfermedad, 'campos_persona')
+    clavesCamposPersona($enfermedad)
 );
 
 $claveCubiertaPorPartial = fn(string $clave): bool => in_array(

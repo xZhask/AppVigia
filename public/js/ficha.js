@@ -129,9 +129,17 @@ document.addEventListener('DOMContentLoaded', function () {
     return valor === null || valor === undefined ? '' : String(valor).trim();
   }
 
-  // Misma lógica que condicionReglaCampos() de app/Core/ayudantes.php.
+  // Misma lógica que condicionReglaCampos() de app/Core/ayudantes.php. Un
+  // MULTISELECT (A50, 2026-09-14) cumple si alguna opción marcada está en
+  // "valores".
   function condicionReglaCumplida(si) {
-    if (si.clave) return (si.valores || []).indexOf(valorReglaPorClave(si.clave)) !== -1;
+    if (si.clave) {
+      var crudo = leerValorCampoPorNombre(campoPorClave(si.clave));
+      if (Array.isArray(crudo)) {
+        return crudo.some(function (valor) { return (si.valores || []).indexOf(String(valor)) !== -1; });
+      }
+      return (si.valores || []).indexOf(valorReglaPorClave(si.clave)) !== -1;
+    }
     return (si.claves || []).some(function (clave) {
       var valor = valorReglaPorClave(clave);
       return valor !== '' && !isNaN(valor) && Number(valor) > Number(si.alguno_mayor_que);
@@ -161,6 +169,47 @@ document.addEventListener('DOMContentLoaded', function () {
           input.removeAttribute('data-regla-fijado');
         }
       });
+    });
+
+    // "opciones" (P96, 2026-09-13): mientras se cumple la condición, el SELECT
+    // solo ofrece esos códigos y, si queda uno solo, lo deja elegido (muerte
+    // neonatal -> Post-parto). Sin condición cumplida vuelven todas. El
+    // servidor exige lo mismo en CasosController::aplicarReglasCampos().
+    var permitidasPorNombre = {};
+    var nombresConOpciones = [];
+    reglasCampos.forEach(function (regla) {
+      Object.keys(regla.opciones || {}).forEach(function (clave) {
+        var nombre = campoPorClave(clave);
+        if (!nombre) return;
+        if (nombresConOpciones.indexOf(nombre) === -1) nombresConOpciones.push(nombre);
+        if (!condicionReglaCumplida(regla.si)) return;
+        var lista = regla.opciones[clave];
+        permitidasPorNombre[nombre] = permitidasPorNombre[nombre]
+          ? permitidasPorNombre[nombre].filter(function (codigo) { return lista.indexOf(codigo) !== -1; })
+          : lista.slice();
+      });
+    });
+    nombresConOpciones.forEach(function (nombre) {
+      var select = document.querySelector('select[name="' + nombre + '"]');
+      if (!select) return;
+      var permitidas = permitidasPorNombre[nombre] || null;
+      Array.prototype.forEach.call(select.options, function (opcion) {
+        if (opcion.value === '') return;
+        var admitida = !permitidas || permitidas.indexOf(opcion.value) !== -1;
+        opcion.disabled = !admitida;
+        opcion.hidden = !admitida;
+      });
+      if (permitidas && permitidas.length === 1) {
+        select.value = permitidas[0];
+        select.setAttribute('data-regla-opcion-fijada', '1');
+      } else {
+        var fijadaAntes = select.getAttribute('data-regla-opcion-fijada') === '1';
+        select.removeAttribute('data-regla-opcion-fijada');
+        if (fijadaAntes || (permitidas && select.value !== '' && permitidas.indexOf(select.value) === -1)) {
+          select.value = '';
+        }
+      }
+      if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(select);
     });
 
     var cambioVisibilidad = false;
@@ -253,6 +302,78 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   actualizarTarjetaPersona();
   document.addEventListener('change', actualizarTarjetaPersona);
+
+  // ---------- Ajustes del núcleo por rama (A50, 2026-09-14) ----------
+  // Trozos de la tarjeta de identidad marcados con data-rama-campo (ver
+  // atributosRama() en ayudantes.php): la casilla "Sin documento", el
+  // asterisco de Nombres, la etiqueta de la fecha de nacimiento y las
+  // tarjetas de condición del paciente. Se ven cuando ese campo tiene uno de
+  // data-rama-valores (o ninguno, con data-rama-excepto). Al ocultarse, una
+  // casilla marcada se desmarca: "Sin documento" no puede quedar marcado en la
+  // rama de la madre. Las tarjetas de condición las termina de ajustar
+  // actualizarCondicionesPorRama(), más abajo.
+  function actualizarPorRama() {
+    document.querySelectorAll('[data-rama-campo]').forEach(function (el) {
+      var valor = leerValorCampoPorNombre(el.getAttribute('data-rama-campo'));
+      var valores = (el.getAttribute('data-rama-valores') || '').split(',');
+      var coincide = valores.indexOf(valor === null || valor === undefined ? '' : String(valor)) !== -1;
+      var visible = el.hasAttribute('data-rama-excepto') ? !coincide : coincide;
+      if (visible === !el.hidden) return;
+      el.hidden = !visible;
+      if (visible) return;
+      el.querySelectorAll('input[type="checkbox"]:checked').forEach(function (casilla) {
+        casilla.checked = false;
+        casilla.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  }
+  actualizarPorRama();
+  document.addEventListener('change', actualizarPorRama);
+
+  // ---------- "desconocido" en FECHA y NUMERO (A50, 2026-09-14) ----------
+  // campos/fecha.php y campos/numero.php pintan la casilla "Desconocido" con
+  // el mismo name que el input: marcada, el input queda vacío y deshabilitado
+  // (no viaja en el POST y viaja la casilla); desmarcada, vuelve a editarse. Se
+  // resincronizan todas en cada cambio porque evaluarDependencias() desmarca
+  // las casillas que oculta sin avisar.
+  function aplicarDesconocido(casilla) {
+    var campo = casilla.closest('.field');
+    var input = campo ? campo.querySelector('[data-con-desconocido]') : null;
+    if (!input) return;
+    input.disabled = casilla.checked;
+    // Al vaciarlo se avisa el cambio: lo que depende del valor (la edad
+    // calculada junto a la fecha de nacimiento, las reglas) se recalcula. Solo
+    // si tenía valor, para no volver a entrar en bucle.
+    if (casilla.checked && input.value !== '') {
+      input.value = '';
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+  function aplicarDesconocidos() {
+    document.querySelectorAll('input[data-casilla-desconocido]').forEach(aplicarDesconocido);
+  }
+  aplicarDesconocidos();
+  document.addEventListener('change', aplicarDesconocidos);
+
+  // ---------- MATRIZ "columnas_condicionadas" (A50, 2026-09-14) ----------
+  // Celda libre que solo se habilita cuando otra columna de su misma fila
+  // tiene cierto valor (campos/matriz.php: data-condicion-columna con el
+  // índice de esa columna y data-condicion-valor): "Otra prueba (cuál)" con
+  // "Tipo de prueba" = Otra. Deshabilitada, se vacía; el servidor la descarta
+  // igual.
+  function aplicarColumnasCondicionadas() {
+    document.querySelectorAll('[data-condicion-columna]').forEach(function (celda) {
+      var nombreCondicion = celda.name.replace(/\[\d+\]$/, '[' + celda.getAttribute('data-condicion-columna') + ']');
+      var marcada = document.querySelector('input[name="' + CSS.escape(nombreCondicion) + '"]:checked');
+      var habilitada = !!marcada && marcada.value === celda.getAttribute('data-condicion-valor');
+      celda.disabled = !habilitada;
+      celda.style.opacity = habilitada ? '' : '.55';
+      celda.style.cursor = habilitada ? '' : 'not-allowed';
+      if (!habilitada) celda.value = '';
+    });
+  }
+  aplicarColumnasCondicionadas();
+  document.addEventListener('change', aplicarColumnasCondicionadas);
 
   // ---------- vinculo_caso: datos de la ficha vinculada ----------
   // (motor de la ficha Z21, cotejo 2026-09-11) Al elegir la ficha vinculada
@@ -1727,6 +1848,34 @@ document.addEventListener('DOMContentLoaded', function () {
     actCondicion(false);
   }
 
+  // Ajustes por rama (A50, 2026-09-14): actualizarPorRama() puede ocultar la
+  // tarjeta de una condición (el producto de la gestación no es efectivo PNP).
+  // Las visibles ocupan todo el ancho y, si la marcada quedó oculta, se pasa a
+  // Particular (o a la primera visible) descartando los datos de la anterior.
+  // Solo en las fichas con tarjetas marcadas por rama.
+  function actualizarCondicionesPorRama() {
+    var opciones = Array.prototype.slice.call(document.querySelectorAll('.cond-opt'));
+    if (!opciones.some(function (opcion) { return opcion.hasAttribute('data-rama-campo'); })) return;
+    var visibles = opciones.filter(function (opcion) { return !opcion.hidden; });
+    var selector = document.querySelector('.cond-pick');
+    if (selector) {
+      if (visibles.length < 3) selector.style.setProperty('--cond-opciones', String(visibles.length));
+      else selector.style.removeProperty('--cond-opciones');
+    }
+    var marcada = document.querySelector('input[name="condicion"]:checked');
+    if (!marcada || !marcada.closest('.cond-opt').hidden) return;
+    var destino = document.getElementById('c-particular');
+    if (!destino || destino.closest('.cond-opt').hidden) {
+      destino = visibles.length ? visibles[0].querySelector('input[name="condicion"]') : null;
+    }
+    if (destino) {
+      destino.checked = true;
+      actCondicion(true);
+    }
+  }
+  actualizarCondicionesPorRama();
+  document.addEventListener('change', actualizarCondicionesPorRama);
+
   // ---------- Buscar titular (derechohabiente) ----------
   var btnBuscarTitular = document.getElementById('btnBuscarTitular');
   if (btnBuscarTitular) {
@@ -1801,8 +1950,10 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Automático: al completar los 8 dígitos de un DNI, sin esperar al botón.
-  // Silencioso si no encuentra nada (es lo esperado la primera vez que se
-  // notifica a alguien): no bloquea ni interrumpe con avisos.
+  // Si no encuentra nada no bloquea ni interrumpe: libera los nombres para
+  // escribirlos a mano y lo dice en el aviso bajo el documento
+  // (#buscandoPacienteHint; hasta el 2026-09-14 la vista le ponía otro id y
+  // ese aviso nunca se veía).
   if (numDocInput) {
     var tipoDocSelect = document.getElementById('tipoDoc');
     
@@ -1847,6 +1998,39 @@ document.addEventListener('DOMContentLoaded', function () {
         });
       }
     });
+
+    // ---------- nucleo_ajustes.sin_documento (P96, 2026-09-13) ----------
+    // Casilla "Sin documento de identidad" (partials/sin-documento.php): el
+    // tipo y el número quedan deshabilitados -- no viajan en el POST, y
+    // CasosController::crear() guarda SIN_DOCUMENTO -- y los nombres se
+    // escriben a mano (no hay padrón ni RENIEC que consultar).
+    var casillaSinDocumento = document.getElementById('sinDocumento');
+    if (casillaSinDocumento) {
+      var aplicarSinDocumento = function () {
+        var sinDocumento = casillaSinDocumento.checked;
+        numDocInput.disabled = sinDocumento;
+        tipoDocSelect.disabled = sinDocumento;
+        // Atenuado: deshabilitado, el tipo y el placeholder se veían igual que activos.
+        numDocInput.closest('.field').style.opacity = sinDocumento ? '0.45' : '';
+        if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(tipoDocSelect);
+        if (btnBuscar) btnBuscar.disabled = sinDocumento;
+        if (!sinDocumento) {
+          aplicarMascaraDoc();
+          return;
+        }
+        numDocInput.value = '';
+        ultimoDocBuscado = null;
+        ['apellidoPaterno', 'apellidoMaterno', 'nombres'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.readOnly = false;
+        });
+        var dupeSlotSinDocumento = document.getElementById('dupeSlot');
+        if (dupeSlotSinDocumento) dupeSlotSinDocumento.innerHTML = '';
+        if (buscandoHint) buscandoHint.hidden = true;
+      };
+      casillaSinDocumento.addEventListener('change', aplicarSinDocumento);
+      aplicarSinDocumento();
+    }
   }
 
   function iniciales(nombreCompleto) {
@@ -1921,25 +2105,47 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('apellidoMaterno').value = p.apellido_materno || '';
     document.getElementById('nombres').value = p.nombres || '';
     document.getElementById('sexo').value = p.sexo || '';
-    if (fechaNac) { fechaNac.value = p.fecha_nac || ''; calcularEdad(); }
+    if (fechaNac) {
+      // fecha_nac_desconocida (A50): si el padrón trae la fecha, deja de ser
+      // desconocida (el change rehabilita el input, ver aplicarDesconocidos()).
+      var casillaFechaNacDesconocida = document.querySelector('input[name="fecha_nac_desconocida"]');
+      if (p.fecha_nac && casillaFechaNacDesconocida && casillaFechaNacDesconocida.checked) {
+        casillaFechaNacDesconocida.checked = false;
+        casillaFechaNacDesconocida.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      fechaNac.value = p.fecha_nac || ''; calcularEdad();
+    }
 
     var condicion = p.condicion || 'PARTICULAR';
     var radioCondicion = document.querySelector('input[name="condicion"][value="' + condicion + '"]');
+    // Ajustes por rama (A50): una tarjeta oculta por la rama cuenta como no admitida.
+    if (radioCondicion && radioCondicion.closest('.cond-opt[hidden]')) radioCondicion = null;
     if (radioCondicion) { radioCondicion.checked = true; actCondicion(false); }
+    // nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): la ficha puede no
+    // ofrecer la condición con la que la persona ya está registrada (un
+    // fallecido fetal o neonatal no es efectivo PNP), y entonces tampoco pinta
+    // su panel. El servidor rechaza guardar; acá solo se avisa, en rojo bajo el
+    // documento en vez de "Datos obtenidos correctamente".
+    var etiquetaCondicionNoAdmitida = (!radioCondicion && radiosCondicion.length > 0)
+      ? (condicion === 'EFECTIVO' ? 'Efectivo PNP' : etiquetasCondicion[condicion])
+      : null;
 
-    document.getElementById('cip').value = p.cip || '';
-    document.getElementById('situacionPnp').value = p.situacion_pnp || '';
-    document.getElementById('categoriaPnp').value = p.categoria_pnp || '';
+    var cipInput = document.getElementById('cip');
+    var situacionPnp = document.getElementById('situacionPnp');
+    var categoriaPnp = document.getElementById('categoriaPnp');
     var gradoId = document.getElementById('gradoId');
-    gradoId.value = p.grado_id || '';
+    if (cipInput) cipInput.value = p.cip || '';
+    if (situacionPnp) situacionPnp.value = p.situacion_pnp || '';
+    if (categoriaPnp) categoriaPnp.value = p.categoria_pnp || '';
+    if (gradoId) gradoId.value = p.grado_id || '';
     var vinculoTitular = document.getElementById('vinculoTitular');
     if (vinculoTitular) vinculoTitular.value = p.vinculo_titular || '';
     var titularId = document.getElementById('titularId');
     if (titularId) titularId.value = p.titular_id || '';
     if (window.SelectorBusqueda) {
-      window.SelectorBusqueda.actualizar(gradoId);
-      window.SelectorBusqueda.actualizar(document.getElementById('categoriaPnp'));
-      window.SelectorBusqueda.actualizar(document.getElementById('situacionPnp'));
+      if (gradoId) window.SelectorBusqueda.actualizar(gradoId);
+      if (categoriaPnp) window.SelectorBusqueda.actualizar(categoriaPnp);
+      if (situacionPnp) window.SelectorBusqueda.actualizar(situacionPnp);
       if (vinculoTitular) window.SelectorBusqueda.actualizar(vinculoTitular);
     }
     actualizarCategoriaCip();
@@ -1953,8 +2159,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (buscandoHint) {
-      buscandoHint.textContent = '✓ Datos obtenidos correctamente.';
-      buscandoHint.style.color = 'var(--accent, #0E7A6E)';
+      buscandoHint.textContent = etiquetaCondicionNoAdmitida
+        ? 'Este documento ya está registrado con la condición «' + etiquetaCondicionNoAdmitida + '», que esta ficha no admite. Revisa el número: con él la ficha no se podrá registrar.'
+        : '✓ Datos obtenidos correctamente.';
+      buscandoHint.style.color = etiquetaCondicionNoAdmitida ? 'var(--s-confirmado, #B23B3B)' : 'var(--accent, #0E7A6E)';
       buscandoHint.hidden = false;
     }
 

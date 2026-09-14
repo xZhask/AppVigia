@@ -89,6 +89,24 @@ class CasosController extends Controller
 
         $hoyIso = (new DateTime())->format('Y-m-d');
         $semana = semanaEpidemiologica($hoyIso);
+        $valoresFijosIniciales = $this->valoresFijosPorDefecto($hoyIso);
+
+        // nucleo_ajustes.registrar_y_agregar_otra (P96, 2026-09-14): el botón
+        // "Registrar y agregar otra" vuelve acá con el establecimiento y la
+        // fecha de notificación de la ficha que acaba de guardar. Solo se
+        // precargan si siguen siendo válidos (fecha no futura; establecimiento
+        // existente y elegible por el usuario); al guardar se revalidan igual.
+        if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra') === true) {
+            $fechaNotifArrastrada = is_string($_GET['fecha_notif'] ?? null) ? fechaIsoValida($_GET['fecha_notif']) : null;
+            if ($fechaNotifArrastrada !== null && $fechaNotifArrastrada <= $hoyIso) {
+                $valoresFijosIniciales['fecha_notif'] = $fechaNotifArrastrada;
+                $semana = semanaEpidemiologica($fechaNotifArrastrada);
+            }
+            $establecimientoArrastrado = (int) (is_string($_GET['establecimiento_id'] ?? null) ? $_GET['establecimiento_id'] : 0);
+            if ($establecimientoArrastrado > 0 && Auth::usuario()['rol'] === 'ADMIN' && Establecimiento::buscar($establecimientoArrastrado)) {
+                $valoresFijosIniciales['establecimiento_id'] = (string) $establecimientoArrastrado;
+            }
+        }
 
         // vinculo_caso (cotejo Z21, 2026-09-11): el botón "Registrar niño
         // nacido expuesto" de la ficha de la madre entra acá como
@@ -118,7 +136,7 @@ class CasosController extends Controller
             'rutaActual'    => 'casos/nuevo',
             'enfermedades'  => $enfermedades,
             'enfermedad'    => $enfermedad,
-            'valoresFijos'  => $this->valoresFijosPorDefecto($hoyIso),
+            'valoresFijos'  => $valoresFijosIniciales,
             'erroresFijos'  => [],
             'semanaEpiPreview' => $semana['semana'],
             'anioEpiPreview'   => $semana['anio'],
@@ -143,7 +161,7 @@ class CasosController extends Controller
             'erroresEvolucion' => [],
             'erroresExamen'  => [],
             'valoresSujetoPorRol' => [],
-        ], $this->datosVinculoCasoVista($enfermedad, $vinculoSeleccionado, null), $this->datosEstablecimiento(), $this->datosPnp(), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
+        ], $this->datosVinculoCasoVista($enfermedad, $vinculoSeleccionado, null), $this->datosEstablecimiento(), $this->datosPnp($enfermedad), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
     }
 
     public function crear(): void
@@ -178,6 +196,7 @@ class CasosController extends Controller
             'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
+            'fecha_nac_desconocida' => ($_POST['fecha_nac_desconocida'] ?? '') === '1' ? '1' : '',
             'nacimiento_distrito_id' => $_POST['nacimiento_distrito_id'] ?? '',
             'edad_valor'         => trim($_POST['edad_valor'] ?? ''),
             'edad_unidad'        => $_POST['edad_unidad'] ?? '',
@@ -247,14 +266,38 @@ class CasosController extends Controller
             $erroresFijos['fecha_notif'] = 'La fecha de notificación no puede ser futura.';
         }
 
-        if ($valoresFijos['num_doc'] === '') {
+        // nucleo_ajustes.sin_documento (P96, muerte fetal y neonatal,
+        // 2026-09-13): con la casilla "Sin documento de identidad" marcada la
+        // persona se guarda como SIN_DOCUMENTO, sin número (NULL, nunca '':
+        // Persona::buscarPorDocumento() con '' encontraría a OTRA persona sin
+        // documento y la sobrescribiría). En las fichas que no declaran el
+        // ajuste la casilla no existe y un POST forjado no cambia nada.
+        // Ajustes por rama (A50, 2026-09-14): la rama elegida sale del POST.
+        $valoresRamaPost = $this->valoresCamposDesdePost();
+        $sinDocumento = nucleoAjuste($enfermedad, 'sin_documento', $valoresRamaPost) === true && ($_POST['sin_documento'] ?? '') === '1';
+        if ($sinDocumento) {
+            $valoresFijos['tipo_doc'] = 'SIN_DOCUMENTO';
+            $valoresFijos['num_doc'] = '';
+        }
+        if ($valoresFijos['num_doc'] === '' && !$sinDocumento) {
             $erroresFijos['num_doc'] = 'Ingresa el número de documento.';
         }
         if ($valoresFijos['apellido_paterno'] === '') {
             $erroresFijos['apellido_paterno'] = 'Ingresa el apellido paterno.';
         }
-        if ($valoresFijos['nombres'] === '') {
+        // nucleo_ajustes.nombres_opcionales (P96): un óbito fetal casi nunca
+        // tiene nombre; se exigen solo los apellidos.
+        if ($valoresFijos['nombres'] === '' && nucleoAjuste($enfermedad, 'nombres_opcionales', $valoresRamaPost) !== true) {
             $erroresFijos['nombres'] = 'Ingresa los nombres.';
+        }
+
+        // fecha_nac_desconocida (A50, 2026-09-14): con "Desconocido" marcado,
+        // y solo si la rama elegida lo ofrece, la fecha no se guarda aunque
+        // llegue en el POST; sin la casilla, la marca no se guarda.
+        $valoresFijos['fecha_nac_desconocida'] = ($valoresFijos['fecha_nac_desconocida'] === '1'
+            && nucleoAjuste($enfermedad, 'fecha_nac_desconocida', $valoresRamaPost) === true) ? '1' : '';
+        if ($valoresFijos['fecha_nac_desconocida'] === '1') {
+            $valoresFijos['fecha_nac'] = '';
         }
 
         $fechaNacIso = null;
@@ -346,7 +389,24 @@ class CasosController extends Controller
         }
 
         // ---------- efectivo PNP (opcional) ----------
-        $datosPnp = $this->leerDatosPnp();
+        $datosPnp = $this->leerDatosPnp($enfermedad, $valoresRamaPost);
+        if ($datosPnp['error'] !== null) {
+            $erroresFijos['condicion'] = $datosPnp['error'];
+        }
+        // nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): si el documento
+        // ya es de una persona registrada con una condición que la ficha no
+        // admite (un efectivo PNP en la ficha de un fallecido fetal o
+        // neonatal), es un número mal digitado; guardar sobrescribiría a esa
+        // persona con los datos de esta ficha.
+        if ((nucleoAjuste($enfermedad, 'condiciones_paciente') !== null || reglasAjusteNucleo($enfermedad, 'condiciones_paciente'))
+            && !$sinDocumento && !isset($erroresFijos['num_doc'])) {
+            $personaDelDocumento = Persona::buscarPorDocumento($valoresFijos['tipo_doc'], $valoresFijos['num_doc']);
+            $condicionDelDocumento = $personaDelDocumento['condicion'] ?? 'PARTICULAR';
+            if ($personaDelDocumento && !in_array($condicionDelDocumento, condicionesPacientePermitidas($enfermedad, $valoresRamaPost), true)) {
+                $erroresFijos['num_doc'] = 'Este documento ya está registrado con la condición «' . (CONDICIONES_PACIENTE[$condicionDelDocumento] ?? $condicionDelDocumento)
+                    . '», que no corresponde a esta ficha. Revisa el número.';
+            }
+        }
 
         // ---------- clasificación del caso ----------
         // nucleo_omitidos: 'clasificacion' (cotejo Z21) -- una ficha cuyo PDF
@@ -367,12 +427,16 @@ class CasosController extends Controller
         }
 
         // ---------- dinámicos: cuadro clínico según la enfermedad ----------
-        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId);
+        // La fecha de nacimiento del núcleo va para las reglas
+        // "comparar_fechas"/"maximo_dias_entre" (P96).
+        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, ['fecha_nac' => $fechaNacIso]);
 
         // reglas_campos "clasificar" (Z21, 2026-09-13): en las fichas que la
         // calculan, la clasificación sale de los campos ya validados y no del
         // POST (no pintan la tarjeta de chips).
         $clasificacionCalculada = $this->clasificacionCalculada($enfermedad, $valoresCampos);
+        // reglas_campos "fallecido" (A50, 2026-09-14): sale del estado vital.
+        $fallecidoCalculado = $this->fallecidoCalculado($enfermedad, $valoresCampos);
         if ($clasificacionCalculada !== null) {
             $clasificacion = $clasificacionCalculada;
             unset($erroresFijos['clasificacion']);
@@ -451,10 +515,12 @@ class CasosController extends Controller
 
             $datosPaciente = array_merge([
                 'tipo_doc'          => $valoresFijos['tipo_doc'],
-                'num_doc'           => $valoresFijos['num_doc'],
+                'num_doc'           => $sinDocumento ? null : $valoresFijos['num_doc'],
                 'apellido_paterno'  => $valoresFijos['apellido_paterno'],
                 'apellido_materno'  => $valoresFijos['apellido_materno'] !== '' ? $valoresFijos['apellido_materno'] : null,
-                'nombres'           => $valoresFijos['nombres'],
+                // NULL solo con nucleo_ajustes.nombres_opcionales: en el resto
+                // de fichas los nombres ya se exigieron arriba.
+                'nombres'           => $valoresFijos['nombres'] !== '' ? $valoresFijos['nombres'] : null,
                 'sexo'              => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null,
                 'fecha_nac'         => $fechaNacIso,
                 // NULL y no '' cuando la rama no pide residencia
@@ -463,7 +529,9 @@ class CasosController extends Controller
                 'distrito_id'       => $distritoId !== '' ? $distritoId : null,
             ], $nucleo['persona'], $datosPnp['datos']);
 
-            $personaExistente = Persona::buscarPorDocumento($valoresFijos['tipo_doc'], $valoresFijos['num_doc']);
+            // Sin documento no hay con qué reconocer a una persona ya
+            // registrada: siempre es una persona nueva.
+            $personaExistente = $sinDocumento ? null : Persona::buscarPorDocumento($valoresFijos['tipo_doc'], $valoresFijos['num_doc']);
             if ($personaExistente) {
                 $personaId = (int) $personaExistente['id'];
                 Persona::actualizar($personaId, $datosPaciente);
@@ -491,7 +559,7 @@ class CasosController extends Controller
                 'semana_epi'            => $semana['semana'],
                 'fecha_inicio_sintomas' => $fechaInicioSintomasIso,
                 'clasificacion'         => $clasificacion,
-            ], $nucleo['caso']));
+            ], $nucleo['caso'], $fallecidoCalculado !== null ? ['fallecido' => $fallecidoCalculado] : []));
 
             CasoValor::guardarTodos($casoId, $paraGuardar);
             CasoContacto::reemplazarTodos($casoId, $filasContactos);
@@ -547,6 +615,27 @@ class CasosController extends Controller
                 [(string) $esperadosEncadenar, (string) $esperadosEncadenar],
                 (string) $configEncadenar['encadenar']['mensaje']
             ));
+            header('Location: /casos/' . $casoId);
+            exit;
+        }
+
+        // nucleo_ajustes.registrar_y_agregar_otra (P96, 2026-09-14): la hoja
+        // es un listado semanal y las defunciones se cargan una tras otra.
+        // "Registrar y agregar otra" abre la siguiente ficha con el mismo
+        // establecimiento y fecha de notificación (la misma semana del
+        // listado); "Registrar ficha", a su lado, abre la ficha recién
+        // registrada. Sin el ajuste, todo sigue igual.
+        if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra') === true) {
+            if (($_POST['despues_de_registrar'] ?? '') === 'agregar_otra') {
+                Flash::set(sprintf('Ficha registrada: F-%05d (SE %d · %d). Registra la siguiente: se mantienen el establecimiento y la fecha de notificación.', $casoId, $semana['semana'], $semana['anio']));
+                header('Location: /casos/nuevo?' . http_build_query(array_merge(
+                    ['enfermedad_id' => $enfermedadId],
+                    $puedeElegirEstablecimiento ? ['establecimiento_id' => (int) $establecimiento['id']] : [],
+                    ['fecha_notif' => $fechaNotifIso]
+                )));
+                exit;
+            }
+            Flash::set('Ficha registrada: ' . sprintf('F-%05d', $casoId));
             header('Location: /casos/' . $casoId);
             exit;
         }
@@ -734,6 +823,7 @@ class CasosController extends Controller
             'nombres'            => $caso['nombres'],
             'sexo'               => $caso['sexo'] ?? '',
             'fecha_nac'          => (string) ($caso['fecha_nac'] ?? ''),
+            'fecha_nac_desconocida' => !empty($caso['fecha_nac_desconocida']) ? '1' : '',
             'nacimiento_distrito_id' => (string) ($caso['nacimiento_distrito_id'] ?? ''),
             'edad_valor'         => (string) ($caso['edad_valor'] ?? ''),
             'edad_unidad'        => (string) ($caso['edad_unidad'] ?? ''),
@@ -851,6 +941,7 @@ class CasosController extends Controller
             'nombres'            => trim($_POST['nombres'] ?? ''),
             'sexo'               => $_POST['sexo'] ?? '',
             'fecha_nac'          => trim($_POST['fecha_nac'] ?? ''),
+            'fecha_nac_desconocida' => ($_POST['fecha_nac_desconocida'] ?? '') === '1' ? '1' : '',
             'nacimiento_distrito_id' => $_POST['nacimiento_distrito_id'] ?? '',
             'edad_valor'         => trim($_POST['edad_valor'] ?? ''),
             'edad_unidad'        => $_POST['edad_unidad'] ?? '',
@@ -911,8 +1002,18 @@ class CasosController extends Controller
         if ($valoresFijos['apellido_paterno'] === '') {
             $erroresFijos['apellido_paterno'] = 'Ingresa el apellido paterno.';
         }
-        if ($valoresFijos['nombres'] === '') {
+        // nucleo_ajustes.nombres_opcionales (P96): ver crear(). Por rama
+        // (A50): la rama elegida sale del POST.
+        $valoresRamaPost = $this->valoresCamposDesdePost();
+        if ($valoresFijos['nombres'] === '' && nucleoAjuste($enfermedad, 'nombres_opcionales', $valoresRamaPost) !== true) {
             $erroresFijos['nombres'] = 'Ingresa los nombres.';
+        }
+
+        // fecha_nac_desconocida: mismo criterio que en crear().
+        $valoresFijos['fecha_nac_desconocida'] = ($valoresFijos['fecha_nac_desconocida'] === '1'
+            && nucleoAjuste($enfermedad, 'fecha_nac_desconocida', $valoresRamaPost) === true) ? '1' : '';
+        if ($valoresFijos['fecha_nac_desconocida'] === '1') {
+            $valoresFijos['fecha_nac'] = '';
         }
 
         $fechaNacIso = null;
@@ -974,8 +1075,11 @@ class CasosController extends Controller
             }
         }
 
-        $datosPnp = $this->leerDatosPnp();
-        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId);
+        $datosPnp = $this->leerDatosPnp($enfermedad, $valoresRamaPost);
+        if ($datosPnp['error'] !== null) {
+            $erroresFijos['condicion'] = $datosPnp['error'];
+        }
+        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, ['fecha_nac' => $fechaNacIso]);
 
         // ---------- vinculo_caso (cotejo Z21, 2026-09-11) ----------
         // Guarda de integridad: si otras fichas apuntan a esta, no se puede
@@ -1005,6 +1109,8 @@ class CasosController extends Controller
         $clasificacion = $this->clasificacionCalculada($enfermedad, $valoresCampos) ?? $clasificacion;
         $hospitalizado = $clasificacionOmitida ? (int) $caso['hospitalizado'] : (isset($_POST['hospitalizado']) ? 1 : 0);
         $fallecido = $clasificacionOmitida ? (int) $caso['fallecido'] : (isset($_POST['fallecido']) ? 1 : 0);
+        // reglas_campos "fallecido" (A50): se recalcula en cada edición.
+        $fallecido = $this->fallecidoCalculado($enfermedad, $valoresCampos) ?? $fallecido;
 
         $filasContactos = $this->filasContactos();
         $filasContactosDirectos = $this->filasContactosDirectos();
@@ -1071,7 +1177,7 @@ class CasosController extends Controller
             $datosPaciente = array_merge([
                 'apellido_paterno'  => $valoresFijos['apellido_paterno'],
                 'apellido_materno'  => $valoresFijos['apellido_materno'] !== '' ? $valoresFijos['apellido_materno'] : null,
-                'nombres'           => $valoresFijos['nombres'],
+                'nombres'           => $valoresFijos['nombres'] !== '' ? $valoresFijos['nombres'] : null,
                 'sexo'              => $valoresFijos['sexo'] !== '' ? $valoresFijos['sexo'] : null,
                 'fecha_nac'         => $fechaNacIso,
                 // NULL y no '' cuando la rama no pide residencia
@@ -1080,8 +1186,10 @@ class CasosController extends Controller
                 'distrito_id'       => $distritoId !== '' ? $distritoId : null,
             ], $nucleo['persona'], $datosPnp['datos']);
 
-            $persona = Persona::buscarPorDocumento($caso['tipo_doc'], $caso['num_doc']);
-            $personaId = (int) $persona['id'];
+            // La persona del caso, por su id: el documento no es editable, así
+            // que es la misma que antes se buscaba por documento, y además
+            // funciona con una persona SIN_DOCUMENTO (número NULL, P96).
+            $personaId = (int) $caso['persona_id'];
 
             // Validación de conflicto de interés
             if ($usuario['persona_id'] !== null && $usuario['persona_id'] === $personaId) {
@@ -1228,7 +1336,12 @@ class CasosController extends Controller
     /**
      * @return array{0: array, 1: array, 2: array} [valoresCampos, erroresCampos, paraGuardar]
      */
-    private function validarCamposDinamicos(int $enfermedadId): array
+    /**
+     * @param array{fecha_nac?: ?string} $valoresNucleo fechas del núcleo ya
+     *        validadas que las reglas "comparar_fechas"/"maximo_dias_entre"
+     *        pueden referenciar como "nucleo:fecha_nac" (P96, 2026-09-13).
+     */
+    private function validarCamposDinamicos(int $enfermedadId, array $valoresNucleo = []): array
     {
         $campos = CampoDef::porEnfermedad($enfermedadId);
         $valoresCampos = [];
@@ -1445,6 +1558,24 @@ class CasosController extends Controller
                         }
                     }
                 }
+                // MATRIZ "columnas_condicionadas" (A50, 2026-09-14): la celda
+                // se descarta si la otra columna de su fila no tiene el valor
+                // declarado ("Otra prueba (cuál)" sin "Tipo de prueba" = Otra).
+                if ($tipo === 'MATRIZ' && !empty($configDelCampo['columnas_condicionadas'])) {
+                    $columnasDelCampo = array_map('strval', $configDelCampo['columnas'] ?? []);
+                    foreach ($configDelCampo['columnas_condicionadas'] as $columnaCondicionada => $condicionColumna) {
+                        $indiceCondicionada = array_search((string) $columnaCondicionada, $columnasDelCampo, true);
+                        $indiceCondicion = array_search((string) ($condicionColumna['columna'] ?? ''), $columnasDelCampo, true);
+                        if ($indiceCondicionada === false || $indiceCondicion === false) {
+                            continue;
+                        }
+                        foreach ($valorCrudo as $indiceFila => $filaMatriz) {
+                            if (is_array($filaMatriz) && (string) ($filaMatriz[$indiceCondicion] ?? '') !== (string) ($condicionColumna['valor'] ?? '')) {
+                                $valorCrudo[$indiceFila][$indiceCondicionada] = '';
+                            }
+                        }
+                    }
+                }
                 $valoresCampos[$campoId] = $valorCrudo;
                 
                 $vacio = empty(array_filter($valorCrudo, function($v) {
@@ -1466,6 +1597,17 @@ class CasosController extends Controller
                 if ($obligatorio) {
                     $erroresCampos[$campoId] = 'Este campo es obligatorio.';
                 }
+                continue;
+            }
+
+            // "desconocido" (A50, 2026-09-14): FECHA o NUMERO con la casilla
+            // "Desconocido" marcada (campos/fecha.php, campos/numero.php). La
+            // casilla usa el mismo name y va después del input, así que llega
+            // VALOR_DESCONOCIDO. Solo lo aceptan los campos que lo declaran; en
+            // los demás cae en "Ingresa una fecha/un número válido".
+            if ($valor === VALOR_DESCONOCIDO && in_array($tipo, ['FECHA', 'NUMERO'], true)
+                && !empty((json_decode((string) ($campo['config'] ?? ''), true) ?: [])['desconocido'])) {
+                $paraGuardar[$campoId] = VALOR_DESCONOCIDO;
                 continue;
             }
 
@@ -1501,13 +1643,30 @@ class CasosController extends Controller
                     }
                     break;
                 default: // TEXTO, TEXTAREA
-                    $paraGuardar[$campoId] = $valor;
+                    // "formato" de un TEXTO (P96, 2026-09-13): "hora" se guarda
+                    // HH:MM y "cie10" normalizado (P21.9); ver campos/texto.php.
+                    $formatoTexto = $tipo === 'TEXTO'
+                        ? ((json_decode((string) ($campo['config'] ?? ''), true) ?: [])['formato'] ?? null)
+                        : null;
+                    $valorNormalizado = match ($formatoTexto) {
+                        'hora'  => horaValida($valor),
+                        'cie10' => codigoCie10Normalizado($valor),
+                        default => $valor,
+                    };
+                    if ($valorNormalizado === null) {
+                        $erroresCampos[$campoId] = $formatoTexto === 'hora'
+                            ? 'Ingresa una hora válida (HH:MM).'
+                            : 'Ingresa un código CIE-10 válido: una letra, dos dígitos y, si corresponde, el subcódigo (P21.9).';
+                    } else {
+                        $valoresCampos[$campoId] = $valorNormalizado;
+                        $paraGuardar[$campoId] = $valorNormalizado;
+                    }
             }
         }
 
         $reglasCampos = jsonDeEnfermedad(Enfermedad::buscar($enfermedadId) ?? [], 'reglas_campos');
         if ($reglasCampos) {
-            [$valoresCampos, $erroresCampos, $paraGuardar] = $this->aplicarReglasCampos($reglasCampos, $campos, $valoresCampos, $erroresCampos, $paraGuardar);
+            [$valoresCampos, $erroresCampos, $paraGuardar] = $this->aplicarReglasCampos($reglasCampos, $campos, $valoresCampos, $erroresCampos, $paraGuardar, $valoresNucleo);
         }
 
         return [$valoresCampos, $erroresCampos, $paraGuardar];
@@ -1518,6 +1677,42 @@ class CasosController extends Controller
      * según los valores ya validados (clasificacionDerivada() en
      * ayudantes.php). null si la ficha no la calcula.
      */
+    /**
+     * reglas_campos "fallecido" (A50, 2026-09-14): caso.fallecido según los
+     * valores ya validados (fallecidoDerivado() en ayudantes.php). null si la
+     * ficha no lo calcula.
+     */
+    private function fallecidoCalculado(array $enfermedad, array $valoresCampos): ?int
+    {
+        if (!jsonDeEnfermedad($enfermedad, 'reglas_campos')) {
+            return null;
+        }
+        $idPorClave = [];
+        foreach (CampoDef::porEnfermedad((int) $enfermedad['id']) as $campoId => $campo) {
+            $idPorClave[$campo['clave']] = (int) $campoId;
+        }
+
+        return fallecidoDerivado($enfermedad, fn(string $clave) => $valoresCampos[$idPorClave[$clave] ?? 0] ?? '');
+    }
+
+    /**
+     * Valores crudos de los campo_def que llegaron en el POST (id => valor),
+     * para decidir la rama antes de validar los campos dinámicos: los ajustes
+     * del núcleo por rama (nucleoAjuste()) se usan al validar el documento y
+     * los nombres, que va primero.
+     */
+    private function valoresCamposDesdePost(): array
+    {
+        $valores = [];
+        foreach ($_POST as $nombre => $valor) {
+            if (preg_match('/^campo_(\d+)$/', (string) $nombre, $partes)) {
+                $valores[(int) $partes[1]] = is_array($valor) ? $valor : trim((string) $valor);
+            }
+        }
+
+        return $valores;
+    }
+
     private function clasificacionCalculada(array $enfermedad, array $valoresCampos): ?string
     {
         if (!fichaDerivaClasificacion($enfermedad)) {
@@ -1548,9 +1743,24 @@ class CasosController extends Controller
      *      ni óbitos fetales).
      *   3. "suma_maxima": con la condición cumplida, la suma no puede pasar el
      *      tope; el mensaje del manifiesto va en el último campo de la suma.
+     * Efectos de P96 (muerte fetal y neonatal, 2026-09-13), con la condición
+     * cumplida:
+     *   - "opciones" (justo después de "fijar"): el SELECT solo admite esos
+     *     códigos; si queda uno solo, se guarda ese sin mirar el POST.
+     *   - "comparar_fechas": días entre dos fechas (una puede ser del núcleo,
+     *     "nucleo:fecha_nac") dentro de dias_minimo/dias_maximo; con las dos
+     *     horas, el mínimo se compara con la hora incluida.
+     *   - "maximo_dias_entre": un NUMERO de días no pasa los días entre dos
+     *     fechas contando ambas.
+     *   - "alguno_minimo": entre los NUMERO con dato, al menos uno llega a su
+     *     mínimo.
+     *   - "alguno_menor_que" (A50, 2026-09-14): el espejo, al menos uno queda
+     *     por debajo de su límite.
+     *   Los cuatro últimos no pisan un error que el campo ya tenga. El efecto
+     *   "fallecido" no va acá: lo lee fallecidoCalculado() al guardar.
      * Un campo oculto por su sección o su propio depende_de no se toca.
      */
-    private function aplicarReglasCampos(array $reglas, array $campos, array $valoresCampos, array $erroresCampos, array $paraGuardar): array
+    private function aplicarReglasCampos(array $reglas, array $campos, array $valoresCampos, array $erroresCampos, array $paraGuardar, array $valoresNucleo = []): array
     {
         $idPorClave = [];
         foreach ($campos as $campoId => $campo) {
@@ -1585,6 +1795,32 @@ class CasosController extends Controller
                 $valoresCampos[$campoId] = (string) $valorFijo;
                 $paraGuardar[$campoId] = (string) $valorFijo;
                 unset($erroresCampos[$campoId]);
+            }
+        }
+
+        $permitidasPorCampo = [];
+        foreach ($reglas as $regla) {
+            if (empty($regla['opciones']) || !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                continue;
+            }
+            foreach ($regla['opciones'] as $clave => $codigos) {
+                $campoId = $idPorClave[$clave] ?? null;
+                if ($campoId === null || $ocultoPorDependencia($campoId)) {
+                    continue;
+                }
+                $permitidasPorCampo[$campoId] = isset($permitidasPorCampo[$campoId])
+                    ? array_values(array_intersect($permitidasPorCampo[$campoId], $codigos))
+                    : array_values($codigos);
+            }
+        }
+        foreach ($permitidasPorCampo as $campoId => $permitidas) {
+            $valorActual = (string) ($valoresCampos[$campoId] ?? '');
+            if (count($permitidas) === 1) {
+                $valoresCampos[$campoId] = $permitidas[0];
+                $paraGuardar[$campoId] = $permitidas[0];
+                unset($erroresCampos[$campoId]);
+            } elseif ($valorActual !== '' && !in_array($valorActual, $permitidas, true)) {
+                $erroresCampos[$campoId] = 'Esta opción no corresponde a lo marcado en la ficha: elige una de las disponibles.';
             }
         }
 
@@ -1628,6 +1864,123 @@ class CasosController extends Controller
             }
         }
 
+        // Fecha (Y-m-d) de una referencia: clave FECHA de la ficha o
+        // "nucleo:<columna>". null si está vacía o no es válida (ese campo ya
+        // trae su propio error de fecha).
+        $fechaDeReferencia = function (string $referencia) use (&$valoresCampos, $idPorClave, $valoresNucleo): ?DateTime {
+            $crudo = str_starts_with($referencia, 'nucleo:')
+                ? ($valoresNucleo[substr($referencia, 7)] ?? null)
+                : ($valoresCampos[$idPorClave[$referencia] ?? 0] ?? null);
+            $iso = is_string($crudo) ? fechaIsoValida($crudo) : null;
+            return $iso ? new DateTime($iso) : null;
+        };
+        $diasEntre = function (DateTime $desde, DateTime $hasta): int {
+            $diferencia = $desde->diff($hasta);
+            return $diferencia->invert ? -$diferencia->days : $diferencia->days;
+        };
+        // Por referencia: tiene que ver los errores que agregan las reglas de
+        // más abajo (una función flecha los copiaría al crearse).
+        $conError = function (int $campoId) use (&$erroresCampos, $ocultoPorDependencia): bool {
+            return isset($erroresCampos[$campoId]) || $ocultoPorDependencia($campoId);
+        };
+
+        foreach ($reglas as $regla) {
+            if (empty($regla['comparar_fechas']) || !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                continue;
+            }
+            $comparar = $regla['comparar_fechas'];
+            $claveDestino = str_starts_with($comparar['hasta'], 'nucleo:') ? $comparar['desde'] : $comparar['hasta'];
+            $destino = $idPorClave[$claveDestino] ?? null;
+            $desde = $fechaDeReferencia($comparar['desde']);
+            $hasta = $fechaDeReferencia($comparar['hasta']);
+            if ($destino === null || !$desde || !$hasta || $conError($destino)) {
+                continue;
+            }
+            $dias = $diasEntre($desde, $hasta);
+            $incumple = isset($comparar['dias_maximo']) && $dias > $comparar['dias_maximo'];
+            if (!$incumple && isset($comparar['dias_minimo'])) {
+                $horaDesde = isset($comparar['hora_desde']) ? horaValida((string) ($valoresCampos[$idPorClave[$comparar['hora_desde']] ?? 0] ?? '')) : null;
+                $horaHasta = isset($comparar['hora_hasta']) ? horaValida((string) ($valoresCampos[$idPorClave[$comparar['hora_hasta']] ?? 0] ?? '')) : null;
+                if ($horaDesde !== null && $horaHasta !== null) {
+                    $minutos = ((new DateTime($hasta->format('Y-m-d') . ' ' . $horaHasta))->getTimestamp()
+                        - (new DateTime($desde->format('Y-m-d') . ' ' . $horaDesde))->getTimestamp()) / 60;
+                    $incumple = $minutos < $comparar['dias_minimo'] * 1440;
+                } else {
+                    $incumple = $dias < $comparar['dias_minimo'];
+                }
+            }
+            if ($incumple) {
+                $erroresCampos[$destino] = $comparar['mensaje'];
+            }
+        }
+
+        foreach ($reglas as $regla) {
+            if (empty($regla['maximo_dias_entre']) || !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                continue;
+            }
+            $maximo = $regla['maximo_dias_entre'];
+            $campoId = $idPorClave[$maximo['clave']] ?? null;
+            $desde = $fechaDeReferencia($maximo['desde']);
+            $hasta = $fechaDeReferencia($maximo['hasta']);
+            $numero = $campoId !== null ? ($valoresCampos[$campoId] ?? '') : '';
+            if ($campoId === null || !$desde || !$hasta || !is_numeric($numero) || $conError($campoId)) {
+                continue;
+            }
+            $dias = $diasEntre($desde, $hasta);
+            // Con las fechas al revés ya avisa "comparar_fechas".
+            if ($dias >= 0 && (float) $numero > $dias + 1) {
+                $erroresCampos[$campoId] = $maximo['mensaje'];
+            }
+        }
+
+        foreach ($reglas as $regla) {
+            if (empty($regla['alguno_minimo']) || !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                continue;
+            }
+            $conDato = [];
+            $alcanza = false;
+            foreach ($regla['alguno_minimo']['claves'] as $clave => $minimo) {
+                $campoId = $idPorClave[$clave] ?? null;
+                if ($campoId === null || $ocultoPorDependencia($campoId)) {
+                    continue;
+                }
+                $valor = $valoresCampos[$campoId] ?? '';
+                if (is_numeric($valor)) {
+                    $conDato[] = $campoId;
+                    $alcanza = $alcanza || (float) $valor >= (float) $minimo;
+                }
+            }
+            if ($conDato && !$alcanza && !isset($erroresCampos[$conDato[0]])) {
+                $erroresCampos[$conDato[0]] = $regla['alguno_minimo']['mensaje'];
+            }
+        }
+
+        // "alguno_menor_que" (A50, 2026-09-14): el espejo de "alguno_minimo".
+        // Entre los NUMERO con dato, al menos uno queda por debajo de su
+        // límite (un aborto tiene menos de 22 semanas o menos de 500 g). Un
+        // "Desconocido" no es dato.
+        foreach ($reglas as $regla) {
+            if (empty($regla['alguno_menor_que']) || !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                continue;
+            }
+            $conDato = [];
+            $quedaDebajo = false;
+            foreach ($regla['alguno_menor_que']['claves'] as $clave => $limite) {
+                $campoId = $idPorClave[$clave] ?? null;
+                if ($campoId === null || $ocultoPorDependencia($campoId)) {
+                    continue;
+                }
+                $valor = $valoresCampos[$campoId] ?? '';
+                if (is_numeric($valor)) {
+                    $conDato[] = $campoId;
+                    $quedaDebajo = $quedaDebajo || (float) $valor < (float) $limite;
+                }
+            }
+            if ($conDato && !$quedaDebajo && !isset($erroresCampos[$conDato[0]])) {
+                $erroresCampos[$conDato[0]] = $regla['alguno_menor_que']['mensaje'];
+            }
+        }
+
         return [$valoresCampos, $erroresCampos, $paraGuardar];
     }
 
@@ -1668,6 +2021,7 @@ class CasosController extends Controller
             'nombres'            => '',
             'sexo'               => '',
             'fecha_nac'          => '',
+            'fecha_nac_desconocida' => '',
             'nacimiento_distrito_id' => '',
             'edad_valor'         => '',
             'edad_unidad'        => '',
@@ -1929,7 +2283,10 @@ class CasosController extends Controller
         // 2026-09-11): si la ficha no pide el bloque, sus columnas quedan en
         // NULL aunque el POST venga armado a mano.
         $captacionOmitida = nucleoOmitido($enfermedad, 'captacion');
-        $investigadorOmitido = nucleoOmitido($enfermedad, 'investigador');
+        // nucleo_ajustes.investigador (A50, 2026-09-14): de la tarjeta solo se
+        // guardan los campos que la ficha declara (el notificador: su nombre).
+        // campoInvestigador() ya devuelve null con la tarjeta omitida.
+        $guardaInvestigador = fn(string $campoTarjeta): bool => campoInvestigador($enfermedad, $campoTarjeta) !== null;
 
         $tipoCaptacion = (!$captacionOmitida && in_array($valoresFijos['tipo_captacion'], ['ACTIVA', 'PASIVA'], true)) ? $valoresFijos['tipo_captacion'] : null;
         $lugarCaptacion = (!$captacionOmitida && in_array($valoresFijos['lugar_captacion'], ['INSTITUCIONAL', 'COMUNIDAD'], true)) ? $valoresFijos['lugar_captacion'] : null;
@@ -1990,13 +2347,20 @@ class CasosController extends Controller
                 // nucleo_omitidos: 'investigador' (cotejo Z21) -- la ficha que
                 // no trae ese bloque en el PDF tampoco lo guarda. Incluye
                 // fecha_investigacion, que vive en esa misma tarjeta.
-                'investigador_nombre'     => (!$investigadorOmitido && $valoresFijos['investigador_nombre'] !== '') ? $valoresFijos['investigador_nombre'] : null,
-                'investigador_cargo'      => (!$investigadorOmitido && $valoresFijos['investigador_cargo'] !== '') ? $valoresFijos['investigador_cargo'] : null,
-                'investigador_profesion'  => (!$investigadorOmitido && $valoresFijos['investigador_profesion'] !== '') ? $valoresFijos['investigador_profesion'] : null,
-                'investigador_telefono'   => (!$investigadorOmitido && $valoresFijos['investigador_telefono'] !== '') ? $valoresFijos['investigador_telefono'] : null,
-                'investigador_email'      => (!$investigadorOmitido && $valoresFijos['investigador_email'] !== '') ? $valoresFijos['investigador_email'] : null,
-                'fecha_investigacion'     => (!$investigadorOmitido && $valoresFijos['fecha_investigacion'] !== '') ? fechaIsoValida($valoresFijos['fecha_investigacion']) : null,
-            ],
+                'investigador_nombre'     => ($guardaInvestigador('nombre') && $valoresFijos['investigador_nombre'] !== '') ? $valoresFijos['investigador_nombre'] : null,
+                'investigador_cargo'      => ($guardaInvestigador('cargo') && $valoresFijos['investigador_cargo'] !== '') ? $valoresFijos['investigador_cargo'] : null,
+                'investigador_profesion'  => ($guardaInvestigador('profesion') && $valoresFijos['investigador_profesion'] !== '') ? $valoresFijos['investigador_profesion'] : null,
+                'investigador_telefono'   => ($guardaInvestigador('telefono') && $valoresFijos['investigador_telefono'] !== '') ? $valoresFijos['investigador_telefono'] : null,
+                'investigador_email'      => ($guardaInvestigador('email') && $valoresFijos['investigador_email'] !== '') ? $valoresFijos['investigador_email'] : null,
+                'fecha_investigacion'     => ($guardaInvestigador('fecha_investigacion') && $valoresFijos['fecha_investigacion'] !== '') ? fechaIsoValida($valoresFijos['fecha_investigacion']) : null,
+            // nucleo_ajustes.fallecido (P96, 2026-09-13): todo caso de la ficha
+            // es una defunción. Va al final para pisar el "Fallecido" que
+            // actualizar() lee del POST (la tarjeta de clasificación ni se pinta).
+            ] + (nucleoAjuste($enfermedad, 'fallecido') === true ? ['fallecido' => 1] : [])
+            // fecha_nac_desconocida (A50, 2026-09-14): solo en las fichas que
+            // ofrecen la casilla; crear()/actualizar() ya la validaron contra
+            // la rama. Las demás no escriben la columna.
+              + (fichaAdmiteFechaNacDesconocida($enfermedad) ? ['fecha_nac_desconocida' => ($valoresFijos['fecha_nac_desconocida'] ?? '') === '1' ? 1 : 0] : []),
         ];
     }
 
@@ -2005,10 +2369,12 @@ class CasosController extends Controller
      * (radio EFECTIVO/DERECHOHABIENTE/PARTICULAR + campos por condición),
      * con valores en blanco.
      */
-    private function datosPnp(): array
+    private function datosPnp(array $enfermedad = []): array
     {
         return [
-            'condicionPaciente' => 'PARTICULAR',
+            // nucleo_ajustes.condiciones_paciente (P96): Particular, salvo
+            // que la ficha no la admita.
+            'condicionPaciente' => condicionPacientePorDefecto($enfermedad),
             'valoresPnp'        => [
                 'cip' => '', 'situacion_pnp' => '', 'grado_id' => '', 'categoria_pnp' => '',
                 'vinculo_titular' => '', 'doc_titular' => '', 'titular_id' => '', 'titular_nombre' => '',
@@ -2057,14 +2423,26 @@ class CasosController extends Controller
      * DERECHOHABIENTE — cualquier combinación imposible se descarta en vez
      * de guardarse.
      *
-     * @return array{datos: array, vista: array}
+     * nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): una condición que
+     * la ficha no admite (un fallecido fetal o neonatal como efectivo PNP) no
+     * se descarta en silencio, vuelve como 'error': el formulario ni siquiera
+     * la ofrece, así que solo llega en un POST armado a mano.
+     *
+     * @return array{datos: array, vista: array, error: ?string}
      */
-    private function leerDatosPnp(): array
+    private function leerDatosPnp(array $enfermedad, array $valoresRama = []): array
     {
-        $condicion = $_POST['condicion'] ?? 'PARTICULAR';
-        if (!in_array($condicion, ['EFECTIVO', 'DERECHOHABIENTE', 'PARTICULAR'], true)) {
-            $condicion = 'PARTICULAR';
+        $condicion = $_POST['condicion'] ?? condicionPacientePorDefecto($enfermedad, $valoresRama);
+        if (!in_array($condicion, array_keys(CONDICIONES_PACIENTE), true)) {
+            $condicion = condicionPacientePorDefecto($enfermedad, $valoresRama);
         }
+        // Por rama (A50, 2026-09-14): el producto de la gestación no admite
+        // efectivo PNP; la madre sí.
+        $condicionesPermitidas = condicionesPacientePermitidas($enfermedad, $valoresRama);
+        $errorCondicion = in_array($condicion, $condicionesPermitidas, true)
+            ? null
+            : 'En esta ficha la condición del paciente solo puede ser '
+                . implode(' o ', array_map(fn(string $c): string => CONDICIONES_PACIENTE[$c], $condicionesPermitidas)) . '.';
 
         $gradoId = $_POST['grado_id'] ?? '';
         $situacion = $_POST['situacion_pnp'] ?? '';
@@ -2126,6 +2504,7 @@ class CasosController extends Controller
 
         return [
             'datos' => $datos,
+            'error' => $errorCondicion,
             'vista' => [
                 'condicionPaciente' => $condicion,
                 'valoresPnp' => [
@@ -3284,6 +3663,11 @@ class CasosController extends Controller
         }
         if (str_starts_with($origen, 'persona:')) {
             $columna = substr($origen, 8);
+            // "nombre_completo" (A50, 2026-09-14): "Apellidos y nombres de la
+            // madre" en un solo campo, como en el PDF.
+            if ($columna === 'nombre_completo') {
+                return Persona::nombreCompleto($casoVinculado);
+            }
             return in_array($columna, ['num_doc', 'tipo_doc', 'nombres', 'apellido_paterno', 'apellido_materno', 'fecha_nac'], true)
                 ? (string) ($casoVinculado[$columna] ?? '')
                 : '';

@@ -1,4 +1,5 @@
 <?php
+use App\Models\ListadoMuerteFetalNeonatal;
 use App\Models\RegistroBusquedaActivaVih;
 
 $agrupaciones = [
@@ -32,6 +33,8 @@ $maxClasificacion = !empty($distribucionClasificacion) ? max($distribucionClasif
   <div class="eyebrow" style="margin-bottom:8px">Formularios del PDF</div>
   <a href="/reportes/busqueda-activa-vih" style="font-size:13.5px;font-weight:500;color:var(--accent)"><?= e(RegistroBusquedaActivaVih::NOMBRE) ?></a>
   <div style="font-size:12px;color:var(--muted);margin-top:3px">Ficha «Gestante con VIH y niño expuesto» (Z21)</div>
+  <a href="/reportes/muerte-fetal-neonatal" style="display:inline-block;margin-top:12px;font-size:13.5px;font-weight:500;color:var(--accent)"><?= e(ListadoMuerteFetalNeonatal::NOMBRE) ?></a>
+  <div style="font-size:12px;color:var(--muted);margin-top:3px">Listado semanal de la ficha «Muerte fetal y neonatal» (P96), con notificación de semana sin casos</div>
 </div>
 
 <div class="card" style="margin-bottom:16px">

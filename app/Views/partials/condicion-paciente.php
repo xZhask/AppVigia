@@ -9,7 +9,46 @@
  *   $valoresPnp          ['cip','situacion_pnp','grado_id','categoria_pnp',
  *                         'vinculo_titular','doc_titular','titular_id','titular_nombre']
  *   $grados              filas de grado_pnp (GradoPnp::todos('jerarquia'))
+ *   $enfermedad          la ficha, por nucleo_ajustes.condiciones_paciente
+ *   $erroresFijos        ['condicion' => mensaje], si la condición no se admite
+ *
+ * nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): solo se pintan la
+ * tarjeta y el panel de las condiciones que la ficha admite (un fallecido fetal
+ * o neonatal no puede ser efectivo PNP). Los if van en la columna 0 para que
+ * el HTML de las fichas que admiten las tres quede idéntico.
+ *
+ * Los radios se marcan con marcado() ("checked"), no con seleccionado()
+ * ("selected", que solo sirve en <option>): hasta el 2026-09-14 ningún radio
+ * quedaba marcado, y al guardar una edición la condición pasaba a PARTICULAR y
+ * se borraban grado, CIP, vínculo y titular.
  */
+$condicionesPermitidas = condicionesPacientePermitidas($enfermedad ?? []);
+$admiteCondicion = fn(string $condicion): bool => in_array($condicion, $condicionesPermitidas, true);
+// Por rama (A50, 2026-09-14): nucleo_condicional.ajustes.condiciones_paciente.
+// La tarjeta de una condición que alguna rama no admite se pinta igual, con
+// los valores de esas ramas; ficha.js la oculta mientras una de ellas esté
+// elegida. '' en las fichas sin ajuste por rama.
+$reglasCondicionesRama = reglasAjusteNucleo($enfermedad ?? [], 'condiciones_paciente');
+$ramaActualCondicion = $reglasCondicionesRama ? (string) (($valoresCampos ?? [])[$reglasCondicionesRama[0]['campo_id']] ?? '') : '';
+$ramasQueExcluyen = function (string $condicion) use ($reglasCondicionesRama): array {
+    $valores = [];
+    foreach ($reglasCondicionesRama as $regla) {
+        if (!in_array($condicion, (array) $regla['valor'], true)) {
+            $valores = array_merge($valores, $regla['valores']);
+        }
+    }
+    return $valores;
+};
+$atributosCondicionRama = function (string $condicion) use ($reglasCondicionesRama, $ramasQueExcluyen, $ramaActualCondicion): string {
+    $excluyen = $ramasQueExcluyen($condicion);
+    return $excluyen
+        ? atributosRama($reglasCondicionesRama[0]['campo_id'], $excluyen, true, !in_array($ramaActualCondicion, $excluyen, true))
+        : '';
+};
+$condicionesVisibles = count(array_filter(
+    $condicionesPermitidas,
+    fn(string $condicion): bool => !in_array($ramaActualCondicion, $ramasQueExcluyen($condicion), true)
+));
 $nombresNiveles = [
     'OFICIAL_GENERAL' => 'Oficiales generales',
     'OFICIAL_SUPERIOR' => 'Oficiales superiores',
@@ -22,9 +61,10 @@ $nombresNiveles = [
 ?>
 <div class="eyebrow" style="margin-bottom:11px">Condición del paciente</div>
 
-<div class="cond-pick">
-  <div class="cond-opt">
-    <input type="radio" name="condicion" id="c-efectivo" value="EFECTIVO" <?= seleccionado($condicionPaciente, 'EFECTIVO') ?>>
+<div class="cond-pick"<?= $condicionesVisibles < count(CONDICIONES_PACIENTE) ? ' style="--cond-opciones:' . $condicionesVisibles . '"' : '' ?>>
+<?php if ($admiteCondicion('EFECTIVO')): ?>
+  <div class="cond-opt"<?= $atributosCondicionRama('EFECTIVO') ?>>
+    <input type="radio" name="condicion" id="c-efectivo" value="EFECTIVO" <?= marcado($condicionPaciente === 'EFECTIVO') ?>>
     <label for="c-efectivo">
       <span class="cond-radio"></span>
       <span class="cond-txt">
@@ -33,8 +73,10 @@ $nombresNiveles = [
       </span>
     </label>
   </div>
-  <div class="cond-opt">
-    <input type="radio" name="condicion" id="c-derecho" value="DERECHOHABIENTE" <?= seleccionado($condicionPaciente, 'DERECHOHABIENTE') ?>>
+<?php endif; ?>
+<?php if ($admiteCondicion('DERECHOHABIENTE')): ?>
+  <div class="cond-opt"<?= $atributosCondicionRama('DERECHOHABIENTE') ?>>
+    <input type="radio" name="condicion" id="c-derecho" value="DERECHOHABIENTE" <?= marcado($condicionPaciente === 'DERECHOHABIENTE') ?>>
     <label for="c-derecho">
       <span class="cond-radio"></span>
       <span class="cond-txt">
@@ -43,8 +85,10 @@ $nombresNiveles = [
       </span>
     </label>
   </div>
-  <div class="cond-opt">
-    <input type="radio" name="condicion" id="c-particular" value="PARTICULAR" <?= seleccionado($condicionPaciente, 'PARTICULAR') ?>>
+<?php endif; ?>
+<?php if ($admiteCondicion('PARTICULAR')): ?>
+  <div class="cond-opt"<?= $atributosCondicionRama('PARTICULAR') ?>>
+    <input type="radio" name="condicion" id="c-particular" value="PARTICULAR" <?= marcado($condicionPaciente === 'PARTICULAR') ?>>
     <label for="c-particular">
       <span class="cond-radio"></span>
       <span class="cond-txt">
@@ -53,8 +97,13 @@ $nombresNiveles = [
       </span>
     </label>
   </div>
+<?php endif; ?>
 </div>
+<?php if (isset($erroresFijos['condicion'])): ?>
+<span class="hint err"><?= e($erroresFijos['condicion']) ?></span>
+<?php endif; ?>
 
+<?php if ($admiteCondicion('EFECTIVO')): ?>
 <!-- Panel: efectivo -->
 <div class="cond-panel" id="p-efectivo" <?= $condicionPaciente === 'EFECTIVO' ? '' : 'hidden' ?>>
   <div class="cond-title"><span class="eyebrow">Datos del efectivo</span><span class="rule"></span></div>
@@ -111,7 +160,9 @@ $nombresNiveles = [
     </div>
   </div>
 </div>
+<?php endif; ?>
 
+<?php if ($admiteCondicion('DERECHOHABIENTE')): ?>
 <!-- Panel: derechohabiente -->
 <div class="cond-panel" id="p-derecho" <?= $condicionPaciente === 'DERECHOHABIENTE' ? '' : 'hidden' ?>>
   <div class="cond-title"><span class="eyebrow">Titular del que depende</span><span class="rule"></span></div>
@@ -146,8 +197,11 @@ $nombresNiveles = [
     </div>
   </div>
 </div>
+<?php endif; ?>
 
+<?php if ($admiteCondicion('PARTICULAR')): ?>
 <!-- Panel: particular -->
 <div class="cond-panel" id="p-particular" <?= $condicionPaciente === 'PARTICULAR' ? '' : 'hidden' ?>>
   <span class="hint">Sin datos institucionales adicionales. La ficha se registra igual y entra en los reportes.</span>
 </div>
+<?php endif; ?>
