@@ -119,7 +119,7 @@ $accionEtiquetas = [
           <?php if (!empty($caso['n_historia_clinica'])): ?>
             <div class="field"><label class="fl">N.° de historia clínica</label><div class="control mono" style="background:var(--paper)"><?= e($caso['n_historia_clinica']) ?></div></div>
           <?php endif; foreach ($camposPersonaVer as $campoPersonaVer): ?><div class="field"><label class="fl"><?= e($campoPersonaVer['etiqueta']) ?></label><div class="control mono" style="background:var(--paper)"><?= e(campoValorTexto($campoPersonaVer, $valoresCampos[$campoPersonaVer['id']] ?? null)) ?></div></div><?php endforeach; ?>
-          <div class="field"><label class="fl">Sexo</label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
+          <div class="field"><label class="fl"><?= e(etiquetaNucleo($enfermedadVer ?? [], 'sexo', 'Sexo')) ?></label><div class="control" style="background:var(--paper)"><?= $caso['sexo'] === 'F' ? 'Femenino' : ($caso['sexo'] === 'M' ? 'Masculino' : '—') ?></div></div>
           <div class="field"><label class="fl">Edad</label><div class="control mono" style="background:var(--paper)"><?= e($edadTexto) ?></div></div>
 <?php // fecha_nac_desconocida (A50, 2026-09-14): la ficha que ofrece "Desconocido" muestra la fecha (con la etiqueta de su rama) o esa marca. ?>
 <?php if (fichaAdmiteFechaNacDesconocida($enfermedadVer ?? [])): ?>
@@ -131,7 +131,7 @@ $accionEtiquetas = [
           <div class="field"><label class="fl"><?= e(nucleoAjuste($enfermedadVer ?? [], 'titulo_residencia') ?? 'Distrito de domicilio') ?></label><div class="control" style="background:var(--paper)"><?= e($caso['distrito_nombre'] ?? '—') ?></div></div>
           <div class="field"><label class="fl">N.° de celular</label><div class="control mono" style="background:var(--paper)"><?= e($caso['celular'] ?: '—') ?></div></div>
           <div class="field"><label class="fl">Nacionalidad</label><div class="control" style="background:var(--paper)"><?= e($caso['nacionalidad'] ?: '—') ?></div></div>
-          <div class="field"><label class="fl">Localidad</label><div class="control" style="background:var(--paper)"><?= e($caso['localidad'] ?: '—') ?></div></div>
+          <div class="field"><label class="fl"><?= e(etiquetaNucleo($enfermedadVer ?? [], 'localidad', 'Localidad')) ?></label><div class="control" style="background:var(--paper)"><?= e($caso['localidad'] ?: '—') ?></div></div>
           <div class="field wide"><label class="fl">Domicilio actual</label><div class="control" style="background:var(--paper)"><?= e($caso['direccion'] ?: '—') ?></div></div>
           <?php if (!empty($caso['referencia_localizar'])): ?>
             <div class="field wide"><label class="fl">Referencia para localizar</label><div class="control" style="background:var(--paper)"><?= e($caso['referencia_localizar']) ?></div></div>
@@ -163,7 +163,9 @@ $accionEtiquetas = [
           <?php if (!empty($caso['estado_civil'])): ?>
             <div class="field"><label class="fl">Estado civil</label><div class="control" style="background:var(--paper)"><?= e($estadoCivilEtiquetas[$caso['estado_civil']] ?? $caso['estado_civil']) ?></div></div>
           <?php endif; ?>
-          <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
+          <?php // nucleo_condicional 'etnia' (Z21, B24): la rama que no pide la etnia tampoco la muestra.
+          $etniaCondicionVer = condicionNucleo($enfermedadVer ?? [], 'etnia');
+          if (\App\Core\Auth::tieneRol('ADMIN') &&(!$etniaCondicionVer || in_array((string) ($valoresCampos[(int) $etniaCondicionVer['campo']['id']] ?? ''), $etniaCondicionVer['valores'], true))): ?>
             <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e(($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') . (($caso['etnia'] ?? '') === 'OTRO' && !empty($caso['etnia_otra']) ? ' (' . $caso['etnia_otra'] . ')' : '')) ?></div></div>
             <?php if (!empty($caso['pueblo_etnico'])): ?>
               <div class="field"><label class="fl">Pueblo étnico o etnia</label><div class="control" style="background:var(--paper)"><?= e($caso['pueblo_etnico']) ?></div></div>

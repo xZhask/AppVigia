@@ -7060,3 +7060,150 @@ desde el navegador, sin errores de JS), verificadores (A80 15/15 · 94/94; el
 huérfano "Notas de investigación de la cadena de transmisión" ya existía),
 esquema regenerado e instalado en limpio. Para la otra PC:
 `php cargar_fichas.php --apply --confirmo-apply --cie10=A80`.
+
+# B24, VIH/SIDA: notificación individual (2026-09-14)
+
+Pág. 17 del PDF (versión 2018.09.01) y su norma: NTS N.° 115-MINSA/DGE V.01
+(R.M. 117-2015/MINSA), Anexo 3 (instructivo) y Anexo 1 (enfermedades
+indicadoras). El usuario aprobó la propuesta completa ("Procede").
+
+**Decisiones:**
+- Una ficha por notificación. El instructivo define la fecha de notificación
+  "para cada condición" y, en el seguimiento, los casos "deberán ser notificados
+  nuevamente" al pasar a SIDA, iniciar TARGA o fallecer. Editar la ficha
+  anterior perdería la fecha de cada condición. Al volver a notificar dentro de
+  30 días sale el aviso de "Posible duplicado", que no bloquea.
+- Motivo en dos niveles, como el PDF y el instructivo (a/b/c): "Motivo de
+  notificación" de elección única (Infección por VIH / Niño nacido expuesto al
+  VIH / Niño nacido expuesto, no infectado) y, con Infección, las 5 condiciones
+  marcables. La rama del niño solo pide identidad y el laboratorio del niño.
+- Identidad con nombre, como todas las fichas (el PDF igual pide el DNI y la
+  ficha ya es privada). El "Código del paciente" se calcula: AP AM N1 N2 +
+  fecha de nacimiento ddmmaa; el recuadro que falta queda como guion.
+- Vía de transmisión única ("la más probable", instructivo ítem 17).
+- Clasificación calculada: Infección -> Confirmado; niño expuesto -> "Niño
+  nacido expuesto al VIH"; no infectado -> Descartado. "Fallecido con VIH o
+  SIDA" marca la defunción.
+- Enfermedades indicadoras: lista cerrada del Anexo 1 (26) y código CIE-10 con
+  validación de forma, hasta que el catálogo CIE-10 esté en el sistema.
+- "País" de la residencia no se captura (ubigeo peruano).
+- No se agregaron, aunque venían en el borrador del usuario: "¿Recibe TARGA?"
+  y "Estadio SIDA" como Sí/No (repetirían la condición marcada), valor y fecha
+  de CD4 (la fecha de diagnóstico de SIDA ya es la de toma del CD4, instructivo
+  ítem 21) ni "Otra" en las confirmatorias (el PDF solo trae WB, IFI, LIA, PCR).
+  TARGA o diagnóstico de SIDA posteriores a la defunción son error, no
+  advertencia (el motor no tiene advertencias y la fecha es imposible).
+
+**Cómo quedó** (10 secciones, 29 campos; carga anterior: 8 secciones, 26
+campos, con DNI y sexo al nacer duplicados del núcleo y la tabla genérica de
+muestras):
+- Ítems 1-5: DIRESA, tipo e institución salen del establecimiento; fecha de
+  notificación del núcleo.
+- Tarjeta de identidad: código calculado (solo lectura), DNI, "Sexo al nacer",
+  fecha de nacimiento, etnia y pueblo étnico (antes omitido), residencia,
+  nacionalidad y "Comunidad". Sin celular, dirección, tutor, gestante,
+  captación, clasificación ni fecha de inicio de síntomas.
+- Motivo de notificación (ítems 8-9); con Infección: Datos sociodemográficos
+  (13, 14, 16 con "especificar" para Otro, 17), Vía de transmisión (18),
+  Laboratorio para caso de infección VIH (19, dos tablas: tamizaje con "Otra
+  (cuál)" solo con Tipo = Otra, y confirmatorias) y Coinfección (23, la fecha
+  aparece al marcar). Con cada condición: TARGA (21), Estadio SIDA (22, criterio
+  CD4 y/o enfermedad indicadora; con enfermedad indicadora, 2 × lista + código)
+  y Defunción (24, fecha y causa obligatorias). Con los motivos del niño:
+  Laboratorio para niño expuesto (20).
+- "Responsable de notificación" con solo el nombre, prellenado (ítem 25).
+- Reglas: fechas no anteriores al nacimiento; defunción no anterior al inicio de
+  TARGA ni al diagnóstico de SIDA; "Niño nacido expuesto, infectado" fija la vía
+  en Madre-niño; con sexo al nacer Mujer la identidad es Femenino, Transgénero
+  femenino a masculino, Otro o Desconocido (Hombre: el espejo) y "Gestante con
+  VIH" solo con Mujer (definiciones del instructivo, ítem 15).
+
+**Mecanismos nuevos del motor** (declarativos, validados por cargar_fichas.php):
+- TEXTO `"calculado": "iniciales_fecha_nac"`: se pinta de solo lectura, ficha.js
+  lo adelanta y el servidor lo calcula al guardar ignorando el POST
+  (`codigoInicialesFechaNac()` en ayudantes.php y en ficha.js).
+- `nucleo_ajustes.etiquetas`: `{"sexo": ..., "localidad": ...}` en nueva,
+  editar y ver (`etiquetaNucleo()`).
+- `reglas_campos`: condición `si` con `"clave": "nucleo:sexo"` (no admite
+  `clasificar` ni `fallecido`) y efecto `opciones` sobre MULTISELECT (el chip
+  no admitido se oculta y se desmarca; el servidor rechaza lo marcado fuera de
+  la lista). El autocompletado por documento vuelve a aplicar las reglas y el
+  código, porque rellena sin disparar eventos.
+
+**Trampa:** los catálogos reutilizados de B24 son de la carga original y ya
+tenían estas mismas listas, con códigos cortos que no son el slug
+(INFECCION_VIH, NINO_EXPUESTO, NINO_EXPUESTO_NO_INFECTADO, GESTANTE_VIH,
+NINO_INFECTADO, INICIO_TARGA, FALLECIDO, ESTADIO_2, TRANS_MF, UDI, RS_HOMBRES...).
+
+**Verificación:** foto del HTML: solo cambia Nueva ficha de B24 (las otras 23 y
+ver/editar de los 4 casos existentes, idénticas). Verificadores: B24 10/10 ·
+29/29, render 29/29 sin huérfanos, claves 0 faltantes (los 3 huérfanos de A80,
+B26 y B55 ya existían). Controlador real: infección completa (Confirmado,
+fallecido, código recalculado sobre uno forjado, CIE-10 normalizado, "Otra
+(cuál)" y tipos forjados descartados, laboratorio del niño forjado descartado),
+niño expuesto con todo lo de la rama de infección forjado y descartado, no
+infectado (Descartado), vía forjada corregida a Madre-niño; rechazos: gestante
+hombre, identidad incoherente, TARGA antes de nacer, defunción antes de TARGA,
+fallecido sin fecha ni causa, sin motivo, CIE-10 inválido. Edición: quitar
+"Fallecido" limpia la defunción y pasa a no fallecido; el código se recalcula.
+Chromium con login real: visibilidad por motivo y condición, código en vivo,
+chips y opciones por sexo, vía fija, "Otra (cuál)", etiquetas; sin errores de JS
+(solo el 404 del favicon). Control A36: crear, editar, ver, mismas etiquetas.
+Esquema regenerado e instalado en limpio en una base temporal. Datos de prueba
+borrados (0 filas residuales).
+
+**Observado, sin tocar:** Ver muestra "N.° de celular" y "Domicilio actual" aunque
+la ficha los omita, y los campos con `depende_de` oculto como "—" (comportamiento
+general de ver.php). La NTS (6.1.4) fija periodicidad mensual para VIH/SIDA y
+semanal solo para gestantes y niños expuestos; B24 figura como "Notificación
+semanal".
+
+**Ajuste pedido por el usuario (mismo día):** en la fila del documento el
+"Código del paciente" quedaba estirado y desalineado con la cuadrícula. Pasa a la
+fila de Sexo al nacer y Fecha de nacimiento (tercera columna, libre, y de donde
+sale el código): `campos_persona` como objeto `{"nacimiento": [...]}`, el
+mecanismo de P96; la ayuda queda en "Iniciales + fecha de nacimiento". Solo
+cambia Nueva ficha de B24 (foto del HTML); a 400 px sin scroll horizontal, sin
+errores de JS; esquema regenerado e instalado en limpio.
+
+**Segundo ajuste del usuario (mismo día): el motivo va en Notificación.** Como
+en Z21 y A50, el campo que elige la rama se pinta en la tarjeta Notificación
+(`campos_notificacion`) y la tarjeta de identidad depende de él
+(`nucleo_condicional`):
+- Sin motivo, la tarjeta de identidad es un aviso ("Elige primero en
+  Notificación el motivo..."). Con motivo, se titula "Datos del paciente"
+  (Infección) o "Datos del niño nacido expuesto" (los dos motivos del niño).
+- Etnia y pueblo étnico (ítem 12) solo con Infección, como los demás datos
+  sociodemográficos; en la rama del niño no se muestran ni se guardan (patrón
+  de la rama del niño de Z21). Residencia, nacionalidad y sexo al nacer siguen
+  en las dos ramas.
+- El niño no puede ser "Efectivo PNP" (`ajustes.condiciones_paciente`, patrón
+  A50); un POST forjado con esa condición se rechaza.
+- La sección "Motivo de notificación" queda solo con el motivo (en Ver es su
+  tarjeta) y las condiciones y el estadio pasan a "Condiciones notificadas y
+  estadio", condicionada a Infección, después de la identidad: "Gestante con
+  VIH" depende del sexo al nacer. 11 secciones, 29 campos.
+
+Código compartido: el pueblo étnico entra en la envoltura condicional de la etnia
+(datos-paciente-nucleo.php) y el controlador no lo guarda si la rama no pide la
+etnia; Ver oculta "Etnia / raza" en esa rama. Solo afecta a fichas con etnia
+condicionada: B24 y Z21 (cuyo pueblo étnico está omitido, así que no se ve
+distinto). Foto del HTML: cambian Nueva ficha de B24 y la posición del cierre de
+la envoltura en Z21; las otras 22 y ver/editar de los 4 casos, idénticas.
+Controlador real: las 12 pruebas anteriores más niño con "Efectivo PNP"
+(rechazado), niño con etnia y pueblo forjados (se guardan vacíos) y edición de
+Infección a Niño (etnia, pueblo y datos de la infección se borran; clasificación
+"Niño nacido expuesto al VIH"). Chromium: aviso, títulos, etnia/pueblo y
+condición por rama, limpieza al cambiar de rama, Editar y Ver de las dos ramas;
+sin errores de JS. Esquema regenerado e instalado en limpio.
+
+Corrección de lo anotado arriba: el "sin scroll horizontal a 400 px" se midió sin
+motivo elegido. Con un motivo, las tablas de laboratorio ensanchan la página
+(538 px): la columna de `.form-grid` y los `.field` no tienen `min-width: 0`, así
+que el contenedor con scroll propio de la tabla no se encoge. Pasa igual en Z21 y
+A50; A97, B55, A44, P35.0, A80, O95, B05 y B04X también se desbordan a 400 px
+sin elegir nada (causa no revisada). Es CSS compartido: queda propuesto al
+usuario.
+
+Para la otra PC: `php sql/migraciones/set_b24_vih.php` y
+`php cargar_fichas.php --apply --confirmo-apply --cie10=B24`.

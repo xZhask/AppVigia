@@ -9354,35 +9354,310 @@
       "enfermedad": "VIH / SIDA — notificación individual",
       "lote": 5,
       "pdf_paginas": "17",
-      "_nota_general": "Todos los campos deben ser sensible=1 (usa codigo de paciente, no nombre completo).",
+      "_nota_general": "Cotejo 2026-09-14 contra la pág. 17 del PDF (FICHA DE NOTIFICACIÓN INDIVIDUAL DE CASO DE INFECCIÓN POR VIH Y SIDA, versión 2018.09.01) y su norma, la NTS N.° 115-MINSA/DGE V.01 (R.M. 117-2015/MINSA): Anexo 3 (instructivo) y Anexo 1 (enfermedades indicadoras). Decisiones del usuario ('Procede', 2026-09-14): UNA FICHA POR NOTIFICACIÓN -- el instructivo define la fecha de notificación 'para cada condición' y, en el seguimiento, los casos 'deberán ser notificados nuevamente' al pasar a SIDA, iniciar TARGA o fallecer; editar la ficha anterior perdería la fecha de cada condición. El motivo tiene dos niveles, como el PDF (3 motivos en negrita, 5 condiciones con sangría bajo 'Infección por VIH') y el instructivo (a/b/c): 'Motivo de notificación' elige la rama y arma el resto de la ficha. La ficha es privada (Caso::CIE10_PRIVADOS) y todos sus campos son sensibles.",
+      "_nota_encabezado": "Ítems 1-5: DIRESA, establecimiento, tipo e institución salen del establecimiento elegido (red_salud.diresa, categoría RENIPRESS y establecimiento.institucion, mismo criterio que Z21/A50); la fecha de notificación es el núcleo. Ítems 6-7, 10-12 y 15 son la tarjeta de identidad: el 'Código del paciente' (iniciales AP AM N1 N2 + fecha de nacimiento dd mm aa) se calcula de los apellidos, nombres y fecha de nacimiento (campo calculado, solo lectura); DNI/CE/Pasaporte es el documento; 'Comunidad' es la localidad y 'Sexo al nacer' el sexo del núcleo, con la etiqueta del PDF (nucleo_ajustes.etiquetas). 'País' de la residencia habitual no se captura (decisión del usuario): el selector de residencia es de ubigeo peruano. Ítem 8 (motivo): en la tarjeta Notificación, porque elige la rama (campos_notificacion). Ítem 25: tarjeta 'Responsable de notificación' con solo el nombre (patrón A50); 'Firma' no aplica a un registro digital.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": true,
+        "caso_muestra": false,
         "caso_viaje": false,
         "caso_vacuna": false
       },
       "nucleo_omitidos": [
+        "celular",
+        "direccion",
         "referencia_localizar",
-        "pueblo_etnico",
-        "ocupacion"
+        "ocupacion",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "captacion",
+        "clasificacion",
+        "fecha_inicio_sintomas"
+      ],
+      "nucleo_condicional": [
+        {
+          "_nota": "Pedido del usuario 2026-09-14: el motivo se elige en la tarjeta Notificación (como Z21 y A50) y la tarjeta de identidad aparece recién con él, titulada según de quién son los datos.",
+          "clave": "b24_motivo_de_notificacion",
+          "valores": [
+            "INFECCION_VIH",
+            "NINO_EXPUESTO",
+            "NINO_EXPUESTO_NO_INFECTADO"
+          ],
+          "bloques": [
+            "persona"
+          ],
+          "titulos": {
+            "INFECCION_VIH": "Datos del paciente",
+            "NINO_EXPUESTO": "Datos del niño nacido expuesto",
+            "NINO_EXPUESTO_NO_INFECTADO": "Datos del niño nacido expuesto"
+          },
+          "aviso": "Elige primero en Notificación el motivo de notificación para completar los datos de la persona."
+        },
+        {
+          "_nota": "Ítem 12 (etnia y pueblo étnico): solo en el caso de infección por VIH, como los demás datos sociodemográficos del PDF (13, 14, 16 y 17). En el niño nacido expuesto no se muestra ni se guarda, igual que la rama del niño de Z21.",
+          "clave": "b24_motivo_de_notificacion",
+          "valores": [
+            "INFECCION_VIH"
+          ],
+          "bloques": [
+            "etnia"
+          ]
+        },
+        {
+          "_nota": "Un niño nacido expuesto no puede ser efectivo PNP (patrón A50, producto de la gestación).",
+          "clave": "b24_motivo_de_notificacion",
+          "valores": [
+            "NINO_EXPUESTO",
+            "NINO_EXPUESTO_NO_INFECTADO"
+          ],
+          "ajustes": {
+            "condiciones_paciente": [
+              "DERECHOHABIENTE",
+              "PARTICULAR"
+            ]
+          }
+        }
+      ],
+      "nucleo_ajustes": {
+        "_nota": "Ítem 25 'Responsable de notificación' (Nombre) y etiquetas del PDF para el sexo (ítem 15) y la comunidad (ítem 11).",
+        "investigador": {
+          "titulo": "Responsable de notificación",
+          "campos": {
+            "nombre": "Nombre"
+          }
+        },
+        "etiquetas": {
+          "sexo": "Sexo al nacer",
+          "localidad": "Comunidad"
+        }
+      },
+      "_nota_campos_notificacion": "Pedido del usuario 2026-09-14: 'Motivo de notificación' (ítem 8) elige la rama, así que va en la tarjeta Notificación, antes de los datos de la persona (patrón Z21/A50). Las condiciones y el estadio (ítems 8 y 9 bajo 'Infección por VIH') quedan en su propia tarjeta, después de la identidad: 'Gestante con VIH' depende del sexo al nacer.",
+      "campos_notificacion": [
+        "b24_motivo_de_notificacion"
+      ],
+      "_nota_campos_persona": "Pedido del usuario 2026-09-14: en la fila del documento el código quedaba estirado y desalineado con la cuadrícula. Va en la fila de Sexo al nacer y Fecha de nacimiento, que tenía la tercera columna libre y de donde sale el código.",
+      "campos_persona": {
+        "nacimiento": [
+          "b24_codigo_del_paciente"
+        ]
+      },
+      "_nota_reglas_campos": "Clasificación calculada (decisión del usuario, como A50): caso de infección por VIH -> Confirmado; niño nacido expuesto -> 'Niño nacido expuesto al VIH' (código de Z21); niño expuesto no infectado -> Descartado. 'Fallecido con VIH o SIDA' marca el caso como defunción. 'Niño nacido expuesto, infectado por VIH' fija la vía en Madre-niño. Fechas: no antes de la de nacimiento, y el diagnóstico de SIDA y el inicio de TARGA no después de la defunción (error, no advertencia: el motor no tiene advertencias y es una fecha imposible). Coherencia con el sexo al nacer según las definiciones del instructivo (ítem 15: 'Femenino: persona con sexo biológico de mujer, que se identifica como una mujer', etc.) y 'Gestante con VIH' solo con sexo al nacer Mujer.",
+      "reglas_campos": [
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "INFECCION_VIH"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "NINO_EXPUESTO"
+            ]
+          },
+          "clasificar": "NINO_EXPUESTO_VIH"
+        },
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "NINO_EXPUESTO_NO_INFECTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "si": {
+            "clave": "b24_condiciones_notificadas",
+            "valores": [
+              "FALLECIDO"
+            ]
+          },
+          "fallecido": true
+        },
+        {
+          "si": {
+            "clave": "b24_condiciones_notificadas",
+            "valores": [
+              "NINO_INFECTADO"
+            ]
+          },
+          "opciones": {
+            "b24_via_de_transmision": [
+              "MADRE_NINO_VERTICAL"
+            ]
+          }
+        },
+        {
+          "_nota": "Instructivo, ítem 15: con sexo al nacer Mujer, la identidad es Femenino, Transgénero femenino a masculino, Otro o Desconocido.",
+          "si": {
+            "clave": "nucleo:sexo",
+            "valores": [
+              "F"
+            ]
+          },
+          "opciones": {
+            "b24_identidad_de_genero": [
+              "FEMENINO",
+              "TRANS_FM",
+              "OTRO",
+              "DESCONOCIDO"
+            ]
+          }
+        },
+        {
+          "_nota": "Instructivo, ítem 15, y 'Gestante con VIH' solo con sexo al nacer Mujer.",
+          "si": {
+            "clave": "nucleo:sexo",
+            "valores": [
+              "M"
+            ]
+          },
+          "opciones": {
+            "b24_identidad_de_genero": [
+              "MASCULINO",
+              "TRANS_MF",
+              "OTRO",
+              "DESCONOCIDO"
+            ],
+            "b24_condiciones_notificadas": [
+              "ESTADIO_SIDA",
+              "NINO_INFECTADO",
+              "INICIO_TARGA",
+              "FALLECIDO"
+            ]
+          }
+        },
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "INFECCION_VIH"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "nucleo:fecha_nac",
+            "hasta": "b24_fecha_de_inicio_de_targa",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de inicio de TARGA no puede ser anterior a la fecha de nacimiento."
+          }
+        },
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "INFECCION_VIH"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "nucleo:fecha_nac",
+            "hasta": "b24_fecha_de_diagnostico_de_sida",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de diagnóstico de SIDA no puede ser anterior a la fecha de nacimiento."
+          }
+        },
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "INFECCION_VIH"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "nucleo:fecha_nac",
+            "hasta": "b24_fecha_de_diagnostico_de_tuberculosis",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de diagnóstico de tuberculosis no puede ser anterior a la fecha de nacimiento."
+          }
+        },
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "INFECCION_VIH"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "nucleo:fecha_nac",
+            "hasta": "b24_fecha_de_diagnostico_de_hepatitis_b",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de diagnóstico de hepatitis B no puede ser anterior a la fecha de nacimiento."
+          }
+        },
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "INFECCION_VIH"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "nucleo:fecha_nac",
+            "hasta": "b24_fecha_de_diagnostico_de_hepatitis_c",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de diagnóstico de hepatitis C no puede ser anterior a la fecha de nacimiento."
+          }
+        },
+        {
+          "si": {
+            "clave": "b24_motivo_de_notificacion",
+            "valores": [
+              "INFECCION_VIH"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "nucleo:fecha_nac",
+            "hasta": "b24_fecha_de_defuncion",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de defunción no puede ser anterior a la fecha de nacimiento."
+          }
+        },
+        {
+          "si": {
+            "clave": "b24_condiciones_notificadas",
+            "valores": [
+              "FALLECIDO"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "b24_fecha_de_inicio_de_targa",
+            "hasta": "b24_fecha_de_defuncion",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de defunción no puede ser anterior a la de inicio de TARGA."
+          }
+        },
+        {
+          "si": {
+            "clave": "b24_condiciones_notificadas",
+            "valores": [
+              "FALLECIDO"
+            ]
+          },
+          "comparar_fechas": {
+            "desde": "b24_fecha_de_diagnostico_de_sida",
+            "hasta": "b24_fecha_de_defuncion",
+            "dias_minimo": 0,
+            "mensaje": "La fecha de defunción no puede ser anterior a la de diagnóstico de SIDA."
+          }
+        }
       ],
       "secciones": [
         {
-          "nombre": "Identificación",
+          "nombre": "Identificación del paciente",
           "orden": 1,
+          "_nota_seccion": "Ítem 6. No genera tarjeta propia: el código se pinta en la tarjeta de identidad (campos_persona).",
           "campos": [
             {
               "clave": "b24_codigo_del_paciente",
               "etiqueta": "Código del paciente",
               "tipo": "TEXTO",
               "orden": 1,
-              "sensible": true
-            },
-            {
-              "clave": "b24_dni_ce_pasaporte",
-              "etiqueta": "DNI / CE / Pasaporte",
-              "tipo": "TEXTO",
-              "orden": 2,
+              "calculado": "iniciales_fecha_nac",
+              "_nota": "Instructivo, ítem 6: primera letra del apellido paterno (AP), del materno (AM), del primer nombre (N1) y del segundo nombre (N2), y la fecha de nacimiento con dos dígitos para día, mes y año. Sin segundo nombre o sin apellido materno, el recuadro queda vacío (guion).",
               "sensible": true
             }
           ]
@@ -9390,25 +9665,35 @@
         {
           "nombre": "Motivo de notificación",
           "orden": 2,
+          "_nota_seccion": "Ítem 8. Instructivo, ítem 8: a) caso de infección por VIH, con una o más condiciones (la primera vez o en el seguimiento); b) niño nacido expuesto al VIH; c) niño nacido expuesto, no infectado por VIH. En Nueva y Editar no genera tarjeta propia: se pinta en la tarjeta Notificación (campos_notificacion).",
           "campos": [
             {
               "clave": "b24_motivo_de_notificacion",
               "etiqueta": "Motivo de notificación",
               "tipo": "SELECT",
               "orden": 1,
+              "obligatorio": true,
               "opciones": [
                 "Infección por VIH",
-                "Gestante con VIH",
                 "Niño nacido expuesto al VIH",
                 "Niño nacido expuesto, no infectado por VIH"
               ],
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Condiciones notificadas y estadio",
+          "orden": 3,
+          "depende_de": "b24_motivo_de_notificacion",
+          "valor_activador": "INFECCION_VIH",
+          "_nota_seccion": "Ítems 8 (las 5 condiciones bajo 'Infección por VIH') y 9. Solo en el caso de infección por VIH.",
+          "campos": [
             {
-              "clave": "b24_subtipo_infeccion_por_vih",
-              "etiqueta": "Subtipo (infección por VIH)",
+              "clave": "b24_condiciones_notificadas",
+              "etiqueta": "Condiciones que se notifican",
               "tipo": "MULTISELECT",
-              "orden": 2,
+              "orden": 1,
               "opciones": [
                 "Estadio SIDA",
                 "Gestante con VIH",
@@ -9417,18 +9702,12 @@
                 "Fallecido con VIH o SIDA"
               ],
               "sensible": true
-            }
-          ]
-        },
-        {
-          "nombre": "Estadio de infección VIH al momento del diagnóstico",
-          "orden": 3,
-          "campos": [
+            },
             {
               "clave": "b24_estadio_de_infeccion_vih_al_momento_del_diagnostico",
               "etiqueta": "Estadio de infección VIH al momento del diagnóstico",
               "tipo": "SELECT",
-              "orden": 1,
+              "orden": 2,
               "opciones": [
                 "Estadio 1",
                 "Estadio 2 (Avanzado)",
@@ -9442,6 +9721,9 @@
         {
           "nombre": "Datos sociodemográficos",
           "orden": 4,
+          "depende_de": "b24_motivo_de_notificacion",
+          "valor_activador": "INFECCION_VIH",
+          "_nota_seccion": "Ítems 13, 14, 16 y 17 (el 15, sexo al nacer, es el núcleo). Solo en el caso de infección por VIH: en un niño nacido expuesto no aplican (decisión del usuario).",
           "campos": [
             {
               "clave": "b24_grado_de_instruccion",
@@ -9471,21 +9753,10 @@
               "sensible": true
             },
             {
-              "clave": "b24_sexo_al_nacer",
-              "etiqueta": "Sexo al nacer",
-              "tipo": "SELECT",
-              "orden": 3,
-              "opciones": [
-                "Mujer",
-                "Hombre"
-              ],
-              "sensible": true
-            },
-            {
               "clave": "b24_identidad_de_genero",
               "etiqueta": "Identidad de género",
               "tipo": "SELECT",
-              "orden": 4,
+              "orden": 3,
               "opciones": [
                 "Femenino",
                 "Masculino",
@@ -9497,8 +9768,17 @@
               "sensible": true
             },
             {
+              "clave": "b24_identidad_de_genero_otra",
+              "etiqueta": "Especificar otra identidad de género",
+              "tipo": "TEXTO",
+              "orden": 4,
+              "depende_de": "b24_identidad_de_genero",
+              "valor_activador": "OTRO",
+              "sensible": true
+            },
+            {
               "clave": "b24_antecedentes_de_rs",
-              "etiqueta": "Antecedentes de RS",
+              "etiqueta": "Antecedentes de relaciones sexuales (RS)",
               "tipo": "SELECT",
               "orden": 5,
               "opciones": [
@@ -9507,6 +9787,7 @@
                 "RS con ambos sexos",
                 "Desconocido"
               ],
+              "_nota": "Una sola opción: 'RS con ambos sexos' ya excluye las otras dos (instructivo, ítem 16).",
               "sensible": true
             }
           ]
@@ -9514,7 +9795,9 @@
         {
           "nombre": "Vía de transmisión",
           "orden": 5,
-          "_corregido": "CIERRE_RECARGA_Y_FASE5.md Parte 1.6: v2.1 aplanaba esto en un solo SELECT de 11 valores, lo que rompe reportes (\"casos por vía sexual\" exigía sumar 4 opciones en vez de filtrar una). Se revierte a vía + subtipo encadenados. El motor depende_de solo admite UN valor activador por campo, así que en vez de un único campo 'Subtipo' se modelan DOS subtipos, cada uno depende_de 'Vía de transmisión' con su propio valor_activador -- funcionalmente igual a lo que pedía el documento (el subtipo correcto se muestra según la vía elegida), pero expresable con el mecanismo que ya existe.",
+          "depende_de": "b24_motivo_de_notificacion",
+          "valor_activador": "INFECCION_VIH",
+          "_nota_seccion": "Ítem 18. Una sola vía, 'la más probable según el relato de la historia clínica' (instructivo, ítem 17), con su subtipo.",
           "campos": [
             {
               "clave": "b24_via_de_transmision",
@@ -9531,24 +9814,26 @@
             },
             {
               "clave": "b24_subtipo_via_sexual",
-              "etiqueta": "Subtipo (vía sexual)",
+              "etiqueta": "Vía sexual",
               "tipo": "SELECT",
               "orden": 2,
+              "depende_de": "b24_via_de_transmision",
+              "valor_activador": "SEXUAL",
               "opciones": [
                 "Heterosexual",
                 "Homosexual",
                 "Bisexual",
                 "No determinado"
               ],
-              "sensible": true,
-              "depende_de": "Vía de transmisión",
-              "valor_activador": "SEXUAL"
+              "sensible": true
             },
             {
               "clave": "b24_subtipo_via_parenteral",
-              "etiqueta": "Subtipo (vía parenteral)",
+              "etiqueta": "Vía parenteral",
               "tipo": "SELECT",
               "orden": 3,
+              "depende_de": "b24_via_de_transmision",
+              "valor_activador": "PARENTERAL",
               "opciones": [
                 "Transfusión de sangre y/o derivados",
                 "Compartir agujas / UDI",
@@ -9556,35 +9841,163 @@
                 "Trasplante de órganos o tejidos",
                 "No determinado"
               ],
-              "sensible": true,
-              "depende_de": "Vía de transmisión",
-              "valor_activador": "PARENTERAL"
+              "sensible": true
             }
           ]
         },
         {
-          "nombre": "TARGA y estadio SIDA",
+          "nombre": "Laboratorio para caso de infección VIH",
           "orden": 6,
+          "depende_de": "b24_motivo_de_notificacion",
+          "valor_activador": "INFECCION_VIH",
+          "_nota_seccion": "Ítem 19, en dos tablas como las dos mitades de la del PDF. La fecha es la de toma de muestra (instructivo, ítem 18); un solo tipo por prueba.",
           "campos": [
             {
-              "clave": "b24_fecha_de_inicio_de_tratamiento",
+              "clave": "b24_tamizaje_vih",
+              "etiqueta": "Pruebas de tamizaje reactivas",
+              "tipo": "MATRIZ",
+              "orden": 1,
+              "filas": [
+                "Prueba N.° 1",
+                "Prueba N.° 2"
+              ],
+              "columnas": [
+                "Fecha",
+                "Tipo",
+                "Otra (cuál)"
+              ],
+              "opciones_por_fila": {
+                "Tipo": [
+                  [
+                    "Prueba rápida",
+                    "Prueba de ELISA",
+                    "Otra"
+                  ],
+                  [
+                    "Prueba rápida",
+                    "Prueba de ELISA",
+                    "Otra"
+                  ]
+                ]
+              },
+              "columnas_condicionadas": {
+                "Otra (cuál)": {
+                  "columna": "Tipo",
+                  "valor": "Otra"
+                }
+              },
+              "_nota": "'Otra (cuál)' solo con Tipo = Otra (pedido del usuario; patrón A50).",
+              "sensible": true
+            },
+            {
+              "clave": "b24_confirmatorias_vih",
+              "etiqueta": "Pruebas confirmatorias positivas",
+              "tipo": "MATRIZ",
+              "orden": 2,
+              "filas": [
+                "Prueba N.° 1",
+                "Prueba N.° 2"
+              ],
+              "columnas": [
+                "Fecha",
+                "Tipo"
+              ],
+              "opciones_por_fila": {
+                "Tipo": [
+                  [
+                    "Western Blot",
+                    "IFI",
+                    "LIA",
+                    "PCR"
+                  ],
+                  [
+                    "Western Blot",
+                    "IFI",
+                    "LIA",
+                    "PCR"
+                  ]
+                ]
+              },
+              "_nota": "El PDF solo trae Western Blot, IFI, LIA y PCR: sin 'Otra'.",
+              "sensible": true
+            }
+          ]
+        },
+        {
+          "nombre": "Laboratorio para niño expuesto, no infectado",
+          "orden": 7,
+          "depende_de": "b24_motivo_de_notificacion",
+          "valor_activador": "NINO_EXPUESTO,NINO_EXPUESTO_NO_INFECTADO",
+          "_nota_seccion": "Ítem 20. Con los dos motivos del niño nacido expuesto (pedido del usuario): al notificarlo al nacer ya puede haber alguna prueba.",
+          "campos": [
+            {
+              "clave": "b24_laboratorio_nino_expuesto",
+              "etiqueta": "Pruebas del niño expuesto",
+              "tipo": "MATRIZ",
+              "orden": 1,
+              "filas": [
+                "Prueba N.° 1",
+                "Prueba N.° 2"
+              ],
+              "columnas": [
+                "Fecha",
+                "Tipo"
+              ],
+              "opciones_por_fila": {
+                "Tipo": [
+                  [
+                    "ELISA",
+                    "IFI",
+                    "Western Blot",
+                    "PCR"
+                  ],
+                  [
+                    "ELISA",
+                    "IFI",
+                    "Western Blot",
+                    "PCR"
+                  ]
+                ]
+              },
+              "sensible": true
+            }
+          ]
+        },
+        {
+          "nombre": "TARGA",
+          "orden": 8,
+          "depende_de": "b24_condiciones_notificadas",
+          "valor_activador": "INICIO_TARGA",
+          "_nota_seccion": "Ítem 21, con la condición 'Inicio de TARGA'. No se agrega un '¿Recibe TARGA?': repetiría la condición marcada.",
+          "campos": [
+            {
+              "clave": "b24_fecha_de_inicio_de_targa",
               "etiqueta": "Fecha de inicio de tratamiento",
+              "tipo": "FECHA",
+              "orden": 1,
+              "sensible": true
+            }
+          ]
+        },
+        {
+          "nombre": "Estadio SIDA",
+          "orden": 9,
+          "depende_de": "b24_condiciones_notificadas",
+          "valor_activador": "ESTADIO_SIDA",
+          "_nota_seccion": "Ítem 22, con la condición 'Estadio SIDA'. La fecha de diagnóstico es la de toma de muestra del conteo de CD4 o la del diagnóstico de la enfermedad indicadora (instructivo, ítem 21): por eso no se agrega un valor ni una fecha de CD4 aparte.",
+          "campos": [
+            {
+              "clave": "b24_fecha_de_diagnostico_de_sida",
+              "etiqueta": "Fecha de diagnóstico",
               "tipo": "FECHA",
               "orden": 1,
               "sensible": true
             },
             {
-              "clave": "b24_estadio_sida_fecha_de_diagnostico",
-              "etiqueta": "Estadio SIDA: fecha de diagnóstico",
-              "tipo": "FECHA",
-              "orden": 2,
-              "sensible": true
-            },
-            {
               "clave": "b24_criterio_diagnostico_de_sida",
               "etiqueta": "Criterio diagnóstico de SIDA",
-              "tipo": "SELECT",
-              "orden": 3,
+              "tipo": "MULTISELECT",
+              "orden": 2,
               "opciones": [
                 "CD4",
                 "Enfermedad indicadora"
@@ -9592,31 +10005,124 @@
               "sensible": true
             },
             {
-              "clave": "b24_enfermedades_indicadoras_de_sida",
-              "etiqueta": "Enfermedades indicadoras de SIDA",
-              "tipo": "MATRIZ",
+              "clave": "b24_enfermedad_indicadora_1",
+              "etiqueta": "Enfermedad indicadora de SIDA N.° 1",
+              "tipo": "SELECT",
+              "orden": 3,
+              "depende_de": "b24_criterio_diagnostico_de_sida",
+              "valor_activador": "ENFERMEDAD_INDICADORA",
+              "opciones": [
+                "Infecciones bacterianas, múltiples o recurrentes (solo en menores de 6 años)",
+                "Candidiasis en bronquios, tráquea o pulmones",
+                "Candidiasis del esófago",
+                "Cáncer cervical invasivo (solo desde los 6 años)",
+                "Coccidioidomicosis, diseminada o extrapulmonar",
+                "Criptococosis extrapulmonar",
+                "Criptosporidiosis intestinal crónica (más de 1 mes)",
+                "Enfermedad por citomegalovirus (excepto hígado, bazo o ganglios), de inicio después del mes de edad",
+                "Retinitis por citomegalovirus (con pérdida de la visión)",
+                "Encefalopatía atribuida al VIH",
+                "Herpes simple: úlceras crónicas (más de 1 mes) o bronquitis, neumonitis o esofagitis",
+                "Histoplasmosis, diseminada o extrapulmonar",
+                "Isosporiasis intestinal crónica (más de 1 mes)",
+                "Sarcoma de Kaposi",
+                "Linfoma de Burkitt (o término equivalente)",
+                "Linfoma inmunoblástico (o término equivalente)",
+                "Linfoma primario del cerebro",
+                "Complejo Mycobacterium avium o Mycobacterium kansasii, diseminada o extrapulmonar",
+                "Mycobacterium tuberculosis de cualquier sitio, pulmonar (desde los 6 años), diseminada o extrapulmonar",
+                "Mycobacterium, otras especies o no identificadas, diseminada o extrapulmonar",
+                "Neumonía por Pneumocystis jirovecii",
+                "Neumonía recurrente (desde los 6 años)",
+                "Leucoencefalopatía multifocal progresiva",
+                "Septicemia por Salmonella, recurrente",
+                "Toxoplasmosis cerebral, de inicio después del mes de edad",
+                "Síndrome de consumo atribuido al VIH"
+              ],
+              "grupo": "Enfermedades indicadoras de SIDA",
+              "_nota": "Lista cerrada del Anexo 1 de la NTS 115 (26 enfermedades oportunistas indicadoras de estadio 3).",
+              "sensible": true
+            },
+            {
+              "clave": "b24_cie10_enfermedad_indicadora_1",
+              "etiqueta": "Código CIE-10 N.° 1",
+              "tipo": "TEXTO",
               "orden": 4,
-              "filas": [
-                "Enfermedad indicadora 1",
-                "Enfermedad indicadora 2"
+              "depende_de": "b24_criterio_diagnostico_de_sida",
+              "valor_activador": "ENFERMEDAD_INDICADORA",
+              "formato": "cie10",
+              "grupo": "Enfermedades indicadoras de SIDA",
+              "_nota": "La NTS no trae los códigos y el catálogo CIE-10 aún no está en el sistema: se valida la forma del código (como P96).",
+              "sensible": true
+            },
+            {
+              "clave": "b24_enfermedad_indicadora_2",
+              "etiqueta": "Enfermedad indicadora de SIDA N.° 2",
+              "tipo": "SELECT",
+              "orden": 5,
+              "depende_de": "b24_criterio_diagnostico_de_sida",
+              "valor_activador": "ENFERMEDAD_INDICADORA",
+              "opciones": [
+                "Infecciones bacterianas, múltiples o recurrentes (solo en menores de 6 años)",
+                "Candidiasis en bronquios, tráquea o pulmones",
+                "Candidiasis del esófago",
+                "Cáncer cervical invasivo (solo desde los 6 años)",
+                "Coccidioidomicosis, diseminada o extrapulmonar",
+                "Criptococosis extrapulmonar",
+                "Criptosporidiosis intestinal crónica (más de 1 mes)",
+                "Enfermedad por citomegalovirus (excepto hígado, bazo o ganglios), de inicio después del mes de edad",
+                "Retinitis por citomegalovirus (con pérdida de la visión)",
+                "Encefalopatía atribuida al VIH",
+                "Herpes simple: úlceras crónicas (más de 1 mes) o bronquitis, neumonitis o esofagitis",
+                "Histoplasmosis, diseminada o extrapulmonar",
+                "Isosporiasis intestinal crónica (más de 1 mes)",
+                "Sarcoma de Kaposi",
+                "Linfoma de Burkitt (o término equivalente)",
+                "Linfoma inmunoblástico (o término equivalente)",
+                "Linfoma primario del cerebro",
+                "Complejo Mycobacterium avium o Mycobacterium kansasii, diseminada o extrapulmonar",
+                "Mycobacterium tuberculosis de cualquier sitio, pulmonar (desde los 6 años), diseminada o extrapulmonar",
+                "Mycobacterium, otras especies o no identificadas, diseminada o extrapulmonar",
+                "Neumonía por Pneumocystis jirovecii",
+                "Neumonía recurrente (desde los 6 años)",
+                "Leucoencefalopatía multifocal progresiva",
+                "Septicemia por Salmonella, recurrente",
+                "Toxoplasmosis cerebral, de inicio después del mes de edad",
+                "Síndrome de consumo atribuido al VIH"
               ],
-              "columnas": [
-                "Descripción",
-                "Código CIE-10"
-              ],
+              "grupo": "Enfermedades indicadoras de SIDA",
+              "sensible": true
+            },
+            {
+              "clave": "b24_cie10_enfermedad_indicadora_2",
+              "etiqueta": "Código CIE-10 N.° 2",
+              "tipo": "TEXTO",
+              "orden": 6,
+              "depende_de": "b24_criterio_diagnostico_de_sida",
+              "valor_activador": "ENFERMEDAD_INDICADORA",
+              "formato": "cie10",
+              "grupo": "Enfermedades indicadoras de SIDA",
               "sensible": true
             }
           ]
         },
         {
           "nombre": "Coinfección",
-          "orden": 7,
+          "orden": 10,
+          "depende_de": "b24_motivo_de_notificacion",
+          "valor_activador": "INFECCION_VIH",
+          "_nota_seccion": "Ítem 23: se marca la coinfección y aparece su fecha de diagnóstico.",
           "campos": [
             {
-              "clave": "b24_tuberculosis",
-              "etiqueta": "Tuberculosis",
-              "tipo": "BOOLEANO",
+              "clave": "b24_coinfeccion",
+              "etiqueta": "Coinfección",
+              "tipo": "MULTISELECT",
               "orden": 1,
+              "opciones": [
+                "Tuberculosis",
+                "Hepatitis B",
+                "Hepatitis C"
+              ],
               "sensible": true
             },
             {
@@ -9624,53 +10130,49 @@
               "etiqueta": "Fecha de diagnóstico de tuberculosis",
               "tipo": "FECHA",
               "orden": 2,
-              "sensible": true
-            },
-            {
-              "clave": "b24_hepatitis_b",
-              "etiqueta": "Hepatitis B",
-              "tipo": "BOOLEANO",
-              "orden": 3,
+              "depende_de": "b24_coinfeccion",
+              "valor_activador": "TUBERCULOSIS",
               "sensible": true
             },
             {
               "clave": "b24_fecha_de_diagnostico_de_hepatitis_b",
               "etiqueta": "Fecha de diagnóstico de hepatitis B",
               "tipo": "FECHA",
-              "orden": 4,
-              "sensible": true
-            },
-            {
-              "clave": "b24_hepatitis_c",
-              "etiqueta": "Hepatitis C",
-              "tipo": "BOOLEANO",
-              "orden": 5,
+              "orden": 3,
+              "depende_de": "b24_coinfeccion",
+              "valor_activador": "HEPATITIS_B",
               "sensible": true
             },
             {
               "clave": "b24_fecha_de_diagnostico_de_hepatitis_c",
               "etiqueta": "Fecha de diagnóstico de hepatitis C",
               "tipo": "FECHA",
-              "orden": 6,
+              "orden": 4,
+              "depende_de": "b24_coinfeccion",
+              "valor_activador": "HEPATITIS_C",
               "sensible": true
             }
           ]
         },
         {
           "nombre": "Defunción",
-          "orden": 8,
+          "orden": 11,
+          "depende_de": "b24_condiciones_notificadas",
+          "valor_activador": "FALLECIDO",
+          "_nota_seccion": "Ítem 24, con la condición 'Fallecido con VIH o SIDA'. La causa de muerte se pide siempre: relacionada o no al SIDA.",
           "campos": [
             {
               "clave": "b24_fecha_de_defuncion",
               "etiqueta": "Fecha de defunción",
               "tipo": "FECHA",
               "orden": 1,
+              "obligatorio": true,
               "sensible": true
             },
             {
               "clave": "b24_defuncion_relacionada_a_sida",
-              "etiqueta": "¿Defunción relacionada a SIDA?",
-              "tipo": "BOOLEANO",
+              "etiqueta": "Defunción relacionada a SIDA",
+              "tipo": "SI_NO",
               "orden": 2,
               "sensible": true
             },
@@ -9679,6 +10181,7 @@
               "etiqueta": "Causa de muerte",
               "tipo": "TEXTO",
               "orden": 3,
+              "obligatorio": true,
               "sensible": true
             }
           ]

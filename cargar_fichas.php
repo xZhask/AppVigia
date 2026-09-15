@@ -217,7 +217,15 @@ const NUCLEO_AJUSTES_VALIDOS = [
     // de CAMPOS_INVESTIGADOR): el notificador del PDF.
     'fecha_nac_desconocida' => 'bool',
     'investigador'         => 'investigador',
+    // B24, 2026-09-14: etiquetas del PDF para campos del núcleo
+    // ({"sexo": "Sexo al nacer", "localidad": "Comunidad"}), de ETIQUETAS_NUCLEO.
+    'etiquetas'            => 'etiquetas',
 ];
+
+// Campos del núcleo cuya etiqueta una ficha puede cambiar con
+// nucleo_ajustes.etiquetas (B24, 2026-09-14). Solo cambia el texto: el dato y
+// sus opciones son los mismos.
+const ETIQUETAS_NUCLEO = ['sexo', 'localidad'];
 
 // Ajustes por rama (A50, 2026-09-14): los que una regla de nucleo_condicional
 // puede declarar en "ajustes" para que valgan solo con su valor (el producto de
@@ -241,6 +249,18 @@ const FILAS_CAMPOS_PERSONA = ['documento', 'nacimiento'];
 // <input type="time"> y se guarda HH:MM; "cie10" exige la forma de un código
 // CIE-10 (P21.9) hasta que el catálogo CIE-10 esté en el sistema.
 const FORMATOS_TEXTO = ['hora', 'cie10'];
+
+// "calculado" de un campo TEXTO (B24, 2026-09-14): el valor no se escribe, lo
+// arma el servidor al guardar con datos del núcleo y se pinta de solo lectura.
+// "iniciales_fecha_nac": código del paciente de la NTS 115 (primera letra del
+// apellido paterno, del materno, del primer y del segundo nombre, más la fecha
+// de nacimiento ddmmaa); ver codigoInicialesFechaNac() en ayudantes.php.
+const CALCULOS_TEXTO = ['iniciales_fecha_nac'];
+
+// reglas_campos: datos del núcleo que puede leer la condición "si" de una regla
+// en vez de un campo_def (B24, 2026-09-14: la identidad de género y "Gestante
+// con VIH" según el sexo al nacer), con los valores que admiten.
+const CONDICIONES_NUCLEO_REGLAS = ['nucleo:sexo' => ['F', 'M']];
 
 // Simétrico de NUCLEO_OMITIBLES: campos del núcleo ocultos por defecto que
 // una ficha declara para MOSTRAR (opt-in), en vez de mostrados por defecto
@@ -516,6 +536,17 @@ function validarManifiesto(array $manifiesto): void
                     }
                     if (!in_array($campo['formato'], FORMATOS_TEXTO, true)) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"formato\" = " . json_encode($campo['formato']) . '. Válidos: ' . implode(', ', FORMATOS_TEXTO) . '.');
+                    }
+                }
+                if (array_key_exists('calculado', $campo)) {
+                    if ($tipo !== 'TEXTO') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"calculado\" pero no es TEXTO (es {$tipo}).");
+                    }
+                    if (!in_array($campo['calculado'], CALCULOS_TEXTO, true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"calculado\" = " . json_encode($campo['calculado']) . '. Válidos: ' . implode(', ', CALCULOS_TEXTO) . '.');
+                    }
+                    if (array_key_exists('formato', $campo) || !empty($campo['obligatorio']) || !empty($campo['depende_de'])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" es \"calculado\": no admite \"formato\", \"obligatorio\" ni \"depende_de\" (nadie lo escribe).");
                     }
                 }
                 if (array_key_exists('especificar', $campo)) {
@@ -810,6 +841,19 @@ function validarManifiesto(array $manifiesto): void
                     }
                     if (count($valorAjuste) === count($condicionesValidas)) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} admite las tres condiciones: para eso no se declara.");
+                    }
+                }
+                if ($tipoAjuste === 'etiquetas') {
+                    if (!is_array($valorAjuste) || array_is_list($valorAjuste) || $valorAjuste === []) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser un objeto no vacío {campo: etiqueta}.");
+                    }
+                    foreach ($valorAjuste as $campoEtiqueta => $textoEtiqueta) {
+                        if (!in_array($campoEtiqueta, ETIQUETAS_NUCLEO, true)) {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}.{$campoEtiqueta} no es un campo con etiqueta ajustable. Válidos: " . implode(', ', ETIQUETAS_NUCLEO) . '.');
+                        }
+                        if (!is_string($textoEtiqueta) || trim($textoEtiqueta) === '') {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}.{$campoEtiqueta} debe ser un texto no vacío.");
+                        }
                     }
                 }
                 if ($tipoAjuste === 'investigador') {
@@ -1120,13 +1164,25 @@ function validarManifiesto(array $manifiesto): void
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si es obligatorio.");
                 }
                 if (isset($si['clave'])) {
-                    if (array_diff(array_keys($si), ['clave', 'valores']) || !isset($clavesFicha[$si['clave']])) {
-                        throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si con \"clave\" solo admite \"clave\" (de esta ficha) y \"valores\".");
+                    // "nucleo:sexo" (B24, 2026-09-14): la condición lee el
+                    // núcleo, no un campo_def (CONDICIONES_NUCLEO_REGLAS).
+                    $condicionNucleo = is_string($si['clave']) && array_key_exists($si['clave'], CONDICIONES_NUCLEO_REGLAS);
+                    if (array_diff(array_keys($si), ['clave', 'valores']) || (!$condicionNucleo && !isset($clavesFicha[$si['clave']]))) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si con \"clave\" solo admite \"clave\" (de esta ficha o " . implode(', ', array_keys(CONDICIONES_NUCLEO_REGLAS)) . ") y \"valores\".");
                     }
                     if (empty($si['valores']) || !is_array($si['valores']) || !array_is_list($si['valores'])) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si.valores debe ser una lista no vacía (CÓDIGOS de opción).");
                     }
-                    $clavesCondicion = [$si['clave']];
+                    if ($condicionNucleo && array_diff($si['valores'], CONDICIONES_NUCLEO_REGLAS[$si['clave']])) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si.valores de {$si['clave']} solo admite: " . implode(', ', CONDICIONES_NUCLEO_REGLAS[$si['clave']]) . '.');
+                    }
+                    // La clasificación y la defunción calculadas se derivan solo
+                    // de los campos de la ficha (clasificacionDerivada() y
+                    // fallecidoDerivado() no reciben el núcleo).
+                    if ($condicionNucleo && (array_key_exists('clasificar', $reglaCampos) || array_key_exists('fallecido', $reglaCampos))) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}: \"clasificar\" y \"fallecido\" no admiten una condición sobre el núcleo.");
+                    }
+                    $clavesCondicion = $condicionNucleo ? [] : [$si['clave']];
                 } elseif (isset($si['claves'])) {
                     if (array_diff(array_keys($si), ['claves', 'alguno_mayor_que']) || !array_key_exists('alguno_mayor_que', $si)
                         || (!is_int($si['alguno_mayor_que']) && !is_float($si['alguno_mayor_que']))) {
@@ -1228,8 +1284,9 @@ function validarManifiesto(array $manifiesto): void
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.opciones debe ser un objeto {clave: [códigos]}.");
                     }
                     foreach ($reglaCampos['opciones'] as $claveOpciones => $codigosPermitidos) {
-                        if (!isset($clavesFicha[$claveOpciones]) || $tiposPorClaveFicha[$claveOpciones] !== 'SELECT') {
-                            throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.opciones incluye \"{$claveOpciones}\", que no es una clave SELECT de esta ficha.");
+                        // MULTISELECT (B24, 2026-09-14): solo se pueden marcar esos códigos.
+                        if (!isset($clavesFicha[$claveOpciones]) || !in_array($tiposPorClaveFicha[$claveOpciones], ['SELECT', 'MULTISELECT'], true)) {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.opciones incluye \"{$claveOpciones}\", que no es una clave SELECT o MULTISELECT de esta ficha.");
                         }
                         if (in_array($claveOpciones, $clavesCondicion, true)) {
                             throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.opciones incluye \"{$claveOpciones}\", que es parte de su propia condición.");
@@ -1602,6 +1659,14 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
     if (array_key_exists('desconocido', $campo)) {
         $config = json_encode(
             (json_decode((string) $config, true) ?: []) + ['desconocido' => true],
+            JSON_UNESCAPED_UNICODE
+        );
+    }
+
+    // "calculado" (B24, 2026-09-14): mismo criterio, se suma al config.
+    if (array_key_exists('calculado', $campo)) {
+        $config = json_encode(
+            (json_decode((string) $config, true) ?: []) + ['calculado' => $campo['calculado']],
             JSON_UNESCAPED_UNICODE
         );
     }

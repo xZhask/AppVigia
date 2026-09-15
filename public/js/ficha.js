@@ -133,6 +133,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // MULTISELECT (A50, 2026-09-14) cumple si alguna opción marcada está en
   // "valores".
   function condicionReglaCumplida(si) {
+    // "nucleo:sexo" (B24, 2026-09-14): un dato del núcleo por su name.
+    if (si.clave && si.clave.indexOf('nucleo:') === 0) {
+      var valorNucleo = leerValorCampoPorNombre(si.clave.slice(7));
+      return (si.valores || []).indexOf(valorNucleo === null || valorNucleo === undefined ? '' : String(valorNucleo)) !== -1;
+    }
     if (si.clave) {
       var crudo = leerValorCampoPorNombre(campoPorClave(si.clave));
       if (Array.isArray(crudo)) {
@@ -189,9 +194,25 @@ document.addEventListener('DOMContentLoaded', function () {
           : lista.slice();
       });
     });
+    var desmarcoOpcion = false;
     nombresConOpciones.forEach(function (nombre) {
       var select = document.querySelector('select[name="' + nombre + '"]');
-      if (!select) return;
+      // MULTISELECT (B24, 2026-09-14): el chip no admitido se oculta y, si
+      // estaba marcado, se desmarca (lo que dependía de él se oculta después).
+      if (!select) {
+        var permitidasChips = permitidasPorNombre[nombre] || null;
+        document.querySelectorAll('input[type="checkbox"][name="' + nombre + '[]"]').forEach(function (chk) {
+          var admitido = !permitidasChips || permitidasChips.indexOf(chk.value) !== -1;
+          chk.disabled = !admitido;
+          var chip = chk.closest('.chip-option');
+          if (chip) chip.style.display = admitido ? '' : 'none';
+          if (!admitido && chk.checked) {
+            chk.checked = false;
+            desmarcoOpcion = true;
+          }
+        });
+        return;
+      }
       var permitidas = permitidasPorNombre[nombre] || null;
       Array.prototype.forEach.call(select.options, function (opcion) {
         if (opcion.value === '') return;
@@ -211,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(select);
     });
+    if (desmarcoOpcion) evaluarDependencias();
 
     var cambioVisibilidad = false;
     document.querySelectorAll('.dep-wrap[data-regla-mostrar]').forEach(function (wrap) {
@@ -374,6 +396,40 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   aplicarColumnasCondicionadas();
   document.addEventListener('change', aplicarColumnasCondicionadas);
+
+  // ---------- TEXTO "calculado": código del paciente (B24, 2026-09-14) ----------
+  // campos/texto.php pinta el campo de solo lectura con
+  // data-calculado="iniciales_fecha_nac". Misma cuenta que
+  // codigoInicialesFechaNac() de app/Core/ayudantes.php: primera letra del
+  // apellido paterno, del materno, del primer y del segundo nombre (guion si
+  // falta) y la fecha de nacimiento ddmmaa (seis guiones sin fecha). Solo es la
+  // vista previa: el servidor lo vuelve a calcular al guardar.
+  function codigoInicialesFechaNac() {
+    function valor(nombre) {
+      var el = document.querySelector('[name="' + nombre + '"]');
+      return el ? String(el.value || '').trim() : '';
+    }
+    function inicial(texto, palabra) {
+      var palabras = texto.split(/\s+/).filter(Boolean);
+      if (!palabras[palabra]) return '-';
+      var letra = palabras[palabra].charAt(0).toUpperCase();
+      return ({ 'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U', 'Ü': 'U' })[letra] || letra;
+    }
+    var fecha = valor('fecha_nac').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return inicial(valor('apellido_paterno'), 0) + inicial(valor('apellido_materno'), 0)
+      + inicial(valor('nombres'), 0) + inicial(valor('nombres'), 1)
+      + (fecha ? fecha[3] + fecha[2] + fecha[1].slice(2) : '------');
+  }
+  function aplicarCamposCalculados() {
+    document.querySelectorAll('input[data-calculado="iniciales_fecha_nac"]').forEach(function (input) {
+      input.value = codigoInicialesFechaNac();
+    });
+  }
+  if (document.querySelector('input[data-calculado]')) {
+    aplicarCamposCalculados();
+    document.addEventListener('input', aplicarCamposCalculados);
+    document.addEventListener('change', aplicarCamposCalculados);
+  }
 
   // ---------- vinculo_caso: datos de la ficha vinculada ----------
   // (motor de la ficha Z21, cotejo 2026-09-11) Al elegir la ficha vinculada
@@ -2115,6 +2171,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       fechaNac.value = p.fecha_nac || ''; calcularEdad();
     }
+    // Lo de arriba no dispara eventos: las reglas con "nucleo:sexo" y el código
+    // del paciente calculado (B24, 2026-09-14) se recalculan acá.
+    aplicarReglasCampos();
+    aplicarCamposCalculados();
 
     var condicion = p.condicion || 'PARTICULAR';
     var radioCondicion = document.querySelector('input[name="condicion"][value="' + condicion + '"]');

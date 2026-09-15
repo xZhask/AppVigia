@@ -34,7 +34,7 @@
   ?>
   <?= $abreLocalidadCondicional ?>
   <div class="field" data-nucleo-campo="localidad" <?= $nucleoOmite('localidad') ? 'hidden style="display:none;"' : '' ?>>
-    <label class="fl">Localidad</label>
+    <label class="fl"><?= e(etiquetaNucleo($enfermedad, 'localidad', 'Localidad')) ?></label>
     <div class="control"><input type="text" name="localidad" value="<?= e($valoresFijos['localidad'] ?? '') ?>"></div>
   </div>
   <?= $cierraLocalidadCondicional ?>

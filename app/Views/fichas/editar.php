@@ -152,7 +152,7 @@ $es = $estados[$caso['estado']];
             <?php // nucleo_condicional 'sexo': ver nueva/index.php.
             [$abreSexoCondicional, $cierraSexoCondicional] = envolturaNucleoCondicional($enfermedad, 'sexo', $valoresCampos);
             echo $abreSexoCondicional; ?><div class="field o95-hide" <?= $esO95Edit ? 'hidden style="display:none;"' : '' ?>>
-              <label class="fl">Sexo</label>
+              <label class="fl"><?= e(etiquetaNucleo($enfermedad, 'sexo', 'Sexo')) ?></label>
               <div class="control">
                 <select name="sexo" data-nosearch="true">
                   <option value="">Seleccionar…</option>

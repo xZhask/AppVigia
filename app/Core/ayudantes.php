@@ -629,6 +629,17 @@ function campoInvestigador(array $enfermedad, string $campo): ?string
     return is_string($declarado) ? $declarado : (CAMPOS_INVESTIGADOR[$campo] ?? null);
 }
 
+/**
+ * Etiqueta de un campo del núcleo: la que declara nucleo_ajustes.etiquetas
+ * (B24, 2026-09-14: "Sexo al nacer", "Comunidad") o la de siempre.
+ */
+function etiquetaNucleo(array $enfermedad, string $campo, string $porDefecto): string
+{
+    $etiquetas = nucleoAjuste($enfermedad, 'etiquetas');
+
+    return is_array($etiquetas) && is_string($etiquetas[$campo] ?? null) ? $etiquetas[$campo] : $porDefecto;
+}
+
 /** Título de la tarjeta "Investigador" (nucleo_ajustes.investigador.titulo: "Notificador" en A50). */
 function tituloInvestigador(array $enfermedad): string
 {
@@ -739,6 +750,33 @@ function codigoCie10Normalizado(string $codigo): ?string
     }
 
     return $partes[1] . (isset($partes[2]) && $partes[2] !== '' ? '.' . $partes[2] : '');
+}
+
+/**
+ * Campo TEXTO "calculado": "iniciales_fecha_nac" (B24, 2026-09-14). Código del
+ * paciente de la NTS 115 (Anexo 3, ítem 6): primera letra del apellido paterno
+ * (AP), del materno (AM), del primer nombre (N1) y del segundo nombre (N2), y
+ * la fecha de nacimiento con dos dígitos para día, mes y año ("PMJC150390").
+ * Cada letra es la primera palabra de su campo tal como está escrita, sin
+ * tilde; la que falta (sin apellido materno o sin segundo nombre) queda como
+ * guion, igual que el recuadro vacío del papel, y sin fecha de nacimiento van
+ * seis guiones. La misma cuenta hace codigoInicialesFechaNac() en ficha.js.
+ */
+function codigoInicialesFechaNac(string $apellidoPaterno, string $apellidoMaterno, string $nombres, ?string $fechaNacIso): string
+{
+    $inicial = function (string $texto, int $palabra): string {
+        $palabras = preg_split('/\s+/u', trim($texto), -1, PREG_SPLIT_NO_EMPTY);
+        if (!isset($palabras[$palabra])) {
+            return '-';
+        }
+        $letra = mb_strtoupper(mb_substr($palabras[$palabra], 0, 1, 'UTF-8'), 'UTF-8');
+
+        return strtr($letra, ['Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U', 'Ü' => 'U']);
+    };
+    $fecha = $fechaNacIso !== null ? fechaIsoValida($fechaNacIso) : null;
+
+    return $inicial($apellidoPaterno, 0) . $inicial($apellidoMaterno, 0) . $inicial($nombres, 0) . $inicial($nombres, 1)
+        . ($fecha !== null ? substr($fecha, 8, 2) . substr($fecha, 5, 2) . substr($fecha, 2, 2) : '------');
 }
 
 /**

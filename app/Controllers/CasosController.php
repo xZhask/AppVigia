@@ -429,7 +429,7 @@ class CasosController extends Controller
         // ---------- dinámicos: cuadro clínico según la enfermedad ----------
         // La fecha de nacimiento del núcleo va para las reglas
         // "comparar_fechas"/"maximo_dias_entre" (P96).
-        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, ['fecha_nac' => $fechaNacIso]);
+        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
 
         // reglas_campos "clasificar" (Z21, 2026-09-13): en las fichas que la
         // calculan, la clasificación sale de los campos ya validados y no del
@@ -1079,7 +1079,7 @@ class CasosController extends Controller
         if ($datosPnp['error'] !== null) {
             $erroresFijos['condicion'] = $datosPnp['error'];
         }
-        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, ['fecha_nac' => $fechaNacIso]);
+        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
 
         // ---------- vinculo_caso (cotejo Z21, 2026-09-11) ----------
         // Guarda de integridad: si otras fichas apuntan a esta, no se puede
@@ -1477,6 +1477,21 @@ class CasosController extends Controller
                 continue;
             }
 
+            // TEXTO "calculado" (B24, 2026-09-14): lo que llegue en el POST no
+            // se lee; el código del paciente sale de los apellidos, los nombres
+            // y la fecha de nacimiento ya validados del núcleo.
+            if ($tipo === 'TEXTO' && ((json_decode((string) ($campo['config'] ?? ''), true) ?: [])['calculado'] ?? null) === 'iniciales_fecha_nac') {
+                $codigoCalculado = codigoInicialesFechaNac(
+                    (string) ($valoresNucleo['apellido_paterno'] ?? ''),
+                    (string) ($valoresNucleo['apellido_materno'] ?? ''),
+                    (string) ($valoresNucleo['nombres'] ?? ''),
+                    $valoresNucleo['fecha_nac'] ?? null
+                );
+                $valoresCampos[$campoId] = $codigoCalculado;
+                $paraGuardar[$campoId] = $codigoCalculado;
+                continue;
+            }
+
             if ($tipo === 'MULTISELECT') {
                 $seleccion = array_map('strval', $_POST[$nombreCampo] ?? []);
                 if ($campo['catalogo_id']) {
@@ -1673,6 +1688,23 @@ class CasosController extends Controller
     }
 
     /**
+     * Datos del núcleo que leen los campos dinámicos al validar: la fecha de
+     * nacimiento ya validada (reglas "comparar_fechas", P96), el sexo (reglas
+     * con "nucleo:sexo", B24) y los apellidos y nombres (campo TEXTO
+     * "calculado", el código del paciente de B24).
+     */
+    private function valoresNucleoParaReglas(array $valoresFijos, ?string $fechaNacIso): array
+    {
+        return [
+            'fecha_nac'        => $fechaNacIso,
+            'sexo'             => (string) ($valoresFijos['sexo'] ?? ''),
+            'apellido_paterno' => (string) ($valoresFijos['apellido_paterno'] ?? ''),
+            'apellido_materno' => (string) ($valoresFijos['apellido_materno'] ?? ''),
+            'nombres'          => (string) ($valoresFijos['nombres'] ?? ''),
+        ];
+    }
+
+    /**
      * reglas_campos "clasificar" (Z21, 2026-09-13): la clasificación del caso
      * según los valores ya validados (clasificacionDerivada() en
      * ayudantes.php). null si la ficha no la calcula.
@@ -1766,7 +1798,12 @@ class CasosController extends Controller
         foreach ($campos as $campoId => $campo) {
             $idPorClave[$campo['clave']] = (int) $campoId;
         }
-        $valorPorClave = function (string $clave) use (&$valoresCampos, $idPorClave) {
+        // "nucleo:sexo" (B24, 2026-09-14): la condición de una regla puede leer
+        // un dato del núcleo ya leído del POST (valoresNucleoParaReglas()).
+        $valorPorClave = function (string $clave) use (&$valoresCampos, $idPorClave, $valoresNucleo) {
+            if (str_starts_with($clave, 'nucleo:')) {
+                return (string) ($valoresNucleo[substr($clave, 7)] ?? '');
+            }
             return $valoresCampos[$idPorClave[$clave] ?? 0] ?? '';
         };
         $ocultoPorDependencia = function (int $campoId) use ($campos, &$valoresCampos): bool {
@@ -1814,6 +1851,14 @@ class CasosController extends Controller
             }
         }
         foreach ($permitidasPorCampo as $campoId => $permitidas) {
+            // MULTISELECT (B24, 2026-09-14): nada marcado fuera de la lista; no
+            // se marca solo aunque quede una opción.
+            if (is_array($valoresCampos[$campoId] ?? null)) {
+                if (array_diff(array_map('strval', $valoresCampos[$campoId]), $permitidas)) {
+                    $erroresCampos[$campoId] = 'Hay una opción marcada que no corresponde a lo registrado en la ficha: desmárcala.';
+                }
+                continue;
+            }
             $valorActual = (string) ($valoresCampos[$campoId] ?? '');
             if (count($permitidas) === 1) {
                 $valoresCampos[$campoId] = $permitidas[0];
@@ -2160,7 +2205,9 @@ class CasosController extends Controller
         // ya retirado) y que MAPA_GRUPO_ETNICO en ficha.js -- cascada desde
         // 'etnia', no depende de a qué grupo pertenezcan acá.
         $pueblosEtnicos = ['Quechua', 'Aymara', 'Jaqaru', 'Uro', 'Asháninka', 'Awajún', 'Shipibo-Konibo', 'Yánesha', 'Kukama Kukamiria', 'Achuar', 'Bora', 'Matsés', 'Ese Eja', 'Harakbut', 'Afroperuano', 'No aplica', 'Chino-peruano', 'Japonés-peruano', 'Otro'];
-        $puebloEtnico = in_array($valoresFijos['pueblo_etnico'], $pueblosEtnicos, true) ? $valoresFijos['pueblo_etnico'] : null;
+        // El pueblo étnico es parte del bloque 'etnia' de nucleo_condicional
+        // (B24, 2026-09-14): la rama que no pide la etnia tampoco lo guarda.
+        $puebloEtnico = ($etniaActiva && in_array($valoresFijos['pueblo_etnico'], $pueblosEtnicos, true)) ? $valoresFijos['pueblo_etnico'] : null;
 
         // detalle_domicilio (Entrada J acotada al bloque de domicilio):
         // mismo criterio que unidades_edad -- opt-in por ficha, no whitelist

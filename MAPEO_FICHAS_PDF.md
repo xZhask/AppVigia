@@ -20,7 +20,7 @@ tiene ficha propia en el manifiesto) = 24.
 | 8 | Difteria | 13-14 | A36 | ✅ cotejada |
 | 9 | Gestantes VIH y Niños Expuestos — Registro Búsqueda Activa | 15 | **ninguno** | ver discrepancia 1 en PENDIENTES.md |
 | 10 | Gestante con VIH y Niño Nacido Expuesto | 16 | Z21 | ✅ cotejada (2026-09-11); la hoja tiene 2 secciones y se modela como 2 fichas enlazadas (ver PENDIENTES.md) |
-| 11 | Notificación Individual VIH/SIDA | 17 | B24 | |
+| 11 | Notificación Individual VIH/SIDA | 17 | B24 | ✅ cotejada (2026-09-14); una ficha por notificación, motivo en dos niveles (ver PENDIENTES.md) |
 | 12 | Sífilis Materna y Congénita | 18-19 | A50 | |
 | 13 | Síndrome de Rubéola Congénita | 20 | P35.0 | ✅ cotejada |
 | 14 | Tétanos Neonatal | 21-22 | A33 | |
@@ -38,11 +38,11 @@ tiene ficha propia en el manifiesto) = 24.
 | 26 | Arbovirosis (Dengue/Chik/Zika/FA) | 49 | A97 | el manifiesto lo marca como "Anexo N.° 01" |
 | 27 | EDA Grave — Cólera | 50-51 | A00 | ✅ cotejada (2026-09-07); `pdf_paginas` corregido a `50-51` |
 
-## Pendiente de cotejar (16)
+## Pendiente de cotejar (15)
 
-En el orden de la tabla: A37.0, B01, B04X, Y59.0 (3 entradas), B24,
+En el orden de la tabla: A37.0, B01, B04X, Y59.0 (3 entradas),
 A50, A33, A35, Y07, A95, P96, V99, B57, A44, A97.
 
-(A00 salió de esta lista el 2026-09-07 y Z21 el 2026-09-11; el resto de las
+(A00 salió de esta lista el 2026-09-07, Z21 el 2026-09-11 y B24 el 2026-09-14; el resto de las
 marcas ✅ de la tabla no se han ido actualizando ficha por ficha, así que la
 lista de arriba es la referencia buena para lo que falta.)
