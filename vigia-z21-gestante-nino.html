@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nueva ficha · Gestante con VIH y niño expuesto (Z21) — VIGÍA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   MOCKUP Z21 · Gestante con VIH y niño nacido expuesto
+   Cubre SOLO la ficha de investigación (pág. 2 del compendio).
+   La ficha de notificación individual de VIH y SIDA es B24, otra entrada.
+   La planilla de búsqueda activa (pág. 1) es un reporte, no un formulario.
+   Marcado con  + NUEVO  lo que se agregaría a theme.css.
+   ============================================================ */
+:root{
+  --paper:#F5F7F7; --surface:#FFFFFF; --ink:#16211E; --ink-2:#283733;
+  --muted:#63726E; --faint:#8D9A96; --line:#E4E9E8; --line-2:#EFF3F2;
+  --accent:#0E7A6E; --accent-soft:#E3F1EE; --accent-deep:#0A5A51;
+  --req:#B23B3B;
+  --radius:11px; --radius-sm:8px; --shadow-soft:0 1px 2px rgba(20,32,43,.04);
+  --sidebar:#0F1D1A; --sidebar-2:#1A2C28; --sidebar-line:#243A35; --sidebar-text:#94A6A1;
+}
+*{box-sizing:border-box} html,body{margin:0;padding:0}
+body{font-family:"IBM Plex Sans",system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer} a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{display:flex;min-height:100vh}
+.sidebar{width:234px;flex-shrink:0;background:var(--sidebar);color:var(--sidebar-text);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:12px;padding:20px 20px 22px}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,var(--accent),var(--accent-deep));display:grid;place-items:center;flex-shrink:0}
+.brand-name{font-family:"IBM Plex Serif",serif;font-weight:600;font-size:19px;color:#fff;letter-spacing:.09em}
+.brand-sub{font-size:10.5px}
+.nav-group{padding:0 12px 14px}
+.nav-t{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#5E726D;padding:0 12px 8px}
+.nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:var(--radius-sm);color:var(--sidebar-text);font-size:13.5px;text-decoration:none}
+.nav a:hover{background:#162723} .nav a.on{background:var(--sidebar-2);color:#fff}
+.nav .count{margin-left:auto;font-size:11px;background:#24403A;color:#BFD6D0;border-radius:999px;padding:1px 7px}
+.side-user{margin-top:auto;padding:14px 18px;border-top:1px solid var(--sidebar-line);display:flex;align-items:center;gap:11px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--sidebar-2);display:grid;place-items:center;font-size:11px;font-weight:600;color:#BFD6D0;flex-shrink:0}
+.side-user .n{font-size:12px;color:#D6E0DD;font-weight:500;line-height:1.25} .side-user .r{font-size:10.5px}
+
+.main{flex:1;min-width:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--line);padding:13px 30px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20}
+.crumb{font-size:13px;font-weight:600} .crumb span{font-weight:400;color:var(--faint)}
+.top-r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.se-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--muted)}
+.se-chip b{font-family:"IBM Plex Mono",monospace;color:var(--ink)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.icobtn{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+
+.page{padding:30px 30px 80px;max-width:1360px}
+h1{font-family:"IBM Plex Serif",serif;font-size:28px;font-weight:500;margin:0 0 5px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 22px}
+
+.sel-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-soft);padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.sel-ico{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);display:grid;place-items:center;flex-shrink:0}
+.eyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.sel-val{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:600;margin-top:1px}
+.sel-val svg{color:var(--faint)}
+.tags{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:11.5px;background:var(--line-2);border-radius:6px;padding:4px 9px;color:var(--muted)}
+
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+.rail{position:sticky;top:74px;display:flex;flex-direction:column;gap:14px}
+
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-soft);margin-bottom:16px;scroll-margin-top:82px}
+.sec-h{padding:16px 22px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:12px}
+.sec-n{width:26px;height:26px;border-radius:50%;background:var(--line-2);color:var(--muted);display:grid;place-items:center;font-size:12px;font-weight:600;flex-shrink:0}
+.sec.done .sec-n{background:var(--accent-soft);color:var(--accent-deep)}
+.sec-h h2{font-size:15px;margin:0;font-weight:600}
+.sec-meta{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.sec-b{padding:22px}
+
+.grid{display:grid;gap:16px 18px;grid-template-columns:repeat(12,1fr)}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c8{grid-column:span 8}.c12{grid-column:span 12}
+label{font-size:12.5px;color:var(--ink-2);font-weight:500} label i{color:var(--req);font-style:normal}
+.help{font-size:11.5px;color:var(--faint)}
+input[type=text],input[type=date],input[type=number],select,textarea{font-family:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:9px 11px;width:100%}
+select{appearance:none;background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' stroke='%238D9A96' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+input[readonly]{background:var(--line-2);border-style:dashed;color:var(--ink-2)}
+.doc{display:flex}
+.doc select{width:86px;border-radius:var(--radius-sm) 0 0 var(--radius-sm);background-color:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' stroke='%23fff' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")}
+.doc input{border-radius:0 var(--radius-sm) var(--radius-sm) 0;border-left:0}
+
+/* + NUEVO · clasificación de caso (discriminador de la planilla) */
+.clasif{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.cl{border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px 14px;background:var(--surface);text-align:left;position:relative}
+.cl:hover{border-color:#C9D4D1}
+.cl.sel{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.cl-n{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);display:block}
+.cl.sel .cl-n{color:var(--accent-deep)}
+.cl-t{display:block;font-weight:600;font-size:13px;margin-top:3px}
+.cl-d{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+.cl.sel .cl-d{color:var(--accent-deep)}
+.note{border-left:2px solid var(--accent);background:var(--accent-soft);padding:12px 15px;font-size:12.5px;color:var(--accent-deep);border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-top:16px}
+.note.mute{border-left-color:var(--line);background:var(--line-2);color:var(--muted)}
+
+/* + NUEVO · vínculo madre–hijo */
+.vinc{display:flex;gap:13px;align-items:center;border:1px solid #BFE0D8;background:var(--accent-soft);border-radius:var(--radius-sm);padding:13px 15px}
+.vinc .av{width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid #BFE0D8;display:grid;place-items:center;font-weight:600;color:var(--accent-deep);flex-shrink:0}
+.vinc .n{font-weight:600;font-size:13.5px}
+.vinc .m{font-size:11.5px;color:var(--accent-deep);margin-top:1px}
+.vinc a{margin-left:auto;font-size:12.5px;color:var(--accent-deep);white-space:nowrap}
+
+/* + NUEVO · tablas repetibles */
+table.rep{width:100%;border-collapse:collapse;font-size:13px}
+table.rep th{text-align:left;font-size:11.5px;font-weight:600;color:var(--muted);padding:0 8px 8px;border-bottom:1px solid var(--line)}
+table.rep td{padding:8px;border-bottom:1px solid var(--line-2)}
+table.rep tr:last-child td{border-bottom:0}
+table.rep td:first-child,table.rep th:first-child{padding-left:0}
+table.rep td:last-child,table.rep th:last-child{padding-right:0;text-align:right}
+.rowdel{border:0;background:none;color:var(--faint);font-size:17px;line-height:1;padding:4px 7px;border-radius:6px}
+.rowdel:hover{background:#FBF0F0;color:var(--req)}
+.tot{display:flex;gap:26px;padding:13px 16px;margin-top:16px;background:var(--line-2);border-radius:var(--radius-sm);font-size:12px;color:var(--muted)}
+.tot b{display:block;font-family:"IBM Plex Mono",monospace;font-size:19px;color:var(--ink);font-weight:600}
+.chip-st{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chip-st.ok{border-color:#BFE0D8;background:var(--accent-soft);color:var(--accent-deep)}
+.chip-st.ok .dot{background:var(--accent)}
+.chip-st.wait{border-color:#E6D6B4;background:#FBF4E4;color:#8A6620}
+.chip-st.wait .dot{background:#C79A3A}
+.sec-meta .chip-st{text-transform:none;letter-spacing:0;font-size:11px}
+
+table.mat{width:100%;border-collapse:collapse;font-size:13px}
+table.mat th{font-size:11.5px;font-weight:600;color:var(--muted);padding:0 10px 8px;border-bottom:1px solid var(--line);text-align:left}
+table.mat td{padding:9px 10px;border-bottom:1px solid var(--line-2)}
+table.mat td:first-child,table.mat th:first-child{padding-left:0;font-weight:500}
+.sino{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.sino button{border:0;background:var(--surface);padding:5px 15px;font-size:12.5px;color:var(--muted)}
+.sino button+button{border-left:1px solid var(--line)}
+.sino button.on{background:var(--accent);color:#fff}
+.sino button.on.neg{background:var(--ink-2);color:#fff}
+
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-soft);padding:16px 18px}
+.rcard h3{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin:0 0 12px;font-weight:600}
+.av-t{font-size:11.5px;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.av-t .chip-st{margin-left:auto}
+.av ul{margin:0;padding:0}
+.av li{list-style:none;display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12.5px;color:var(--muted);cursor:pointer}
+.av li .mk{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--line);flex-shrink:0}
+.av li.ok .mk{background:var(--accent);border-color:var(--accent)}
+.av li.now{color:var(--ink);font-weight:600}
+.av li.now .mk{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.av li .late{margin-left:auto;font-size:10px;color:#8A6620;background:#FBF4E4;border-radius:999px;padding:1px 7px}
+.btn{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:11px 14px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:500}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:hover{background:var(--accent-deep)}
+.btn-sm{width:auto;padding:6px 12px;font-size:12.5px}
+.info{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px}
+.info b{display:block;font-size:13px;margin-bottom:5px}
+.info p{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
+.res div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:12.5px;color:var(--muted)}
+.res div b{color:var(--ink);font-weight:600;text-align:right}
+
+@media (max-width:1100px){.cols{grid-template-columns:1fr}.rail{position:static;flex-direction:row;flex-wrap:wrap}.rail>*{flex:1;min-width:240px}}
+@media (max-width:860px){.sidebar{display:none}.page{padding:18px}.grid>*{grid-column:span 12 !important}.clasif{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:no-preference){.cl,.btn,.sec{transition:border-color .12s ease,background .12s ease,box-shadow .12s ease}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark"><svg width="17" height="17" viewBox="0 0 16 16" fill="none"><path d="M1 11.5l3-6 2.5 4.5L9 3l2 6 1-2h3" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><div class="brand-name">VIGÍA</div><div class="brand-sub">Vigilancia · DIRSAPOL</div></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-group"><div class="nav-t">Operación</div>
+      <a href="#">Panel</a><a href="#">Fichas <span class="count">4</span></a>
+      <a href="#" class="on">Nueva ficha</a><a href="#">Reportes</a>
+    </div>
+    <div class="nav-group"><div class="nav-t">Catálogos</div>
+      <a href="#">Establecimientos</a><a href="#">Enfermedades</a><a href="#">Usuarios</a>
+    </div>
+  </nav>
+  <div class="side-user"><div class="avatar">SJ</div>
+    <div><div class="n">SILVA AGUILAR,<br>CESAR JOSUE</div><div class="r">Administrador</div></div></div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="crumb">Nueva ficha <span>· vigilancia epidemiológica</span></div>
+    <div class="top-r">
+      <span class="se-chip"><span class="dot"></span>Semana <b>SE 37</b> · 2026</span>
+      <button class="icobtn" title="Tema">☾</button><button class="icobtn" title="Avisos">◔</button>
+    </div>
+  </header>
+
+  <div class="page">
+    <h1>Nueva ficha de notificación</h1>
+    <p class="sub">El formulario se ajusta a la ficha modelo MINSA de la enfermedad seleccionada</p>
+
+    <div class="sel-card">
+      <div class="sel-ico"><svg width="17" height="17" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      <div>
+        <div class="eyebrow">Enfermedad / evento bajo vigilancia</div>
+        <div class="sel-val">Gestante con VIH y niño nacido expuesto
+          <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div class="tags"><span class="tag">CIE-10 · Z21</span><span class="tag">Ficha de investigación</span></div>
+    </div>
+
+    <div class="cols">
+      <div class="form">
+
+        <!-- 1 -->
+        <section class="sec done" id="s1">
+          <div class="sec-h"><span class="sec-n">1</span><h2>Notificación</h2>
+            <div class="sec-meta">SE de la ficha <span class="tag">SE 37 · 2026</span></div></div>
+          <div class="sec-b">
+            <div class="grid">
+              <div class="f c6"><label>Establecimiento (EESS) <i>*</i></label>
+                <select><option selected>HN PNP Luis N. Sáenz</option></select>
+                <span class="help">Del padrón RENIPRESS · define DIRESA, tipo de EESS e institución</span></div>
+              <div class="f c3"><label>Fecha de notificación <i>*</i></label><input type="date" value="2026-09-11"></div>
+              <div class="f c3"><label>Fecha de reporte de la ficha</label><input type="date"></div>
+              <div class="f c4"><label>Tipo de captación</label>
+                <select id="tipoCapt"><option selected>Pasiva</option><option>Búsqueda activa institucional</option></select></div>
+              <div class="f c4"><label>Lugar de captación</label>
+                <select><option>Consultorio externo</option><option selected>Hospitalización</option><option>Emergencia</option></select>
+                <span class="help">Es el “servicio de captación” de la planilla</span></div>
+              <div class="f c4"><label>Notificado al sistema de vigilancia</label>
+                <select><option selected>Sí</option><option>No</option></select>
+                <span class="help">Campo nuevo · lo exige la planilla, no la ficha</span></div>
+              <div class="f c6" id="wrapCampana" style="display:none"><label>Campaña de búsqueda activa</label>
+                <select><option selected>Agosto 2026 · 01/08 – 31/08</option><option>Crear campaña…</option></select>
+                <span class="help">Solo estos casos entran a la planilla del periodo</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2 · DISCRIMINADOR -->
+        <section class="sec done" id="s2">
+          <div class="sec-h"><span class="sec-n">2</span><h2>Clasificación del caso</h2>
+            <div class="sec-meta">Planilla · nota 2</div></div>
+          <div class="sec-b">
+            <p class="help" style="margin:0 0 14px;max-width:78ch">Los cuatro valores son los que MINSA numera al pie de la planilla de búsqueda activa. Define de quién es la ficha y qué secciones siguen.</p>
+            <div class="clasif">
+              <button class="cl sel" data-c="gestante"><span class="cl-n">1</span><span class="cl-t">Gestante con VIH</span><span class="cl-d">Gestación y desenlaces</span></button>
+              <button class="cl" data-c="aborto"><span class="cl-n">2</span><span class="cl-t">Aborto</span><span class="cl-d">Ficha mínima, enlazada</span></button>
+              <button class="cl" data-c="mortinato"><span class="cl-n">3</span><span class="cl-t">Mortinato</span><span class="cl-d">Ficha mínima, enlazada</span></button>
+              <button class="cl" data-c="nino"><span class="cl-n">4</span><span class="cl-t">Niño nacido expuesto</span><span class="cl-d">Exposición y serología</span></button>
+            </div>
+            <div class="note" id="note">La ficha seguirá con los datos de la gestante, el momento del diagnóstico de la infección, los datos de la gestación y la culminación del embarazo.</div>
+          </div>
+        </section>
+
+        <!-- 3 -->
+        <section class="sec" id="s3">
+          <div class="sec-h"><span class="sec-n">3</span><h2 id="t3">Datos de la gestante</h2></div>
+          <div class="sec-b">
+
+            <div id="vinc" style="display:none;margin-bottom:20px">
+              <label style="display:block;margin-bottom:7px">Madre <i>*</i></label>
+              <div class="vinc"><div class="av">M</div>
+                <div><div class="n">QUISPE ROJAS, MARÍA ELENA</div>
+                  <div class="m mono">DNI 43871209 · Caso 2026-Z21-00418 · notificada 04/09/2026</div></div>
+                <a href="#">Cambiar</a></div>
+              <span class="help" style="display:block;margin-top:6px">Enlace al caso, no texto libre. El código y el DNI de la madre (ítem 9) salen de aquí.</span>
+            </div>
+
+            <div class="grid" id="camposPersona">
+              <div class="f c4"><label>Documento de identidad</label>
+                <div class="doc"><select><option>DNI</option><option>CE</option><option>S/D</option></select><input type="text" class="mono" value="43871209"></div></div>
+              <div class="f c4"><label>Código del paciente</label><input type="text" class="mono" value="" placeholder="Asignado por el EESS"></div>
+              <div class="f c4"><label>N.º de historia clínica</label><input type="text" class="mono" value="HC-118402">
+                <span class="help">Columna de la planilla</span></div>
+              <div class="f c4"><label>Apellido paterno <i>*</i></label><input type="text" value="QUISPE"></div>
+              <div class="f c4"><label>Apellido materno</label><input type="text" value="ROJAS"></div>
+              <div class="f c4"><label>Nombres <i>*</i></label><input type="text" value="MARÍA ELENA"></div>
+              <div class="f c3"><label id="lblSexo">Sexo</label><select id="selSexo"><option selected>Mujer</option><option>Hombre</option></select></div>
+              <div class="f c3"><label id="lblFN">Fecha de nacimiento <i>*</i></label><input type="date" value="1994-09-18"></div>
+              <div class="f c3" id="wrapEdad" style="display:none"><label>Edad <i>*</i></label>
+                <div style="display:flex;gap:8px"><input type="number" class="mono" value="3" style="width:72px"><select><option>días</option><option selected>meses</option><option>años</option></select></div>
+                <span class="help">Unidad exigida por la planilla (d / m / a)</span></div>
+              <div class="f c3"><label>Etnia</label>
+                <select><option>Seleccionar…</option><option>Mestizo</option><option>Afrodescendiente</option><option selected>Andino</option><option>Indígena amazónico</option><option>Asiático descendiente</option><option>Otro</option></select>
+                <span class="help">Sin pueblo étnico: esta ficha no lo pide</span></div>
+            </div>
+
+            <!-- producto de gestación -->
+            <div class="grid" id="camposProducto" style="display:none">
+              <div class="f c3"><label>Clasificación</label><input type="text" id="inpClasif" value="2 · Aborto" readonly></div>
+              <div class="f c3"><label>Fecha de defunción <i>*</i></label><input type="date" value="2026-08-30"></div>
+              <div class="f c3"><label>Sexo</label><select><option selected>No determinado</option><option>Mujer</option><option>Hombre</option></select></div>
+              <div class="f c3"><label>N.º de historia clínica</label><input type="text" class="mono" placeholder="De la madre, si aplica"></div>
+              <div class="f c12"><label>Observaciones</label><input type="text"></div>
+            </div>
+
+            <div class="note mute" id="notaProducto" style="display:none">Este caso no tiene registro en el padrón de personas. Existe como caso propio para que la planilla pueda contarlo en su fila con su fecha de defunción.</div>
+          </div>
+        </section>
+
+        <!-- 4 · residencia -->
+        <section class="sec" id="s4">
+          <div class="sec-h"><span class="sec-n">4</span><h2>Residencia habitual</h2></div>
+          <div class="sec-b"><div class="grid">
+            <div class="f c3"><label>Departamento</label><select><option selected>Lima</option></select></div>
+            <div class="f c3"><label>Provincia</label><select><option selected>Lima</option></select></div>
+            <div class="f c3"><label>Distrito</label><select><option selected>Jesús María</option></select></div>
+            <div class="f c3"><label>Localidad</label><input type="text"></div>
+          </div></div>
+        </section>
+
+        <!-- ===== RAMA GESTANTE ===== -->
+        <div id="ramaGestante">
+          <section class="sec" id="s5g">
+            <div class="sec-h"><span class="sec-n">5</span><h2>Momento del diagnóstico de la infección</h2>
+              <div class="sec-meta">Ítem 4</div></div>
+            <div class="sec-b"><div class="grid">
+              <div class="f c4"><label>Momento del diagnóstico</label>
+                <select id="momentoDx"><option>Previo a la gestación actual</option><option selected>Durante la actual gestación</option></select></div>
+              <div class="f c4" id="wrapMomG"><label>Momento dentro de la gestación</label>
+                <select><option selected>Atención prenatal (APN)</option><option>Trabajo de parto</option><option>Puerperio</option><option>Posterior al puerperio</option><option>Por aborto</option></select></div>
+              <div class="f c4" id="wrapAnio" style="display:none"><label>Año de diagnóstico</label><input type="number" class="mono" placeholder="AAAA"></div>
+              <div class="f c4"><label>Prueba de tamizaje N.º 1</label><input type="date" value="2026-02-08"></div>
+              <div class="f c4"><label>Prueba de tamizaje N.º 2</label><input type="date"></div>
+              <div class="f c4"><label>Prueba confirmatoria</label><input type="date" value="2026-02-12"></div>
+            </div></div>
+          </section>
+
+          <section class="sec" id="s6g">
+            <div class="sec-h"><span class="sec-n">6</span><h2>Datos de la gestación</h2>
+              <div class="sec-meta"><span class="chip-st wait"><span class="dot"></span>Se cierra tras el parto</span></div></div>
+            <div class="sec-b"><div class="grid">
+              <div class="f c3"><label>FUR</label><input type="date" value="2025-12-02"></div>
+              <div class="f c3"><label>Recibió APN</label><select><option selected>Sí</option><option>No</option></select></div>
+              <div class="f c3"><label>Embarazo múltiple</label><select><option selected>Sí</option><option>No</option></select>
+                <span class="help">Se valida contra la sección 7</span></div>
+              <div class="f c3"><label>Recibió ARV</label><select><option selected>Sí</option><option>No</option></select></div>
+              <div class="f c3"><label>Fecha de inicio de ARV</label><input type="date" value="2026-02-14"></div>
+              <div class="f c3"><label>Abandonó terapia ARV</label><select><option>Sí</option><option selected>No</option></select></div>
+              <div class="f c3"><label>Terapia triple / TARGA</label><select><option selected>Sí</option><option>No</option></select></div>
+              <div class="f c3"><label>Carga viral indetectable</label><select><option selected>Sí</option><option>No</option></select></div>
+              <div class="f c5"><label>EESS del parto</label><select><option selected>HN PNP Luis N. Sáenz</option><option>Otro…</option></select></div>
+              <div class="f c3"><label>Fecha del parto</label><input type="date" value="2026-08-30"></div>
+              <div class="f c4"><label>Parto por cesárea</label><select><option selected>Sí</option><option>No</option></select></div>
+              <div class="f c4"><label>Abandona seguimiento</label><select><option>Sí</option><option selected>No</option></select></div>
+              <div class="f c4"><label>Gestante fallece</label><select><option>Sí</option><option selected>No</option></select></div>
+              <div class="f c4"><label>Fecha de defunción</label><input type="date"></div>
+            </div></div>
+          </section>
+
+          <section class="sec" id="s7g">
+            <div class="sec-h"><span class="sec-n">7</span><h2>Culminación del embarazo</h2>
+              <div class="sec-meta"><span class="chip-st wait"><span class="dot"></span>Se cierra tras el parto</span></div></div>
+            <div class="sec-b">
+              <p class="help" style="margin:0 0 14px;max-width:78ch">Una fila por producto. Cada una genera un caso propio enlazado a esta gestante, con su clasificación en la planilla: nacido vivo va como 4, óbito fetal como 3, aborto como 2.</p>
+              <table class="rep" id="tDes">
+                <thead><tr><th style="width:24%">Desenlace</th><th style="width:18%">Fecha</th><th style="width:16%">Sexo</th><th style="width:26%">Caso enlazado</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td><select class="tipo"><option value="vivo" selected>Nacido vivo</option><option value="obito">Óbito fetal</option><option value="aborto">Aborto</option></select></td>
+                    <td><input type="date" value="2026-08-30"></td>
+                    <td><select><option selected>Mujer</option><option>Hombre</option><option>No determinado</option></select></td>
+                    <td><span class="chip-st ok"><span class="dot"></span>Registrado · 00419</span></td>
+                    <td><button class="rowdel" title="Quitar">×</button></td></tr>
+                  <tr><td><select class="tipo"><option value="vivo" selected>Nacido vivo</option><option value="obito">Óbito fetal</option><option value="aborto">Aborto</option></select></td>
+                    <td><input type="date" value="2026-08-30"></td>
+                    <td><select><option>Mujer</option><option selected>Hombre</option><option>No determinado</option></select></td>
+                    <td><button class="btn btn-sm">Registrar ficha</button></td>
+                    <td><button class="rowdel" title="Quitar">×</button></td></tr>
+                  <tr><td><select class="tipo"><option value="vivo">Nacido vivo</option><option value="obito" selected>Óbito fetal</option><option value="aborto">Aborto</option></select></td>
+                    <td><input type="date" value="2026-08-30"></td>
+                    <td><select><option>Mujer</option><option>Hombre</option><option selected>No determinado</option></select></td>
+                    <td><span class="chip-st ok"><span class="dot"></span>Registrado · 00420</span></td>
+                    <td><button class="rowdel" title="Quitar">×</button></td></tr>
+                </tbody>
+              </table>
+              <button class="btn btn-sm" data-add="tDes" style="margin-top:14px">Agregar desenlace</button>
+              <div class="tot">
+                <div>N.º de nacidos vivos<b id="tVivos">2</b></div>
+                <div>N.º de óbitos fetales<b id="tObitos">1</b></div>
+                <div>Abortos<b id="tAbortos">0</b></div>
+                <div style="margin-left:auto;align-self:center;max-width:30ch">Se calculan de las filas. Así van a la ficha impresa.</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ===== RAMA NIÑO ===== -->
+        <div id="ramaNino" style="display:none">
+          <section class="sec" id="s5n">
+            <div class="sec-h"><span class="sec-n">5</span><h2>Datos de la exposición al VIH</h2>
+              <div class="sec-meta">Ítem 10</div></div>
+            <div class="sec-b"><div class="grid">
+              <div class="f c3"><label>Recibió ARV</label><select><option selected>Sí</option><option>No</option></select></div>
+              <div class="f c3"><label>Fecha de inicio de ARV</label><input type="date" value="2026-08-30"></div>
+              <div class="f c3"><label>ARV recibido</label><select><option>AZT</option><option selected>AZT + NVP</option><option>Otro</option></select></div>
+              <div class="f c3"><label>N.º de días que tomó ARV</label><input type="number" class="mono" value="28"></div>
+              <div class="f c3"><label>Abandonó terapia ARV</label><select><option>Sí</option><option selected>No</option></select></div>
+              <div class="f c3"><label>Profilaxis según NT vigente</label><select><option selected>Sí</option><option>No</option></select></div>
+              <div class="f c3"><label>Tomó leche materna</label><select><option>Sí</option><option selected>No</option></select></div>
+              <div class="f c3"><label>Sucedáneos de leche materna</label><select><option selected>Sí</option><option>No</option></select></div>
+              <div class="f c3"><label>Meses de sucedáneos</label><input type="number" class="mono" value="6"></div>
+            </div></div>
+          </section>
+
+          <section class="sec" id="s6n">
+            <div class="sec-h"><span class="sec-n">6</span><h2>Estado serológico</h2>
+              <div class="sec-meta"><span class="chip-st wait"><span class="dot"></span>Cierra a los 18 meses</span></div></div>
+            <div class="sec-b">
+              <div class="grid" style="margin-bottom:18px">
+                <div class="f c4"><label>Estado serológico final</label>
+                  <select id="serFinal"><option>Infectado por VIH</option><option>No infectado por VIH</option><option selected>Estado indeterminado</option></select></div>
+                <div class="f c5" id="wrapMotInd"><label>Motivo del estado indeterminado</label>
+                  <select id="motInd"><option selected>Continúa en seguimiento</option><option>Falleció antes de determinar su estado</option><option>Abandonó el seguimiento o seguimiento irregular</option><option>Referido</option></select></div>
+                <div class="f c3" id="wrapRef" style="display:none"><label>Referido a</label><input type="text"></div>
+              </div>
+              <table class="mat">
+                <thead><tr><th style="width:34%">Prueba</th><th style="width:28%">Fecha de toma de muestra</th><th>Resultado</th></tr></thead>
+                <tbody>
+                  <tr><td>1.er PCR</td><td><input type="date" value="2026-09-01"></td><td><span class="sino"><button class="on">Positivo</button><button>Negativo</button></span></td></tr>
+                  <tr><td>2.º PCR</td><td><input type="date"></td><td><span class="sino"><button>Positivo</button><button>Negativo</button></span></td></tr>
+                  <tr><td>Prueba de ELISA</td><td><input type="date"></td><td><span class="sino"><button>Reactivo</button><button>No reactivo</button></span></td></tr>
+                  <tr><td>Prueba confirmatoria</td><td><input type="date"></td><td><span class="sino"><button>Positivo</button><button>Negativo</button></span></td></tr>
+                </tbody>
+              </table>
+              <div class="grid" style="margin-top:18px">
+                <div class="f c6"><label>Fecha de defunción</label><input type="date"></div>
+                <div class="f c6"><label>Observaciones</label><input type="text"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+      </div><!-- /form -->
+
+      <aside class="rail">
+        <div class="rcard av">
+          <h3>Avance de la ficha</h3>
+          <div class="av-t" id="avT">Gestante con VIH <span class="chip-st ok"><span class="dot"></span>3 de 7</span></div>
+          <ul id="lista"></ul>
+        </div>
+
+        <div class="info">
+          <b>Datos limpios desde el origen</b>
+          <p>Distritos, establecimientos y campos clínicos vienen de catálogos oficiales. La ficha se valida en el servidor antes de guardar: obligatorios, fechas y valores de catálogo.</p>
+        </div>
+
+        <button class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5l3.2 3L12 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Registrar ficha</button>
+        <button class="btn">Guardar borrador</button>
+
+        <div class="rcard res">
+          <h3>Resumen de la ficha</h3>
+          <div><span>Enfermedad</span><b>Gestante VIH / Niño</b></div>
+          <div><span>Clasificación</span><b id="resCl">1 · Gestante con VIH</b></div>
+          <div><span>Establecimiento</span><b>HN PNP L. N. Sáenz</b></div>
+          <div id="resVinc"><span>Casos enlazados</span><b><a href="#" id="resVincN">3</a></b></div>
+          <div id="resMadre" style="display:none"><span>Madre</span><b>Caso 00418</b></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  var $=function(s,c){return (c||document).querySelector(s)},
+      $$=function(s,c){return [].slice.call((c||document).querySelectorAll(s))};
+
+  var SEC={
+    gestante:[['s1','Notificación',0],['s2','Clasificación del caso',0],['s3','Datos de la gestante',0],
+              ['s4','Residencia habitual',0],['s5g','Momento del diagnóstico',0],
+              ['s6g','Datos de la gestación',1],['s7g','Culminación del embarazo',1]],
+    nino:[['s1','Notificación',0],['s2','Clasificación del caso',0],['s3','Datos del niño',0],
+          ['s4','Residencia habitual',0],['s5n','Exposición al VIH',0],['s6n','Estado serológico',1]],
+    prod:[['s1','Notificación',0],['s2','Clasificación del caso',0],['s3','Datos del desenlace',0]]
+  };
+  var CFG={
+    gestante:{t:'Datos de la gestante',res:'1 · Gestante con VIH',lista:'gestante',
+      n:'La ficha seguirá con los datos de la gestante, el momento del diagnóstico de la infección, los datos de la gestación y la culminación del embarazo.'},
+    aborto:{t:'Datos del desenlace',res:'2 · Aborto',lista:'prod',clasif:'2 · Aborto',
+      n:'Ficha mínima: se enlaza a la madre y solo pide la fecha de defunción y el sexo si se conoce. No genera registro en el padrón de personas.'},
+    mortinato:{t:'Datos del desenlace',res:'3 · Mortinato',lista:'prod',clasif:'3 · Mortinato',
+      n:'Ficha mínima: se enlaza a la madre y solo pide la fecha de defunción y el sexo si se conoce. No genera registro en el padrón de personas.'},
+    nino:{t:'Datos del niño',res:'4 · Niño nacido expuesto',lista:'nino',
+      n:'La ficha seguirá con la exposición al VIH y el seguimiento serológico hasta determinar el estado final.'}
+  };
+
+  function pintaRiel(k){
+    var l=SEC[CFG[k].lista],html='';
+    l.forEach(function(s,i){
+      html+='<li class="'+(i<3?'ok':'')+'" data-go="'+s[0]+'"><span class="mk"></span>'+s[1]+
+            (s[2]?'<span class="late">después</span>':'')+'</li>';
+    });
+    $('#lista').innerHTML=html;
+    $('#avT').childNodes[0].nodeValue=CFG[k].res.split(' · ')[1]+' ';
+    $('#avT .chip-st').innerHTML='<span class="dot"></span>3 de '+l.length;
+  }
+
+  function aplica(k){
+    var c=CFG[k],esProd=(k==='aborto'||k==='mortinato'),esNino=(k==='nino');
+    $('#note').textContent=c.n; $('#note').classList.toggle('mute',esProd);
+    $('#t3').textContent=c.t; $('#resCl').textContent=c.res;
+    $('#vinc').style.display=(esProd||esNino)?'':'none';
+    $('#camposPersona').style.display=esProd?'none':'';
+    $('#camposProducto').style.display=esProd?'':'none';
+    $('#notaProducto').style.display=esProd?'':'none';
+    if(esProd) $('#inpClasif').value=c.clasif;
+    $('#s4').style.display=esProd?'none':'';
+    $('#ramaGestante').style.display=(k==='gestante')?'':'none';
+    $('#ramaNino').style.display=esNino?'':'none';
+    $('#wrapEdad').style.display=esNino?'':'none';
+    $('#lblFN').innerHTML=esNino?'Fecha de nacimiento <i>*</i>':'Fecha de nacimiento <i>*</i>';
+    $('#selSexo').selectedIndex=esNino?0:0;
+    $('#resVinc').style.display=(k==='gestante')?'':'none';
+    $('#resMadre').style.display=(esProd||esNino)?'':'none';
+    pintaRiel(k);
+  }
+  $$('.cl').forEach(function(b){
+    b.addEventListener('click',function(){
+      $$('.cl').forEach(function(x){x.classList.remove('sel')});
+      b.classList.add('sel'); aplica(b.dataset.c);
+    });
+  });
+
+  $('#tipoCapt').addEventListener('change',function(){
+    $('#wrapCampana').style.display=this.value.indexOf('Búsqueda')===0?'':'none';
+  });
+  $('#momentoDx').addEventListener('change',function(){
+    var d=this.value.indexOf('Durante')===0;
+    $('#wrapMomG').style.display=d?'':'none'; $('#wrapAnio').style.display=d?'none':'';
+  });
+  $('#serFinal').addEventListener('change',function(){
+    var ind=this.value==='Estado indeterminado';
+    $('#wrapMotInd').style.display=ind?'':'none';
+    if(!ind) $('#wrapRef').style.display='none';
+  });
+  $('#motInd').addEventListener('change',function(){
+    $('#wrapRef').style.display=this.value==='Referido'?'':'none';
+  });
+
+  document.addEventListener('click',function(e){
+    var li=e.target.closest('.av li');
+    if(li&&li.dataset.go){var s=$('#'+li.dataset.go); if(s) s.scrollIntoView({behavior:'smooth',block:'start'});}
+    if(e.target.classList.contains('rowdel')){
+      var tr=e.target.closest('tr'),tb=tr.parentNode;
+      if(tb.children.length>1){tr.remove();recuenta()}
+    }
+    if(e.target.dataset&&e.target.dataset.add){
+      var tb=$('#'+e.target.dataset.add+' tbody'),n=tb.lastElementChild.cloneNode(true);
+      $$('input',n).forEach(function(i){i.value=''});
+      $$('td',n)[3].innerHTML='<button class="btn btn-sm">Registrar ficha</button>';
+      tb.appendChild(n);recuenta();
+      var f=$('select,input',n); if(f) f.focus();
+    }
+    if(e.target.parentNode&&e.target.parentNode.classList.contains('sino')){
+      $$('button',e.target.parentNode).forEach(function(b){b.classList.remove('on','neg')});
+      e.target.classList.add('on');
+      if(e.target.textContent.indexOf('No')===0) e.target.classList.add('neg');
+    }
+  });
+
+  function recuenta(){
+    var t={vivo:0,obito:0,aborto:0},f=$$('#tDes tbody tr');
+    f.forEach(function(tr){t[$('.tipo',tr).value]++});
+    $('#tVivos').textContent=t.vivo;$('#tObitos').textContent=t.obito;$('#tAbortos').textContent=t.aborto;
+    $('#resVincN').textContent=f.length;
+  }
+  document.addEventListener('change',function(e){if(e.target.classList.contains('tipo'))recuenta()});
+
+  var io=new IntersectionObserver(function(ent){
+    ent.forEach(function(en){
+      if(!en.isIntersecting)return;
+      $$('.av li').forEach(function(l){l.classList.remove('now')});
+      var li=$('.av li[data-go="'+en.target.id+'"]'); if(li) li.classList.add('now');
+    });
+  },{rootMargin:'-80px 0px -65% 0px'});
+  $$('.sec').forEach(function(s){io.observe(s)});
+
+  aplica('gestante');recuenta();
+})();
+</script>
+</body>
+</html>
