@@ -1103,8 +1103,7 @@ class CasosController extends Controller
         [$casoVinculadoId, $errorVinculoCaso] = $this->resolverVinculoCaso($enfermedad, $valoresCampos, $paraGuardar, (int) $caso['id']);
 
         // nucleo_omitidos: 'clasificacion' (cotejo Z21) -- con la tarjeta
-        // oculta tampoco llegan Hospitalizado/Fallecido, así que se conservan
-        // los valores guardados en vez de leerlos como desmarcados.
+        // oculta se conserva la clasificación guardada.
         $opcionesClasificacion = opcionesClasificacionPara($enfermedad);
         $clasificacionOmitida = nucleoOmitido($enfermedad, 'clasificacion');
         $clasificacion = $clasificacionOmitida ? $caso['clasificacion'] : ($_POST['clasificacion'] ?? $caso['clasificacion']);
@@ -1113,8 +1112,13 @@ class CasosController extends Controller
         }
         // reglas_campos "clasificar": se recalcula en cada edición.
         $clasificacion = $this->clasificacionCalculada($enfermedad, $valoresCampos) ?? $clasificacion;
-        $hospitalizado = $clasificacionOmitida ? (int) $caso['hospitalizado'] : (isset($_POST['hospitalizado']) ? 1 : 0);
-        $fallecido = $clasificacionOmitida ? (int) $caso['fallecido'] : (isset($_POST['fallecido']) ? 1 : 0);
+        // caso.hospitalizado/fallecido no se capturan en el formulario (2026-10-08):
+        // "Nueva ficha" nunca los pidió y "Editar" tenía dos casillas genéricas
+        // que duplicaban los campos propios de cada ficha (Hospitalizado,
+        // Fallecido). Se conservan los guardados; fallecido lo recalculan las
+        // fichas que declaran la regla.
+        $hospitalizado = (int) $caso['hospitalizado'];
+        $fallecido = (int) $caso['fallecido'];
         // reglas_campos "fallecido" (A50): se recalcula en cada edición.
         $fallecido = $this->fallecidoCalculado($enfermedad, $valoresCampos) ?? $fallecido;
 

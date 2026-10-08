@@ -442,20 +442,13 @@ endforeach;
       ?>
 
       <!-- Clasificación del caso -->
-      <?php // nucleo_omitidos: 'clasificacion' -- ver nueva/index.php. Con la
-      // tarjeta oculta tampoco llegan Hospitalizado/Fallecido en el POST, así
-      // que CasosController::actualizar() conserva los valores guardados en
-      // vez de interpretarlos como desmarcados. ?>
+      <?php // nucleo_omitidos: 'clasificacion' -- ver nueva/index.php. ?>
       <?php if (!nucleoOmitido($enfermedad, 'clasificacion')): ?>
       <?php $esB26Clasif = (($enfermedad['cie10'] ?? '') === 'B26'); ?>
       <div class="card section" id="cardClasificacionCaso" <?= $esB26Clasif ? 'hidden style="display:none;"' : '' ?>>
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Clasificación del caso</h3></div>
         <div class="section-body">
           <?php $clasificacionActual = $caso['clasificacion']; require __DIR__ . '/../partials/clasificacion-chips.php'; ?>
-          <div class="sym-grid" style="margin-top:14px;grid-template-columns:1fr">
-            <label class="sym"><input type="checkbox" name="hospitalizado" <?= marcado($caso['hospitalizado']) ?>> Hospitalizado</label>
-            <label class="sym"><input type="checkbox" name="fallecido" <?= marcado($caso['fallecido']) ?>> Fallecido</label>
-          </div>
         </div>
       </div>
       <?php endif; ?>
