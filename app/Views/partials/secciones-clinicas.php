@@ -63,11 +63,6 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // lugar-probable-infeccion-b26.php
         'b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con', 'b26_contactos_por_lugar',
         'b26_tuvo_contacto_con_gestante', 'b26_trimestre_de_gestacion_contacto',
-        // PENDIENTES.md ítem N.3: duplicado conceptual muerto de caso.fecha_inicio_sintomas
-        // (ver el comentario original en cuadro-clinico-b26.php) -- nunca fue alcanzable,
-        // no es un campo nuevo sin cobertura. Se mantiene suprimido a propósito: decidir
-        // si se borra o se conecta es aparte, no algo que esta ruta deba resolver sola.
-        'b26_fecha_de_inicio_de_sintomas',
     ],
     'O95' => [
         // notificacion-fechas-o95.php (mecanismo de name literal remapeado, ítem N.2)

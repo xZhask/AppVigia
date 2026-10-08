@@ -1573,12 +1573,6 @@
           "orden": 2,
           "campos": [
             {
-              "clave": "b26_fecha_de_inicio_de_sintomas",
-              "etiqueta": "Fecha de inicio de síntomas",
-              "tipo": "FECHA",
-              "orden": 1
-            },
-            {
               "clave": "b26_presento_inflamacion_de_glandulas_parotidas",
               "etiqueta": "¿Presentó inflamación de glándulas parótidas?",
               "tipo": "BOOLEANO",

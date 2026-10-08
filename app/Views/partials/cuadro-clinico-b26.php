@@ -45,11 +45,10 @@ $campoFechaEgreso = $campoB26('b26_fecha_de_egreso');
 $campoReferidoA = $campoB26('b26_referido_a');
 $campoCausaMuerte = $campoB26('b26_causa_de_muerte');
 
-// Extraer valores existentes. "Fecha de inicio de sintomas" es un campo fijo
-// de caso.fecha_inicio_sintomas (name="fecha_inicio_sintomas" literal, mas
-// abajo) -- el campo_def b26_fecha_de_inicio_de_sintomas existe pero ningun
-// input postea a el, es un duplicado conceptual sin usar; no se resuelve por
-// clave porque nunca fue alcanzable.
+// Extraer valores existentes. "Fecha de inicio de sintomas" es el campo del
+// nucleo caso.fecha_inicio_sintomas (name="fecha_inicio_sintomas" literal, mas
+// abajo). El campo_def duplicado b26_fecha_de_inicio_de_sintomas, al que nada
+// posteaba, se quito del manifiesto el 2026-10-08.
 $valFechaInicioSintomas = $valoresFijos['fecha_inicio_sintomas'] ?? '';
 
 // Glándulas parótidas
