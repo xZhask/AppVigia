@@ -1075,6 +1075,29 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             return ['SI' => 'Sí', 'NO' => 'No', 'IGNORADO' => 'Ignorado'][$marcado] ?? '—';
         case 'FECHA':
             return fechaIsoADmy($valorCrudo) ?: '—';
+        case 'GRUPO_SI_NO':
+            // {"CODIGO": "SI"|"NO"|"IGNORADO", ...}, en el orden del catálogo
+            // (el de partials/campos/grupo-si-no.php): "Fiebre: Sí; Trismus: No".
+            $decodGrupo = json_decode($valorCrudo, true);
+            if (!is_array($decodGrupo)) {
+                return $valorCrudo;
+            }
+            $etiquetasSiNo = ['SI' => 'Sí', 'NO' => 'No', 'IGNORADO' => 'Ignorado'];
+            $itemsGrupo = $campo['catalogo_id'] ? CatalogoItem::porCatalogo((int) $campo['catalogo_id']) : [];
+            $partesGrupo = [];
+            foreach ($itemsGrupo as $item) {
+                $respuesta = $decodGrupo[$item['valor']] ?? '';
+                if ($respuesta !== '') {
+                    $partesGrupo[] = $item['etiqueta'] . ': ' . ($etiquetasSiNo[$respuesta] ?? $respuesta);
+                }
+                unset($decodGrupo[$item['valor']]);
+            }
+            foreach ($decodGrupo as $codigo => $respuesta) {
+                if ($respuesta !== '' && $respuesta !== null) {
+                    $partesGrupo[] = $codigo . ': ' . ($etiquetasSiNo[$respuesta] ?? $respuesta);
+                }
+            }
+            return implode('; ', $partesGrupo) ?: '—';
         case 'SELECT':
         case 'MULTISELECT':
             $opciones = $campo['catalogo_id'] ? CatalogoItem::porCatalogo((int) $campo['catalogo_id']) : [];
