@@ -5124,6 +5124,9 @@ para el usuario: pantalla igual que "no se pudo registrar por un error
 interno", sin decir por qué). Encontrado al armar las pruebas de este
 cambio, no relacionado con Edad. Pendiente de decidir si el fix es
 cambiar el `<option>` a `SIN_DOCUMENTO` o agregar `'OTRO'` al ENUM.
+**Resuelto 2026-10-07:** se agregó `'OTRO'` al ENUM
+(`sql/migraciones/add_tipo_doc_otro_persona.php`) y `CasosController::crear()`
+rechaza con mensaje cualquier tipo fuera de DNI/CE/PTP/PAS/OTRO.
 
 ## Cotejo B04X -- Sección V "Antecedentes" (ítems 36-45), 2026-09-02
 
@@ -6771,8 +6774,9 @@ regenerado e instalado en una base limpia: 31 tablas, 393 columnas, 112
 índices, 52 FK iguales a la real. Datos de prueba borrados.
 
 ## Observado, sin tocar
-- **"OTRO" en tipo de documento** rompe el guardado en las 24 fichas: el ENUM
-  de persona.tipo_doc no lo tiene (error 1265 comprobado en la BD).
+- ~~**"OTRO" en tipo de documento** rompe el guardado en las 24 fichas: el ENUM
+  de persona.tipo_doc no lo tiene (error 1265 comprobado en la BD).~~ Resuelto
+  2026-10-07 (OTRO agregado al ENUM + validación del tipo en el controlador).
 - Los campos del núcleo omitidos (celular, dirección, etnia...) se guardan si
   llegan forjados en el POST: nucleo_omitidos solo los oculta en la vista.
 - ~~**La semana epidemiológica de la app no coincide con la del MINSA.**~~

@@ -279,6 +279,12 @@ class CasosController extends Controller
             $valoresFijos['tipo_doc'] = 'SIN_DOCUMENTO';
             $valoresFijos['num_doc'] = '';
         }
+        // Mismos tipos que ofrece el selector de nueva/index.php; cualquier otro
+        // valor haría fallar el INSERT de persona (ENUM con STRICT_TRANS_TABLES).
+        if (!$sinDocumento && !in_array($valoresFijos['tipo_doc'], ['DNI', 'CE', 'PTP', 'PAS', 'OTRO'], true)) {
+            $erroresFijos['num_doc'] = 'Tipo de documento no válido.';
+            $valoresFijos['tipo_doc'] = 'DNI';
+        }
         if ($valoresFijos['num_doc'] === '' && !$sinDocumento) {
             $erroresFijos['num_doc'] = 'Ingresa el número de documento.';
         }

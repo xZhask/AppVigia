@@ -922,7 +922,7 @@ DROP TABLE IF EXISTS `persona`;
 CREATE TABLE `persona` (
   `id` int NOT NULL AUTO_INCREMENT,
   `codigo_interno` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `tipo_doc` enum('DNI','CE','PTP','PAS','SIN_DOCUMENTO') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DNI',
+  `tipo_doc` enum('DNI','CE','PTP','PAS','OTRO','SIN_DOCUMENTO') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DNI',
   `num_doc` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `apellido_paterno` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `apellido_materno` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
