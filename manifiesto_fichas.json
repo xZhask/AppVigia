@@ -6373,7 +6373,24 @@
         "nombre_tutor",
         "celular_tutor",
         "direccion",
-        "ocupacion"
+        "ocupacion",
+        "nacionalidad",
+        "gestante"
+      ],
+      "nucleo_ajustes": {
+        "_nota": "Cotejo 2026-10-08 (págs. 21-22): el paciente es un recién nacido de menos de 28 días. El PDF no pide documento de identidad (casi nunca lo tiene), nacionalidad ni gestante, y un neonato no puede ser efectivo PNP (titular).",
+        "sin_documento": true,
+        "condiciones_paciente": ["DERECHOHABIENTE", "PARTICULAR"]
+      },
+      "reglas_campos": [
+        {
+          "_nota": "Fallecido = Sí (ítem III) marca el caso como defunción (caso.fallecido).",
+          "si": {
+            "clave": "a33_fallecido",
+            "valores": ["SI"]
+          },
+          "fallecido": true
+        }
       ],
       "secciones": [
         {
@@ -6461,11 +6478,11 @@
               "opciones": [
                 "Fiebre",
                 "Trismus (no succiona)",
-                "Risa sardónica",
+                "Risa sardónica (contracción de los músculos de la cara)",
                 "Convulsiones (espasmos)",
-                "Opistótonos",
-                "Onfalitis",
-                "Ictericia"
+                "Opistótonos (columna arqueada)",
+                "Onfalitis (ombligo infectado)",
+                "Ictericia (piel amarilla)"
               ]
             },
             {
@@ -6506,7 +6523,7 @@
             },
             {
               "clave": "a33_hospital",
-              "etiqueta": "Hospital",
+              "etiqueta": "Hospital o C. Salud",
               "tipo": "TEXTO",
               "orden": 8,
               "depende_de": "Hospitalizado",
@@ -6514,7 +6531,7 @@
             },
             {
               "clave": "a33_n_h_c",
-              "etiqueta": "N.° H.C.",
+              "etiqueta": "N.° H. Clínica",
               "tipo": "TEXTO",
               "orden": 9,
               "depende_de": "Hospitalizado",
@@ -6543,8 +6560,7 @@
               "orden": 12,
               "opciones": [
                 "Sí",
-                "No",
-                "Ignorado"
+                "No"
               ]
             },
             {
