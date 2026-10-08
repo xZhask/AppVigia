@@ -47,6 +47,7 @@ const CLAVES_MECANISMO_NO_ESTANDAR = [
     'o95_hora_de_la_notificacion'  => 'notificacion-fechas-o95.php: name="hora_notificacion" literal, remapeado en CasosController.php:1001.',
     'o95_identificado_por'         => 'notificacion-fechas-o95.php: name="identificado_por" literal, remapeado en CasosController.php:1007.',
     'o95_tipo_de_ficha'            => 'notificacion-fechas-o95.php: name="o95_tipo_ficha" literal, remapeado en CasosController.php:1013.',
+    'b55_lesiones'                 => 'leishmaniasis-body-map.php: el JS crea name="campo_<id>[i][tipo|localizacion|...]" al marcar una lesión en el mapa (no hay input en el HTML inicial); verificado con Playwright y POST real 2026-10-08.',
     'a35_distrito_probable_infeccion' => 'secciones-clinicas.php: selector real Departamento/Provincia/Distrito, name="a35_lugar_infeccion_distrito_id" literal, remapeado en CasosController.php (validarCamposDinamicos).',
 ];
 
