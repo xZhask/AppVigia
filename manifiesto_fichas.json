@@ -7399,14 +7399,9 @@
         {
           "nombre": "Cadena de transmisión",
           "orden": 10,
-          "campos": [
-            {
-              "clave": "a80_notas_de_investigacion_de_la_cadena_de_transmision",
-              "etiqueta": "Notas de investigación de la cadena de transmisión",
-              "tipo": "TEXTAREA",
-              "orden": 1
-            }
-          ]
+          "solo_tabla_hija": true,
+          "_nota": "10. CADENA DE TRANSMISIÓN del PDF (pág. 36): instrucciones + tabla de contactos (caso_contacto, la pinta secciones-clinicas.php). El PDF no trae campo de notas; el TEXTAREA 'Notas de investigación...' que había estaba solo para que la sección existiera y nunca se pintaba (huérfano en verificar_render.php). Quitado 2026-10-08, sin datos guardados.",
+          "campos": []
         },
         {
           "nombre": "Acciones de control",
