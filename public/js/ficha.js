@@ -4738,6 +4738,66 @@ document.addEventListener('DOMContentLoaded', function () {
     var bloque = e.target.closest('.secuencia-exantema-b04x');
     if (bloque) repintarSecuenciaB04x(bloque);
   });
+
+  // nucleo_ajustes.copiar_a_sujeto (V99, 2026-10-09): cuando el campo
+  // declarado toma uno de sus valores ("Ubicación del lesionado" =
+  // Conductor), el bloque de identidad del sujeto secundario se llena con los
+  // datos del paciente -- solo si está vacío, para no pisar lo ya escrito, y
+  // queda editable (el conductor de la denuncia puede ser otra persona). La
+  // ficha lo declara en data-copiar-de-paciente (tablas-hijas/residencia-madre.php);
+  // acá no se decide nada por CIE-10.
+  function valorDelPaciente(nombre) {
+    var el = document.querySelector('[name="' + nombre + '"]');
+    return el && el.value ? el.value.trim() : '';
+  }
+
+  function edadDelPacienteEnAnios() {
+    var fechaNac = valorDelPaciente('fecha_nac');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaNac)) {
+      var nac = new Date(fechaNac + 'T00:00:00');
+      var hoy = new Date();
+      var anios = hoy.getFullYear() - nac.getFullYear();
+      if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) anios--;
+      return anios >= 0 ? String(anios) : '';
+    }
+    var unidad = valorDelPaciente('edad_unidad');
+    return (unidad === '' || unidad === 'ANIOS') ? valorDelPaciente('edad_valor') : '';
+  }
+
+  function datosDelPacienteParaSujeto() {
+    return {
+      tipo_doc: valorDelPaciente('tipo_doc'),
+      doc: valorDelPaciente('num_doc'),
+      apellidos: [valorDelPaciente('apellido_paterno'), valorDelPaciente('apellido_materno')].filter(Boolean).join(' '),
+      nombres: valorDelPaciente('nombres'),
+      sexo: valorDelPaciente('sexo'),
+      edad: edadDelPacienteEnAnios(),
+      fecha_nacimiento: valorDelPaciente('fecha_nac'),
+      nacionalidad: valorDelPaciente('nacionalidad'),
+      ocupacion: valorDelPaciente('ocupacion')
+    };
+  }
+
+  document.addEventListener('change', function (e) {
+    if (!e.target || !e.target.name) return;
+    document.querySelectorAll('[data-copiar-de-paciente]').forEach(function (bloque) {
+      if (bloque.getAttribute('data-copiar-de-paciente') !== e.target.name) return;
+      var valores = JSON.parse(bloque.getAttribute('data-copiar-valores') || '[]');
+      if (valores.indexOf(e.target.value) === -1) return;
+      var prefijo = bloque.getAttribute('data-sujeto-prefijo');
+      var datos = datosDelPacienteParaSujeto();
+      var controles = Object.keys(datos).map(function (col) {
+        return { col: col, el: bloque.querySelector('[name="' + prefijo + '_' + col + '"]') };
+      }).filter(function (c) { return c.el; });
+      if (controles.some(function (c) { return c.el.value.trim() !== ''; })) return;
+      controles.forEach(function (c) {
+        if (datos[c.col] === '') return;
+        c.el.value = datos[c.col];
+        if (c.el.tagName === 'SELECT' && window.SelectorBusqueda) window.SelectorBusqueda.actualizar(c.el);
+        c.el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  });
 });
 
 

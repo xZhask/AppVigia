@@ -27,7 +27,14 @@ $prefijoNombre = mb_strtolower($rolActual);
 $meta = metaColumnasSujeto();
 $columnasOrdenadas = array_intersect_key($meta, array_flip($columnasDeclaradas));
 $columnasSimples = array_filter($columnasOrdenadas, fn($info) => $info['kind'] !== 'ubigeo');
+// nucleo_ajustes.copiar_a_sujeto (V99, 2026-10-09): {"ROL": {"si": {"clave",
+// "valores"}}}. Si la ficha lo declara para este rol, el bloque lleva el
+// name del campo disparador y sus valores; ficha.js copia los datos del
+// paciente al elegir uno de ellos (el conductor que es el mismo lesionado).
+$copiaSujeto = (nucleoAjuste($enfermedad ?? [], 'copiar_a_sujeto') ?? [])[$rolActual]['si'] ?? null;
+$campoCopiaSujeto = $copiaSujeto ? \App\Models\CampoDef::porClave((int) ($enfermedad['id'] ?? 0), (string) $copiaSujeto['clave']) : null;
 ?>
+<div<?php if ($campoCopiaSujeto): ?> data-copiar-de-paciente="campo_<?= (int) $campoCopiaSujeto['id'] ?>" data-copiar-valores="<?= e(json_encode(array_values($copiaSujeto['valores']))) ?>" data-sujeto-prefijo="<?= e($prefijoNombre) ?>"<?php endif; ?>>
 <div class="eyebrow" style="margin:22px 0 10px"><?= e($tituloBloque) ?></div>
 
 <?php if (!empty($columnasSimples)): ?>
@@ -80,3 +87,4 @@ $columnasSimples = array_filter($columnasOrdenadas, fn($info) => $info['kind'] !
   })($prefijoNombre, $valoresSujetoActual);
   ?>
 <?php endif; ?>
+</div>

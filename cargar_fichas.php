@@ -220,6 +220,12 @@ const NUCLEO_AJUSTES_VALIDOS = [
     // B24, 2026-09-14: etiquetas del PDF para campos del núcleo
     // ({"sexo": "Sexo al nacer", "localidad": "Comunidad"}), de ETIQUETAS_NUCLEO.
     'etiquetas'            => 'etiquetas',
+    // V99, 2026-10-09: {"ROL": {"si": {"clave": ..., "valores": [...]}}}.
+    // Cuando ese campo_def de la ficha toma uno de esos valores, el bloque de
+    // identidad del sujeto secundario (columnas_sujeto) se llena con los datos
+    // del paciente, si está vacío (el lesionado que es el conductor). Solo
+    // del lado del navegador; se guarda lo que quede escrito.
+    'copiar_a_sujeto'      => 'copiar_a_sujeto',
 ];
 
 // Campos del núcleo cuya etiqueta una ficha puede cambiar con
@@ -855,6 +861,27 @@ function validarManifiesto(array $manifiesto): void
                         }
                         if (!is_string($textoEtiqueta) || trim($textoEtiqueta) === '') {
                             throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}.{$campoEtiqueta} debe ser un texto no vacío.");
+                        }
+                    }
+                }
+                if ($tipoAjuste === 'copiar_a_sujeto') {
+                    if (!is_array($valorAjuste) || array_is_list($valorAjuste) || $valorAjuste === []) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser un objeto {ROL: {\"si\": {\"clave\": ..., \"valores\": [...]}}}.");
+                    }
+                    $clavesFichaCopia = [];
+                    foreach ($ficha['secciones'] ?? [] as $seccionCopia) {
+                        foreach ($seccionCopia['campos'] ?? [] as $campoCopia) {
+                            $clavesFichaCopia[] = $campoCopia['clave'] ?? null;
+                        }
+                    }
+                    foreach ($valorAjuste as $rolCopia => $reglaCopia) {
+                        if (!array_key_exists($rolCopia, (array) ($ficha['columnas_sujeto'] ?? []))) {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}.{$rolCopia} no es un rol declarado en columnas_sujeto.");
+                        }
+                        $siCopia = $reglaCopia['si'] ?? null;
+                        if (!is_array($siCopia) || !in_array($siCopia['clave'] ?? null, $clavesFichaCopia, true)
+                            || !is_array($siCopia['valores'] ?? null) || !array_is_list($siCopia['valores']) || $siCopia['valores'] === []) {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}.{$rolCopia}.si debe ser {\"clave\": clave de un campo de esta ficha, \"valores\": lista no vacía}.");
                         }
                     }
                 }
