@@ -129,11 +129,20 @@ $accionEtiquetas = [
             <div class="field"><label class="fl">Distrito de nacimiento</label><div class="control" style="background:var(--paper)"><?= e($caso['nacimiento_distrito_nombre']) ?></div></div>
           <?php endif; ?>
           <div class="field"><label class="fl"><?= e(nucleoAjuste($enfermedadVer ?? [], 'titulo_residencia') ?? 'Distrito de domicilio') ?></label><div class="control" style="background:var(--paper)"><?= e($caso['distrito_nombre'] ?? '—') ?></div></div>
-          <div class="field"><label class="fl">N.° de celular</label><div class="control mono" style="background:var(--paper)"><?= e($caso['celular'] ?: '—') ?></div></div>
-          <div class="field"><label class="fl">Nacionalidad</label><div class="control" style="background:var(--paper)"><?= e($caso['nacionalidad'] ?: '—') ?></div></div>
-          <div class="field"><label class="fl"><?= e(etiquetaNucleo($enfermedadVer ?? [], 'localidad', 'Localidad')) ?></label><div class="control" style="background:var(--paper)"><?= e($caso['localidad'] ?: '—') ?></div></div>
-          <div class="field wide"><label class="fl">Domicilio actual</label><div class="control" style="background:var(--paper)"><?= e($caso['direccion'] ?: '—') ?></div></div>
-          <?php if (!empty($caso['referencia_localizar'])): ?>
+          <?php // nucleo_omitidos (V99, 2026-10-09): lo que el formulario de la ficha no pide tampoco se muestra acá; antes salía siempre, con "—". ?>
+          <?php if (!nucleoOmitido($enfermedadVer ?? [], 'celular')): ?>
+            <div class="field"><label class="fl">N.° de celular</label><div class="control mono" style="background:var(--paper)"><?= e($caso['celular'] ?: '—') ?></div></div>
+          <?php endif; ?>
+          <?php if (!nucleoOmitido($enfermedadVer ?? [], 'nacionalidad')): ?>
+            <div class="field"><label class="fl">Nacionalidad</label><div class="control" style="background:var(--paper)"><?= e($caso['nacionalidad'] ?: '—') ?></div></div>
+          <?php endif; ?>
+          <?php if (!nucleoOmitido($enfermedadVer ?? [], 'localidad')): ?>
+            <div class="field"><label class="fl"><?= e(etiquetaNucleo($enfermedadVer ?? [], 'localidad', 'Localidad')) ?></label><div class="control" style="background:var(--paper)"><?= e($caso['localidad'] ?: '—') ?></div></div>
+          <?php endif; ?>
+          <?php if (!nucleoOmitido($enfermedadVer ?? [], 'direccion')): ?>
+            <div class="field wide"><label class="fl">Domicilio actual</label><div class="control" style="background:var(--paper)"><?= e($caso['direccion'] ?: '—') ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['referencia_localizar']) && !nucleoOmitido($enfermedadVer ?? [], 'referencia_localizar')): ?>
             <div class="field wide"><label class="fl">Referencia para localizar</label><div class="control" style="background:var(--paper)"><?= e($caso['referencia_localizar']) ?></div></div>
           <?php endif; ?>
           <?php if (!empty($caso['tipo_zona'])): ?>
@@ -157,7 +166,7 @@ $accionEtiquetas = [
           <?php if (!empty($caso['tiempo_residencia'])): ?>
             <div class="field"><label class="fl">Tiempo de residencia</label><div class="control" style="background:var(--paper)"><?= e($caso['tiempo_residencia']) ?></div></div>
           <?php endif; ?>
-          <?php if (!empty($caso['ocupacion'])): ?>
+          <?php if (!empty($caso['ocupacion']) && !nucleoOmitido($enfermedadVer ?? [], 'ocupacion')): ?>
             <div class="field"><label class="fl">Ocupación</label><div class="control" style="background:var(--paper)"><?= e($caso['ocupacion']) ?></div></div>
           <?php endif; ?>
           <?php if (!empty($caso['estado_civil'])): ?>
@@ -165,16 +174,19 @@ $accionEtiquetas = [
           <?php endif; ?>
           <?php // nucleo_condicional 'etnia' (Z21, B24): la rama que no pide la etnia tampoco la muestra.
           $etniaCondicionVer = condicionNucleo($enfermedadVer ?? [], 'etnia');
-          if (\App\Core\Auth::tieneRol('ADMIN') &&(!$etniaCondicionVer || in_array((string) ($valoresCampos[(int) $etniaCondicionVer['campo']['id']] ?? ''), $etniaCondicionVer['valores'], true))): ?>
+          if (\App\Core\Auth::tieneRol('ADMIN') && !nucleoOmitido($enfermedadVer ?? [], 'etnia') && (!$etniaCondicionVer || in_array((string) ($valoresCampos[(int) $etniaCondicionVer['campo']['id']] ?? ''), $etniaCondicionVer['valores'], true))): ?>
             <div class="field"><label class="fl">Etnia / raza</label><div class="control" style="background:var(--paper)"><?= e(($etniaEtiquetas[$caso['etnia'] ?? ''] ?? '—') . (($caso['etnia'] ?? '') === 'OTRO' && !empty($caso['etnia_otra']) ? ' (' . $caso['etnia_otra'] . ')' : '')) ?></div></div>
-            <?php if (!empty($caso['pueblo_etnico'])): ?>
+            <?php if (!empty($caso['pueblo_etnico']) && !nucleoOmitido($enfermedadVer ?? [], 'pueblo_etnico')): ?>
               <div class="field"><label class="fl">Pueblo étnico o etnia</label><div class="control" style="background:var(--paper)"><?= e($caso['pueblo_etnico']) ?></div></div>
             <?php endif; ?>
           <?php endif; ?>
-          <?php if (!empty($caso['nombre_tutor']) || !empty($caso['celular_tutor'])): ?>
-            <div class="field wide"><label class="fl">Madre / Tutor / Responsable</label><div class="control" style="background:var(--paper)"><?= e($caso['nombre_tutor'] ?: '—') ?><?= !empty($caso['celular_tutor']) ? ' · N.° Celular: ' . e($caso['celular_tutor']) : '' ?></div></div>
+          <?php
+          $nombreTutorVer = nucleoOmitido($enfermedadVer ?? [], 'nombre_tutor') ? '' : (string) ($caso['nombre_tutor'] ?? '');
+          $celularTutorVer = nucleoOmitido($enfermedadVer ?? [], 'celular_tutor') ? '' : (string) ($caso['celular_tutor'] ?? '');
+          if ($nombreTutorVer !== '' || $celularTutorVer !== ''): ?>
+            <div class="field wide"><label class="fl">Madre / Tutor / Responsable</label><div class="control" style="background:var(--paper)"><?= e($nombreTutorVer ?: '—') ?><?= $celularTutorVer !== '' ? ' · N.° Celular: ' . e($celularTutorVer) : '' ?></div></div>
           <?php endif; ?>
-          <?php if ($caso['gestante']): ?>
+          <?php if ($caso['gestante'] && !nucleoOmitido($enfermedadVer ?? [], 'gestante')): ?>
             <div class="field"><label class="fl">Gestante</label><div class="control" style="background:var(--paper)">Sí<?= !empty($caso['trimestre_gestacion']) ? ' · Trimestre ' . e($caso['trimestre_gestacion']) : ($caso['semanas_gestacion'] ? ' · ' . (int) $caso['semanas_gestacion'] . ' semanas' : '') ?><?= !empty($caso['fur']) ? ' · FUR: ' . e(date('d/m/Y', strtotime($caso['fur']))) : '' ?></div></div>
           <?php endif; ?>
         </div>
@@ -229,6 +241,35 @@ $accionEtiquetas = [
     // secciones son de la otra rama de la ficha, y sin esto la ficha de un
     // niño nacido expuesto mostraría las secciones de la gestante llenas de
     // "—". Ninguna otra de las 24 fichas declara secciones condicionadas.
+    // Bloque de identidad de un sujeto secundario (columnas_sujeto: la madre de
+    // P35.0, el conductor de V99). Igual que en el formulario
+    // (secciones-clinicas.php), va al inicio de la primera sección de su rol;
+    // un rol sin sección propia sigue en "Antecedentes epidemiológicos".
+    // Antes iba siempre allí, lejos de su sección (V99, 2026-10-09).
+    $rolesConSeccionPropiaVer = CampoDef::rolesConSeccionPropia((int) ($enfermedadVer['id'] ?? 0));
+    $pintarSujetoVer = function (string $rolVer) use ($caso, $valoresSujetoPorRol): void {
+        $datosVer = $valoresSujetoPorRol[$rolVer] ?? [];
+        if (empty($datosVer)) {
+            return; // ningún caso_sujeto guardado para este rol todavía
+        }
+        $columnasVerOrdenadas = array_intersect_key(metaColumnasSujeto(), array_flip(columnasSujeto($caso['enfermedad_columnas_sujeto'] ?? null, $rolVer)));
+        ?>
+          <div class="eyebrow" style="margin:0 0 10px"><?= e(tituloSujeto($caso['enfermedad_titulo_sujeto'] ?? null, $rolVer)) ?></div>
+          <div class="subrow" style="margin-bottom:16px"><div class="fields thirds" style="flex:1">
+            <?php foreach ($columnasVerOrdenadas as $colVer => $infoVer):
+                $esUbigeo = $infoVer['kind'] === 'ubigeo';
+                $valorVer = $esUbigeo ? ($datosVer['distrito_nombre'] ?? '—') : ($datosVer[$colVer] ?? '—');
+                if ($infoVer['kind'] === 'sexo') {
+                    $valorVer = ['M' => 'Masculino', 'F' => 'Femenino'][$valorVer] ?? $valorVer;
+                }
+                $claseVer = $infoVer['kind'] === 'texto_wide' ? 'field wide' : 'field';
+            ?>
+              <div class="<?= $claseVer ?>"><label class="fl"><?= e($esUbigeo ? 'Distrito' : $infoVer['label']) ?></label><div class="control" style="background:var(--paper)"><?= e($valorVer !== null && $valorVer !== '' ? $valorVer : '—') ?></div></div>
+            <?php endforeach; ?>
+          </div></div>
+        <?php
+    };
+    $rolesSujetoPintadosVer = [];
     $numeroSeccion = 3;
     foreach ($secciones as $seccion):
         if (!empty($seccion['depende_de']) && !campoVisiblePorDependencia(
@@ -248,6 +289,15 @@ $accionEtiquetas = [
       <div class="card section">
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3><?= e($seccion['nombre']) ?></h3></div>
         <div class="section-body">
+          <?php
+          $rolSeccionVer = $camposSeccionVer[0]['rol_sujeto'] ?? 'CASO_INDICE';
+          if (in_array($rolSeccionVer, $rolesConSeccionPropiaVer, true) && !in_array($rolSeccionVer, $rolesSujetoPintadosVer, true)) {
+              $rolesSujetoPintadosVer[] = $rolSeccionVer;
+              if (tieneSujeto($caso['enfermedad_columnas_sujeto'] ?? null, $rolSeccionVer)) {
+                  $pintarSujetoVer($rolSeccionVer);
+              }
+          }
+          ?>
           <?php if ($numeroSeccion === 3 && !nucleoOmitido($enfermedadVer ?? [], 'fecha_inicio_sintomas')): ?>
             <div class="fields" style="margin-bottom:16px">
               <div class="field"><label class="fl">Fecha de inicio de síntomas</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_inicio_sintomas'])) ?: '—' ?></div></div>
@@ -368,22 +418,9 @@ $accionEtiquetas = [
           <?php endforeach; ?>
         <?php endif; ?>
 
-        <?php foreach (rolesSujetoDeclarados($caso['enfermedad_columnas_sujeto'] ?? null) as $rolVer):
-            $datosVer = $valoresSujetoPorRol[$rolVer] ?? [];
-            if (empty($datosVer)) continue; // ningún caso_sujeto guardado para este rol todavía
-            $columnasVerOrdenadas = array_intersect_key(metaColumnasSujeto(), array_flip(columnasSujeto($caso['enfermedad_columnas_sujeto'] ?? null, $rolVer)));
-        ?>
-          <div class="eyebrow" style="margin:18px 0 10px"><?= e(tituloSujeto($caso['enfermedad_titulo_sujeto'] ?? null, $rolVer)) ?></div>
-          <div class="subrow"><div class="fields thirds" style="flex:1">
-            <?php foreach ($columnasVerOrdenadas as $colVer => $infoVer):
-                $esUbigeo = $infoVer['kind'] === 'ubigeo';
-                $valorVer = $esUbigeo ? ($datosVer['distrito_nombre'] ?? '—') : ($datosVer[$colVer] ?? '—');
-                $claseVer = $infoVer['kind'] === 'texto_wide' ? 'field wide' : 'field';
-            ?>
-              <div class="<?= $claseVer ?>"><label class="fl"><?= e($esUbigeo ? 'Distrito' : $infoVer['label']) ?></label><div class="control" style="background:var(--paper)"><?= e($valorVer !== null && $valorVer !== '' ? $valorVer : '—') ?></div></div>
-            <?php endforeach; ?>
-          </div></div>
-        <?php endforeach; ?>
+        <?php foreach (rolesSujetoSinAnclaje($caso['enfermedad_columnas_sujeto'] ?? null, $rolesConSeccionPropiaVer) as $rolVer) {
+            $pintarSujetoVer($rolVer);
+        } ?>
       </div>
     </div>
     <?php $numeroSeccion++; ?>
