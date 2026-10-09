@@ -12165,6 +12165,7 @@
         "CASO_INDICE",
         "CONDUCTOR"
       ],
+      "_nota_cotejo": "Cotejo 2026-10-08 (pág. 29). El conductor (ítems 23-25) es una segunda persona: columnas_sujeto.CONDUCTOR (apellidos, nombres, edad, sexo), como la madre de P35.0. Las secciones IV y V (conductor y vehículo) son del ocasionante y van con rol CONDUCTOR, para que el aviso de sujeto no vuelva a 'Caso índice' a mitad de camino. Los lugares del PDF (15.2-15.4, 27.1-27.3) usan el formato 'distrito' (selector encadenado, se guarda el id del distrito). El PDF no pide captación, clasificación, investigador ni fecha de inicio de síntomas: se omiten, como en P96.",
       "tablas_hijas": {
         "caso_contacto": false,
         "caso_muestra": false,
@@ -12174,7 +12175,40 @@
       "nucleo_omitidos": [
         "referencia_localizar",
         "pueblo_etnico",
-        "ocupacion"
+        "ocupacion",
+        "celular",
+        "nacionalidad",
+        "etnia",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "captacion",
+        "clasificacion",
+        "investigador",
+        "fecha_inicio_sintomas"
+      ],
+      "columnas_sujeto": {
+        "CONDUCTOR": [
+          "apellidos",
+          "nombres",
+          "edad",
+          "sexo"
+        ]
+      },
+      "titulo_sujeto": {
+        "CONDUCTOR": "Identidad del conductor"
+      },
+      "reglas_campos": [
+        {
+          "_nota": "Condición de egreso = Fallecido (ítem 12.2) marca el caso como defunción (caso.fallecido).",
+          "si": {
+            "clave": "v99_condicion_de_egreso",
+            "valores": [
+              "FALLECIDO"
+            ]
+          },
+          "fallecido": true
+        }
       ],
       "secciones": [
         {
@@ -12213,13 +12247,16 @@
             {
               "clave": "v99_referido_de_un_ee_ss",
               "etiqueta": "¿Referido de un EE.SS.?",
-              "tipo": "BOOLEANO",
+              "tipo": "SI_NO",
+              "_corregido_tipo": "Cotejo 2026-10-08: BOOLEANO caía al checklist genérico 'Signos y síntomas'. SI_NO, como b04x_recibe_tar.",
               "orden": 3
             },
             {
               "clave": "v99_nombre_del_ee_ss_de_referencia",
               "etiqueta": "Nombre del EE.SS. de referencia",
               "tipo": "TEXTO",
+              "depende_de": "v99_referido_de_un_ee_ss",
+              "valor_activador": "SI",
               "orden": 4
             },
             {
@@ -12229,34 +12266,68 @@
               "orden": 5
             },
             {
-              "clave": "v99_diagnostico_medico_dx_1",
-              "etiqueta": "Diagnóstico médico Dx 1",
+              "clave": "v99_hora_de_ingreso",
+              "etiqueta": "Hora de ingreso",
               "tipo": "TEXTO",
+              "formato": "hora",
               "orden": 6
             },
             {
-              "clave": "v99_diagnostico_medico_dx_2",
-              "etiqueta": "Diagnóstico médico Dx 2",
+              "clave": "v99_diagnostico_medico_dx_1",
+              "etiqueta": "Dx 1",
               "tipo": "TEXTO",
+              "grupo": "Diagnóstico médico",
               "orden": 7
             },
             {
-              "clave": "v99_diagnostico_medico_dx_3",
-              "etiqueta": "Diagnóstico médico Dx 3",
+              "clave": "v99_cie10_dx_1",
+              "etiqueta": "CIE-10 (Dx 1)",
               "tipo": "TEXTO",
+              "formato": "cie10",
+              "grupo": "Diagnóstico médico",
               "orden": 8
+            },
+            {
+              "clave": "v99_diagnostico_medico_dx_2",
+              "etiqueta": "Dx 2",
+              "tipo": "TEXTO",
+              "grupo": "Diagnóstico médico",
+              "orden": 9
+            },
+            {
+              "clave": "v99_cie10_dx_2",
+              "etiqueta": "CIE-10 (Dx 2)",
+              "tipo": "TEXTO",
+              "formato": "cie10",
+              "grupo": "Diagnóstico médico",
+              "orden": 10
+            },
+            {
+              "clave": "v99_diagnostico_medico_dx_3",
+              "etiqueta": "Dx 3",
+              "tipo": "TEXTO",
+              "grupo": "Diagnóstico médico",
+              "orden": 11
+            },
+            {
+              "clave": "v99_cie10_dx_3",
+              "etiqueta": "CIE-10 (Dx 3)",
+              "tipo": "TEXTO",
+              "formato": "cie10",
+              "grupo": "Diagnóstico médico",
+              "orden": 12
             },
             {
               "clave": "v99_fecha_de_egreso_del_establecimiento",
               "etiqueta": "Fecha de egreso del establecimiento",
               "tipo": "FECHA",
-              "orden": 9
+              "orden": 13
             },
             {
               "clave": "v99_condicion_de_egreso",
               "etiqueta": "Condición de egreso",
               "tipo": "SELECT",
-              "orden": 10,
+              "orden": 14,
               "opciones": [
                 "Alta",
                 "Fallecido",
@@ -12264,10 +12335,18 @@
               ]
             },
             {
+              "clave": "v99_referido_a",
+              "etiqueta": "Referido a (¿dónde?)",
+              "tipo": "TEXTO",
+              "depende_de": "v99_condicion_de_egreso",
+              "valor_activador": "REFERIDO",
+              "orden": 15
+            },
+            {
               "clave": "v99_requiere_rehabilitacion",
               "etiqueta": "¿Requiere rehabilitación?",
-              "tipo": "BOOLEANO",
-              "orden": 11
+              "tipo": "SI_NO",
+              "orden": 16
             }
           ]
         },
@@ -12285,13 +12364,29 @@
               "clave": "v99_hora_del_accidente",
               "etiqueta": "Hora del accidente",
               "tipo": "TEXTO",
+              "formato": "hora",
               "orden": 2
+            },
+            {
+              "clave": "v99_lugar_del_accidente_direccion",
+              "etiqueta": "Jr./Av./Calle/localidad",
+              "tipo": "TEXTO",
+              "grupo": "Lugar del accidente",
+              "orden": 3
+            },
+            {
+              "clave": "v99_lugar_del_accidente_distrito",
+              "etiqueta": "Departamento, provincia y distrito",
+              "tipo": "TEXTO",
+              "formato": "distrito",
+              "grupo": "Lugar del accidente",
+              "orden": 4
             },
             {
               "clave": "v99_via_donde_ocurrio",
               "etiqueta": "Vía donde ocurrió",
               "tipo": "SELECT",
-              "orden": 3,
+              "orden": 5,
               "opciones": [
                 "Calles/Jirones",
                 "Avenidas",
@@ -12306,7 +12401,7 @@
               "clave": "v99_tipo_de_accidente",
               "etiqueta": "Tipo de accidente",
               "tipo": "SELECT",
-              "orden": 4,
+              "orden": 6,
               "opciones": [
                 "Atropellado",
                 "Choque",
@@ -12314,6 +12409,14 @@
                 "Caída de ocupante",
                 "Otro"
               ]
+            },
+            {
+              "clave": "v99_tipo_de_accidente_otro",
+              "etiqueta": "Otro tipo de accidente (especificar)",
+              "tipo": "TEXTO",
+              "depende_de": "v99_tipo_de_accidente",
+              "valor_activador": "OTRO",
+              "orden": 7
             }
           ]
         },
@@ -12417,7 +12520,7 @@
           "campos": [
             {
               "clave": "v99_n_de_licencia_de_conducir",
-              "etiqueta": "N.° de licencia de conducir",
+              "etiqueta": "Licencia de conducir",
               "tipo": "SELECT",
               "orden": 1,
               "opciones": [
@@ -12427,10 +12530,27 @@
               ]
             },
             {
-              "clave": "v99_comisaria_donde_se_registra_la_denuncia_policial",
-              "etiqueta": "Comisaría donde se registra la denuncia policial",
+              "clave": "v99_numero_de_licencia",
+              "etiqueta": "N.° de licencia",
               "tipo": "TEXTO",
+              "depende_de": "v99_n_de_licencia_de_conducir",
+              "valor_activador": "SI",
               "orden": 2
+            },
+            {
+              "clave": "v99_comisaria_donde_se_registra_la_denuncia_policial",
+              "etiqueta": "Nombre de la comisaría",
+              "tipo": "TEXTO",
+              "orden": 3,
+              "grupo": "Comisaría donde se registra la denuncia policial"
+            },
+            {
+              "clave": "v99_comisaria_distrito",
+              "etiqueta": "Departamento, provincia y distrito",
+              "tipo": "TEXTO",
+              "formato": "distrito",
+              "grupo": "Comisaría donde se registra la denuncia policial",
+              "orden": 4
             }
           ]
         },
@@ -12470,8 +12590,17 @@
                 "Latino Seguros",
                 "Otro"
               ]
+            },
+            {
+              "clave": "v99_aseguradora_otra",
+              "etiqueta": "Otra aseguradora (especificar)",
+              "tipo": "TEXTO",
+              "depende_de": "v99_aseguradora",
+              "valor_activador": "OTRO",
+              "orden": 5
             }
-          ]
+          ],
+          "rol_sujeto": "CONDUCTOR"
         }
       ]
     },
