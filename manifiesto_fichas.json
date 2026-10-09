@@ -11823,6 +11823,7 @@
         "AGRESOR"
       ],
       "_nota_general": "Ficha de maxima confidencialidad: todos los campos deben ser sensible=1. Ocupación de la persona agredida (antes y07_ocupacion) se promovió a núcleo (persona.ocupacion) -- no se omite acá, así que se muestra; y07_ocupacion_agresor es otra persona y se queda como campo_def propio.",
+      "_nota_cotejo": "Cotejo 2026-10-09 (pág. 25). Institución (MINSA/PNP/DEMUNAS/CMM/Otros) y Hospital/Centro de Salud no se capturan: decisión del usuario, la institución es siempre PNP, un dato constante del establecimiento (mismo criterio que la 'Institución informante' de A35/A36); el tipo sale de establecimiento.categoria. El PDF no pide el nombre del agredido; se conserva el del núcleo para identificar a la persona (ficha privada; decisión del usuario). Del agresor solo pide edad y sexo (columnas_sujeto). Gestando solo con sexo Mujer (reglas_campos con nucleo:sexo, como B24); el 'Gestante' del núcleo se omite para no duplicarlo. La dirección del PDF es solo Departamento/Provincia/Distrito/Localidad, sin calle.",
       "tablas_hijas": {
         "caso_contacto": false,
         "caso_muestra": false,
@@ -11831,43 +11832,55 @@
       },
       "nucleo_omitidos": [
         "referencia_localizar",
-        "pueblo_etnico"
+        "pueblo_etnico",
+        "celular",
+        "nacionalidad",
+        "etnia",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "direccion",
+        "captacion",
+        "clasificacion",
+        "investigador",
+        "fecha_inicio_sintomas"
+      ],
+      "columnas_sujeto": {
+        "AGRESOR": [
+          "edad",
+          "sexo"
+        ]
+      },
+      "titulo_sujeto": {
+        "AGRESOR": "Persona agresora"
+      },
+      "campos_notificacion": [
+        "y07_codigo"
+      ],
+      "reglas_campos": [
+        {
+          "_nota": "'En caso de ser mujer: ¿Se encuentra gestando?'",
+          "si": {
+            "clave": "nucleo:sexo",
+            "valores": [
+              "F"
+            ]
+          },
+          "mostrar": [
+            "y07_se_encuentra_gestando"
+          ]
+        }
       ],
       "secciones": [
         {
-          "nombre": "Institución que registra",
+          "nombre": "Registro",
           "orden": 1,
           "campos": [
             {
-              "clave": "y07_institucion_que_registra",
-              "etiqueta": "Institución que registra",
-              "tipo": "SELECT",
-              "orden": 1,
-              "opciones": [
-                "MINSA",
-                "PNP",
-                "DEMUNAS",
-                "CMM",
-                "Otros"
-              ],
-              "sensible": true
-            },
-            {
-              "clave": "y07_que_otras_instituciones",
-              "etiqueta": "Qué otras instituciones",
+              "clave": "y07_codigo",
+              "etiqueta": "Código",
               "tipo": "TEXTO",
-              "orden": 2,
-              "sensible": true
-            },
-            {
-              "clave": "y07_tipo_de_establecimiento",
-              "etiqueta": "Tipo de establecimiento",
-              "tipo": "SELECT",
-              "orden": 3,
-              "opciones": [
-                "Hospital",
-                "Centro de Salud"
-              ],
+              "orden": 1,
               "sensible": true
             }
           ]
@@ -11878,17 +11891,52 @@
           "rol_sujeto": "CASO_INDICE",
           "campos": [
             {
+              "clave": "y07_departamento_residencia_ultimo_anio",
+              "etiqueta": "Departamento de residencia en el último año",
+              "tipo": "SELECT",
+              "orden": 1,
+              "opciones": [
+                "Amazonas",
+                "Áncash",
+                "Apurímac",
+                "Arequipa",
+                "Ayacucho",
+                "Cajamarca",
+                "Callao",
+                "Cusco",
+                "Huancavelica",
+                "Huánuco",
+                "Ica",
+                "Junín",
+                "La Libertad",
+                "Lambayeque",
+                "Lima",
+                "Loreto",
+                "Madre de Dios",
+                "Moquegua",
+                "Pasco",
+                "Piura",
+                "Puno",
+                "San Martín",
+                "Tacna",
+                "Tumbes",
+                "Ucayali"
+              ],
+              "sensible": true
+            },
+            {
               "clave": "y07_se_encuentra_gestando",
               "etiqueta": "¿Se encuentra gestando?",
-              "tipo": "BOOLEANO",
-              "orden": 1,
+              "tipo": "SI_NO",
+              "orden": 2,
+              "_corregido_tipo": "Cotejo 2026-10-09: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como SI/NO.",
               "sensible": true
             },
             {
               "clave": "y07_estado_civil",
               "etiqueta": "Estado civil",
               "tipo": "SELECT",
-              "orden": 2,
+              "orden": 3,
               "opciones": [
                 "Soltero(a)",
                 "Casado(a)",
@@ -11903,7 +11951,7 @@
               "clave": "y07_grado_de_instruccion",
               "etiqueta": "Grado de instrucción",
               "tipo": "SELECT",
-              "orden": 3,
+              "orden": 4,
               "opciones": [
                 "Iletrada",
                 "Primaria",
@@ -11916,18 +11964,21 @@
               "clave": "y07_completa_incompleta",
               "etiqueta": "Completa / Incompleta",
               "tipo": "SELECT",
-              "orden": 4,
+              "orden": 5,
               "opciones": [
                 "Completa",
                 "Incompleta"
               ],
-              "sensible": true
+              "sensible": true,
+              "depende_de": "y07_grado_de_instruccion",
+              "valor_activador": "PRIMARIA,SECUNDARIA,SUPERIOR"
             },
             {
               "clave": "y07_tiene_empleo_remunerado",
               "etiqueta": "¿Tiene empleo remunerado?",
-              "tipo": "BOOLEANO",
-              "orden": 5,
+              "tipo": "SI_NO",
+              "orden": 6,
+              "_corregido_tipo": "Cotejo 2026-10-09: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como SI/NO.",
               "sensible": true
             }
           ]
@@ -11953,10 +12004,19 @@
               "sensible": true
             },
             {
+              "clave": "y07_vinculo_con_la_victima_otro",
+              "etiqueta": "Otro vínculo (especificar)",
+              "tipo": "TEXTO",
+              "orden": 2,
+              "depende_de": "y07_vinculo_con_la_victima",
+              "valor_activador": "OTRO",
+              "sensible": true
+            },
+            {
               "clave": "y07_grado_de_instruccion_agresor",
               "etiqueta": "Grado de instrucción",
               "tipo": "SELECT",
-              "orden": 2,
+              "orden": 3,
               "opciones": [
                 "Iletrada",
                 "Primaria",
@@ -11969,25 +12029,28 @@
               "clave": "y07_completa_incompleta_agresor",
               "etiqueta": "Completa / Incompleta",
               "tipo": "SELECT",
-              "orden": 3,
+              "orden": 4,
               "opciones": [
                 "Completa",
                 "Incompleta"
               ],
-              "sensible": true
+              "sensible": true,
+              "depende_de": "y07_grado_de_instruccion_agresor",
+              "valor_activador": "PRIMARIA,SECUNDARIA,SUPERIOR"
             },
             {
               "clave": "y07_tiene_empleo_remunerado_agresor",
               "etiqueta": "¿Tiene empleo remunerado?",
-              "tipo": "BOOLEANO",
-              "orden": 4,
+              "tipo": "SI_NO",
+              "orden": 5,
+              "_corregido_tipo": "Cotejo 2026-10-09: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como SI/NO.",
               "sensible": true
             },
             {
               "clave": "y07_ocupacion_agresor",
               "etiqueta": "Ocupación",
               "tipo": "TEXTO",
-              "orden": 5,
+              "orden": 6,
               "sensible": true
             }
           ]
@@ -12051,17 +12114,28 @@
               "sensible": true
             },
             {
+              "clave": "y07_motivo_expresado_otro",
+              "etiqueta": "Otro motivo (especificar)",
+              "tipo": "TEXTO",
+              "orden": 5,
+              "depende_de": "y07_motivo_expresado",
+              "valor_activador": "OTROS",
+              "sensible": true
+            },
+            {
               "clave": "y07_es_la_primera_vez_que_es_agredido_a",
               "etiqueta": "¿Es la primera vez que es agredido(a)?",
-              "tipo": "BOOLEANO",
-              "orden": 5,
+              "tipo": "SI_NO",
+              "orden": 6,
+              "_corregido_tipo": "Cotejo 2026-10-09: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como SI/NO.",
+              "grupo": "Frecuencia",
               "sensible": true
             },
             {
               "clave": "y07_durante_la_semana_cuantas_veces_fue_agredido_a",
               "etiqueta": "Durante la semana, ¿cuántas veces fue agredido(a)?",
               "tipo": "SELECT",
-              "orden": 6,
+              "orden": 7,
               "opciones": [
                 "1",
                 "2",
@@ -12071,13 +12145,14 @@
                 "6",
                 "7"
               ],
-              "sensible": true
+              "sensible": true,
+              "grupo": "Frecuencia"
             },
             {
               "clave": "y07_durante_el_ultimo_mes_cuantas_veces",
-              "etiqueta": "Durante el último mes, ¿cuántas veces?",
+              "etiqueta": "Durante el último mes, ¿cuántas veces fue agredido(a)?",
               "tipo": "SELECT",
-              "orden": 7,
+              "orden": 8,
               "opciones": [
                 "1",
                 "2 a 3",
@@ -12087,19 +12162,29 @@
                 "9",
                 "10"
               ],
-              "sensible": true
+              "sensible": true,
+              "grupo": "Frecuencia"
             },
             {
               "clave": "y07_lugar_de_la_agresion",
               "etiqueta": "Lugar de la agresión",
               "tipo": "SELECT",
-              "orden": 8,
+              "orden": 9,
               "opciones": [
                 "Calle",
                 "Casa",
                 "Centro de Trabajo",
                 "Otros"
               ],
+              "sensible": true
+            },
+            {
+              "clave": "y07_lugar_de_la_agresion_otro",
+              "etiqueta": "Otro lugar (especificar)",
+              "tipo": "TEXTO",
+              "orden": 10,
+              "depende_de": "y07_lugar_de_la_agresion",
+              "valor_activador": "OTROS",
               "sensible": true
             }
           ]
@@ -12122,6 +12207,15 @@
                 "Otros"
               ],
               "sensible": true
+            },
+            {
+              "clave": "y07_medidas_tomadas_otra",
+              "etiqueta": "Otra medida (especificar)",
+              "tipo": "TEXTO",
+              "orden": 2,
+              "depende_de": "y07_medidas_tomadas",
+              "valor_activador": "OTROS",
+              "sensible": true
             }
           ]
         },
@@ -12132,13 +12226,14 @@
             {
               "clave": "y07_fue_derivado",
               "etiqueta": "¿Fue derivado?",
-              "tipo": "BOOLEANO",
+              "tipo": "SI_NO",
               "orden": 1,
+              "_corregido_tipo": "Cotejo 2026-10-09: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como SI/NO.",
               "sensible": true
             },
             {
               "clave": "y07_donde_derivacion",
-              "etiqueta": "¿Dónde? (derivación)",
+              "etiqueta": "¿Dónde?",
               "tipo": "MULTISELECT",
               "orden": 2,
               "opciones": [
@@ -12150,6 +12245,17 @@
                 "DEMUNA",
                 "Otros"
               ],
+              "sensible": true,
+              "depende_de": "y07_fue_derivado",
+              "valor_activador": "SI"
+            },
+            {
+              "clave": "y07_donde_derivacion_otro",
+              "etiqueta": "Otro destino (especificar)",
+              "tipo": "TEXTO",
+              "orden": 3,
+              "depende_de": "y07_donde_derivacion",
+              "valor_activador": "OTROS",
               "sensible": true
             }
           ]
