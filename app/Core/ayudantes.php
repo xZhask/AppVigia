@@ -1184,8 +1184,31 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             }
             return is_array($decoded) ? 'Registrado (' . count($decoded) . ' ítems)' : $valorCrudo;
         default:
+            // TEXTO "formato": "distrito" (V99, 2026-10-08): se guarda el id
+            // del distrito; se lee "Distrito, Provincia, Departamento".
+            $formatoTextoVer = $campo['tipo'] === 'TEXTO'
+                ? ((json_decode((string) ($campo['config'] ?? ''), true) ?: [])['formato'] ?? null)
+                : null;
+            if ($formatoTextoVer === 'distrito') {
+                return ubigeoLegible($valorCrudo) ?? $valorCrudo;
+            }
             return $valorCrudo;
     }
+}
+
+/** "Distrito, Provincia, Departamento" de un id de distrito; null si no existe. */
+function ubigeoLegible(string $distritoId): ?string
+{
+    $consulta = \App\Core\Database::conexion()->prepare(
+        'SELECT d.nombre AS distrito, p.nombre AS provincia, dep.nombre AS departamento
+           FROM distrito d
+           JOIN provincia p ON p.id = d.provincia_id
+           JOIN departamento dep ON dep.id = d.departamento_id
+          WHERE d.id = :id'
+    );
+    $consulta->execute(['id' => $distritoId]);
+    $fila = $consulta->fetch();
+    return $fila ? implode(', ', array_map('trim', [$fila['distrito'], $fila['provincia'], $fila['departamento']])) : null;
 }
 
 /**

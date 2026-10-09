@@ -248,7 +248,9 @@ const FILAS_CAMPOS_PERSONA = ['documento', 'nacimiento'];
 // "formato" de un campo TEXTO (P96, 2026-09-13): "hora" se pinta como
 // <input type="time"> y se guarda HH:MM; "cie10" exige la forma de un código
 // CIE-10 (P21.9) hasta que el catálogo CIE-10 esté en el sistema.
-const FORMATOS_TEXTO = ['hora', 'cie10'];
+// "distrito" (V99, 2026-10-08): un lugar del PDF (Departamento/Provincia/
+// Distrito) con el selector encadenado de siempre; se guarda el id del distrito.
+const FORMATOS_TEXTO = ['hora', 'cie10', 'distrito'];
 
 // "calculado" de un campo TEXTO (B24, 2026-09-14): el valor no se escribe, lo
 // arma el servidor al guardar con datos del núcleo y se pinta de solo lectura.

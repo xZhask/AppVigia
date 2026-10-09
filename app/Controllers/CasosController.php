@@ -1676,12 +1676,16 @@ class CasosController extends Controller
                     $valorNormalizado = match ($formatoTexto) {
                         'hora'  => horaValida($valor),
                         'cie10' => codigoCie10Normalizado($valor),
+                        // V99, 2026-10-08: id de un distrito real del padrón.
+                        'distrito' => \App\Models\Distrito::buscarPorId($valor) ? $valor : null,
                         default => $valor,
                     };
                     if ($valorNormalizado === null) {
-                        $erroresCampos[$campoId] = $formatoTexto === 'hora'
-                            ? 'Ingresa una hora válida (HH:MM).'
-                            : 'Ingresa un código CIE-10 válido: una letra, dos dígitos y, si corresponde, el subcódigo (P21.9).';
+                        $erroresCampos[$campoId] = match ($formatoTexto) {
+                            'hora'     => 'Ingresa una hora válida (HH:MM).',
+                            'distrito' => 'Selecciona un distrito válido.',
+                            default    => 'Ingresa un código CIE-10 válido: una letra, dos dígitos y, si corresponde, el subcódigo (P21.9).',
+                        };
                     } else {
                         $valoresCampos[$campoId] = $valorNormalizado;
                         $paraGuardar[$campoId] = $valorNormalizado;
