@@ -458,7 +458,12 @@ foreach ($reglasCamposFicha as $indiceReglaCampos => $reglaCamposFicha) {
     }
     unset($reglasCamposFicha[$indiceReglaCampos]['_nota']);
 }
-$valorReglaPorClave = fn(string $clave) => $campo($clave)['val'];
+// "nucleo:sexo" (B24 lo usaba solo para "opciones"; Y07, 2026-10-09, para
+// "mostrar"): la condición lee el dato del núcleo ya cargado, no un campo_def.
+$valoresNucleoRegla = $valoresFijos ?? [];
+$valorReglaPorClave = fn(string $clave) => str_starts_with($clave, 'nucleo:')
+    ? ($valoresNucleoRegla[substr($clave, 7)] ?? '')
+    : $campo($clave)['val'];
 if ($reglasCamposFicha) {
     echo '<script type="application/json" id="reglasCampos">' . json_encode(array_values($reglasCamposFicha), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) . '</script>';
 }
