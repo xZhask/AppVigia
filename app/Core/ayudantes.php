@@ -105,8 +105,10 @@ function metaColumnasSujeto(): array
         'doc'              => ['label' => 'N.° de documento', 'kind' => 'texto'],
         'apellidos'        => ['label' => 'Apellidos', 'kind' => 'texto'],
         'nombres'          => ['label' => 'Nombres', 'kind' => 'texto'],
-        'sexo'             => ['label' => 'Sexo', 'kind' => 'sexo'],
+        // Edad antes que Sexo: el orden de V99 (ítems 24-25 del conductor).
+        // P35.0 no declara sexo, así que no cambia.
         'edad'             => ['label' => 'Edad (años)', 'kind' => 'numero'],
+        'sexo'             => ['label' => 'Sexo', 'kind' => 'sexo'],
         'fecha_nacimiento' => ['label' => 'Fecha de nacimiento', 'kind' => 'fecha'],
         'nacionalidad'     => ['label' => 'Nacionalidad', 'kind' => 'texto'],
         'ocupacion'        => ['label' => 'Ocupación', 'kind' => 'texto'],
