@@ -12198,6 +12198,19 @@
       "titulo_sujeto": {
         "CONDUCTOR": "Identidad del conductor"
       },
+      "nucleo_ajustes": {
+        "_nota": "Si el lesionado era el conductor (ítem 19.2), los datos del conductor (ítems 23-25) se llenan con los suyos al elegirlo; quedan editables, porque el conductor de la denuncia o la póliza puede ser otra persona (el del otro vehículo).",
+        "copiar_a_sujeto": {
+          "CONDUCTOR": {
+            "si": {
+              "clave": "v99_ubicacion_del_lesionado",
+              "valores": [
+                "CONDUCTOR"
+              ]
+            }
+          }
+        }
+      },
       "reglas_campos": [
         {
           "_nota": "Condición de egreso = Fallecido (ítem 12.2) marca el caso como defunción (caso.fallecido).",
