@@ -19,7 +19,7 @@ $cie10Actual = $enfermedad['cie10'] ?? '';
 $esB05 = ($cie10Actual === 'B05');
 
 $filaVacuna = function (array $fila = [
-    'vacuna' => '', 'vacuna_otro' => '', 'dosis' => '', 'fecha' => '', 'fabricante' => '', 'lote' => '',
+    'vacuna' => '', 'vacuna_otro' => '', 'dosis' => '', 'fecha' => '', 'hora' => '', 'fabricante' => '', 'lote' => '',
     'via' => '', 'sitio' => '', 'adyuvante' => '', 'fecha_vencimiento' => '', 'establecimiento' => '', 'fuente_informacion' => '',
 ], ?array $error = null) use ($opcionesVacuna, $opcionesDosis, $opcionesViaVacuna, $opcionesSitio, $opcionesAdyuvante, $muestra, $esB05): void {
     $errorFecha = $error['fecha'] ?? null;
@@ -110,6 +110,12 @@ $filaVacuna = function (array $fila = [
           <div class="control mono <?= $errorFecha ? 'err' : '' ?>"><input type="date" name="vacuna_fecha[]" value="<?= e($fila['fecha'] ?? '') ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"></div>
           <?php if ($errorFecha): ?><span class="hint err"><?= e($errorFecha) ?></span><?php endif; ?>
         </div>
+        <?php if ($muestra('hora')): // Y59.0, 2026-10-10: "Fecha de vacunación (Hs:m)" ?>
+        <div class="field">
+          <label class="fl">Hora de aplicación</label>
+          <div class="control mono"><input type="time" name="vacuna_hora[]" value="<?= e(substr((string) ($fila['hora'] ?? ''), 0, 5)) ?>"></div>
+        </div>
+        <?php endif; ?>
         <?php if ($muestra('dosis')): ?>
         <div class="field">
           <label class="fl">Dosis</label>

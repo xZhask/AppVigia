@@ -579,6 +579,7 @@ CREATE TABLE `caso_vacuna` (
   `vacuna` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `dosis` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `fecha` date DEFAULT NULL,
+  `hora` time DEFAULT NULL,
   `fabricante` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `lote` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `via` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

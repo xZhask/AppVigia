@@ -3241,6 +3241,7 @@ class CasosController extends Controller
         $vacunasOtro = $_POST['vacuna_otro'] ?? [];
         $dosis = $_POST['vacuna_dosis'] ?? [];
         $fechas = $_POST['vacuna_fecha'] ?? [];
+        $horas = $_POST['vacuna_hora'] ?? [];
         $fabricantes = $_POST['vacuna_fabricante'] ?? [];
         $lotes = $_POST['vacuna_lote'] ?? [];
         $vias = $_POST['vacuna_via'] ?? [];
@@ -3275,6 +3276,8 @@ class CasosController extends Controller
                 'vacuna'            => $vacuna,
                 'dosis'             => $this->codigoValidoDeCatalogo(trim((string) ($dosis[$i] ?? '')), 'dosis_vacuna') ?: (trim((string) ($dosis[$i] ?? '')) ?: null),
                 'fecha'             => $fechaIso,
+                // Y59.0: hora de aplicación (HH:MM); una hora inválida se descarta.
+                'hora'              => horaValida(trim((string) ($horas[$i] ?? ''))),
                 'fabricante'        => trim((string) ($fabricantes[$i] ?? '')) ?: null,
                 'lote'              => trim((string) ($lotes[$i] ?? '')) ?: null,
                 'via'               => $this->codigoValidoDeCatalogo(trim((string) ($vias[$i] ?? '')), 'via_vacuna'),

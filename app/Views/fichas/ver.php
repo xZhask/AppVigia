@@ -396,7 +396,7 @@ $accionEtiquetas = [
           <div class="subrow"><div class="fields thirds" style="flex:1">
             <div class="field"><label class="fl">Vacuna</label><div class="control" style="background:var(--paper)"><?= e($vc['vacuna']) ?></div></div>
             <div class="field"><label class="fl">Dosis</label><div class="control" style="background:var(--paper)"><?= e($vc['dosis'] ?? '—') ?></div></div>
-            <div class="field"><label class="fl">Fecha</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($vc['fecha']) ?: '—') ?></div></div>
+            <div class="field"><label class="fl">Fecha</label><div class="control mono" style="background:var(--paper)"><?= e((fechaIsoADmy($vc['fecha']) ?: '—') . (!empty($vc['hora']) ? ' · ' . substr((string) $vc['hora'], 0, 5) : '')) ?></div></div>
             <div class="field"><label class="fl">Fabricante</label><div class="control" style="background:var(--paper)"><?= e($vc['fabricante'] ?? '—') ?></div></div>
             <div class="field"><label class="fl">Lote</label><div class="control mono" style="background:var(--paper)"><?= e($vc['lote'] ?? '—') ?></div></div>
             <div class="field"><label class="fl">Vía</label><div class="control" style="background:var(--paper)"><?= e($vc['via'] ?? '—') ?></div></div>

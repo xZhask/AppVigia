@@ -118,7 +118,7 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
     // los 6 checkboxes como el texto libre de "6. Otro" (tipo_exposicion_otro,
     // no es una entrada aparte acá porque siempre va junto al checklist).
     'caso_contacto' => ['parentesco', 'edad', 'sexo', 'vacunado', 'fecha_vacunacion', 'profilaxis', 'doc', 'celular', 'fecha_contacto', 'lugar_contacto', 'fecha_inicio_erupcion', 'vacunado_72h', 'tipo_exposicion'],
-    'caso_vacuna'   => ['dosis', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
+    'caso_vacuna'   => ['dosis', 'hora', 'via', 'sitio', 'adyuvante', 'fabricante', 'lote', 'fecha_vencimiento', 'establecimiento'],
     // 'distrito_id'/'direccion' (2026-08-13, A97, pág. 49 ítems 23-27): la
     // columna distrito_id ya existía en caso_viaje sin usarse -- ambas se
     // vuelven declarativas junto con las demás en vez de asumirse por defecto.
