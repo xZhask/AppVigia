@@ -11413,6 +11413,7 @@
       "enfermedad": "ESAVI severo",
       "lote": 6,
       "pdf_paginas": "9-11 (ficha principal), 12 (Anexo 1 notificación inmediata), 7-8 (Anexo 6.2, opcional)",
+      "_nota_cotejo": "Cotejo 2026-10-10 (págs. 9-12). Dos etapas en el mismo caso, como O95: 'Notificación inmediata (Anexo 01)' y 'Investigación completa'; las secciones V-X dependen de la etapa (secciones condicionadas, como Z21). DIRESA/red/microrred/nivel/institución salen del establecimiento. La clasificación es la 'Clasificación final' propia (sin chips genéricos, decisión del usuario). Dx de ingreso y N.° de historia clínica se conservan aunque la pág. 11 perdió el texto de esa zona. El Anexo 6.2 (págs. 7-8) queda para la etapa 3: se activará con la clasificación final 2 o 3.",
       "tablas_hijas": {
         "caso_contacto": false,
         "caso_muestra": false,
@@ -11423,6 +11424,7 @@
       "columnas_tablas_hija": {
         "caso_vacuna": [
           "dosis",
+          "hora",
           "via",
           "sitio",
           "adyuvante",
@@ -11432,11 +11434,66 @@
           "establecimiento"
         ]
       },
-      "_nota_columnas": "ANTES_DE_COMPARAR_FICHAS.md, prueba de humo: sin esto, el widget mostraba solo 'Dosis' (el mínimo por defecto) para ESAVI -- justo la ficha que motivó ampliar caso_vacuna con estas columnas. Se configuran todas: es la única ficha que las necesitaba todas.",
+      "_nota_columnas": "ANTES_DE_COMPARAR_FICHAS.md, prueba de humo: sin esto, el widget mostraba solo 'Dosis' (el mínimo por defecto) para ESAVI -- justo la ficha que motivó ampliar caso_vacuna con estas columnas. Se configuran todas: es la única ficha que las necesitaba todas. 'hora' (2026-10-10): 'Fecha de vacunación (Hs:m)' de la pág. 9.",
       "nucleo_omitidos": [
-        "referencia_localizar",
-        "pueblo_etnico",
-        "ocupacion"
+        "ocupacion",
+        "nacionalidad",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "captacion",
+        "clasificacion",
+        "fecha_inicio_sintomas"
+      ],
+      "unidades_edad": [
+        "ANIOS",
+        "MESES",
+        "DIAS",
+        "HORAS",
+        "MINUTOS"
+      ],
+      "nucleo_ajustes": {
+        "_nota": "El PDF admite 'Sin documento'. Del investigador pide solo nombre, cargo y teléfono (más la firma).",
+        "sin_documento": true,
+        "investigador": {
+          "campos": {
+            "nombre": true,
+            "cargo": true,
+            "telefono": true
+          }
+        }
+      },
+      "campos_notificacion": [
+        "y59_0_etapa_de_la_ficha",
+        "y59_0_tipo",
+        "y59_0_codigo_de_registro",
+        "y59_0_fecha_de_identificacion_local_del_caso_o_consulta",
+        "y59_0_fecha_de_notificacion_de_diresa_geresa_diris_a_cd",
+        "y59_0_fecha_de_inicio_de_investigacion"
+      ],
+      "reglas_campos": [
+        {
+          "_nota": "Gestante solo con sexo Mujer, como Y07.",
+          "si": {
+            "clave": "nucleo:sexo",
+            "valores": [
+              "F"
+            ]
+          },
+          "mostrar": [
+            "y59_0_gestante"
+          ]
+        },
+        {
+          "_nota": "Estado de alta = Fallecido marca el caso como defunción (caso.fallecido).",
+          "si": {
+            "clave": "y59_0_estado_de_alta",
+            "valores": [
+              "FALLECIDO"
+            ]
+          },
+          "fallecido": true
+        }
       ],
       "secciones": [
         {
@@ -11444,50 +11501,136 @@
           "orden": 1,
           "campos": [
             {
-              "clave": "y59_0_tipo",
-              "etiqueta": "Tipo",
+              "clave": "y59_0_etapa_de_la_ficha",
+              "etiqueta": "Etapa de la ficha",
               "tipo": "SELECT",
               "orden": 1,
+              "obligatorio": true,
+              "opciones": [
+                "Notificación inmediata (Anexo 01)",
+                "Investigación completa"
+              ],
+              "_nota": "Como O95: primero se registra la notificación inmediata (Anexo 01) y luego, editando el mismo caso, la investigación completa (págs. 9-11). Las secciones de la investigación dependen de este campo."
+            },
+            {
+              "clave": "y59_0_tipo",
+              "etiqueta": "Tipo de ESAVI",
+              "tipo": "SELECT",
+              "orden": 2,
               "opciones": [
                 "Severo",
                 "Conglomerado (leve-moderado)"
               ]
             },
             {
+              "clave": "y59_0_codigo_de_registro",
+              "etiqueta": "Código de registro",
+              "tipo": "TEXTO",
+              "orden": 3
+            },
+            {
               "clave": "y59_0_fecha_de_identificacion_local_del_caso_o_consulta",
               "etiqueta": "Fecha de identificación local del caso (o consulta)",
               "tipo": "FECHA",
-              "orden": 2
+              "orden": 4
             },
             {
               "clave": "y59_0_fecha_de_notificacion_de_diresa_geresa_diris_a_cd",
               "etiqueta": "Fecha de notificación de DIRESA/GERESA/DIRIS a CDC/MINSA",
               "tipo": "FECHA",
-              "orden": 3
+              "orden": 5
             },
             {
               "clave": "y59_0_fecha_de_inicio_de_investigacion",
               "etiqueta": "Fecha de inicio de investigación",
               "tipo": "FECHA",
-              "orden": 4
+              "orden": 6
+            }
+          ]
+        },
+        {
+          "nombre": "Notificación inmediata (Anexo 01)",
+          "orden": 2,
+          "campos": [
+            {
+              "clave": "y59_0_telefono_del_establecimiento",
+              "etiqueta": "Teléfono del establecimiento",
+              "tipo": "TEXTO",
+              "orden": 1
+            },
+            {
+              "clave": "y59_0_telefono_del_personal_de_salud",
+              "etiqueta": "Teléfono del personal de salud",
+              "tipo": "TEXTO",
+              "orden": 2
+            },
+            {
+              "clave": "y59_0_notificante_apellidos_y_nombres",
+              "etiqueta": "Apellidos y nombres",
+              "tipo": "TEXTO",
+              "orden": 3,
+              "grupo": "Persona notificante"
+            },
+            {
+              "clave": "y59_0_notificante_telefono",
+              "etiqueta": "Teléfono",
+              "tipo": "TEXTO",
+              "orden": 4,
+              "grupo": "Persona notificante"
+            },
+            {
+              "clave": "y59_0_notificante_cargo",
+              "etiqueta": "Cargo",
+              "tipo": "TEXTO",
+              "orden": 5,
+              "grupo": "Persona notificante"
+            },
+            {
+              "clave": "y59_0_fecha_de_captacion",
+              "etiqueta": "Fecha de captación",
+              "tipo": "FECHA",
+              "orden": 6
+            },
+            {
+              "clave": "y59_0_fecha_de_inicio",
+              "etiqueta": "Fecha de inicio de síntomas",
+              "tipo": "FECHA",
+              "orden": 7,
+              "_nota": "Ítem VII 'Fecha de inicio' y Anexo 01 'Fecha y hora de inicio de síntomas': el mismo dato. Reemplaza a la fecha de inicio genérica del núcleo (omitida)."
+            },
+            {
+              "clave": "y59_0_hora_de_inicio_de_sintomas",
+              "etiqueta": "Hora de inicio de síntomas",
+              "tipo": "TEXTO",
+              "orden": 8,
+              "formato": "hora"
+            },
+            {
+              "clave": "y59_0_signos_y_sintomas_presentados",
+              "etiqueta": "Signos y síntomas presentados",
+              "tipo": "TEXTAREA",
+              "orden": 9
             }
           ]
         },
         {
           "nombre": "Datos del paciente (adicionales)",
-          "orden": 2,
+          "orden": 3,
           "campos": [
             {
               "clave": "y59_0_gestante",
               "etiqueta": "Gestante",
-              "tipo": "BOOLEANO",
-              "orden": 1
+              "tipo": "SI_NO",
+              "orden": 1,
+              "_corregido_tipo": "Cotejo 2026-10-10: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como Sí/No."
             },
             {
               "clave": "y59_0_n_de_semanas_de_gestacion",
               "etiqueta": "N.° de semanas de gestación",
               "tipo": "NUMERO",
-              "orden": 2
+              "orden": 2,
+              "depende_de": "y59_0_gestante",
+              "valor_activador": "SI"
             },
             {
               "clave": "y59_0_tipo_de_localidad",
@@ -11503,8 +11646,9 @@
             {
               "clave": "y59_0_esta_asegurado",
               "etiqueta": "¿Está asegurado?",
-              "tipo": "BOOLEANO",
-              "orden": 4
+              "tipo": "SI_NO",
+              "orden": 4,
+              "_corregido_tipo": "Cotejo 2026-10-10: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como Sí/No."
             },
             {
               "clave": "y59_0_tipo_de_seguro",
@@ -11515,7 +11659,9 @@
                 "SIS",
                 "EsSalud",
                 "Privado"
-              ]
+              ],
+              "depende_de": "y59_0_esta_asegurado",
+              "valor_activador": "SI"
             },
             {
               "clave": "y59_0_ocupacion",
@@ -11530,18 +11676,29 @@
                 "Personal de salud",
                 "Otro"
               ]
+            },
+            {
+              "clave": "y59_0_ocupacion_otra",
+              "etiqueta": "¿Cuál? (ocupación)",
+              "tipo": "TEXTO",
+              "orden": 7,
+              "depende_de": "y59_0_ocupacion",
+              "valor_activador": "OTRO"
             }
           ]
         },
         {
           "nombre": "Antecedentes",
-          "orden": 3,
+          "orden": 4,
+          "depende_de": "y59_0_etapa_de_la_ficha",
+          "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
             {
               "clave": "y59_0_esavi_previo",
               "etiqueta": "¿ESAVI previo?",
-              "tipo": "BOOLEANO",
-              "orden": 1
+              "tipo": "SI_NO",
+              "orden": 1,
+              "_corregido_tipo": "Cotejo 2026-10-10: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como Sí/No."
             },
             {
               "clave": "y59_0_cual_esavi_previo",
@@ -11553,13 +11710,23 @@
                 "Rush",
                 "Pérdida de conocimiento",
                 "Otra"
-              ]
+              ],
+              "depende_de": "y59_0_esavi_previo",
+              "valor_activador": "SI"
+            },
+            {
+              "clave": "y59_0_cual_esavi_previo_otra",
+              "etiqueta": "Otro ESAVI previo (especificar)",
+              "tipo": "TEXTO",
+              "orden": 3,
+              "depende_de": "y59_0_cual_esavi_previo",
+              "valor_activador": "OTRA"
             },
             {
               "clave": "y59_0_condiciones_de_comorbilidad",
               "etiqueta": "Condiciones de comorbilidad",
               "tipo": "MULTISELECT",
-              "orden": 3,
+              "orden": 4,
               "opciones": [
                 "Alergia",
                 "Convulsión",
@@ -11579,10 +11746,18 @@
               ]
             },
             {
+              "clave": "y59_0_condiciones_de_comorbilidad_otra",
+              "etiqueta": "Otra comorbilidad (especificar)",
+              "tipo": "TEXTO",
+              "orden": 5,
+              "depende_de": "y59_0_condiciones_de_comorbilidad",
+              "valor_activador": "OTRA"
+            },
+            {
               "clave": "y59_0_cuadros_patologicos_familiares",
               "etiqueta": "Cuadros patológicos familiares",
               "tipo": "MULTISELECT",
-              "orden": 4,
+              "orden": 6,
               "opciones": [
                 "Alergia",
                 "Asma",
@@ -11604,10 +11779,18 @@
               ]
             },
             {
+              "clave": "y59_0_cuadros_patologicos_familiares_otra",
+              "etiqueta": "Otro cuadro familiar (especificar)",
+              "tipo": "TEXTO",
+              "orden": 7,
+              "depende_de": "y59_0_cuadros_patologicos_familiares",
+              "valor_activador": "OTRA"
+            },
+            {
               "clave": "y59_0_enfermedades_prevalentes_en_la_region",
               "etiqueta": "Enfermedades prevalentes en la región",
               "tipo": "MULTISELECT",
-              "orden": 5,
+              "orden": 8,
               "opciones": [
                 "Dengue",
                 "Malaria",
@@ -11617,46 +11800,74 @@
                 "Rabia",
                 "Otra"
               ]
+            },
+            {
+              "clave": "y59_0_enfermedades_prevalentes_en_la_region_otra",
+              "etiqueta": "Otra enfermedad de la región (especificar)",
+              "tipo": "TEXTO",
+              "orden": 9,
+              "depende_de": "y59_0_enfermedades_prevalentes_en_la_region",
+              "valor_activador": "OTRA"
             }
           ]
         },
         {
           "nombre": "Signos y síntomas",
-          "orden": 4,
+          "orden": 5,
+          "depende_de": "y59_0_etapa_de_la_ficha",
+          "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
             {
               "clave": "y59_0_signos_y_sintomas_18_items_con_tiempo_de_inicio_y",
-              "etiqueta": "Signos y síntomas (18 ítems con tiempo de inicio y término)",
+              "etiqueta": "Signos y síntomas",
               "tipo": "MATRIZ",
               "orden": 1,
               "filas": [
-                "Absceso en el sitio de inyección (estéril/bacteriano)",
-                "Linfadenitis supurativa",
-                "Reacción local severa",
-                "Llanto persistente (>3 horas)",
-                "Convulsiones",
-                "Síndrome hipotónico-hiporreactivo",
-                "Reacción alérgica",
-                "Púrpura trombocitopénica",
-                "Síncope o reacción vasovagal",
-                "Parálisis flácida aguda",
-                "Encefalopatías",
-                "Encefalitis",
-                "Meningitis",
-                "Osteítis/osteomielitis",
-                "Artralgia",
-                "Sepsis",
-                "Síndrome de shock tóxico"
+                "1. Absceso en el sitio de inyección: a) Estéril",
+                "1. Absceso en el sitio de inyección: b) Bacteriano",
+                "2. Linfadenitis supurativa: a) Nódulo linfático mayor a 1.5 cm",
+                "2. Linfadenitis supurativa: b) Nódulo bacteriano",
+                "3. Reacción local severa: a) Inflamación más allá de la articulación más cercana",
+                "3. Reacción local severa: b) Dolor, enrojecimiento e inflamación de más de 3 días",
+                "3. Reacción local severa: c) Inflamación >10 cm más limitación funcional",
+                "4. Llanto persistente (mayor de 3 horas): I. Solo asociado a fiebre",
+                "4. Llanto persistente (mayor de 3 horas): II. Asociado a otros síntomas",
+                "5. Convulsiones: a) Febril",
+                "5. Convulsiones: b) Afebril",
+                "6. Síndrome hipotónico-hiporreactivo: a) Asociado a depresión respiratoria, cianosis",
+                "6. Síndrome hipotónico-hiporreactivo: b) No asociado a depresión respiratoria, cianosis",
+                "7. Reacción alérgica: a) Reacción anafiláctica",
+                "7. Reacción alérgica: b) Shock anafiláctico",
+                "8. Púrpura trombocitopénica: a) Solo manifestaciones dérmicas (petequias)",
+                "8. Púrpura trombocitopénica: b) Asociada a otros síntomas",
+                "9. Síncope o reacción vasovagal",
+                "10. Parálisis flácida aguda: a) Asimétrica",
+                "10. Parálisis flácida aguda: b) Simétrica (d/c SGB, mielitis transversa, otra)",
+                "11. Encefalopatías: a) Convulsiones",
+                "11. Encefalopatías: b) Severa alteración de conciencia por uno o más días",
+                "11. Encefalopatías: c) Cambio de conducta por uno o más días",
+                "11. Encefalopatías: d) Daño cerebral permanente",
+                "12. Encefalitis",
+                "13. Meningitis",
+                "14. Osteítis / osteomielitis",
+                "15. Artralgia: a) Persistente",
+                "15. Artralgia: b) Transitoria",
+                "16. Sepsis",
+                "17. Síndrome de shock tóxico",
+                "18. Otros eventos severos e inusuales"
               ],
               "columnas": [
-                "Tiempo (minuto/hora/día)",
+                "Minuto",
+                "Hora",
+                "Días",
                 "Fecha de inicio",
                 "Fecha de término"
-              ]
+              ],
+              "_nota": "Cotejo 2026-10-10 (pág. 10): una fila por subítem, como en el papel; el tiempo entre la vacunación y el inicio se anota en minutos, horas o días."
             },
             {
               "clave": "y59_0_otros_eventos_severos_e_inusuales_especificar",
-              "etiqueta": "Otros eventos severos e inusuales (especificar)",
+              "etiqueta": "18. Otros eventos severos e inusuales: ¿cuál?",
               "tipo": "TEXTO",
               "orden": 2
             }
@@ -11664,49 +11875,47 @@
         },
         {
           "nombre": "Descripción del cuadro clínico",
-          "orden": 5,
+          "orden": 6,
+          "depende_de": "y59_0_etapa_de_la_ficha",
+          "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
-            {
-              "clave": "y59_0_fecha_de_inicio",
-              "etiqueta": "Fecha de inicio",
-              "tipo": "FECHA",
-              "orden": 1
-            },
             {
               "clave": "y59_0_gravedad_del_caso",
               "etiqueta": "Gravedad del caso",
               "tipo": "TEXTO",
-              "orden": 2
+              "orden": 1
             },
             {
               "clave": "y59_0_secuencia_cronologica_de_instalacion_de_signos_y_",
               "etiqueta": "Secuencia cronológica de instalación de signos y síntomas",
               "tipo": "TEXTAREA",
-              "orden": 3
+              "orden": 2
             },
             {
               "clave": "y59_0_examenes_auxiliares",
               "etiqueta": "Exámenes auxiliares",
               "tipo": "TEXTAREA",
-              "orden": 4
+              "orden": 3
             },
             {
               "clave": "y59_0_tratamiento_recibido",
               "etiqueta": "Tratamiento recibido",
               "tipo": "TEXTAREA",
-              "orden": 5
+              "orden": 4
             },
             {
               "clave": "y59_0_evolucion",
               "etiqueta": "Evolución",
               "tipo": "TEXTAREA",
-              "orden": 6
+              "orden": 5
             }
           ]
         },
         {
           "nombre": "Hospitalización",
-          "orden": 6,
+          "orden": 7,
+          "depende_de": "y59_0_etapa_de_la_ficha",
+          "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
             {
               "clave": "y59_0_n_de_historia_clinica",
@@ -11752,20 +11961,25 @@
             {
               "clave": "y59_0_transferido",
               "etiqueta": "¿Transferido?",
-              "tipo": "BOOLEANO",
-              "orden": 7
+              "tipo": "SI_NO",
+              "orden": 7,
+              "_corregido_tipo": "Cotejo 2026-10-10: BOOLEANO caía al checklist genérico 'Signos y síntomas'; el PDF lo pide como Sí/No."
             },
             {
               "clave": "y59_0_a_donde_transferencia",
-              "etiqueta": "A dónde (transferencia)",
+              "etiqueta": "¿A dónde?",
               "tipo": "TEXTO",
-              "orden": 8
+              "orden": 8,
+              "depende_de": "y59_0_transferido",
+              "valor_activador": "SI"
             }
           ]
         },
         {
           "nombre": "Seguimiento del paciente",
-          "orden": 7,
+          "orden": 8,
+          "depende_de": "y59_0_etapa_de_la_ficha",
+          "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
             {
               "clave": "y59_0_seguimiento_del_paciente",
@@ -11787,7 +12001,9 @@
         },
         {
           "nombre": "Clasificación final",
-          "orden": 8,
+          "orden": 9,
+          "depende_de": "y59_0_etapa_de_la_ficha",
+          "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
             {
               "clave": "y59_0_clasificacion_final",
@@ -11804,12 +12020,6 @@
               ]
             }
           ]
-        },
-        {
-          "nombre": "Anexo 6.2 — Lista de chequeo del vacunatorio",
-          "orden": 9,
-          "campos": [],
-          "_nota": "El contenido real (12 secciones romanas, patron Si/No + consideracion + comentario) SI esta disponible ahora en el PDF paginas 7-8 (ver memoria pendiente_anexo_62_esavi, actualizada 2026-07-22). Se deja fuera del alcance de esta version del manifiesto porque requiere una capacidad de seccion condicional (activarse solo si clasificacion final = 2 o 3) que el motor de fichas no tiene todavia. La ficha ESAVI funciona sin el segun el propio documento de definicion."
         }
       ]
     },
