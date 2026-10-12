@@ -6014,15 +6014,30 @@
         "caso_viaje": false,
         "caso_vacuna": false
       },
+      "unidades_edad": [
+        "ANIOS",
+        "MESES"
+      ],
+      "_nota_nucleo_omitidos": "Cotejo I. Datos del paciente (2026-10-12): el PDF pide 'Domicilio con referencias', así que referencia_localizar ya no se omite (mismo criterio que A33). 'Dirección de salud' no se captura: es DIRSAPOL fijo. fecha_inicio_sintomas genérico se omite: el ítem III.2 vive en a35_fecha_de_inicio_de_sintomas (Cuadro clínico), no obligatorio.",
       "nucleo_omitidos": [
-        "referencia_localizar",
         "pueblo_etnico",
         "nacionalidad",
         "etnia",
         "nombre_tutor",
         "celular_tutor",
-        "ocupacion"
+        "ocupacion",
+        "fecha_inicio_sintomas"
       ],
+      "nucleo_ajustes": {
+        "_nota": "VI. Investigador de campo (cotejo 2026-10-12): nombre, cargo y teléfono. La 'Fecha' ya está en la cabecera (Fecha de investigación) y el 'Establecimiento' es el EESS notificante; profesión y email no los pide el PDF.",
+        "investigador": {
+          "campos": {
+            "nombre": true,
+            "cargo": true,
+            "telefono": true
+          }
+        }
+      },
       "secciones": [
         {
           "nombre": "Datos de notificación e investigación del caso",
@@ -6114,10 +6129,16 @@
               "orden": 2
             },
             {
+              "clave": "a35_fecha_de_inicio_de_sintomas",
+              "etiqueta": "Fecha de inicio de síntomas",
+              "tipo": "FECHA",
+              "orden": 3
+            },
+            {
               "clave": "a35_herida",
               "etiqueta": "Herida",
               "tipo": "SELECT",
-              "orden": 3,
+              "orden": 4,
               "opciones": [
                 "Única",
                 "Múltiple"
@@ -6127,7 +6148,7 @@
               "clave": "a35_tipo_de_herida",
               "etiqueta": "Tipo de herida",
               "tipo": "SELECT",
-              "orden": 4,
+              "orden": 5,
               "opciones": [
                 "Superficial",
                 "Profunda"
@@ -6137,19 +6158,19 @@
               "clave": "a35_causa_de_la_herida",
               "etiqueta": "Causa de la herida",
               "tipo": "TEXTO",
-              "orden": 5
+              "orden": 6
             },
             {
               "clave": "a35_lugar_de_la_herida",
               "etiqueta": "Lugar de la herida",
               "tipo": "TEXTO",
-              "orden": 6
+              "orden": 7
             },
             {
               "clave": "a35_signos_y_sintomas",
               "etiqueta": "Signos y síntomas",
               "tipo": "GRUPO_SI_NO",
-              "orden": 7,
+              "orden": 8,
               "opciones": [
                 "Fiebre",
                 "Trismus (no succiona)",
@@ -6164,7 +6185,7 @@
               "clave": "a35_complicaciones",
               "etiqueta": "Complicaciones",
               "tipo": "TEXTAREA",
-              "orden": 8
+              "orden": 9
             }
           ]
         },
