@@ -11413,7 +11413,7 @@
       "enfermedad": "ESAVI severo",
       "lote": 6,
       "pdf_paginas": "9-11 (ficha principal), 12 (Anexo 1 notificación inmediata), 7-8 (Anexo 6.2, opcional)",
-      "_nota_cotejo": "Cotejo 2026-10-10 (págs. 9-12). Dos etapas en el mismo caso, como O95: 'Notificación inmediata (Anexo 01)' y 'Investigación completa'; las secciones V-X dependen de la etapa (secciones condicionadas, como Z21). DIRESA/red/microrred/nivel/institución salen del establecimiento. La clasificación es la 'Clasificación final' propia (sin chips genéricos, decisión del usuario). Dx de ingreso y N.° de historia clínica se conservan aunque la pág. 11 perdió el texto de esa zona. El Anexo 6.2 (págs. 7-8) queda para la etapa 3: se activará con la clasificación final 2 o 3.",
+      "_nota_cotejo": "Cotejo 2026-10-10 (págs. 9-12). Dos etapas en el mismo caso, como O95: 'Notificación inmediata (Anexo 01)' y 'Investigación completa'; las secciones V-X dependen de la etapa (secciones condicionadas, como Z21). DIRESA/red/microrred/nivel/institución salen del establecimiento. La clasificación es la 'Clasificación final' propia (sin chips genéricos, decisión del usuario). Dx de ingreso y N.° de historia clínica se conservan aunque la pág. 11 perdió el texto de esa zona. El Anexo 6.2 (págs. 7-8) queda para la etapa 3: se activará con la clasificación final 2 o 3. 2026-10-11: la etapa 1 muestra solo lo que pide el Anexo 01 (pág. 12); los datos de la ficha de investigación (tipo, código, fechas, teléfono del personal de salud, datos adicionales del paciente, etnia e investigador) pasan a la etapa 2. Las columnas de vacunación que el Anexo 01 no pide (adyuvante, sitio, fabricante, lote, expiración) siguen visibles y opcionales.",
       "tablas_hijas": {
         "caso_contacto": false,
         "caso_muestra": false,
@@ -11463,13 +11463,21 @@
           }
         }
       },
+      "nucleo_condicional": [
+        {
+          "_nota": "Cotejo 2026-10-11: el Anexo 01 (notificación inmediata) no pide etnia ni investigador; son de la ficha de investigación.",
+          "clave": "y59_0_etapa_de_la_ficha",
+          "valores": [
+            "INVESTIGACION_COMPLETA"
+          ],
+          "bloques": [
+            "etnia",
+            "investigador"
+          ]
+        }
+      ],
       "campos_notificacion": [
-        "y59_0_etapa_de_la_ficha",
-        "y59_0_tipo",
-        "y59_0_codigo_de_registro",
-        "y59_0_fecha_de_identificacion_local_del_caso_o_consulta",
-        "y59_0_fecha_de_notificacion_de_diresa_geresa_diris_a_cd",
-        "y59_0_fecha_de_inicio_de_investigacion"
+        "y59_0_etapa_de_la_ficha"
       ],
       "reglas_campos": [
         {
@@ -11511,40 +11519,6 @@
                 "Investigación completa"
               ],
               "_nota": "Como O95: primero se registra la notificación inmediata (Anexo 01) y luego, editando el mismo caso, la investigación completa (págs. 9-11). Las secciones de la investigación dependen de este campo."
-            },
-            {
-              "clave": "y59_0_tipo",
-              "etiqueta": "Tipo de ESAVI",
-              "tipo": "SELECT",
-              "orden": 2,
-              "opciones": [
-                "Severo",
-                "Conglomerado (leve-moderado)"
-              ]
-            },
-            {
-              "clave": "y59_0_codigo_de_registro",
-              "etiqueta": "Código de registro",
-              "tipo": "TEXTO",
-              "orden": 3
-            },
-            {
-              "clave": "y59_0_fecha_de_identificacion_local_del_caso_o_consulta",
-              "etiqueta": "Fecha de identificación local del caso (o consulta)",
-              "tipo": "FECHA",
-              "orden": 4
-            },
-            {
-              "clave": "y59_0_fecha_de_notificacion_de_diresa_geresa_diris_a_cd",
-              "etiqueta": "Fecha de notificación de DIRESA/GERESA/DIRIS a CDC/MINSA",
-              "tipo": "FECHA",
-              "orden": 5
-            },
-            {
-              "clave": "y59_0_fecha_de_inicio_de_investigacion",
-              "etiqueta": "Fecha de inicio de investigación",
-              "tipo": "FECHA",
-              "orden": 6
             }
           ]
         },
@@ -11559,63 +11533,107 @@
               "orden": 1
             },
             {
-              "clave": "y59_0_telefono_del_personal_de_salud",
-              "etiqueta": "Teléfono del personal de salud",
-              "tipo": "TEXTO",
-              "orden": 2
-            },
-            {
               "clave": "y59_0_notificante_apellidos_y_nombres",
               "etiqueta": "Apellidos y nombres",
               "tipo": "TEXTO",
-              "orden": 3,
+              "orden": 2,
               "grupo": "Persona notificante"
             },
             {
               "clave": "y59_0_notificante_telefono",
               "etiqueta": "Teléfono",
               "tipo": "TEXTO",
-              "orden": 4,
+              "orden": 3,
               "grupo": "Persona notificante"
             },
             {
               "clave": "y59_0_notificante_cargo",
               "etiqueta": "Cargo",
               "tipo": "TEXTO",
-              "orden": 5,
+              "orden": 4,
               "grupo": "Persona notificante"
             },
             {
               "clave": "y59_0_fecha_de_captacion",
               "etiqueta": "Fecha de captación",
               "tipo": "FECHA",
-              "orden": 6
+              "orden": 5
             },
             {
               "clave": "y59_0_fecha_de_inicio",
               "etiqueta": "Fecha de inicio de síntomas",
               "tipo": "FECHA",
-              "orden": 7,
+              "orden": 6,
               "_nota": "Ítem VII 'Fecha de inicio' y Anexo 01 'Fecha y hora de inicio de síntomas': el mismo dato. Reemplaza a la fecha de inicio genérica del núcleo (omitida)."
             },
             {
               "clave": "y59_0_hora_de_inicio_de_sintomas",
               "etiqueta": "Hora de inicio de síntomas",
               "tipo": "TEXTO",
-              "orden": 8,
+              "orden": 7,
               "formato": "hora"
             },
             {
               "clave": "y59_0_signos_y_sintomas_presentados",
               "etiqueta": "Signos y síntomas presentados",
               "tipo": "TEXTAREA",
-              "orden": 9
+              "orden": 8
+            }
+          ]
+        },
+        {
+          "nombre": "Datos de la ficha de investigación",
+          "orden": 3,
+          "depende_de": "y59_0_etapa_de_la_ficha",
+          "valor_activador": "INVESTIGACION_COMPLETA",
+          "campos": [
+            {
+              "clave": "y59_0_tipo",
+              "etiqueta": "Tipo de ESAVI",
+              "tipo": "SELECT",
+              "orden": 1,
+              "opciones": [
+                "Severo",
+                "Conglomerado (leve-moderado)"
+              ]
+            },
+            {
+              "clave": "y59_0_codigo_de_registro",
+              "etiqueta": "Código de registro",
+              "tipo": "TEXTO",
+              "orden": 2
+            },
+            {
+              "clave": "y59_0_fecha_de_identificacion_local_del_caso_o_consulta",
+              "etiqueta": "Fecha de identificación local del caso (o consulta)",
+              "tipo": "FECHA",
+              "orden": 3
+            },
+            {
+              "clave": "y59_0_fecha_de_notificacion_de_diresa_geresa_diris_a_cd",
+              "etiqueta": "Fecha de notificación de DIRESA/GERESA/DIRIS a CDC/MINSA",
+              "tipo": "FECHA",
+              "orden": 4
+            },
+            {
+              "clave": "y59_0_fecha_de_inicio_de_investigacion",
+              "etiqueta": "Fecha de inicio de investigación",
+              "tipo": "FECHA",
+              "orden": 5
+            },
+            {
+              "clave": "y59_0_telefono_del_personal_de_salud",
+              "etiqueta": "Teléfono del personal de salud",
+              "tipo": "TEXTO",
+              "orden": 6
             }
           ]
         },
         {
           "nombre": "Datos del paciente (adicionales)",
-          "orden": 3,
+          "orden": 4,
+          "depende_de": "y59_0_etapa_de_la_ficha",
+          "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
             {
               "clave": "y59_0_gestante",
@@ -11689,7 +11707,7 @@
         },
         {
           "nombre": "Antecedentes",
-          "orden": 4,
+          "orden": 5,
           "depende_de": "y59_0_etapa_de_la_ficha",
           "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
@@ -11813,7 +11831,7 @@
         },
         {
           "nombre": "Signos y síntomas",
-          "orden": 5,
+          "orden": 6,
           "depende_de": "y59_0_etapa_de_la_ficha",
           "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
@@ -11875,7 +11893,7 @@
         },
         {
           "nombre": "Descripción del cuadro clínico",
-          "orden": 6,
+          "orden": 7,
           "depende_de": "y59_0_etapa_de_la_ficha",
           "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
@@ -11913,7 +11931,7 @@
         },
         {
           "nombre": "Hospitalización",
-          "orden": 7,
+          "orden": 8,
           "depende_de": "y59_0_etapa_de_la_ficha",
           "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
@@ -11977,7 +11995,7 @@
         },
         {
           "nombre": "Seguimiento del paciente",
-          "orden": 8,
+          "orden": 9,
           "depende_de": "y59_0_etapa_de_la_ficha",
           "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
@@ -12001,7 +12019,7 @@
         },
         {
           "nombre": "Clasificación final",
-          "orden": 9,
+          "orden": 10,
           "depende_de": "y59_0_etapa_de_la_ficha",
           "valor_activador": "INVESTIGACION_COMPLETA",
           "campos": [
