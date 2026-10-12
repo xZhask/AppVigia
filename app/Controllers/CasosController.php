@@ -2347,7 +2347,10 @@ class CasosController extends Controller
         // nucleo_ajustes.investigador (A50, 2026-09-14): de la tarjeta solo se
         // guardan los campos que la ficha declara (el notificador: su nombre).
         // campoInvestigador() ya devuelve null con la tarjeta omitida.
-        $guardaInvestigador = fn(string $campoTarjeta): bool => campoInvestigador($enfermedad, $campoTarjeta) !== null;
+        // nucleo_condicional 'investigador' (Y59.0, 2026-10-11): con la tarjeta
+        // condicionada y su valor no elegido, no se guarda nada de ella.
+        $investigadorActivo = $this->bloqueNucleoActivoDesdePost($enfermedad, 'investigador');
+        $guardaInvestigador = fn(string $campoTarjeta): bool => $investigadorActivo && campoInvestigador($enfermedad, $campoTarjeta) !== null;
 
         $tipoCaptacion = (!$captacionOmitida && in_array($valoresFijos['tipo_captacion'], ['ACTIVA', 'PASIVA'], true)) ? $valoresFijos['tipo_captacion'] : null;
         $lugarCaptacion = (!$captacionOmitida && in_array($valoresFijos['lugar_captacion'], ['INSTITUCIONAL', 'COMUNIDAD'], true)) ? $valoresFijos['lugar_captacion'] : null;

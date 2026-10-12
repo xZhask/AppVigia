@@ -184,7 +184,9 @@ const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', '
 // 'persona' (pedido del usuario, 2026-09-12): la tarjeta de identidad entera.
 // No descarta nada al guardar (la identidad siempre se exige); solo decide
 // cuándo se muestra la tarjeta y con qué título ("titulos" / "aviso").
-const NUCLEO_CONDICIONABLES = ['etnia', 'residencia', 'sexo', 'persona'];
+// 'investigador' (Y59.0, 2026-10-11): la tarjeta de quién investiga solo en
+// la etapa de investigación completa, no en la notificación inmediata.
+const NUCLEO_CONDICIONABLES = ['etnia', 'residencia', 'sexo', 'persona', 'investigador'];
 
 // Qué valores admite "valor_fijo" por bloque: lo que se guarda cuando el
 // bloque NO aplica. Sin entrada acá, el bloque no admite valor fijo.

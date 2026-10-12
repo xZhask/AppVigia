@@ -536,13 +536,18 @@ endforeach;
       <?php // nucleo_omitidos: 'investigador' (cotejo Z21, 2026-09-11) -- una
       // ficha cuyo PDF no trae el bloque de quién investiga no lo pinta, y
       // así tampoco llega nada suyo en el POST. ?>
-      <?php if (!nucleoOmitido($enfermedad, 'investigador')): ?>
+      <?php if (!nucleoOmitido($enfermedad, 'investigador')):
+          // nucleo_condicional 'investigador' (Y59.0, 2026-10-11): la tarjeta
+          // solo con el valor declarado (la etapa de investigación completa).
+          [$abreInvestigadorCondicional, $cierraInvestigadorCondicional] = envolturaNucleoCondicional($enfermedad, 'investigador', $valoresCampos ?? []); ?>
+      <?= $abreInvestigadorCondicional ?>
       <div class="card section">
         <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3><?= e(tituloInvestigador($enfermedad)) ?></h3></div>
         <div class="section-body">
           <?php require __DIR__ . '/../partials/investigador.php'; ?>
         </div>
       </div>
+      <?= $cierraInvestigadorCondicional ?>
       <?php $numeroSeccion++; ?>
       <?php endif; ?>
 
