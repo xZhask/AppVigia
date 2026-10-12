@@ -3273,8 +3273,15 @@ class CasosController extends Controller
                 }
             }
             $fechaVencimientoTxt = trim((string) ($fechasVencimiento[$i] ?? ''));
-            // "Otro (especificar)" reemplaza al código elegido si se completó.
-            $vacuna = $otro !== '' ? $otro : ($this->codigoValidoDeCatalogo($codigo, 'vacuna_minsa') ?: $codigo);
+            // "Otro (especificar)" reemplaza al código elegido si se completó,
+            // pero solo con la opción "Otro" (2026-10-12): con otra vacuna
+            // elegida el texto se descarta, aunque venga en el POST.
+            $codigoValido = $this->codigoValidoDeCatalogo($codigo, 'vacuna_minsa');
+            $esOtro = $codigoValido !== null && str_ends_with($codigoValido, 'OTRO');
+            if ($codigoValido !== null && !$esOtro) {
+                $otro = '';
+            }
+            $vacuna = $otro !== '' ? $otro : ($codigoValido ?: $codigo);
             $filas[] = [
                 'vacuna'            => $vacuna,
                 'dosis'             => $this->codigoValidoDeCatalogo(trim((string) ($dosis[$i] ?? '')), 'dosis_vacuna') ?: (trim((string) ($dosis[$i] ?? '')) ?: null),

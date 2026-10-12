@@ -18,11 +18,29 @@ $muestra = fn(string $col) => in_array($col, $columnasVacuna, true);
 $cie10Actual = $enfermedad['cie10'] ?? '';
 $esB05 = ($cie10Actual === 'B05');
 
+// "Otro" del catálogo vacuna_minsa (20_OTRO): su "especificar" solo se ve con
+// esa opción elegida (2026-10-12, pedido del usuario). Una vacuna "Otro" se
+// guarda con su texto en caso_vacuna.vacuna, así que al editar se reconoce
+// como "Otro" todo valor que no es un código del catálogo -- antes el
+// desplegable quedaba vacío y la fila se perdía al volver a guardar.
+$codigoOtroVacuna = '';
+foreach ($opcionesVacuna as $opVacuna) {
+    if (str_ends_with((string) $opVacuna['valor'], 'OTRO')) {
+        $codigoOtroVacuna = (string) $opVacuna['valor'];
+    }
+}
+$codigosVacuna = array_map('strval', array_column($opcionesVacuna, 'valor'));
+
 $filaVacuna = function (array $fila = [
     'vacuna' => '', 'vacuna_otro' => '', 'dosis' => '', 'fecha' => '', 'hora' => '', 'fabricante' => '', 'lote' => '',
     'via' => '', 'sitio' => '', 'adyuvante' => '', 'fecha_vencimiento' => '', 'establecimiento' => '', 'fuente_informacion' => '',
-], ?array $error = null) use ($opcionesVacuna, $opcionesDosis, $opcionesViaVacuna, $opcionesSitio, $opcionesAdyuvante, $muestra, $esB05): void {
+], ?array $error = null) use ($opcionesVacuna, $opcionesDosis, $opcionesViaVacuna, $opcionesSitio, $opcionesAdyuvante, $muestra, $esB05, $codigoOtroVacuna, $codigosVacuna): void {
     $errorFecha = $error['fecha'] ?? null;
+    if (!$esB05 && $codigoOtroVacuna !== '' && ($fila['vacuna'] ?? '') !== '' && !in_array((string) $fila['vacuna'], $codigosVacuna, true)) {
+        $fila['vacuna_otro'] = ($fila['vacuna_otro'] ?? '') !== '' ? $fila['vacuna_otro'] : $fila['vacuna'];
+        $fila['vacuna'] = $codigoOtroVacuna;
+    }
+    $esOtroVacuna = $codigoOtroVacuna !== '' && ($fila['vacuna'] ?? '') === $codigoOtroVacuna;
     ?>
   <div class="subrow" style="<?= $esB05 ? 'border-left: 3px solid var(--accent); padding-left: 12px; margin-bottom: 16px;' : '' ?>">
     <div class="fields thirds" style="flex:1">
@@ -93,7 +111,7 @@ $filaVacuna = function (array $fila = [
         <div class="field">
           <label class="fl">Vacuna</label>
           <div class="control">
-            <select name="vacuna_nombre[]">
+            <select name="vacuna_nombre[]" data-codigo-otro="<?= e($codigoOtroVacuna) ?>">
               <option value="">Seleccionar…</option>
               <?php foreach ($opcionesVacuna as $op): ?>
                 <option value="<?= e($op['valor']) ?>" <?= seleccionado($fila['vacuna'] ?? '', $op['valor']) ?>><?= e($op['etiqueta']) ?></option>
@@ -101,7 +119,7 @@ $filaVacuna = function (array $fila = [
             </select>
           </div>
         </div>
-        <div class="field">
+        <div class="field" data-vacuna-otro <?= $esOtroVacuna ? '' : 'hidden' ?>>
           <label class="fl">Si es "Otro", especificar</label>
           <div class="control"><input type="text" name="vacuna_otro[]" value="<?= e($fila['vacuna_otro'] ?? '') ?>"></div>
         </div>

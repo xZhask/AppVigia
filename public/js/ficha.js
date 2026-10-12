@@ -4739,6 +4739,23 @@ document.addEventListener('DOMContentLoaded', function () {
     if (bloque) repintarSecuenciaB04x(bloque);
   });
 
+  // Vacunación: "Si es 'Otro', especificar" solo con la vacuna "Otro"
+  // elegida en su misma fila (2026-10-12). Delegado, así también vale para
+  // las filas que se agregan después; al ocultarse se limpia su texto.
+  document.addEventListener('change', function (e) {
+    var select = e.target;
+    if (!select || select.name !== 'vacuna_nombre[]') return;
+    var fila = select.closest('.subrow');
+    var campoOtro = fila && fila.querySelector('[data-vacuna-otro]');
+    if (!campoOtro) return;
+    var esOtro = select.value !== '' && select.value === select.getAttribute('data-codigo-otro');
+    campoOtro.hidden = !esOtro;
+    if (!esOtro) {
+      var input = campoOtro.querySelector('input');
+      if (input) input.value = '';
+    }
+  });
+
   // nucleo_ajustes.copiar_a_sujeto (V99, 2026-10-09): cuando el campo
   // declarado toma uno de sus valores ("Ubicación del lesionado" =
   // Conductor), el bloque de identidad del sujeto secundario se llena con los
