@@ -58,6 +58,7 @@ $accionEtiquetas = [
     'CLASIFICACION' => 'Cambio de clasificación',
     'CIERRE'        => 'Cierre',
     'ANULACION'     => 'Anulación',
+    'CUESTIONARIO'  => 'Cuestionario',
 ];
 
 ?>
@@ -698,6 +699,33 @@ $accionEtiquetas = [
         <?php if ($vinculoVer['puedeRegistrar']): ?>
           <a class="btn btn-ghost" style="width:100%;text-align:center" href="/casos/nuevo?enfermedad_id=<?= (int) $caso['enfermedad_id'] ?>&amp;vinculo=<?= (int) $caso['id'] ?>"><?= e($vinculoVer['config']['accion_registrar'] ?? 'Registrar ficha vinculada') ?></a>
         <?php endif; ?>
+      </div>
+    <?php endif; ?>
+
+    <?php
+    // Cuestionarios asociados al caso (2026-10-11, Anexo 6.2 de ESAVI): los
+    // que su definición ofrece para el CIE-10 de esta ficha
+    // (config/cuestionarios/*.php), con su estado y el acceso.
+    $cuestionariosVer = $caso['anulado'] ? [] : \App\Models\CasoCuestionario::aplicables((string) $caso['cie10']);
+    if ($cuestionariosVer): ?>
+      <div class="card rail-card">
+        <div class="eyebrow" style="margin-bottom:12px">Cuestionarios</div>
+        <?php foreach ($cuestionariosVer as $cuestionarioVer):
+            $guardadoVer = \App\Models\CasoCuestionario::porCaso((int) $caso['id'], $cuestionarioVer['clave']); ?>
+          <div style="font-size:12.5px; margin-bottom:10px">
+            <div style="font-weight:600; color:var(--ink)"><?= e($cuestionarioVer['titulo']) ?></div>
+            <div style="color:var(--muted)">
+              <?= $guardadoVer
+                  ? 'Registrada · ' . \App\Models\CasoCuestionario::respondidas($guardadoVer['datos']) . ' respuestas · ' . e(date('d/m/Y', strtotime($guardadoVer['actualizado_en'])))
+                  : 'Sin registrar' ?>
+            </div>
+          </div>
+          <?php if ($guardadoVer || $puedeEditar): ?>
+            <a class="btn btn-ghost" style="width:100%; text-align:center; margin-bottom:8px" href="/casos/<?= (int) $caso['id'] ?>/cuestionario/<?= e($cuestionarioVer['clave']) ?>">
+              <?= $guardadoVer ? ($puedeEditar ? 'Ver / editar' : 'Ver') : 'Llenar' ?>
+            </a>
+          <?php endif; ?>
+        <?php endforeach; ?>
       </div>
     <?php endif; ?>
 

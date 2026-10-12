@@ -570,6 +570,23 @@ CREATE TABLE `caso_sujeto` (
 -- Table structure for table `caso_vacuna`
 --
 
+--
+-- Cuestionarios asociados a un caso (2026-10-11, sql/migraciones/add_caso_cuestionario.php)
+--
+CREATE TABLE `caso_cuestionario` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `caso_id` int NOT NULL,
+  `cuestionario` varchar(60) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `datos` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `usuario_id` int DEFAULT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `actualizado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_caso_cuestionario` (`caso_id`,`cuestionario`),
+  CONSTRAINT `fk_caso_cuestionario_caso` FOREIGN KEY (`caso_id`) REFERENCES `caso` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 DROP TABLE IF EXISTS `caso_vacuna`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

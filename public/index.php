@@ -4,6 +4,7 @@ require __DIR__ . '/../app/Core/ayudantes.php';
 
 use App\Controllers\AuthController;
 use App\Controllers\CasosController;
+use App\Controllers\CuestionariosController;
 use App\Controllers\EnfermedadesController;
 use App\Controllers\EstablecimientosController;
 use App\Controllers\GradosController;
@@ -154,6 +155,15 @@ $router->post('/casos/{id}/estado', function ($id) {
 
 $router->post('/casos/{id}/anular', function ($id) {
     (new CasosController())->anular($id);
+});
+
+// Cuestionarios asociados a un caso (2026-10-11: Anexo 6.2 de ESAVI).
+$router->get('/casos/{id}/cuestionario/{clave}', function ($id, $clave) {
+    (new CuestionariosController())->mostrar($id, $clave);
+});
+
+$router->post('/casos/{id}/cuestionario/{clave}', function ($id, $clave) {
+    (new CuestionariosController())->guardar($id, $clave);
 });
 
 $router->get('/casos/{id}', function ($id) {

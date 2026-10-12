@@ -3957,7 +3957,7 @@ class CasosController extends Controller
         return in_array(trim((string) ($_POST['campo_' . (int) $condicion['campo']['id']] ?? '')), $condicion['valores'], true);
     }
 
-    private function puedeVerCaso(array $caso): bool
+    public function puedeVerCaso(array $caso): bool
     {
         $usuario = Auth::usuario();
         if ($usuario['rol'] === 'REGISTRADOR') {
@@ -3971,7 +3971,7 @@ class CasosController extends Controller
         return true;
     }
 
-    private function puedeEditarCaso(array $caso): bool
+    public function puedeEditarCaso(array $caso): bool
     {
         $usuario = Auth::usuario();
 
