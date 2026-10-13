@@ -981,12 +981,13 @@
           ]
         },
         {
-          "nombre": "Antecedentes vacunales (preguntas contextuales)",
+          "nombre": "Antecedentes vacunales",
           "orden": 6,
           "_nota": "2026-08-06: 'Dosis recibidas' (ítem 51: Pentavalente 1a/2a/3a, DPT 1er/2do refuerzo) pasó de caso_vacuna (tabla genérica de vacunas aplicadas) a 5 BOOLEANO propios de la ficha -- mismo patrón que 'Dosis recibidas' de toxoide tetánico en A35/A33 (a35_dosis_1d..5d/a33_dosis_1a..5a): es un checklist cerrado de 5 ítems fijos, no una lista abierta, así que caso_vacuna (pensado para vacunas/fechas arbitrarias) no encajaba -- tablas_hijas.caso_vacuna pasa a false. Las 6 preguntas que siguen sí son campo_def sueltos porque son condicionales de un solo valor, no una lista. Los bloques 'madre'/'gestante' se muestran/ocultan de verdad -- 'madre' según la edad calculada del paciente (envuelto en #wrapTdapMadreA370, toggled por calcularEdad() en ficha.js), 'gestante' según el núcleo persona.gestante (envuelto en #wrapTdapGestanteA370, toggled por actualizarGestante(), mecanismo ya existente reusado -- ver wrapLugarPartoB05). Ninguno de los 2 wraps se valida server-side (igual que wrapLugarPartoB05): es un gate de UI, no una regla de negocio dura. Lo mismo aplica a 'Fecha de última dosis' respecto a las 5 dosis: el usuario pidió que solo se habilite si hay al menos una dosis marcada, pero A35 (ya cotejada) tampoco enforce esa regla para su propia 'Fecha última dosis' -- se dejó sin implementar por consistencia con el precedente, pendiente de confirmar con el usuario si de verdad la quiere (ver PENDIENTES.md ítem 13).",
           "campos": [
             {
               "clave": "a37_0_pentavalente_1ra",
+              "indicacion": "Solo considerar dosis de vacunas documentadas (en registros de vacunación en físico o en el aplicativo HIS MINSA). No registrar dosis referidas de memoria por el paciente o la familia.",
               "etiqueta": "1.ª",
               "tipo": "BOOLEANO",
               "orden": 1
@@ -1023,16 +1024,22 @@
               "_nota": "2026-08-06: ítem 52 del PDF. Ítem 53 'EE.SS donde se vacunó' queda deliberadamente fuera -- el usuario no lo incluyó en su jerarquía/resumen de dependencias."
             },
             {
+              "clave": "a37_0_ees_donde_se_vacuno",
+              "etiqueta": "EE.SS. donde se vacunó",
+              "tipo": "TEXTO",
+              "orden": 7
+            },
+            {
               "clave": "a37_0_la_madre_fue_vacunada_con_tdap_durante_la_gestaci",
               "etiqueta": "¿La madre fue vacunada con Tdap durante la gestación?",
               "tipo": "BOOLEANO",
-              "orden": 7
+              "orden": 8
             },
             {
               "clave": "a37_0_fecha_de_vacunacion_tdap_de_la_madre",
               "etiqueta": "Fecha de vacunación Tdap de la madre",
               "tipo": "FECHA",
-              "orden": 8,
+              "orden": 9,
               "depende_de": "¿La madre fue vacunada con Tdap durante la gestación?",
               "valor_activador": "1"
             },
@@ -1040,13 +1047,13 @@
               "clave": "a37_0_la_gestante_recibio_tdap_si_el_caso_es_gestante",
               "etiqueta": "¿La gestante recibió Tdap?",
               "tipo": "BOOLEANO",
-              "orden": 9
+              "orden": 10
             },
             {
               "clave": "a37_0_semana_de_gestacion_durante_la_vacunacion_tdap",
               "etiqueta": "Semana de gestación durante la vacunación Tdap",
               "tipo": "NUMERO",
-              "orden": 10,
+              "orden": 11,
               "depende_de": "¿La gestante recibió Tdap?",
               "valor_activador": "1"
             },
@@ -1054,7 +1061,7 @@
               "clave": "a37_0_fecha_de_vacunacion_tdap_gestante",
               "etiqueta": "Fecha de vacunación Tdap (gestante)",
               "tipo": "FECHA",
-              "orden": 11,
+              "orden": 12,
               "depende_de": "¿La gestante recibió Tdap?",
               "valor_activador": "1"
             }
