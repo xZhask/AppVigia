@@ -625,6 +625,13 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 }
                 $grupoAbierto = $grupoCampo;
             }
+            // "indicacion" del manifiesto (A37.0, 2026-10-13): nota del papel
+            // que va antes del campo, a todo el ancho del .fields en curso
+            // (el eyebrow a medida que siga, si lo hay, cierra ese .fields).
+            $indicacionCampo = (json_decode((string) ($campo['config'] ?? ''), true) ?: [])['indicacion'] ?? null;
+            if ($indicacionCampo !== null) {
+                ?><div class="info-callout" style="grid-column:1/-1; margin-bottom:6px; background:var(--accent-soft); border:1px solid var(--accent); border-radius:var(--radius-sm, 8px); padding:10px 14px; color:var(--ink); font-size:0.875rem; line-height:1.5;"><?= e($indicacionCampo) ?></div><?php
+            }
             if (($campo['clave'] ?? '') === 'b05_hospitalizado') {
                 ?></div><div class="eyebrow" style="margin-bottom:12px">Condición del paciente</div><div class="fields" style="margin-bottom:16px"><?php
             }

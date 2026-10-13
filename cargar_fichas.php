@@ -1694,6 +1694,16 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
         );
     }
 
+    // "indicacion" (A37.0, 2026-10-13): nota del papel que se lee antes de
+    // llenar el campo (p. ej. "solo considerar dosis documentadas"). Mismo
+    // criterio que "grupo": se suma al config, solo si se declara.
+    if (array_key_exists('indicacion', $campo)) {
+        $config = json_encode(
+            (json_decode((string) $config, true) ?: []) + ['indicacion' => $campo['indicacion']],
+            JSON_UNESCAPED_UNICODE
+        );
+    }
+
     // "calculado" (B24, 2026-09-14): mismo criterio, se suma al config.
     if (array_key_exists('calculado', $campo)) {
         $config = json_encode(
