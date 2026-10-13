@@ -6029,11 +6029,10 @@
         "fecha_inicio_sintomas"
       ],
       "nucleo_ajustes": {
-        "_nota": "VI. Investigador de campo (cotejo 2026-10-12): nombre, fecha, cargo y teléfono. La 'Fecha' junto al investigador es la de registro de la ficha (puede diferir de la visita domiciliaria de la cabecera); usa el campo núcleo fecha_investigacion con otra etiqueta. El 'Establecimiento' es el EESS notificante; profesión y email no los pide el PDF.",
+        "_nota": "VI. Investigador de campo (cotejo 2026-10-12): nombre, cargo y teléfono. La 'Fecha' ya está en la cabecera (Fecha de investigación) y el 'Establecimiento' es el EESS notificante; profesión y email no los pide el PDF.",
         "investigador": {
           "campos": {
             "nombre": true,
-            "fecha_investigacion": "Fecha de registro de la ficha",
             "cargo": true,
             "telefono": true
           }
