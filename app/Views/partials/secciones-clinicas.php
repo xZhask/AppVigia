@@ -114,6 +114,9 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // "Laboratorio" en vez de quedar en su orden del manifiesto (8),
         // que caería ANTES de la tarjeta fija de Laboratorio.
         'a37_0_clasificacion_final',
+        // personal-salud-a370.php (2026-10-12): sección X del PDF, entre
+        // "Clasificación final" y la tarjeta "Investigador" (sección XI).
+        'a37_0_personal_salud_nombre', 'a37_0_personal_salud_cargo',
     ],
     'B01' => [
         // notificacion-fechas-b01.php (2026-08-08). Ojo: b01_fecha_de_hospitalizacion
@@ -249,7 +252,7 @@ $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'P35.0' => ['Datos de notificación e investigación del caso', 'Clasificación del caso'],
     'A35' => ['Datos de notificación e investigación del caso'],
     'A33' => ['Datos de notificación e investigación del caso'],
-    'A37.0' => ['Datos de notificación e investigación del caso', 'Clasificación final'],
+    'A37.0' => ['Datos de notificación e investigación del caso', 'Clasificación final', 'Personal de salud que llena la ficha'],
     'B01' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Observaciones'],
     'A97' => ['Enfermedad / evento a notificar', 'Subsistema de vigilancia'],
     'B57' => ['Fechas de notificación'],

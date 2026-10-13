@@ -404,6 +404,9 @@ if ($isP350) require __DIR__ . '/../partials/clasificacion-caso-p350.php';
 // clasificacion-caso-a370.php (2026-08-07): ver nueva/index.php.
 if ($isA370) require __DIR__ . '/../partials/clasificacion-caso-a370.php';
 
+// personal-salud-a370.php (2026-10-12): ver nueva/index.php.
+if ($isA370) require __DIR__ . '/../partials/personal-salud-a370.php';
+
 // observaciones-b01.php (2026-08-09): ver nueva/index.php.
 $isB01 = ($enfermedad['cie10'] ?? '') === 'B01';
 if ($isB01) require __DIR__ . '/../partials/observaciones-b01.php';

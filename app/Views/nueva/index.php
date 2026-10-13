@@ -511,6 +511,11 @@ if ($isP350) require __DIR__ . '/../partials/clasificacion-caso-p350.php';
 // -- "Clasificación final" reposicionada después de Laboratorio.
 if ($isA370) require __DIR__ . '/../partials/clasificacion-caso-a370.php';
 
+// personal-salud-a370.php (2026-10-12): sección X del PDF ("Personal de
+// salud que llena la ficha"), después de Clasificación final y antes de la
+// tarjeta "Investigador" (sección XI).
+if ($isA370) require __DIR__ . '/../partials/personal-salud-a370.php';
+
 // observaciones-b01.php (2026-08-09): mismo motivo que P35.0/A37.0 arriba
 // -- "Observaciones" reposicionada después de Laboratorio.
 $isB01 = ($enfermedad['cie10'] ?? '') === 'B01';

@@ -492,6 +492,16 @@
       "enfermedad": "Tos ferina",
       "lote": 1,
       "pdf_paginas": "1-2",
+      "nucleo_ajustes": {
+        "_nota": "XI. Investigador (cotejo 2026-10-12, ítems 69-71): nombre, cargo y N.° de celular. La fecha de investigación ya está en la cabecera y profesión/email no los pide el PDF. 'Firma y sello' es del papel.",
+        "investigador": {
+          "campos": {
+            "nombre": true,
+            "cargo": true,
+            "telefono": "N.° de celular"
+          }
+        }
+      },
       "tablas_hijas": {
         "caso_muestra": true,
         "caso_viaje": true,
@@ -1135,6 +1145,25 @@
                 "Descartado"
               ],
               "_nota": "4 valores propios que no encajan en el ENUM genérico de 4 valores de caso.clasificacion (ver memoria pendiente_auditoria_fichas)"
+            }
+          ]
+        },
+        {
+          "nombre": "Personal de salud que llena la ficha",
+          "orden": 9,
+          "_nota_cotejo": "Sección X del PDF (ítems 66-67, cotejo 2026-10-12): preferentemente el personal que atiende al paciente; es otra persona que el investigador de la sección XI (tarjeta núcleo). Se pinta con personal-salud-a370.php, después de Clasificación final y antes de Investigador, para respetar el orden del PDF. 'Firma y sello' (68) es del papel.",
+          "campos": [
+            {
+              "clave": "a37_0_personal_salud_nombre",
+              "etiqueta": "Nombre del personal de salud que atiende el caso",
+              "tipo": "TEXTO",
+              "orden": 1
+            },
+            {
+              "clave": "a37_0_personal_salud_cargo",
+              "etiqueta": "Cargo del personal de salud",
+              "tipo": "TEXTO",
+              "orden": 2
             }
           ]
         }
