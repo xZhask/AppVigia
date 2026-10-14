@@ -564,9 +564,11 @@
       },
       "_observaciones_tablas_hija": "CORREGIDO (PENDIENTES_POST_FASE5.md punto 1.2/3): esta nota decía que no había campos que llenar en caso_contacto -- era un error. Verificado contra el PDF (pág. 1-2): la pregunta 61 SÍ trae una tabla nominal (N.° / Apellidos y Nombres / Parentesco / Celular / Doc. identidad / Lugar de exposición) para familiares con tos prolongada, además de la matriz agregada por lugar (esa sí es campo_def, 'Contactos por lugar'). usa_contactos=1 es correcto; tablas_hijas.caso_contacto pasa de false a true para que coincida.",
       "_nota_laboratorio": "VIII. Laboratorio (ítem 62-64 del PDF, pág. 2), 2026-08-07: 'Agente identificado' (ítem 64) es capacidad nueva en muestras.php -- select opt-in vía columnas_tablas_hija.caso_muestra.opciones.agente_aislado (con 4 especies de Bordetella hardcodeadas como default local en el partial, mismo patrón que opcionesGenotipoDefecto; A80 sigue con texto libre para agente_aislado, sin cambio) gateado a Resultado=Positivo (capacidad 5, depende_de_columna). 'Resultado' agrega Contaminado/No viable -- códigos CONTAM/NOVIABLE resueltos en CasosController::OPCIONES_RESULTADO_EXTRA (no en catalogo_item compartido, para no afectar a las otras 11 fichas con usa_muestras=1); sin 'Indeterminado' porque el PDF no lo ofrece para esta ficha. 'Tipo de muestra'/'Tipo de prueba' ya estaban correctamente filtrados desde antes de este cotejo (HNF/ASP_NF, CULT/PCR).",
+      "_nota_clasificacion": "Clasificación del caso calculada (2026-10-14, pedido del usuario): la tarjeta genérica de chips se oculta y caso.clasificacion sale de 'IX. Clasificación final' (ítem 65) con las reglas 'clasificar'. Sin clasificación final elegida queda Sospechoso (regla explícita), el estado de un caso recién notificado.",
       "nucleo_omitidos": [
         "nombre_tutor",
-        "celular_tutor"
+        "celular_tutor",
+        "clasificacion"
       ],
       "unidades_edad": [
         "ANIOS",
@@ -579,6 +581,78 @@
         "NUMERO",
         "MZ_LOTE",
         "TIEMPO_RESIDENCIA"
+      ],
+      "reglas_campos": [
+        {
+          "si": {"clave": "a37_0_clasificacion_final", "valores": ["PROBABLE"]},
+          "clasificar": "PROBABLE"
+        },
+        {
+          "si": {"clave": "a37_0_clasificacion_final", "valores": ["CONFIRMADO_POR_LABORATORIO", "CONFIRMADO_POR_NEXO_EPIDEMIOLOGICO"]},
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {"clave": "a37_0_clasificacion_final", "valores": ["DESCARTADO"]},
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "_nota": "Sin clasificación final: Sospechoso. Explícito para que al editar y vaciarla no quede la clasificación anterior (actualizar() conserva la guardada si ninguna regla se cumple).",
+          "si": {"clave": "a37_0_clasificacion_final", "valores": [""]},
+          "clasificar": "SOSPECHOSO"
+        },
+        {
+          "_nota": "Regla de dosis (2026-10-14, pedido del usuario para A35/A33/A37.0): la fecha de la última dosis y dónde se vacunó solo se registra si hay al menos una dosis marcada.",
+          "si": {
+            "claves": [
+              "a37_0_pentavalente_1ra",
+              "a37_0_pentavalente_2da",
+              "a37_0_pentavalente_3ra",
+              "a37_0_dpt_1er_refuerzo",
+              "a37_0_dpt_2do_refuerzo"
+            ],
+            "alguno_mayor_que": 0
+          },
+          "mostrar": [
+            "a37_0_fecha_de_ultima_dosis",
+            "a37_0_ees_donde_se_vacuno"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a37_0_pentavalente_1ra",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a37_0_pentavalente_2da"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a37_0_pentavalente_2da",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a37_0_pentavalente_3ra"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a37_0_dpt_1er_refuerzo",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a37_0_dpt_2do_refuerzo"
+          ]
+        }
       ],
       "secciones": [
         {
@@ -6074,6 +6148,72 @@
           }
         }
       },
+      "reglas_campos": [
+        {
+          "_nota": "Regla de dosis (2026-10-14, pedido del usuario para A35/A33/A37.0): la fecha de la última dosis solo se registra si hay al menos una dosis marcada.",
+          "si": {
+            "claves": [
+              "a35_dosis_1d",
+              "a35_dosis_2d",
+              "a35_dosis_3d",
+              "a35_dosis_4d",
+              "a35_dosis_5d"
+            ],
+            "alguno_mayor_que": 0
+          },
+          "mostrar": [
+            "a35_fecha_ultima_dosis"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a35_dosis_1d",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a35_dosis_2d"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a35_dosis_2d",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a35_dosis_3d"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a35_dosis_3d",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a35_dosis_4d"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a35_dosis_4d",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a35_dosis_5d"
+          ]
+        }
+      ],
       "secciones": [
         {
           "nombre": "Datos de notificación e investigación del caso",
@@ -6441,6 +6581,71 @@
             "valores": ["SI"]
           },
           "fallecido": true
+        },
+              {
+          "_nota": "Regla de dosis (2026-10-14, pedido del usuario para A35/A33/A37.0): la fecha de la última dosis y dónde se vacunó solo se registra si hay al menos una dosis marcada.",
+          "si": {
+            "claves": [
+              "a33_dosis_1a",
+              "a33_dosis_2a",
+              "a33_dosis_3a",
+              "a33_dosis_4a",
+              "a33_dosis_5a"
+            ],
+            "alguno_mayor_que": 0
+          },
+          "mostrar": [
+            "a33_fecha_de_la_ultima_dosis",
+            "a33_lugar_de_aplicacion_de_la_vacuna"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a33_dosis_1a",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a33_dosis_2a"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a33_dosis_2a",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a33_dosis_3a"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a33_dosis_3a",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a33_dosis_4a"
+          ]
+        },
+        {
+          "_nota": "Dosis secuenciales: no se marca una dosis sin la anterior.",
+          "si": {
+            "clave": "a33_dosis_4a",
+            "valores": [
+              "1"
+            ]
+          },
+          "mostrar": [
+            "a33_dosis_5a"
+          ]
         }
       ],
       "secciones": [
