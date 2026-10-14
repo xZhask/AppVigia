@@ -1883,16 +1883,24 @@ class CasosController extends Controller
             }
         }
 
-        foreach ($reglas as $regla) {
-            if (empty($regla['mostrar']) || condicionReglaCampos($regla['si'], $valorPorClave)) {
-                continue;
-            }
-            foreach ($regla['mostrar'] as $clave) {
-                if (isset($idPorClave[$clave])) {
-                    $vaciar($idPorClave[$clave]);
+        // Hasta que nada cambie (2026-10-14): una regla puede leer un campo que
+        // otra vacía después -- con la cadena de dosis de A35/A33/A37.0, "alguna
+        // dosis marcada" vería todavía una 3.ª forjada sin la 1.ª.
+        do {
+            $huboCambio = false;
+            foreach ($reglas as $regla) {
+                if (empty($regla['mostrar']) || condicionReglaCampos($regla['si'], $valorPorClave)) {
+                    continue;
+                }
+                foreach ($regla['mostrar'] as $clave) {
+                    $campoId = $idPorClave[$clave] ?? null;
+                    if ($campoId !== null && !in_array($valoresCampos[$campoId] ?? '', ['', []], true)) {
+                        $vaciar($campoId);
+                        $huboCambio = true;
+                    }
                 }
             }
-        }
+        } while ($huboCambio);
         do {
             $huboCambio = false;
             foreach ($campos as $campoId => $campo) {
