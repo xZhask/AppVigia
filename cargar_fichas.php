@@ -1167,7 +1167,10 @@ function validarManifiesto(array $manifiesto): void
                 throw new RuntimeException("Manifiesto inválido: {$cie10} / reglas_campos debe ser una lista de reglas.");
             }
             $clavesEnTarjetasFijas = array_merge($ficha['campos_notificacion'] ?? [], $clavesCamposPersonaFicha);
-            $exigirClavesNumero = function (mixed $claves, string $donde, int $minimo) use ($cie10, $clavesFicha, $tiposPorClaveFicha): void {
+            // $tiposAdmitidos: "si.claves" con "alguno_mayor_que" admite además
+            // BOOLEANO (2026-10-14, dosis de A35/A33/A37.0): una casilla vale
+            // "1"/"0", así que "alguno_mayor_que": 0 es "alguna marcada".
+            $exigirClavesNumero = function (mixed $claves, string $donde, int $minimo, array $tiposAdmitidos = ['NUMERO']) use ($cie10, $clavesFicha, $tiposPorClaveFicha): void {
                 if (!is_array($claves) || !array_is_list($claves) || count($claves) < $minimo) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} debe ser una lista de al menos {$minimo} clave(s).");
                 }
@@ -1175,8 +1178,8 @@ function validarManifiesto(array $manifiesto): void
                     if (!is_string($claveNumero) || !isset($clavesFicha[$claveNumero])) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} incluye \"{$claveNumero}\", que no es una \"clave\" explícita de esta ficha.");
                     }
-                    if ($tiposPorClaveFicha[$claveNumero] !== 'NUMERO') {
-                        throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} incluye \"{$claveNumero}\", que no es NUMERO.");
+                    if (!in_array($tiposPorClaveFicha[$claveNumero], $tiposAdmitidos, true)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} incluye \"{$claveNumero}\", que no es " . implode(' ni ', $tiposAdmitidos) . ".");
                     }
                 }
             };
@@ -1219,7 +1222,7 @@ function validarManifiesto(array $manifiesto): void
                         || (!is_int($si['alguno_mayor_que']) && !is_float($si['alguno_mayor_que']))) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si con \"claves\" necesita \"alguno_mayor_que\" numérico.");
                     }
-                    $exigirClavesNumero($si['claves'], "{$donde}.si.claves", 1);
+                    $exigirClavesNumero($si['claves'], "{$donde}.si.claves", 1, ['NUMERO', 'BOOLEANO']);
                     $clavesCondicion = $si['claves'];
                 } else {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si debe traer \"clave\"+\"valores\" o \"claves\"+\"alguno_mayor_que\".");
