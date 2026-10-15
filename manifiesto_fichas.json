@@ -1259,6 +1259,7 @@
       ]
     },
     "B01": {
+      "_nota_unico_por_tipo": "2026-10-15: el PDF (pág. 3, VI. Laboratorio) trae una fila de Suero y una de Hisopado de vesícula; cada tipo se registra una sola vez. Las demás fichas con lista cerrada NO lo llevan: repiten tipo a propósito (Heces 1/2 en A80, 1.ª/2.ª muestra en B05 y P35.0, una muestra con PCR y Cultivo en A36/A37.0, varios exámenes en A00).",
       "enfermedad": "Varicela con complicaciones",
       "lote": 1,
       "pdf_paginas": "3",
@@ -1276,6 +1277,7 @@
       "_nota_laboratorio": "2026-08-09: columnas_tablas_hija.caso_muestra ahora declara 'columnas' explícito (antes faltaba, por eso la cadena de fechas de envío del PDF -- secc. VI -- nunca aparecía: sin 'columnas' la tabla cae al set mínimo por defecto, que no las incluye). 'tipo_prueba' se quitó de la lista (2026-08-09, decisión explícita del usuario): el PDF no trae esa columna, así que ni se muestra ni se pide -- ya no está ni en 'columnas' ni en 'opciones'.",
       "columnas_tablas_hija": {
         "caso_muestra": {
+          "unico_por_tipo": true,
           "columnas": [
             "tipo_muestra",
             "fecha_toma",
