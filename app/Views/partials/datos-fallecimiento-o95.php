@@ -317,6 +317,7 @@ if ($provSelFall) {
     $provinciaSeleccionada = $provSelFall;
     $distritoSeleccionado = $distSelFall;
     $nombreCampoDistrito = $campoDistFallecimiento['name'];
+    $errorDistrito = $campoDistFallecimiento['err']; // formato "distrito": código que no existe en el padrón
     $distritoRequerido = false;
     require __DIR__ . '/selector-ubigeo.php';
     ?>

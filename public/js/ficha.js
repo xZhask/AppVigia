@@ -3164,7 +3164,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Para O95:
-    var radioAnexo2 = document.querySelector('input[name="o95_tipo_ficha"][value="ANEXO_2"]');
+    var radioAnexo2 = document.querySelector('input.o95-tipo-ficha-radio[value="ANEXO_2"]');
     var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
 
     document.querySelectorAll('.o95-anexo-2-section, .o95-anexo-2-elem').forEach(function(sec) {
@@ -3192,7 +3192,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.addEventListener('change', function(e) {
-    if (e.target && e.target.name === 'o95_tipo_ficha') {
+    if (e.target && e.target.classList && e.target.classList.contains('o95-tipo-ficha-radio')) {
       actualizarEtapaFichaO95();
     }
   });
@@ -3279,7 +3279,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function actualizarOtrosCamposO95() {
-    var radioAnexo2 = document.querySelector('input[name="o95_tipo_ficha"][value="ANEXO_2"]');
+    var radioAnexo2 = document.querySelector('input.o95-tipo-ficha-radio[value="ANEXO_2"]');
     var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
 
     var selIdioma = document.getElementById('o95IdiomaSel');
@@ -3336,7 +3336,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function actualizarDatosFallecimientoO95() {
-    var radioAnexo2 = document.querySelector('input[name="o95_tipo_ficha"][value="ANEXO_2"]');
+    var radioAnexo2 = document.querySelector('input.o95-tipo-ficha-radio[value="ANEXO_2"]');
     var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
 
     var selMomento = document.getElementById('o95MomentoFallecimientoSel');
@@ -3526,7 +3526,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var valRef = (selReferida.value || '').toUpperCase().trim();
     var esSi = (valRef === 'SI' || valRef === '1');
 
-    var radioAnexo2 = document.querySelector('input[name="o95_tipo_ficha"][value="ANEXO_2"]');
+    var radioAnexo2 = document.querySelector('input.o95-tipo-ficha-radio[value="ANEXO_2"]');
     var esAnexo2 = radioAnexo2 && radioAnexo2.checked;
 
     if (wrapAnexo1) {

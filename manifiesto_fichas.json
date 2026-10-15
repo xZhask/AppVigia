@@ -13634,6 +13634,7 @@
               "clave": "o95_distrito_fallecimiento",
               "etiqueta": "Distrito (Fallecimiento)",
               "tipo": "TEXTO",
+              "formato": "distrito",
               "orden": 22,
               "requerido": false,
               "sensible": false
@@ -13725,6 +13726,8 @@
         },
         {
           "nombre": "Antecedentes patológicos y obstétricos",
+          "depende_de": "o95_tipo_de_ficha",
+          "valor_activador": "ANEXO_2",
           "orden": 3,
           "campos": [
             {
@@ -13982,6 +13985,8 @@
         },
         {
           "nombre": "Atención prenatal",
+          "depende_de": "o95_tipo_de_ficha",
+          "valor_activador": "ANEXO_2",
           "orden": 5,
           "campos": [
             {
@@ -14099,6 +14104,8 @@
         },
         {
           "nombre": "Complicaciones",
+          "depende_de": "o95_tipo_de_ficha",
+          "valor_activador": "ANEXO_2",
           "orden": 6,
           "campos": [
             {
@@ -14263,6 +14270,7 @@
               "clave": "o95_distrito_origen_de_la_referencia",
               "etiqueta": "Distrito (Origen de la referencia)",
               "tipo": "TEXTO",
+              "formato": "distrito",
               "orden": 6,
               "requerido": false,
               "sensible": false
@@ -14387,6 +14395,8 @@
         },
         {
           "nombre": "Hospitalizaciones",
+          "depende_de": "o95_tipo_de_ficha",
+          "valor_activador": "ANEXO_2",
           "orden": 8,
           "campos": [
             {
@@ -14425,6 +14435,8 @@
         },
         {
           "nombre": "Parto o aborto",
+          "depende_de": "o95_tipo_de_ficha",
+          "valor_activador": "ANEXO_2",
           "orden": 9,
           "campos": [
             {
@@ -14556,6 +14568,8 @@
         },
         {
           "nombre": "Entorno social y comunitario",
+          "depende_de": "o95_tipo_de_ficha",
+          "valor_activador": "ANEXO_2",
           "orden": 10,
           "campos": [
             {
@@ -14780,6 +14794,8 @@
         },
         {
           "nombre": "Datos comunitarios",
+          "depende_de": "o95_tipo_de_ficha",
+          "valor_activador": "ANEXO_2",
           "orden": 11,
           "campos": [
             {
@@ -14896,6 +14912,8 @@
         },
         {
           "nombre": "Las cuatro demoras",
+          "depende_de": "o95_tipo_de_ficha",
+          "valor_activador": "ANEXO_2",
           "orden": 12,
           "campos": [
             {

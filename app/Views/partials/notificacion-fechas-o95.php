@@ -30,6 +30,10 @@ $campoO95 = $resolvedorPara('O95');
 // inalcanzable"), y 14300 (o95_tipo_ficha) era v99_aseguradora de otra
 // ficha. $campo(...)['val'] nunca es null, así que hay que comparar contra
 // '' antes de seguir la cadena de fallback.
+// o95_tipo_de_ficha (2026-10-15): el radio ya usa el name estándar
+// campo_<id> (solo en O95; en las demás fichas este bloque oculto no lo
+// envía), así las 8 secciones del Anexo 2 son secciones condicionadas del
+// manifiesto. ficha.js lo encuentra por la clase o95-tipo-ficha-radio.
 $campoHoraNotifO95 = $campoO95('o95_hora_de_la_notificacion');
 $campoIdentificadoPorO95 = $campoO95('o95_identificado_por');
 $campoTipoFichaO95Notif = $campoO95('o95_tipo_de_ficha');
@@ -74,11 +78,11 @@ $valTipoFicha = $valoresFijos['o95_tipo_ficha']
     <label class="fl" style="font-weight:700; color:var(--accent-deep); margin-bottom:8px;">Etapa de la ficha (Muerte Materna) <span class="req">*</span></label>
     <div class="control-radio-group">
       <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; font-weight:600;">
-        <input type="radio" name="o95_tipo_ficha" value="ANEXO_1" <?= $valTipoFicha !== 'ANEXO_2' ? 'checked' : '' ?> style="accent-color:var(--accent); width:16px; height:16px;">
+        <input type="radio" class="o95-tipo-ficha-radio" <?= $esO95 ? 'name="' . e($campoTipoFichaO95Notif['name']) . '"' : '' ?> value="ANEXO_1" <?= $valTipoFicha !== 'ANEXO_2' ? 'checked' : '' ?> style="accent-color:var(--accent); width:16px; height:16px;">
         <span>Anexo 1: Notificación inmediata</span>
       </label>
       <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; font-weight:600;">
-        <input type="radio" name="o95_tipo_ficha" value="ANEXO_2" <?= $valTipoFicha === 'ANEXO_2' ? 'checked' : '' ?> style="accent-color:var(--accent); width:16px; height:16px;">
+        <input type="radio" class="o95-tipo-ficha-radio" <?= $esO95 ? 'name="' . e($campoTipoFichaO95Notif['name']) . '"' : '' ?> value="ANEXO_2" <?= $valTipoFicha === 'ANEXO_2' ? 'checked' : '' ?> style="accent-color:var(--accent); width:16px; height:16px;">
         <span>Anexo 2: Investigación epidemiológica</span>
       </label>
     </div>

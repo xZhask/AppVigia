@@ -1444,12 +1444,6 @@ class CasosController extends Controller
                 $paraGuardar[$campoId] = $valIdentificado;
                 continue;
             }
-            if ($campo['clave'] === 'o95_tipo_de_ficha' && !empty($_POST['o95_tipo_ficha'])) {
-                $valTipoFicha = trim($_POST['o95_tipo_ficha']);
-                $valoresCampos[$campoId] = $valTipoFicha;
-                $paraGuardar[$campoId] = $valTipoFicha;
-                continue;
-            }
             // A35.12: el selector real Departamento/Provincia/Distrito de
             // "Lugar probable de infección" postea distrito_id (no
             // campo_<id>, ver secciones-clinicas.php); departamento/provincia
