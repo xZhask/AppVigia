@@ -410,6 +410,30 @@ function condicionReglaCampos(array $si, callable $valorPorClave): bool
 }
 
 /**
+ * Una lesión del mapa de B55 (Leishmaniasis) en texto: "#1: Úlcera en cabeza,
+ * perfil izquierdo (5×3 mm)". Los códigos son los de leishmaniasis-body-map.php
+ * (tipo sin tilde, vista por clave del dibujo).
+ */
+function textoLesionB55(array $lesion, int $numero): string
+{
+    $tipos = ['Ulcera' => 'Úlcera', 'Nodulo' => 'Nódulo', 'Verrugosa' => 'Verrugosa', 'Cicatriz' => 'Cicatriz'];
+    $vistas = [
+        'cuerpo_anterior' => 'cuerpo, vista anterior', 'cuerpo_posterior' => 'cuerpo, vista posterior',
+        'cabeza_perfil_der' => 'perfil derecho', 'cabeza_frontal' => 'rostro, vista frontal',
+        'cabeza_perfil_izq' => 'perfil izquierdo',
+    ];
+    $tipo = $tipos[$lesion['tipo'] ?? ''] ?? (($lesion['tipo'] ?? '') ?: 'Lesión');
+    $partes = array_filter([
+        ($lesion['localizacion'] ?? '') !== '' ? mb_strtolower($lesion['localizacion']) : null,
+        $vistas[$lesion['vista'] ?? ''] ?? null,
+    ]);
+    $donde = $partes ? ' en ' . implode(', ', $partes) : '';
+    $medidas = (!empty($lesion['d1']) && !empty($lesion['d2'])) ? " ({$lesion['d1']}×{$lesion['d2']} mm)" : '';
+
+    return "#{$numero}: {$tipo}{$donde}{$medidas}";
+}
+
+/**
  * Lista u objeto JSON declarado en una columna de `enfermedad`
  * (nucleo_omitidos, campos_notificacion, vinculo_caso, nucleo_condicional...),
  * ya decodificado; [] si la ficha no declara nada o el JSON no es válido.
@@ -1114,11 +1138,7 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             if (($campo['clave'] ?? '') === 'b55_lesiones') {
                 $items = [];
                 foreach ($decoded as $idx => $les) {
-                    $n = $idx + 1;
-                    $tipo = $les['tipo'] ?? 'Lesión';
-                    $loc = $les['localizacion'] ?? '—';
-                    $dim = (!empty($les['d1']) && !empty($les['d2'])) ? " ({$les['d1']}×{$les['d2']} mm)" : '';
-                    $items[] = "#{$n}: {$tipo} en {$loc}{$dim}";
+                    $items[] = textoLesionB55($les, $idx + 1);
                 }
                 return implode(' | ', $items) ?: '—';
             }

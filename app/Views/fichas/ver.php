@@ -306,6 +306,17 @@ $accionEtiquetas = [
           <?php endif; ?>
           <div class="fields thirds">
             <?php foreach ($camposSeccionVer as $campo): ?>
+              <?php if (($campo['clave'] ?? '') === 'b55_lesiones'):
+                  // B55: el mapa con los marcadores en su sitio, además del texto.
+                  $lesionesSilueta = json_decode((string) ($valoresCampos[$campo['id']] ?? ''), true) ?: [];
+                  $generoSilueta = ($caso['sexo'] ?? '') === 'F' ? 'mujer' : 'hombre';
+                  $soloLecturaSilueta = true; ?>
+              <div class="field wide">
+                <label class="fl"><?= e($campo['etiqueta']) ?></label>
+                <?php if ($lesionesSilueta) require __DIR__ . '/../partials/campos/leishmaniasis-siluetas.php'; ?>
+                <div class="control" style="background:var(--paper)"><?= e(campoValorTexto($campo, $valoresCampos[$campo['id']] ?? null)) ?></div>
+              </div>
+              <?php continue; endif; ?>
               <div class="field">
                 <label class="fl"><?= e($campo['etiqueta']) ?></label>
                 <div class="control" style="background:var(--paper)"><?= e(campoValorTexto($campo, $valoresCampos[$campo['id']] ?? null)) ?></div>
