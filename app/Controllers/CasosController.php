@@ -3332,34 +3332,44 @@ class CasosController extends Controller
 
     private function filasMuestras(?array $enfermedad = null): array
     {
-        $tiposMuestra = $_POST['muestra_tipo_muestra'] ?? [];
-        $tiposPrueba = $_POST['muestra_tipo_prueba'] ?? [];
-        $recibioAntibiotico = $_POST['muestra_recibio_antibiotico'] ?? [];
-        $resultados = $_POST['muestra_resultado'] ?? [];
-        $fechasToma = $_POST['muestra_fecha_toma'] ?? [];
-        $fechasEnvioEessRed = $_POST['muestra_fecha_envio_eess_red'] ?? [];
-        $fechasEnvioRedLrr = $_POST['muestra_fecha_envio_red_lrr'] ?? [];
-        $fechasEnvioLrrIns = $_POST['muestra_fecha_envio_lrr_ins'] ?? [];
-        $fechasEnvioIns = $_POST['muestra_fecha_envio_ins'] ?? [];
-        $fechasResultado = $_POST['muestra_fecha_result'] ?? [];
-        $agentesAislados = $_POST['muestra_agente_aislado'] ?? [];
-        $observacionesArr = $_POST['muestra_observaciones'] ?? [];
+        // Solo las columnas que la ficha declara en columnas_tablas_hija
+        // (2026-10-15): antes se leían todas del POST y un POST forjado
+        // escribía, p. ej., titulacion o los serológicos en fichas que no los
+        // tienen. El widget pinta exactamente esas columnas (B05 declara
+        // también las 4 que su rama especial de muestras.php pinta aparte).
+        $columnasDeclaradasMuestra = $this->resolverConfigMuestra($enfermedad ?? [])['columnas'];
+        $postMuestra = fn(string $columna): array => in_array($columna, $columnasDeclaradasMuestra, true)
+            ? (array) ($_POST['muestra_' . $columna] ?? [])
+            : [];
+
+        $tiposMuestra = $postMuestra('tipo_muestra');
+        $tiposPrueba = $postMuestra('tipo_prueba');
+        $recibioAntibiotico = $postMuestra('recibio_antibiotico');
+        $resultados = $postMuestra('resultado');
+        $fechasToma = $postMuestra('fecha_toma');
+        $fechasEnvioEessRed = $postMuestra('fecha_envio_eess_red');
+        $fechasEnvioRedLrr = $postMuestra('fecha_envio_red_lrr');
+        $fechasEnvioLrrIns = $postMuestra('fecha_envio_lrr_ins');
+        $fechasEnvioIns = $postMuestra('fecha_envio_ins');
+        $fechasResultado = $postMuestra('fecha_result');
+        $agentesAislados = $postMuestra('agente_aislado');
+        $observacionesArr = $postMuestra('observaciones');
         // A00 (cotejo 2026-09-07, "V. LABORATORIO" pág. 51): 3 columnas más de
         // la tabla del papel -- opt-in por ficha vía columnas_tablas_hija, las
         // otras 11 fichas con caso_muestra nunca las postean.
-        $establecimientosMuestra = $_POST['muestra_establecimiento'] ?? [];
-        $serogrupos = $_POST['muestra_serogrupo'] ?? [];
-        $serotipos = $_POST['muestra_serotipo'] ?? [];
+        $establecimientosMuestra = $postMuestra('establecimiento');
+        $serogrupos = $postMuestra('serogrupo');
+        $serotipos = $postMuestra('serotipo');
 
-        $fechasRecepcionIns = $_POST['muestra_fecha_recepcion_ins'] ?? [];
-        $resultadosPcr = $_POST['muestra_resultado_pcr'] ?? [];
-        $fechasResultPcr = $_POST['muestra_fecha_result_pcr'] ?? [];
-        $genotipos = $_POST['muestra_genotipo'] ?? [];
-        $resultadosIgm = $_POST['muestra_resultado_igm'] ?? [];
-        $fechasResultIgm = $_POST['muestra_fecha_result_igm'] ?? [];
-        $resultadosIgg = $_POST['muestra_resultado_igg'] ?? [];
-        $fechasResultIgg = $_POST['muestra_fecha_result_igg'] ?? [];
-        $titulaciones = $_POST['muestra_titulacion'] ?? [];
+        $fechasRecepcionIns = $postMuestra('fecha_recepcion_ins');
+        $resultadosPcr = $postMuestra('resultado_pcr');
+        $fechasResultPcr = $postMuestra('fecha_result_pcr');
+        $genotipos = $postMuestra('genotipo');
+        $resultadosIgm = $postMuestra('resultado_igm');
+        $fechasResultIgm = $postMuestra('fecha_result_igm');
+        $resultadosIgg = $postMuestra('resultado_igg');
+        $fechasResultIgg = $postMuestra('fecha_result_igg');
+        $titulaciones = $postMuestra('titulacion');
 
         $datosMuestras = $this->datosMuestrasCatalogo($enfermedad);
         $validosTipoMuestra = array_column($datosMuestras['opcionesTipoMuestra'], 'valor');
@@ -3375,7 +3385,6 @@ class CasosController extends Controller
         // el resto de las columnas de esta tabla. Las columnas nuevas de este
         // cotejo no lo amplían: serogrupo/serotipo ya quedan en NULL por no
         // pasar la validación contra opciones.* cuando la ficha no las declara.
-        $columnasDeclaradasMuestra = $this->resolverConfigMuestra($enfermedad ?? [])['columnas'];
         $declaraEstablecimientoMuestra = in_array('establecimiento', $columnasDeclaradasMuestra, true);
         // unicoPorTipo (2026-08-23): el <select> ya deshabilita del lado
         // cliente los tipos repetidos (filas-dinamicas.js), pero no hay que
@@ -3403,8 +3412,15 @@ class CasosController extends Controller
 
         $filas = [];
         $errores = [];
-        foreach ($tiposMuestra as $i => $tipoMuestra) {
-            $tipoMuestra = trim((string) $tipoMuestra);
+        $totalFilasMuestra = max(array_map('count', [
+            $tiposMuestra, $tiposPrueba, $recibioAntibiotico, $resultados, $fechasToma, $fechasEnvioEessRed,
+            $fechasEnvioRedLrr, $fechasEnvioLrrIns, $fechasEnvioIns, $fechasResultado, $agentesAislados,
+            $observacionesArr, $establecimientosMuestra, $serogrupos, $serotipos, $fechasRecepcionIns,
+            $resultadosPcr, $fechasResultPcr, $genotipos, $resultadosIgm, $fechasResultIgm, $resultadosIgg,
+            $fechasResultIgg, $titulaciones,
+        ]));
+        for ($i = 0; $i < $totalFilasMuestra; $i++) {
+            $tipoMuestra = trim((string) ($tiposMuestra[$i] ?? ''));
             $tipoPrueba = trim((string) ($tiposPrueba[$i] ?? ''));
             $resultado = trim((string) ($resultados[$i] ?? ''));
             $tomaTxt = trim((string) ($fechasToma[$i] ?? ''));
