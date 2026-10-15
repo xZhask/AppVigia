@@ -1,5 +1,7 @@
 # Pendientes — Petición 2 (IDs por clave y orden explícito)
 
+> **Lo vigente está en `HOJA_DE_RUTA.md`.** Este archivo es la bitácora histórica.
+
 Generado 2026-07-29. Hallazgos detectados durante la Petición 2 que quedan
 fuera de su alcance (no son parte de "migrar de ID a clave" ni de "orden
 explícito"), documentados aquí para no perderlos. Ninguno bloquea el
@@ -7,7 +9,7 @@ cierre de la petición.
 
 ---
 
-## 1. `ver.php` no lee ninguno de los mecanismos declarativos que el formulario sí usa para decidir qué mostrar
+## 1. `ver.php` no lee ninguno de los mecanismos declarativos que el formulario sí usa para decidir qué mostrar — ✅ en su mayor parte cerrado (2026-10-15: anexo de O95, columnas de muestra, secciones condicionadas; ver HOJA_DE_RUTA.md)
 
 `app/Views/fichas/ver.php` renderiza toda ficha guardada con un único
 motor genérico, campo por campo, como texto plano. No conoce ni el anexo
@@ -48,7 +50,7 @@ por el motor genérico" — cada ficha con partial a medida, y cada tabla
 hija con columnas declarativas, necesitaría su propio tratamiento en
 `ver.php`. Material de Petición 3.
 
-## 2. La validación de servidor de `obligatorio` no sabe de anexo (O95)
+## 2. La validación de servidor de `obligatorio` no sabe de anexo (O95) — ✅ cerrado 2026-10-15 (Anexo 2 como secciones condicionadas)
 
 `validarCamposDinamicos()` en `CasosController.php` evalúa
 `$campo['obligatorio']` campo por campo, sin conocer si ese campo
@@ -114,7 +116,7 @@ el manifiesto.
 
 </details>
 
-## 4. Hueco de contenido en Y59.0 (ESAVI): Anexo 6.2
+## 4. Hueco de contenido en Y59.0 (ESAVI): Anexo 6.2 — ✅ cerrado 2026-10-11 (cuestionario asociado al caso)
 
 "Anexo 6.2 — Lista de chequeo del vacunatorio" es un anexo real del
 MINSA (contenido disponible: 12 secciones romanas, patrón Sí/No +
@@ -227,7 +229,7 @@ por caso.
 
 </details>
 
-## 7. Ubigeo de O95 (fallecimiento y referencia) sin integridad referencial real — falta un tipo UBIGEO en el motor (hallazgo A.7)
+## 7. Ubigeo de O95 (fallecimiento y referencia) sin integridad referencial real — falta un tipo UBIGEO en el motor (hallazgo A.7) — ✅ distrito validado 2026-10-15 (formato "distrito"); departamento/provincia siguen sin validar
 
 Al corregir las 6 claves de ubigeo de O95 (`o95_departamento_fallecimiento`
 / `_provincia_fallecimiento` / `_distrito_fallecimiento` y sus 3
@@ -263,7 +265,7 @@ pérdida.
 (schema de `campo_def`, `cargar_fichas.php`, `campo-dinamico.php`,
 `verificar_fichas.php`), no algo que quepa en una corrección de claves.
 
-## 8. Núcleo no tiene rol y "ocupación" no es un campo núcleo — hallazgo de PETICION_P35_RUBEOLA_CONGENITA.md Fase 1
+## 8. Núcleo no tiene rol y "ocupación" no es un campo núcleo — hallazgo de PETICION_P35_RUBEOLA_CONGENITA.md Fase 1 — ✅ cerrado (columnas_sujeto; ocupación en el núcleo)
 
 Al cotejar P35.0 contra el PDF (bloque IV, ítem 29 "Ocupación" de la
 madre) se evaluó si `nucleo_omitidos` podía generalizarse a
@@ -5768,7 +5770,7 @@ agregar un campo al detalle de domicilio (columna nueva en `persona` +
 `DETALLE_DOMICILIO_VALIDO` + el partial compartido) y revisar las 5 fichas de una
 vez. **Decisión del usuario.**
 
-### 2. `caso_muestra` guarda columnas que la ficha no declara (bug preexistente, general)
+### 2. `caso_muestra` guarda columnas que la ficha no declara (bug preexistente, general) — ✅ cerrado 2026-10-15
 
 Hallado por la prueba negativa del Paso 4: un POST forjado con
 `muestra_titulacion[]` se guarda en un caso de A00 aunque A00 no declare esa
@@ -6777,8 +6779,9 @@ regenerado e instalado en una base limpia: 31 tablas, 393 columnas, 112
 - ~~**"OTRO" en tipo de documento** rompe el guardado en las 24 fichas: el ENUM
   de persona.tipo_doc no lo tiene (error 1265 comprobado en la BD).~~ Resuelto
   2026-10-07 (OTRO agregado al ENUM + validación del tipo en el controlador).
-- Los campos del núcleo omitidos (celular, dirección, etnia...) se guardan si
-  llegan forjados en el POST: nucleo_omitidos solo los oculta en la vista.
+- ~~Los campos del núcleo omitidos (celular, dirección, etnia...) se guardan si
+  llegan forjados en el POST: nucleo_omitidos solo los oculta en la vista.~~
+  Resuelto 2026-10-15 junto con el borrado de datos de una persona compartida.
 - ~~**La semana epidemiológica de la app no coincide con la del MINSA.**~~
   Corregido el 2026-09-14 con autorización del usuario: ver "Semana
   epidemiológica según el calendario del MINSA" al final de este archivo.
