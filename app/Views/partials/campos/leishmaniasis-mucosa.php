@@ -34,117 +34,119 @@ $estructuras = [
 ?>
 
 <div class="field wide leishmaniasis-mucosa-widget" style="margin-top: 10px; margin-bottom: 24px;">
-  <div style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-    
-    <div style="margin-bottom: 16px; border-bottom: 1px solid var(--line-2); padding-bottom: 12px;">
-      <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
-          <path d="M12 6v6l4 2"></path>
-        </svg>
-        DIAGRAMAS ANATÓMICOS ORL Y COMPROMISO DE ESTRUCTURAS MUCOSAS
-      </h4>
+  <div style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-soft);">
+
+    <div style="margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 12px;">
+      <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--ink);">Diagramas ORL y compromiso de estructuras mucosas</h4>
       <div style="font-size: 12px; color: var(--muted); margin-top: 3px;">
-        Examen clínico otorrinolaringológico: evalúe eritema, edema, infiltración o ulceración por estructura anatómica.
+        Examen otorrinolaringológico: marque por estructura el compromiso y si hay eritema, edema, infiltración o úlcera. La estructura marcada se resalta en los diagramas; al pasar el cursor por una fila se señala dónde está.
       </div>
     </div>
 
-    <!-- 4 Diagramas Anatómicos Vectoriales -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px;">
-      
-      <!-- Vista 1: Corte Sagital de Fosas y Faringe -->
-      <div class="card-diagrama-orl" style="background: var(--paper); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; text-align: center;">
-        <div style="font-size: 11px; font-weight: 700; color: var(--ink); text-transform: uppercase; margin-bottom: 6px;">1. Corte Sagital</div>
-        <div style="height: 110px; display: flex; align-items: center; justify-content: center;">
-          <svg viewBox="0 0 120 100" style="width: 100%; height: 100%;">
-            <!-- Silueta craneal sagital -->
-            <path d="M 20 80 C 15 65 15 45 25 30 C 35 15 55 10 75 12 C 90 15 100 30 95 50 C 90 70 85 85 85 95" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <!-- Nariz y Fosas nasales -->
-            <path data-region="septo" d="M 25 35 L 12 50 L 22 55 L 45 52 L 45 38 Z" class="orl-region" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1" />
-            <!-- Paladar duro y blando -->
-            <path data-region="paladar" d="M 24 60 L 55 60 L 60 68 L 52 68 L 24 64 Z" class="orl-region" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1" />
-            <!-- Rinofaringe / Faringe -->
-            <path data-region="faringe" d="M 55 40 L 70 42 L 72 85 L 62 85 L 60 55 Z" class="orl-region" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1" />
-            <!-- Laringe y Epiglotis -->
-            <path data-region="epiglotis" d="M 52 75 L 56 68 L 58 75 Z" class="orl-region" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1" />
-            <path data-region="cuerdas" d="M 50 82 L 60 82 L 58 92 L 48 92 Z" class="orl-region" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1" />
-          </svg>
-        </div>
-        <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Fosas / Paladar / Laringe</div>
-      </div>
+    <!-- 4 vistas del PDF (pág. 46): corte sagital, laringe, rinoscopia anterior y cavidad oral.
+         Cada .orl-region lleva el data-region de su fila de la tabla. -->
+    <div class="orl-diagramas">
 
-      <!-- Vista 2: Laringoscopia (Cuerdas Vocales y Epiglotis) -->
-      <div class="card-diagrama-orl" style="background: var(--paper); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; text-align: center;">
-        <div style="font-size: 11px; font-weight: 700; color: var(--ink); text-transform: uppercase; margin-bottom: 6px;">2. Laringe / Cuerdas</div>
-        <div style="height: 110px; display: flex; align-items: center; justify-content: center;">
-          <svg viewBox="0 0 120 100" style="width: 100%; height: 100%;">
-            <!-- Anillo laríngeo exterior -->
-            <path d="M 25 35 C 35 15 85 15 95 35 C 105 55 95 85 60 88 C 25 85 15 55 25 35 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <!-- Epiglotis superior -->
-            <path data-region="epiglotis" d="M 35 30 Q 60 18 85 30 Q 60 40 35 30 Z" class="orl-region" fill="var(--paper-3, #d1d5db)" stroke="var(--line-3, #6b7280)" stroke-width="1" />
-            <!-- Cuerdas vocales verdaderas (en 'V') -->
-            <path data-region="cuerdas" d="M 60 38 L 42 70 L 48 74 L 60 46 L 72 74 L 78 70 Z" class="orl-region" fill="#ffffff" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <!-- Glotis / Espacio central -->
-            <polygon points="60,42 48,70 72,70" fill="#1f2937" />
-          </svg>
-        </div>
-        <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Cuerdas / Epiglotis</div>
-      </div>
+      <figure class="orl-vista">
+        <figcaption>Corte sagital</figcaption>
+        <svg viewBox="0 0 160 120" role="img" aria-label="Corte sagital de nariz, boca, faringe y laringe">
+          <!-- Perfil de cabeza y cuello (mirando a la izquierda) -->
+          <path class="orl-base" d="M118 8 C88 2 58 8 50 30 L47 44 L32 60 Q30 63 34 64 L42 65 L41 70 L43 74 L41 79 L45 86 C49 94 60 97 70 94 L76 95 L78 118 M118 8 C140 16 146 46 136 70 C130 86 120 98 118 118" />
+          <!-- Lengua (referencia, sin región) -->
+          <path class="orl-tejido" d="M47 75 Q62 67 82 70 Q92 74 93 84 L86 90 Q66 92 49 84 Z" />
+          <!-- Fosa nasal: tercio anterior y resto -->
+          <path class="orl-region" data-region="septo_anterior" d="M47 47 L60 46 L60 61 L46 62 Z" />
+          <path class="orl-region" data-region="septo" d="M60 46 L84 44 Q92 48 92 54 L86 60 L60 61 Z" />
+          <!-- Cornetes -->
+          <path class="orl-region orl-linea" data-region="cornetes" d="M64 50 Q74 47 84 50 M63 55 Q75 52 87 56" />
+          <!-- Paladar duro y blando -->
+          <path class="orl-region" data-region="paladar" d="M46 63 L84 61 Q93 62 97 69 L94 71 Q89 66 83 66 L46 67 Z" />
+          <!-- Úvula -->
+          <path class="orl-region" data-region="uvula" d="M95 69 Q100 75 95 77 Q92 73 94 70 Z" />
+          <!-- Labios -->
+          <path class="orl-region" data-region="labios" d="M41 69 Q45 68 47 70 L47 72 Q43 73 41 72 Z M41 76 Q45 75 47 76 L47 79 Q43 80 41 78 Z" />
+          <!-- Rinofaringe y faringe (pared posterior) -->
+          <path class="orl-region" data-region="faringe" d="M93 44 Q106 46 108 60 L108 98 L101 98 L101 62 Q99 54 93 51 Z" />
+          <!-- Epiglotis -->
+          <path class="orl-region" data-region="epiglotis" d="M95 87 Q98 79 101 86 Q99 91 96 92 Z" />
+          <!-- Laringe / cuerdas vocales -->
+          <path class="orl-region" data-region="cuerdas" d="M89 96 L101 96 L101 109 L89 109 Z" />
+          <path class="orl-detalle" d="M89 102 L101 102" />
+        </svg>
+        <div class="orl-pie">Fosas · paladar · faringe · laringe</div>
+      </figure>
 
-      <!-- Vista 3: Rinoscopia Anterior (Narinas / Septo Nasal) -->
-      <div class="card-diagrama-orl" style="background: var(--paper); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; text-align: center;">
-        <div style="font-size: 11px; font-weight: 700; color: var(--ink); text-transform: uppercase; margin-bottom: 6px;">3. Rinoscopia Anterior</div>
-        <div style="height: 110px; display: flex; align-items: center; justify-content: center;">
-          <svg viewBox="0 0 120 100" style="width: 100%; height: 100%;">
-            <!-- Base nasal y narinas -->
-            <path d="M 15 80 C 20 40 40 20 60 20 C 80 20 100 40 105 80 Z" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <!-- Narina Izquierda -->
-            <ellipse data-region="narinas" cx="42" cy="55" rx="14" ry="24" class="orl-region" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <!-- Narina Derecha -->
-            <ellipse data-region="narinas" cx="78" cy="55" rx="14" ry="24" class="orl-region" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <!-- Septo Nasal (Columela central) -->
-            <rect data-region="septo" x="56" y="24" width="8" height="56" class="orl-region" fill="var(--paper-3, #d1d5db)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <!-- Cornetes en la pared lateral -->
-            <path data-region="cornetes" d="M 32 50 Q 38 60 32 70 M 88 50 Q 82 60 88 70" class="orl-region" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.5" />
-          </svg>
-        </div>
-        <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Narinas / Tabique / Cornetes</div>
-      </div>
+      <figure class="orl-vista">
+        <figcaption>Laringe</figcaption>
+        <svg viewBox="0 0 160 120" role="img" aria-label="Laringe vista desde arriba">
+          <ellipse class="orl-tejido" cx="80" cy="62" rx="58" ry="50" />
+          <!-- Bandas ventriculares (falsas cuerdas) -->
+          <path class="orl-detalle" d="M75 38 L50 92 M85 38 L110 92" />
+          <!-- Glotis -->
+          <path class="orl-hueco" d="M80 42 L64 93 Q80 99 96 93 Z" />
+          <!-- Cuerdas vocales -->
+          <path class="orl-region" data-region="cuerdas" d="M80 40 L59 93 L66 95 L80 47 Z M80 40 L101 93 L94 95 L80 47 Z" />
+          <!-- Aritenoides -->
+          <circle class="orl-tejido" cx="64" cy="102" r="7" />
+          <circle class="orl-tejido" cx="96" cy="102" r="7" />
+          <!-- Epiglotis -->
+          <path class="orl-region" data-region="epiglotis" d="M42 36 Q80 2 118 36 Q80 22 42 36 Z" />
+        </svg>
+        <div class="orl-pie">Epiglotis · cuerdas vocales</div>
+      </figure>
 
-      <!-- Vista 4: Cavidad Oral Abierta -->
-      <div class="card-diagrama-orl" style="background: var(--paper); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; text-align: center;">
-        <div style="font-size: 11px; font-weight: 700; color: var(--ink); text-transform: uppercase; margin-bottom: 6px;">4. Cavidad Oral</div>
-        <div style="height: 110px; display: flex; align-items: center; justify-content: center;">
-          <svg viewBox="0 0 120 100" style="width: 100%; height: 100%;">
-            <!-- Labios abiertos -->
-            <ellipse cx="60" cy="50" rx="46" ry="36" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.4" />
-            <!-- Arcada dental superior e inferior -->
-            <path data-region="arcada" d="M 28 35 Q 60 22 92 35" class="orl-region" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="2.5" />
-            <path data-region="arcada" d="M 30 68 Q 60 80 90 68" class="orl-region" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="2.5" />
-            <!-- Paladar y Úvula -->
-            <path data-region="paladar" d="M 32 38 Q 60 48 88 38" class="orl-region" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <path data-region="uvula" d="M 57 42 Q 60 56 63 42 Z" class="orl-region" fill="var(--paper-3, #d1d5db)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-            <!-- Lengua inferior -->
-            <ellipse cx="60" cy="66" rx="24" ry="10" fill="var(--paper-3, #d1d5db)" stroke="var(--line-3, #6b7280)" stroke-width="1" />
-          </svg>
-        </div>
-        <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Labios / Paladar / Úvula</div>
-      </div>
+      <figure class="orl-vista">
+        <figcaption>Rinoscopia anterior</figcaption>
+        <svg viewBox="0 0 160 120" role="img" aria-label="Rinoscopia anterior: fosas nasales, tabique y cornetes">
+          <path class="orl-tejido" d="M18 106 Q20 40 80 12 Q140 40 142 106 Z" />
+          <!-- Fosas nasales -->
+          <path class="orl-hueco" d="M71 24 Q42 40 32 104 L71 104 Z M89 24 Q118 40 128 104 L89 104 Z" />
+          <!-- Cornetes medio e inferior -->
+          <path class="orl-region" data-region="cornetes" d="M40 42 Q60 44 62 52 Q58 58 38 56 Z M33 66 Q60 66 64 78 Q58 88 30 86 Z M120 42 Q100 44 98 52 Q102 58 122 56 Z M127 66 Q100 66 96 78 Q102 88 130 86 Z" />
+          <!-- Tabique: resto y tercio anterior -->
+          <path class="orl-region" data-region="septo" d="M74 20 L86 20 L87 84 L73 84 Z" />
+          <path class="orl-region" data-region="septo_anterior" d="M73 84 L87 84 L88 104 L72 104 Z" />
+          <!-- Narinas -->
+          <path class="orl-region" data-region="narinas" d="M30 104 Q50 94 70 104 Q50 112 30 104 Z M90 104 Q110 94 130 104 Q110 112 90 104 Z" />
+        </svg>
+        <div class="orl-pie">Narinas · tabique · cornetes</div>
+      </figure>
+
+      <figure class="orl-vista">
+        <figcaption>Cavidad oral</figcaption>
+        <svg viewBox="0 0 160 120" role="img" aria-label="Cavidad oral abierta">
+          <!-- Labios -->
+          <path class="orl-region" data-region="labios" fill-rule="evenodd" d="M12 60 A68 50 0 1 0 148 60 A68 50 0 1 0 12 60 Z M24 60 A56 38 0 1 1 136 60 A56 38 0 1 1 24 60 Z" />
+          <ellipse class="orl-hueco" cx="80" cy="60" rx="56" ry="38" />
+          <!-- Pared posterior de la faringe -->
+          <ellipse class="orl-region" data-region="faringe" cx="80" cy="58" rx="17" ry="12" />
+          <!-- Paladar -->
+          <path class="orl-region" data-region="paladar" d="M30 46 Q80 8 130 46 Q104 36 80 36 Q56 36 30 46 Z" />
+          <!-- Úvula -->
+          <path class="orl-region" data-region="uvula" d="M76 37 Q80 56 84 37 Z" />
+          <!-- Lengua -->
+          <path class="orl-tejido" d="M38 84 Q80 62 122 84 Q80 96 38 84 Z" />
+          <!-- Arcadas dentales -->
+          <path class="orl-encia" d="M30 40 Q80 18 130 40 M32 82 Q80 102 128 82" />
+          <path class="orl-region orl-dientes" data-region="arcada" d="M30 40 Q80 18 130 40 M32 82 Q80 102 128 82" />
+        </svg>
+        <div class="orl-pie">Labios · arcada · paladar · úvula</div>
+      </figure>
 
     </div>
 
     <!-- Matriz de Compromiso de Estructuras -->
     <div style="overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;">
-      <table style="width: 100%; border-collapse: collapse; min-width: 680px; font-size: 12px;">
+      <table style="width: 100%; border-collapse: collapse; min-width: 520px; font-size: 12px; table-layout: fixed;" class="tabla-orl">
         <thead>
-          <tr style="background: var(--paper-2); border-bottom: 1px solid var(--line);">
-            <th style="padding: 8px 12px; text-align: left; color: var(--faint); width: 190px;">Estructura Evaluada</th>
-            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 85px;">Compromiso</th>
-            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 65px;">Eritema</th>
-            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 65px;">Edema</th>
-            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 65px;">Infiltración</th>
-            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 65px;">Úlcera</th>
-            <th style="padding: 8px 12px; text-align: left; color: var(--faint);">N.° Lesiones y Características</th>
+          <tr style="background: var(--paper); border-bottom: 1px solid var(--line);">
+            <th style="padding: 8px 12px; text-align: left; color: var(--faint); width: 140px;">Estructura</th>
+            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 82px;">Compromiso</th>
+            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 56px;">Eritema</th>
+            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 54px;">Edema</th>
+            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 64px;">Infiltr.</th>
+            <th style="padding: 8px 6px; text-align: center; color: var(--faint); width: 54px;">Úlcera</th>
+            <th style="padding: 8px 12px; text-align: left; color: var(--faint);">N.° de lesiones y características</th>
           </tr>
         </thead>
         <tbody>
@@ -201,7 +203,7 @@ $estructuras = [
 
               <!-- Características -->
               <td style="padding: 4px 8px;">
-                <input type="text" name="<?= e($nombreCampo) ?>[<?= e($keyEst) ?>][caracteristicas]" value="<?= e($caracteristicas) ?>" placeholder="Descripción o n.° de lesiones..." style="width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; font-size: 11.5px; background: var(--paper); color: var(--ink);">
+                <input type="text" name="<?= e($nombreCampo) ?>[<?= e($keyEst) ?>][caracteristicas]" value="<?= e($caracteristicas) ?>" placeholder="N.° y detalle…" style="width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; font-size: 11.5px; background: var(--paper); color: var(--ink);">
               </td>
             </tr>
 
@@ -214,22 +216,37 @@ $estructuras = [
 </div>
 
 <style>
+.leishmaniasis-mucosa-widget .orl-diagramas {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;
+}
+.leishmaniasis-mucosa-widget .orl-vista {
+  margin: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 8px 8px 6px; text-align: center;
+}
+.leishmaniasis-mucosa-widget .orl-vista figcaption { font-size: 11px; font-weight: 700; color: var(--ink-2); margin-bottom: 4px; }
+.leishmaniasis-mucosa-widget .orl-vista svg { display: block; width: 100%; height: auto; max-height: 120px; }
+.leishmaniasis-mucosa-widget .orl-pie { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.leishmaniasis-mucosa-widget .orl-base { fill: none; stroke: var(--muted); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+.leishmaniasis-mucosa-widget .orl-tejido { fill: var(--line-2); stroke: var(--muted); stroke-width: .8; }
+.leishmaniasis-mucosa-widget .orl-hueco { fill: var(--line); stroke: var(--muted); stroke-width: .8; }
+.leishmaniasis-mucosa-widget .orl-detalle { fill: none; stroke: var(--muted); stroke-width: .8; stroke-dasharray: 2 2; }
 .leishmaniasis-mucosa-widget .orl-region {
-  transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
-  cursor: pointer;
+  fill: var(--surface); stroke: var(--ink-2); stroke-width: 1; stroke-linejoin: round;
+  transition: fill .15s ease, stroke .15s ease; cursor: pointer;
 }
-.leishmaniasis-mucosa-widget .orl-region:hover {
-  fill: #fed7aa !important;
-  stroke: #ea580c !important;
-}
-.leishmaniasis-mucosa-widget .orl-region.afectada {
-  fill: #ef4444 !important;
-  stroke: #b91c1c !important;
-  filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.6));
-}
-.leishmaniasis-mucosa-widget tr.fila-resaltada {
-  background: rgba(234, 88, 12, 0.08) !important;
-}
+.leishmaniasis-mucosa-widget .orl-region.orl-linea { fill: none; stroke-width: 1.6; stroke-linecap: round; }
+.leishmaniasis-mucosa-widget .orl-encia { fill: none; stroke: var(--muted); stroke-width: 6; }
+.leishmaniasis-mucosa-widget .orl-region.orl-dientes { fill: none; stroke: var(--surface); stroke-width: 4.2; stroke-dasharray: 4.2 1.3; }
+.leishmaniasis-mucosa-widget .orl-region:hover,
+.leishmaniasis-mucosa-widget .orl-region.senalada { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.6; }
+.leishmaniasis-mucosa-widget .orl-region.orl-linea:hover,
+.leishmaniasis-mucosa-widget .orl-region.orl-linea.senalada,
+.leishmaniasis-mucosa-widget .orl-region.orl-dientes:hover,
+.leishmaniasis-mucosa-widget .orl-region.orl-dientes.senalada { fill: none; stroke: var(--accent); }
+.leishmaniasis-mucosa-widget .orl-region.afectada { fill: var(--s-confirmado); fill-opacity: .55; stroke: var(--s-confirmado); }
+.leishmaniasis-mucosa-widget .orl-region.orl-linea.afectada,
+.leishmaniasis-mucosa-widget .orl-region.orl-dientes.afectada { fill: none; }
+.leishmaniasis-mucosa-widget .tabla-orl thead th { text-transform: none; letter-spacing: 0; white-space: normal; font-size: 11px; line-height: 1.25; vertical-align: bottom; }
+.leishmaniasis-mucosa-widget tr.fila-resaltada { background: var(--accent-soft) !important; }
 </style>
 
 <script>
@@ -278,7 +295,7 @@ $estructuras = [
       const region = fila.getAttribute('data-region');
       if (region) {
         document.querySelectorAll(`.leishmaniasis-mucosa-widget [data-region="${region}"]`).forEach(el => {
-          el.style.strokeWidth = '2.5px';
+          el.classList.add('senalada');
         });
       }
     });
@@ -286,7 +303,7 @@ $estructuras = [
       const region = fila.getAttribute('data-region');
       if (region) {
         document.querySelectorAll(`.leishmaniasis-mucosa-widget [data-region="${region}"]`).forEach(el => {
-          el.style.strokeWidth = '';
+          el.classList.remove('senalada');
         });
       }
     });
