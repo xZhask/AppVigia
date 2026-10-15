@@ -72,10 +72,17 @@ En este orden:
 ```
 php sql/migraciones/add_tablas_hijas_enfermedad.php
 php cargar_fichas.php --apply --confirmo-apply
+php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
   escribir esa columna.
+- `set_o95_anexo2_campos_condicionados.php` (15/10, después del cargador):
+  condiciona a Anexo 2 los 10 campos de O95 descritos en la sección 2. Hace
+  falta porque, si O95 tiene casos, el cargador la bloquea y no aplica el
+  cambio del manifiesto. Actualiza esos `campo_def` (no los recrea) y borra
+  los valores de Anexo 2 que hayan quedado grabados en casos que no son de
+  Anexo 2. Se puede correr más de una vez.
 - El cargador va **sin** `--cie10`: el 15/10 cambió `tablas_hijas` en las 24
   fichas. Si una ficha sale "bloqueada por datos capturados", igual recibe sus
   tablas hijas (el cargador las aplica aparte); el resto de esa ficha queda
@@ -101,6 +108,22 @@ php cargar_fichas.php --apply --confirmo-apply
 - **O95:** el Anexo 2 son secciones condicionadas ("ver" y la validación ya
   respetan el anexo); el distrito de fallecimiento y de referencia se valida
   contra el padrón.
+- **O95, datos de Anexo 2 fuera de las secciones de Anexo 2 (cerrado el 15/10,
+  segunda vuelta):** 10 campos de "Datos del fallecimiento (Anexo 1)" se
+  ocultaban con Anexo 1, pero igual se guardaban: los 7 de la tarjeta de
+  identidad (grupo étnico, pueblo étnico, idioma, nivel educativo, estado
+  civil, ocupación, tipo de seguro) y los 3 de "Datos ampliados del
+  fallecimiento" (categoría del EE.SS., fecha y hora de ingreso, responsable
+  de la atención). No hacía falta un POST forjado: bastaba marcar Anexo 2,
+  llenar y volver a Anexo 1. Ahora dependen de `o95_tipo_de_ficha = ANEXO_2`
+  en el manifiesto ("especificar otro idioma/seguro" caen en cadena).
+  - Verificado con Playwright al registrar (Anexo 2 → Anexo 1, POST forjado y
+    control positivo con Anexo 2) y al editar (Anexo 2 → Anexo 1 borra los
+    datos), por la migración y por el cargador. El HTML de "nueva", "editar" y
+    "ver" queda idéntico byte a byte.
+  - Los valores grabados antes del arreglo en casos de Anexo 1 los borra la
+    misma migración (verificado: borra solo esos campos y solo en casos que no
+    son de Anexo 2).
 - **B01:** un registro por tipo de muestra. Revisadas las demás candidatas:
   repiten tipo a propósito y no lo llevan.
 - **Motor nuevo:** `indicacion` de campo (nota del papel antes del campo),
@@ -134,16 +157,16 @@ No tocar sin una respuesta explícita.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
-- **O95, datos del Anexo 2 en la tarjeta de identidad** (grupo étnico, idioma,
-  nivel educativo, estado civil, ocupación, seguro): se ocultan con Anexo 1,
-  pero no están en las secciones condicionadas; probablemente se guardan si
-  llegan en el POST. Verificar y, si es así, condicionarlos.
 - **O95:** departamento y provincia del ubigeo de fallecimiento y referencia no
   se validan (el distrito sí).
 - **"Ver":**
   - No aplica `campos_notificacion` (Z21 muestra "Tipo de registro" en una
     tarjeta aparte).
   - Por verificar si `b26_contactos_por_lugar` se lee bien o sale como JSON.
+  - Oculta las secciones condicionadas pero no los campos sueltos con
+    `depende_de`: los muestra con "—" aunque no apliquen (p. ej. "Especificar
+    otro idioma", o los 10 de Anexo 2 de O95 en un caso de Anexo 1). Pasa en
+    las 24 fichas.
 - **Reportes:** el orden y las columnas por clasificación solo conocen las 4
   genéricas; el filtro del listado de fichas también.
 - **Padrón RENIPRESS:** revisar categorías dudosas (Centro de Salud Mental

@@ -13414,6 +13414,8 @@
               "orden": 4,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2",
               "opciones": [
                 "Español",
                 "Quechua",
@@ -13428,6 +13430,8 @@
               "orden": 5,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2",
               "opciones": [
                 "Ninguno",
                 "Primaria incompleta",
@@ -13446,6 +13450,8 @@
               "orden": 6,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2",
               "opciones": [
                 "Soltera",
                 "Casada",
@@ -13463,6 +13469,8 @@
               "orden": 7,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2",
               "opciones": [
                 "SIS",
                 "EsSalud",
@@ -13494,6 +13502,8 @@
               "orden": 9,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2",
               "opciones": [
                 "Mestizo",
                 "Andino",
@@ -13510,6 +13520,8 @@
               "orden": 10,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2",
               "opciones": [
                 "Quechua",
                 "Aymara",
@@ -13538,7 +13550,9 @@
               "tipo": "TEXTO",
               "orden": 11,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2"
             },
             {
               "clave": "o95_idioma_otra",
@@ -13678,6 +13692,8 @@
               "orden": 27,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2",
               "opciones": [
                 "I-1",
                 "I-2",
@@ -13698,7 +13714,9 @@
               "tipo": "FECHA",
               "orden": 28,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2"
             },
             {
               "clave": "o95_responsable_de_la_atencion",
@@ -13707,6 +13725,8 @@
               "orden": 29,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_tipo_de_ficha",
+              "valor_activador": "ANEXO_2",
               "opciones": [
                 "Médico G-O",
                 "Médico intensivista",
