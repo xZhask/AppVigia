@@ -3,7 +3,69 @@
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 
-## 1. Sincronizar esta estación (después de `git pull`)
+## 1. Base de datos
+
+Servidor: MySQL 8.4.3 de Laragon. La app se conecta según
+`config/config.php` (`127.0.0.1:3306`, base `vigia`, `root` sin clave).
+
+### 1.1 Instalar la base desde cero (estación sin `vigia`)
+
+`sql/01_esquema_actual.sql` trae la estructura de las 32 tablas y la
+configuración de las 24 fichas (enfermedades, secciones, campos, catálogos,
+ubigeo, establecimientos, grados), ya cargada con el manifiesto del 15/10. No
+trae casos, personas ni usuarios. Desde la raíz del proyecto:
+
+```
+mysql --host=127.0.0.1 -uroot -e "CREATE DATABASE vigia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+mysql --host=127.0.0.1 -uroot --default-character-set=utf8mb4 vigia -e "source sql/01_esquema_actual.sql"
+php scripts/crear_admin.php tu-correo@dominio "Tu nombre"
+php verificar_fichas.php
+php verificar_claves.php
+php verificar_render.php
+```
+
+- `mysql` es `C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe` (ruta
+  completa, o esa carpeta en el PATH). Se usa `source` y no `<` porque
+  PowerShell no admite esa redirección; así funciona igual en PowerShell, cmd
+  y Git Bash (probado en PowerShell el 15/10).
+- `crear_admin.php` imprime una contraseña aleatoria una sola vez. Al entrar,
+  la app pide completar el perfil.
+- No hace falta correr las migraciones ni el cargador: el archivo ya los trae
+  aplicados (si se corren, no cambian nada).
+- Los tres verificadores deben salir en verde, sin huérfanos.
+
+### 1.2 Mantener `sql/01_esquema_actual.sql` instalable
+
+El 15/10 el archivo dejó de instalarse: se agregó `enfermedad.tablas_hijas` a
+mano al `CREATE TABLE`, pero los `INSERT` de `enfermedad` seguían sin esa
+columna ("Column count doesn't match value count"). Se regeneró el mismo día.
+Para que no vuelva a pasar:
+
+- **Nunca editar a mano** el `CREATE TABLE` ni los `INSERT` del archivo. Todo
+  cambio de esquema va como migración en `sql/migraciones/`, se aplica y luego
+  **se regenera el archivo completo** en el mismo commit.
+- Regenerar cuando cambie el esquema **o** el contenido de las fichas (después
+  de `cargar_fichas.php --apply`), porque el archivo transporta ambos.
+- Procedimiento (`mysqldump` de la 8.4.3, siempre con `--result-file`):
+
+  ```
+  mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --routines --triggers --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-data --result-file=estructura.sql vigia
+  mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-create-info --skip-triggers --result-file=datos.sql vigia campo_def catalogo catalogo_item departamento distrito enfermedad establecimiento grado_pnp provincia red_salud seccion_def
+  ```
+
+  Armar el archivo en este orden: la cabecera de comentarios (agregar arriba
+  una entrada con la fecha y qué cambió), `estructura.sql` hasta antes de la
+  línea `SET TIME_ZONE=@OLD_TIME_ZONE`, los bloques `-- Dumping data` de
+  `datos.sql` (sin su prólogo ni su epílogo) y, al final, el resto de
+  `estructura.sql`.
+- **Probar que se instala antes de commitear:** crear `vigia_limpia`, importar
+  el archivo tal cual y comparar contra `vigia` las columnas, índices y claves
+  foráneas (`information_schema`) y el contenido de las 11 tablas de
+  configuración. Luego borrar `vigia_limpia`. El 15/10 dio 403 columnas,
+  115 índices y 53 claves foráneas idénticas, 24 enfermedades, 195 secciones,
+  1216 campos, 338 catálogos y 1861 ítems.
+
+### 1.3 Sincronizar una estación que ya tiene `vigia` (después de `git pull`)
 
 En este orden:
 
