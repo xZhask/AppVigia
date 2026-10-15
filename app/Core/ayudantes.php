@@ -449,6 +449,23 @@ function jsonDeEnfermedad(array $enfermedad, string $columna): array
 }
 
 /**
+ * Bloque de gestación del núcleo: qué pide cada ficha además de "¿Gestante?".
+ * La vista (datos-paciente-nucleo.php) y el servidor (qué columnas de persona
+ * escribe CasosController) leen estas mismas reglas.
+ *   - FUR: solo A44 (cotejo 2026-08-18, ítem 4 del PDF).
+ *   - Trimestre en vez de semanas de gestación: B26 y B01 (ítem 20 del PDF).
+ */
+function pideFurGestacion(array $enfermedad): bool
+{
+    return ($enfermedad['cie10'] ?? '') === 'A44';
+}
+
+function pideTrimestreGestacion(array $enfermedad): bool
+{
+    return in_array($enfermedad['cie10'] ?? '', ['B26', 'B01'], true);
+}
+
+/**
  * Tablas hijas de un caso que una ficha puede declarar en "tablas_hijas" del
  * manifiesto (2026-10-15). cargar_fichas.php valida las claves contra esta
  * lista y guarda las que valen true en enfermedad.tablas_hijas.

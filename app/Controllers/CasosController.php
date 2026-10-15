@@ -538,9 +538,9 @@ class CasosController extends Controller
             $personaExistente = $sinDocumento ? null : Persona::buscarPorDocumento($valoresFijos['tipo_doc'], $valoresFijos['num_doc']);
             if ($personaExistente) {
                 $personaId = (int) $personaExistente['id'];
-                Persona::actualizar($personaId, $datosPaciente);
+                Persona::actualizar($personaId, $this->sinColumnasNoPedidas($datosPaciente, $nucleo));
             } else {
-                $personaId = Persona::crear($datosPaciente);
+                $personaId = Persona::crear(array_merge($datosPaciente, array_fill_keys($nucleo['persona_no_pedidos'], null)));
             }
 
             // Validación de conflicto de interés
@@ -1202,7 +1202,7 @@ class CasosController extends Controller
                 throw new ConflictoInteresException('No puedes editar esta ficha: la persona notificada eres tú mismo/a. Pide a otro registrador o al epidemiólogo que la edite.');
             }
 
-            Persona::actualizar($personaId, $datosPaciente);
+            Persona::actualizar($personaId, $this->sinColumnasNoPedidas($datosPaciente, $nucleo));
 
             $semana = semanaEpidemiologica($fechaNotifIso);
 
@@ -2163,6 +2163,15 @@ class CasosController extends Controller
      *
      * @return array{persona: array, caso: array}
      */
+    /**
+     * Datos de una persona que ya existe, sin las columnas que esta ficha no
+     * pide (sanearCamposNucleo(), 'persona_no_pedidos'): quedan como estaban.
+     */
+    private function sinColumnasNoPedidas(array $datosPaciente, array $nucleo): array
+    {
+        return array_diff_key($datosPaciente, array_flip($nucleo['persona_no_pedidos']));
+    }
+
     private function sanearCamposNucleo(array $valoresFijos, array $enfermedad): array
     {
         // unidades_edad (entrada F): a diferencia de etnia/pueblo_etnico, la
@@ -2347,6 +2356,52 @@ class CasosController extends Controller
         // nucleo_omitidos: 'captacion' / 'investigador' (cotejo Z21,
         // 2026-09-11): si la ficha no pide el bloque, sus columnas quedan en
         // NULL aunque el POST venga armado a mano.
+        // Columnas de persona que esta ficha (o su rama) no pide (2026-10-15).
+        // La persona se comparte entre fichas: si al guardar se escribieran
+        // en NULL, registrar p. ej. un caso de A36 borraba el estado civil
+        // que había guardado un caso de B57 para la misma persona (verificado
+        // en el navegador). crear()/actualizar() no las tocan en una persona
+        // existente y las dejan en NULL en una nueva, así que tampoco se
+        // guarda lo que llegue forjado para ellas.
+        $omite = fn(string $campoNucleo): bool => nucleoOmitido($enfermedad, $campoNucleo);
+        $noPedidos = [];
+        $pedidoSi = function (bool $pedido, array $columnas) use (&$noPedidos): void {
+            if (!$pedido) {
+                array_push($noPedidos, ...$columnas);
+            }
+        };
+        $pedidoSi(!$omite('celular'), ['celular']);
+        $pedidoSi(!$omite('nacionalidad'), ['nacionalidad']);
+        $pedidoSi(!$omite('ocupacion'), ['ocupacion']);
+        $pedidoSi(!$omite('nombre_tutor'), ['nombre_tutor']);
+        $pedidoSi(!$omite('celular_tutor'), ['celular_tutor']);
+        $pedidoSi($residenciaActiva, ['distrito_id']);
+        $pedidoSi($residenciaActiva && !$omite('localidad'), ['localidad']);
+        $pedidoSi($residenciaActiva && !$omite('direccion'), ['direccion']);
+        $pedidoSi($residenciaActiva && !$omite('referencia_localizar'), ['referencia_localizar']);
+        $detallePedido = fn(string $codigo): bool => $residenciaActiva && in_array($codigo, $detalleDomicilioPermitido, true);
+        $pedidoSi($detallePedido('TIPO_ZONA'), ['tipo_zona']);
+        $pedidoSi($detallePedido('NOMBRE_ZONA'), ['nombre_zona']);
+        $pedidoSi($detallePedido('TIPO_VIA'), ['tipo_via']);
+        $pedidoSi($detallePedido('NOMBRE_VIA'), ['nombre_via']);
+        $pedidoSi($detallePedido('NUMERO'), ['numero']);
+        $pedidoSi($detallePedido('MZ_LOTE'), ['mz_lote']);
+        $pedidoSi($detallePedido('TIEMPO_RESIDENCIA'), ['tiempo_residencia']);
+        $pedidoSi(!empty($enfermedad['migracion_reciente']), [
+            'tiempo_reside_anios', 'tiempo_reside_meses', 'anterior_distrito_id', 'anterior_tipo_zona',
+            'anterior_nombre_zona', 'anterior_tipo_via', 'anterior_nombre_via', 'anterior_numero', 'anterior_mz_lote',
+        ]);
+        $pedidoSi(in_array('n_historia_clinica', $nucleoIncluidosPermitido, true), ['n_historia_clinica']);
+        $pedidoSi(in_array('estado_civil', $nucleoIncluidosPermitido, true), ['estado_civil']);
+        $pedidoSi(in_array('nacimiento_distrito_id', $nucleoIncluidosPermitido, true), ['nacimiento_distrito_id']);
+        $pedidoSi($etniaActiva && !$omite('etnia'), ['etnia', 'etnia_otra']);
+        $pedidoSi($etniaActiva && !$omite('pueblo_etnico'), ['pueblo_etnico']);
+        $pideGestacion = !$omite('gestante');
+        $pedidoSi($pideGestacion, ['gestante']);
+        $pedidoSi($pideGestacion && pideFurGestacion($enfermedad), ['fur']);
+        $pedidoSi($pideGestacion && !pideTrimestreGestacion($enfermedad), ['semanas_gestacion']);
+        $pedidoSi($pideGestacion && pideTrimestreGestacion($enfermedad), ['trimestre_gestacion']);
+
         $captacionOmitida = nucleoOmitido($enfermedad, 'captacion');
         // nucleo_ajustes.investigador (A50, 2026-09-14): de la tarjeta solo se
         // guardan los campos que la ficha declara (el notificador: su nombre).
@@ -2365,6 +2420,7 @@ class CasosController extends Controller
             // pisa el valor que crear()/actualizar() toman del POST. Las 23
             // fichas que no lo declaran siguen guardándolo tal cual, sin
             // pasar por acá.
+            'persona_no_pedidos' => array_values(array_unique($noPedidos)),
             'persona' => array_merge([
                 'celular'            => $valoresFijos['celular'] !== '' ? $valoresFijos['celular'] : null,
                 'nacionalidad'       => $valoresFijos['nacionalidad'] !== '' ? $valoresFijos['nacionalidad'] : null,
