@@ -449,6 +449,30 @@ function jsonDeEnfermedad(array $enfermedad, string $columna): array
 }
 
 /**
+ * Tablas hijas de un caso que una ficha puede declarar en "tablas_hijas" del
+ * manifiesto (2026-10-15). cargar_fichas.php valida las claves contra esta
+ * lista y guarda las que valen true en enfermedad.tablas_hijas.
+ */
+const TABLAS_HIJAS = [
+    'caso_contacto', 'caso_contacto_directo', 'caso_viaje', 'caso_vacuna',
+    'caso_muestra', 'caso_lugar_infeccion', 'caso_evolucion', 'caso_examen_auxiliar',
+];
+
+/**
+ * ¿La ficha usa esta tabla hija? CasosController guarda solo las que usa: sin
+ * esto, un POST forjado agregaba filas (muestras, viajes...) a fichas que no
+ * tienen esa tabla. NULL en enfermedad.tablas_hijas = la ficha aún no se
+ * cargó con el manifiesto que la declara: se guardan todas, como antes.
+ */
+function tablaHijaUsada(array $enfermedad, string $tabla): bool
+{
+    if (($enfermedad['tablas_hijas'] ?? null) === null) {
+        return true;
+    }
+    return in_array($tabla, jsonDeEnfermedad($enfermedad, 'tablas_hijas'), true);
+}
+
+/**
  * ¿La ficha declara este campo/bloque en nucleo_omitidos? Además de los
  * campos de persona de siempre (celular, etnia...), desde el cotejo de Z21
  * (2026-09-11) admite 4 bloques enteros del formulario: 'captacion',

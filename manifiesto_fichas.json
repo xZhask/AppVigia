@@ -28,9 +28,13 @@
       "pdf_paginas": "49 (Anexo N.° 01)",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": true,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "columnas_tablas_hija": {
         "caso_viaje": [
@@ -503,10 +507,14 @@
         }
       },
       "tablas_hijas": {
-        "caso_muestra": true,
+        "caso_contacto": true,
+        "caso_contacto_directo": false,
         "caso_viaje": true,
         "caso_vacuna": false,
-        "caso_contacto": true
+        "caso_muestra": true,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "columnas_tablas_hija": {
         "caso_contacto": [
@@ -1256,9 +1264,13 @@
       "pdf_paginas": "3",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": true,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": true,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "_nota_vacunas": "2026-08-09: caso_vacuna desactivada -- el PDF (pág. 3, secc. V) solo pide 3 campos fijos para UNA vacuna (Vacunación contra Varicela Sí/No, N.° de dosis, Fecha), no la tabla genérica multi-vacuna/multi-catálogo que se veía antes (mismo listado extenso de 'vacuna_minsa' que usan las fichas con esquema de vacunación completo). Ver sección 'Antecedentes de vacunación' más abajo.",
       "_nota_laboratorio": "2026-08-09: columnas_tablas_hija.caso_muestra ahora declara 'columnas' explícito (antes faltaba, por eso la cadena de fechas de envío del PDF -- secc. VI -- nunca aparecía: sin 'columnas' la tabla cae al set mínimo por defecto, que no las incluye). 'tipo_prueba' se quitó de la lista (2026-08-09, decisión explícita del usuario): el PDF no trae esa columna, así que ni se muestra ni se pide -- ya no está ni en 'columnas' ni en 'opciones'.",
@@ -1619,9 +1631,13 @@
       "pdf_paginas": "4",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": true
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "_observaciones_tablas_hija": "La BD tiene usa_muestras=1, pero el PDF de Parotiditis (pág. 4) no trae ninguna sección de laboratorio — a diferencia de Varicela, que sí la trae. Revisar si el flag es correcto.",
       "nucleo_omitidos": [
@@ -1968,9 +1984,13 @@
       "_corregido": "Auditoría ficha-por-ficha del usuario (comparacion_ficha_ficha, 2026-07-23): se quitó 'Fecha de inicio' (duplicaba el campo núcleo fecha_inicio_sintomas), se agregaron las dependencias condicionales de Hospitalizado/Antibiótico/Aislamiento que ya estaban especificadas en AUDITORIA_FICHA_DIFTERIA.md pero nunca se cargaron al manifiesto, se reemplazó la tabla genérica caso_vacuna por los 4 campos propios que pide el PDF (51-54), y se desactivó caso_viaje (el PDF solo pide 'lugar probable de infección', ya cubierto por caso_lugar_infeccion). enfermedad.usa_viajes/usa_vacunas se corrigieron aparte con un UPDATE puntual: este cargador no sincroniza tablas_hijas contra los flags usa_* de la tabla enfermedad (deuda técnica pendiente).",
       "tablas_hijas": {
         "caso_contacto": true,
-        "caso_muestra": true,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": true,
+        "caso_lugar_infeccion": true,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "columnas_tablas_hija": {
         "caso_contacto": [
@@ -2257,9 +2277,13 @@
       "pdf_paginas": "26-27",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": true,
+        "caso_contacto_directo": false,
         "caso_viaje": true,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": true,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "_nota_vacuna": "Cotejo 2026-08-23 (pág. 27 del PDF): 'V. ANTECEDENTE DE VACUNA ANTIAMARILICA' es un solo registro (Vacunado SI/NO/IGN + establecimiento + N.° de dosis + fecha de última dosis), no una lista repetible -- caso_vacuna (tabla genérica de múltiples antecedentes vacunales, como usa B05) no aplica. Se modela como 4 campo_def fijos en la sección 'Antecedente de vacuna antiamarílica' (mismo criterio que B26, que tampoco usa caso_vacuna).",
       "_nota_laboratorio": "Cotejo 2026-08-23, 2.ª revisión (pág. 27 del PDF): 'VII. MUESTRA' son 4 filas FIJAS de PAPEL (Biopsia/Serología/Hígado/Cultivos), pero la 1.ª revisión (campo_def fijos, calcando a B57 Sangre/Suero) se descartó -- el usuario señaló que la ficha no exige las 4 pruebas, así que el modelo fijo dejaba campos vacíos innecesarios en cada caso. Se usa caso_muestra (componente dinámico '+ Agregar muestra') con tipo_muestra restringido a esas 4 opciones + la regla unico_por_tipo=true (un registro por tipo como máximo, ver columnas_tablas_hija.caso_muestra abajo) para conservar la garantía 1-por-categoría sin forzar los 4 registros.",
@@ -2740,9 +2764,13 @@
       "_corregido_laboratorio": "Revisión 2026-08-24: 'caso_muestra' venía en true además de la sección propia 'Pruebas de laboratorio' (MATRIZ) -- desactivado ese día para no duplicar el panel fijo de 6 pruebas del PDF (pág. 46). Revertido 2026-08-25 (pedido del usuario): la MATRIZ obliga la MISMA columna 'Tipo / Muestra' para las 6 filas, pero el PDF solo trae TIPO en Cultivo/Histopatología (Frotis directo/IDR/ELISA/PCR no la tienen) -- el widget dinámico 'caso_muestra' ('+ Agregar muestra', reusado por B55, ya el mismo componente que Difteria/A97/A80/etc.) modela esto sin forzar nada: cada fila declara su propia prueba (tipo_prueba) y el campo 'Tipo' (tipo_muestra) queda simplemente vacío en las filas que no lo necesitan. Se reactiva 'caso_muestra' y se inyecta el widget DENTRO de la sección 'Pruebas de laboratorio' (secciones-clinicas.php, mismo mecanismo ya usado por A95 dentro de su sección 'Laboratorio') en vez de dejarlo caer en la tarjeta fija de siempre al final del formulario -- así conserva la posición real del PDF (VI, antes de Diagnóstico). La sección 'Pruebas de laboratorio' se queda sin campo_def propio (solo_tabla_hija=true, mismo mecanismo que 'Laboratorio y evolución' de A44) -- b55_pruebas_laboratorio (MATRIZ) se retiró.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": true,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": true,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
         "referencia_localizar",
@@ -3133,9 +3161,13 @@
       "pdf_paginas": "40-41",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": true,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "columnas_tablas_hija": {
         "caso_viaje": [
@@ -3724,9 +3756,13 @@
       "pdf_paginas": "42-44",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": true,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": true,
+        "caso_examen_auxiliar": true
       },
       "columnas_tablas_hija": {
         "caso_viaje": [
@@ -4560,9 +4596,13 @@
       "pdf_paginas": "5-6",
       "tablas_hijas": {
         "caso_contacto": true,
-        "caso_muestra": true,
+        "caso_contacto_directo": true,
         "caso_viaje": true,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": true,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "_nota_caso_vacuna": "Apagado 2026-09-03 al cerrar el cotejo del PDF completo (decisión del usuario). Venía en true desde la carga masiva original sin verificar, y hacía aparecer la tarjeta genérica 'Antecedentes epidemiológicos' conteniendo SOLO el widget 'Antecedentes vacunales / Agregar antecedente vacunal', que no corresponde a ningún ítem del PDF de B04X. La vacunación que el PDF sí pide (ítem 42: 'Recibió vacuna contra la viruela' + Dosis 1/Dosis 2 con fecha y país) se modeló en la Sección V como el campo MATRIZ b04x_dosis_vacuna_viruela, así que el widget genérico era un segundo camino de captura para lo mismo. Se verificó que había 0 filas de caso_vacuna para B04X antes de apagarlo: no se perdió ningún dato. Mismo criterio con el que se quitaron 2 tarjetas genéricas duplicadas al cerrar A95.",
       "columnas_tablas_hija": {
@@ -5459,9 +5499,13 @@
       "_nota_cotejo": "Cotejo 2026-09-07 contra las págs. 50-51 del compendio (EDA GRAVE - CÓLERA, ficha clínico-epidemiológica de 2 páginas). Antes el manifiesto declaraba sólo la pág. 50. Las secciones romanas del papel se mapean así: I. Datos generales -> sección 'Datos generales' (pintada a medida en notificacion-fechas-a00.php, dentro de la tarjeta fija '1. Notificación'); II. Datos del paciente -> núcleo (unidades_edad + detalle_domicilio + nucleo_incluidos) más la sección 'Para los residentes en otros países'; III -> 'Antecedentes epidemiológicos — fuente de infección'; IV -> 'Cuadro clínico', 'Tratamiento' y 'Evolución del paciente'; V -> 'Laboratorio' (campo_def + widget caso_muestra inyectado, patrón A95); VI -> 'Clasificación'; VII -> 'Observaciones' + tarjeta núcleo 'Investigador'. DISA/Red/Establecimiento notificante de la sección I no se capturan como campo_def: son datos del establecimiento ya elegido (mismo criterio que A37.0/A97/B57/A95). 'Firma' (VII) no se modela: es un artefacto del papel.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": true,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": true,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "columnas_tablas_hija": {
         "caso_muestra": {
@@ -6120,9 +6164,13 @@
       "pdf_paginas": "23-24",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "unidades_edad": [
         "ANIOS",
@@ -6554,9 +6602,13 @@
       "pdf_paginas": "21-22",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
         "pueblo_etnico",
@@ -7016,11 +7068,14 @@
       "lote": 3,
       "pdf_paginas": "34-36",
       "tablas_hijas": {
-        "caso_contacto": false,
-        "caso_muestra": true,
+        "caso_contacto": true,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
         "caso_vacuna": false,
-        "caso_lugar_infeccion": false
+        "caso_muestra": true,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "columnas_tablas_hija": {
         "caso_muestra": {
@@ -8003,9 +8058,13 @@
       "pdf_paginas": "37-39",
       "tablas_hijas": {
         "caso_contacto": true,
-        "caso_muestra": true,
+        "caso_contacto_directo": false,
         "caso_viaje": true,
-        "caso_vacuna": true
+        "caso_vacuna": true,
+        "caso_muestra": true,
+        "caso_lugar_infeccion": true,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "_observaciones_tablas_hija": "Cadena de transmisión (CIERRE_RECARGA_Y_FASE5.md Parte 1.4): fecha del contacto, lugar de contacto, fecha de inicio de erupción y vacunación dentro de 72h del contacto viven en caso_contacto (columnas fecha_contacto/lugar_contacto/fecha_inicio_erupcion/vacunado_72h, agregadas en sql/35_fase5_ampliar_tablas_hija.sql), no en campo_def -- son datos repetibles por contacto, igual que el resto de caso_contacto.",
       "columnas_tablas_hija": {
@@ -8986,9 +9045,13 @@
       "_nota_sensible": "Antes de la recarga (RECARGA_FICHAS.md Fase 3), el 100% de los campos de esta ficha (45/45) estaban marcados campo_def.sensible=1 en la BD -- coherente con que toda la ficha trata de estado VIH de gestante y niño. La v2.1 no había trasladado esa marca al manifiesto (hallazgo de CIERRE_RECARGA_Y_FASE5.md Parte 0); se restaura aquí en todos los campos.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "_nota_nucleo": "Los ítems 1-3 y 6-8 del PDF (Datos del EESS y sus dos fechas) son los mismos datos para las dos ramas: DISA/DIRESA, nombre, institución y tipo del EE.SS. salen del establecimiento elegido (red_salud.diresa/establecimiento.institucion, mismo criterio que A37.0/A97/B57/A95/A00) y la fecha de notificación es el núcleo fecha_notif; solo la fecha de reporte y el código se capturan como campo_def. 'Tipo de EESS' fue campo_def hasta el 2026-09-12: el usuario pidió que no se capture sino que se tome del establecimiento, y como el padrón no guardaba la categoría se creó establecimiento.categoria (sql/migraciones/add_categoria_establecimiento.php, llenada desde el listado RENIPRESS); el tipo sale de ahí con tipoEstablecimientoPorCategoria() (I-1/I-2 Puesto de Salud, I-3/I-4 Centro de Salud, II-x/III-1/III-E Hospital). Los ítems 4 y 9 (Datos de la gestante / del niño: DNI, apellidos y nombres, fecha de nacimiento, sexo) son el núcleo de persona de cada caso. El PDF no trae captación, clasificación del caso, investigador ni fecha de inicio de síntomas: los cuatro se omiten del formulario. La clasificación igual se guarda (2026-09-13): la calculan las reglas 'clasificar' de reglas_campos para el registro por búsqueda activa de la pág. 15 (Gestante con VIH / Aborto / Mortinato / Niño nacido expuesto).",
       "nucleo_omitidos": [
@@ -9625,9 +9688,13 @@
       "_nota_encabezado": "Ítems 1-5: DIRESA, establecimiento, tipo e institución salen del establecimiento elegido (red_salud.diresa, categoría RENIPRESS y establecimiento.institucion, mismo criterio que Z21/A50); la fecha de notificación es el núcleo. Ítems 6-7, 10-12 y 15 son la tarjeta de identidad: el 'Código del paciente' (iniciales AP AM N1 N2 + fecha de nacimiento dd mm aa) se calcula de los apellidos, nombres y fecha de nacimiento (campo calculado, solo lectura); DNI/CE/Pasaporte es el documento; 'Comunidad' es la localidad y 'Sexo al nacer' el sexo del núcleo, con la etiqueta del PDF (nucleo_ajustes.etiquetas). 'País' de la residencia habitual no se captura (decisión del usuario): el selector de residencia es de ubigeo peruano. Ítem 8 (motivo): en la tarjeta Notificación, porque elige la rama (campos_notificacion). Ítem 25: tarjeta 'Responsable de notificación' con solo el nombre (patrón A50); 'Firma' no aplica a un registro digital.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
         "celular",
@@ -10464,9 +10531,13 @@
       "_nota_encabezado": "Datos generales del PDF: establecimiento, institución, nivel, DISA/DIRESA, red y microrred salen del establecimiento elegido (padrón); la fecha de notificación e investigación es la del núcleo y la semana epidemiológica se calcula. El 'Código' es el DNI de la madre: en su ficha, su documento; en la del producto, 'DNI de la madre'. El notificador ('Nombres y Apellidos del notificador', pie de la ficha) va en una tarjeta 'Notificador' con solo ese campo, prellenado con el usuario que registra y editable (pedido del usuario 2026-09-14: antes no se veía). 'Firma y sello' no aplica a un registro digital.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
         "celular",
@@ -11184,9 +11255,13 @@
       ],
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": true,
+        "caso_contacto_directo": false,
         "caso_viaje": true,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": true,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "columnas_tablas_hija": {
         "caso_viaje": [
@@ -11678,9 +11753,13 @@
       "_nota_cotejo": "Cotejo 2026-10-10 (págs. 9-12). Dos etapas en el mismo caso, como O95: 'Notificación inmediata (Anexo 01)' y 'Investigación completa'; las secciones V-X dependen de la etapa (secciones condicionadas, como Z21). DIRESA/red/microrred/nivel/institución salen del establecimiento. La clasificación es la 'Clasificación final' propia (sin chips genéricos, decisión del usuario). Dx de ingreso y N.° de historia clínica se conservan aunque la pág. 11 perdió el texto de esa zona. El Anexo 6.2 (págs. 7-8) queda para la etapa 3: se activará con la clasificación final 2 o 3. 2026-10-11: la etapa 1 muestra solo lo que pide el Anexo 01 (pág. 12); los datos de la ficha de investigación (tipo, código, fechas, teléfono del personal de salud, datos adicionales del paciente, etnia e investigador) pasan a la etapa 2. Las columnas de vacunación que el Anexo 01 no pide (adyuvante, sitio, fabricante, lote, expiración) siguen visibles y opcionales.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": true
+        "caso_vacuna": true,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "_observaciones_tablas_hija": "Los datos de la vacunación (nombre/dosis/vía/sitio/adyuvante/fecha/fabricante/lote/fecha de expiración/EE.SS.) viven enteramente en caso_vacuna desde CIERRE_RECARGA_Y_FASE5.md Parte 2. La regresión de calidad de dato que eso introdujo (catálogo cerrado del PDF -> texto libre) se corrigió en PENDIENTES_POST_FASE5.md punto 2: caso_vacuna.vacuna/dosis/via/sitio/adyuvante ahora se llenan con <select> respaldados por catálogos compartidos (vacuna_minsa/dosis_vacuna/via_vacuna/sitio_vacuna/adyuvante_vacuna, sql/37_catalogos_vacuna_compartidos.sql), mismo patrón que caso_muestra -- ya no queda ningún campo de vacunación en campo_def para esta ficha.",
       "columnas_tablas_hija": {
@@ -12316,9 +12395,13 @@
       "_nota_cotejo": "Cotejo 2026-10-09 (pág. 25). Institución (MINSA/PNP/DEMUNAS/CMM/Otros) y Hospital/Centro de Salud no se capturan: decisión del usuario, la institución es siempre PNP, un dato constante del establecimiento (mismo criterio que la 'Institución informante' de A35/A36); el tipo sale de establecimiento.categoria. El PDF no pide el nombre del agredido; se conserva el del núcleo para identificar a la persona (ficha privada; decisión del usuario). Del agresor solo pide edad y sexo (columnas_sujeto). Gestando solo con sexo Mujer (reglas_campos con nucleo:sexo, como B24); el 'Gestante' del núcleo se omite para no duplicarlo. La dirección del PDF es solo Departamento/Provincia/Distrito/Localidad, sin calle.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
         "referencia_localizar",
@@ -12764,9 +12847,13 @@
       "_nota_cotejo": "Cotejo 2026-10-08 (pág. 29). El conductor (ítems 23-25) es una segunda persona: columnas_sujeto.CONDUCTOR (apellidos, nombres, edad, sexo), como la madre de P35.0. Las secciones IV y V (conductor y vehículo) son del ocasionante y van con rol CONDUCTOR, para que el aviso de sujeto no vuelva a 'Caso índice' a mitad de camino. Los lugares del PDF (15.2-15.4, 27.1-27.3) usan el formato 'distrito' (selector encadenado, se guarda el id del distrito). El PDF no pide captación, clasificación, investigador ni fecha de inicio de síntomas: se omiten, como en P96.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
         "referencia_localizar",
@@ -13219,9 +13306,13 @@
       "pdf_paginas": "30-33",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
         "celular",
@@ -14865,9 +14956,13 @@
       "_nota_general": "Cotejo 2026-09-13 (pág. 28 del PDF: Anexo 1 de la R.M. 279-2009/MINSA, NTS N.° 078-MINSA/DGE-V.01). La hoja es un listado semanal: cada fila es un fallecido y el encabezado (DISA/DIRESA, establecimiento notificante, distrito, responsable, semana epidemiológica) es del envío, no del caso. Se modela una ficha por defunción -- la NTS dice 'los casos se notifican en forma obligatoria e individual, y con periodicidad semanal' -- y el listado se arma en Reportes > Formularios del PDF, donde también se notifica la semana sin casos. Decisiones del usuario: apellidos obligatorios y nombres opcionales (NN en el listado); la semana es la de notificación; el Responsable es quien genera el listado; el código CIE-10 se valida solo por su forma hasta que llegue el catálogo CIE-10.",
       "tablas_hijas": {
         "caso_contacto": false,
-        "caso_muestra": false,
+        "caso_contacto_directo": false,
         "caso_viaje": false,
-        "caso_vacuna": false
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
       },
       "_nota_residencia_madre": "La residencia habitual de un feto o de un neonato es la de su madre, así que es UNA sola: la residencia del núcleo, con el título del PDF (nucleo_ajustes.titulo_residencia). Antes había dos (la del núcleo y un bloque MADRE en caso_sujeto que además pedía una dirección que el PDF no trae). P96 deja de ser multi_sujeto: sql/migraciones/set_p96_muerte_fetal_neonatal.php.",
       "nucleo_omitidos": [

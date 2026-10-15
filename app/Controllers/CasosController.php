@@ -454,14 +454,12 @@ class CasosController extends Controller
         [$casoVinculadoId, $errorVinculoCaso] = $this->resolverVinculoCaso($enfermedad, $valoresCampos, $paraGuardar, null);
 
         // ---------- tablas hijas (opcionales) ----------
-        $filasContactos = $this->filasContactos();
-        $filasContactosDirectos = $this->filasContactosDirectos();
-        [$filasViajes, $erroresViajes] = $this->filasViajes();
-        [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
-        [$filasMuestras, $erroresMuestras] = $this->filasMuestras($enfermedad);
-        [$filasLugarInfeccion, $erroresLugarInfeccion] = $this->filasLugarInfeccion();
-        [$filasEvolucion, $erroresEvolucion] = $this->filasEvolucion();
-        [$filasExamen, $erroresExamen] = $this->filasExamen();
+        [
+            $filasContactos, $filasContactosDirectos,
+            [$filasViajes, $erroresViajes], [$filasVacunas, $erroresVacunas],
+            [$filasMuestras, $erroresMuestras], [$filasLugarInfeccion, $erroresLugarInfeccion],
+            [$filasEvolucion, $erroresEvolucion], [$filasExamen, $erroresExamen],
+        ] = $this->tablasHijasDesdePost($enfermedad);
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
             || $errorVinculoCaso !== null
@@ -1122,14 +1120,12 @@ class CasosController extends Controller
         // reglas_campos "fallecido" (A50): se recalcula en cada edición.
         $fallecido = $this->fallecidoCalculado($enfermedad, $valoresCampos) ?? $fallecido;
 
-        $filasContactos = $this->filasContactos();
-        $filasContactosDirectos = $this->filasContactosDirectos();
-        [$filasViajes, $erroresViajes] = $this->filasViajes();
-        [$filasVacunas, $erroresVacunas] = $this->filasVacunas();
-        [$filasMuestras, $erroresMuestras] = $this->filasMuestras($enfermedad);
-        [$filasLugarInfeccion, $erroresLugarInfeccion] = $this->filasLugarInfeccion();
-        [$filasEvolucion, $erroresEvolucion] = $this->filasEvolucion();
-        [$filasExamen, $erroresExamen] = $this->filasExamen();
+        [
+            $filasContactos, $filasContactosDirectos,
+            [$filasViajes, $erroresViajes], [$filasVacunas, $erroresVacunas],
+            [$filasMuestras, $erroresMuestras], [$filasLugarInfeccion, $erroresLugarInfeccion],
+            [$filasEvolucion, $erroresEvolucion], [$filasExamen, $erroresExamen],
+        ] = $this->tablasHijasDesdePost($enfermedad);
 
         $hayErrores = !empty($erroresFijos) || !empty($erroresCampos) || $errorFechaInicioSintomas !== null
             || !empty($erroresViajes) || !empty($erroresVacunas) || !empty($erroresMuestras) || !empty($erroresLugarInfeccion)
@@ -2865,6 +2861,30 @@ class CasosController extends Controller
             $valores[$rol] = $this->datosSujetoDesdePost($rol, columnasSujeto($columnasSujetoJson, $rol));
         }
         return $valores;
+    }
+
+    /**
+     * Las 8 tablas hijas leídas del POST, en el orden de crear()/actualizar().
+     * Las que la ficha no usa (enfermedad.tablas_hijas, ver tablaHijaUsada())
+     * vuelven vacías y sin errores aunque lleguen filas: antes se guardaban
+     * siempre y un POST forjado podía agregar, p. ej., muestras a Violencia
+     * familiar. Guardar [] además borra al editar lo que hubiera quedado.
+     */
+    private function tablasHijasDesdePost(array $enfermedad): array
+    {
+        $usa = fn(string $tabla): bool => tablaHijaUsada($enfermedad, $tabla);
+        $vacia = [[], []];
+
+        return [
+            $usa('caso_contacto') ? $this->filasContactos() : [],
+            $usa('caso_contacto_directo') ? $this->filasContactosDirectos() : [],
+            $usa('caso_viaje') ? $this->filasViajes() : $vacia,
+            $usa('caso_vacuna') ? $this->filasVacunas() : $vacia,
+            $usa('caso_muestra') ? $this->filasMuestras($enfermedad) : $vacia,
+            $usa('caso_lugar_infeccion') ? $this->filasLugarInfeccion() : $vacia,
+            $usa('caso_evolucion') ? $this->filasEvolucion() : $vacia,
+            $usa('caso_examen_auxiliar') ? $this->filasExamen() : $vacia,
+        ];
     }
 
     private function filasContactos(): array

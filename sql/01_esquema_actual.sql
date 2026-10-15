@@ -748,6 +748,7 @@ CREATE TABLE `enfermedad` (
   `usa_viajes` tinyint(1) NOT NULL DEFAULT '0',
   `usa_vacunas` tinyint(1) NOT NULL DEFAULT '0',
   `usa_lugar_infeccion` tinyint(1) NOT NULL DEFAULT '0',
+  `tablas_hijas` text COLLATE utf8mb4_unicode_ci,
   `multi_sujeto` tinyint(1) DEFAULT '0',
   `roles_sujeto` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `opciones_clasificacion` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

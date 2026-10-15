@@ -381,6 +381,13 @@ function esCatalogoCompartido(array $opciones): bool
 function validarManifiesto(array $manifiesto): void
 {
     foreach ($manifiesto['fichas'] as $cie10 => $ficha) {
+        // tablas_hijas (2026-10-15): solo las 8 tablas conocidas; una clave mal
+        // escrita dejaría la tabla sin guardar en silencio.
+        foreach (array_keys($ficha['tablas_hijas'] ?? []) as $tablaHija) {
+            if (!str_starts_with((string) $tablaHija, '_') && !in_array($tablaHija, TABLAS_HIJAS, true)) {
+                throw new RuntimeException("Manifiesto inválido: {$cie10} / tablas_hijas incluye \"{$tablaHija}\", que no es una tabla hija conocida. Válidas: " . implode(', ', TABLAS_HIJAS) . '.');
+            }
+        }
         // Cuántas veces se repite cada etiqueta dentro de la ficha, y qué
         // claves explícitas declara: "depende_de" admite las dos formas.
         $etiquetasFicha = [];
@@ -1735,6 +1742,25 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
  * visibles para las siguientes dentro del mismo dry-run, igual que
  * quedarían visibles de verdad con --apply).
  */
+/**
+ * Flags usa_* y enfermedad.tablas_hijas según "tablas_hijas" del manifiesto.
+ * procesarFicha() los escribe en su UPDATE general; esto es lo mismo, aparte,
+ * para las fichas bloqueadas (cuya transacción se revierte entera).
+ */
+function aplicarTablasHijas(PDO $pdo, array $fichaManifiesto, int $enfermedadId): void
+{
+    $tablasHijas = $fichaManifiesto['tablas_hijas'] ?? [];
+    $pdo->prepare('UPDATE enfermedad SET usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, usa_lugar_infeccion = ?, tablas_hijas = ? WHERE id = ?')->execute([
+        !empty($tablasHijas['caso_contacto']) ? 1 : 0,
+        !empty($tablasHijas['caso_muestra']) ? 1 : 0,
+        !empty($tablasHijas['caso_viaje']) ? 1 : 0,
+        !empty($tablasHijas['caso_vacuna']) ? 1 : 0,
+        !empty($tablasHijas['caso_lugar_infeccion']) ? 1 : 0,
+        json_encode(array_values(array_filter(TABLAS_HIJAS, fn($t) => !empty($tablasHijas[$t])))),
+        $enfermedadId,
+    ]);
+}
+
 function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enfermedadId, array &$catalogCache, array &$nombresCatalogo, bool $forzarProtegida): array
 {
     $reporte = [
@@ -1805,7 +1831,7 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         fn($ajuste) => !str_starts_with((string) $ajuste, '_'),
         ARRAY_FILTER_USE_KEY
     );
-    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ?, bloques_condicionales = ?, migracion_reciente = ?, campos_notificacion = ?, campos_persona = ?, vinculo_caso = ?, nucleo_condicional = ?, reglas_campos = ?, nucleo_ajustes = ? WHERE id = ?')->execute([
+    $pdo->prepare('UPDATE enfermedad SET columnas_contacto = ?, columnas_muestra = ?, columnas_viaje = ?, columnas_vacuna = ?, usa_contactos = ?, usa_muestras = ?, usa_viajes = ?, usa_vacunas = ?, usa_lugar_infeccion = ?, tablas_hijas = ?, nucleo_omitidos = ?, nucleo_incluidos = ?, columnas_sujeto = ?, titulo_sujeto = ?, unidades_edad = ?, detalle_domicilio = ?, bloques_condicionales = ?, migracion_reciente = ?, campos_notificacion = ?, campos_persona = ?, vinculo_caso = ?, nucleo_condicional = ?, reglas_campos = ?, nucleo_ajustes = ? WHERE id = ?')->execute([
         isset($columnasDeclaradas['caso_contacto']) ? json_encode($columnasDeclaradas['caso_contacto'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_muestra']) ? json_encode($columnasDeclaradas['caso_muestra'], JSON_UNESCAPED_UNICODE) : null,
         isset($columnasDeclaradas['caso_viaje']) ? json_encode($columnasDeclaradas['caso_viaje'], JSON_UNESCAPED_UNICODE) : null,
@@ -1814,6 +1840,11 @@ function procesarFicha(PDO $pdo, string $cie10, array $fichaManifiesto, int $enf
         !empty($tablasHijas['caso_muestra']) ? 1 : 0,
         !empty($tablasHijas['caso_viaje']) ? 1 : 0,
         !empty($tablasHijas['caso_vacuna']) ? 1 : 0,
+        // usa_lugar_infeccion y la lista completa (2026-10-15): antes este
+        // flag se ponía a mano y evolución/exámenes/contactos directos no
+        // tenían ninguno.
+        !empty($tablasHijas['caso_lugar_infeccion']) ? 1 : 0,
+        json_encode(array_values(array_filter(TABLAS_HIJAS, fn($t) => !empty($tablasHijas[$t])))),
         !empty($nucleoOmitidosDeclarados) ? json_encode($nucleoOmitidosDeclarados, JSON_UNESCAPED_UNICODE) : null,
         !empty($nucleoIncluidosDeclarados) ? json_encode($nucleoIncluidosDeclarados, JSON_UNESCAPED_UNICODE) : null,
         !empty($columnasSujetoDeclaradas) ? json_encode($columnasSujetoDeclaradas, JSON_UNESCAPED_UNICODE) : null,
@@ -2015,6 +2046,10 @@ if ($aplicar) {
             $reporte = procesarFicha($pdo, $cie10, $fichaManifiesto, $enfermedadId, $catalogCache, $nombresCatalogo, $forzar);
             if ($reporte['bloqueada']) {
                 $pdo->rollBack();
+                // Las tablas hijas que usa la ficha no dependen de sus
+                // campo_def: se aplican aunque la ficha quede bloqueada, para
+                // que el servidor no siga guardando tablas que no declara.
+                aplicarTablasHijas($pdo, $fichaManifiesto, $enfermedadId);
             } else {
                 $pdo->commit();
             }
