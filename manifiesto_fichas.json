@@ -2789,22 +2789,22 @@
           "_nota": "Departamento/Provincia/Distrito/Localidad de Lugar de contagio se pintan con selector Ubigeo y se guardan en caso.lugar_contagio_distrito_id/localidad.",
           "campos": [
             {
-              "clave": "b55_permanencia_dias",
-              "etiqueta": "Tiempo de permanencia: días",
+              "clave": "b55_tiempo_permanencia",
+              "etiqueta": "Tiempo de permanencia",
               "tipo": "NUMERO",
-              "orden": 1
+              "orden": 1,
+              "_nota": "Cotejo 2026-10-14: el PDF trae UN solo blanco con '(días/meses/años)'. Antes eran 3 NUMERO (días/meses/años) copiados de B57, cuyo papel sí trae 3 casillas. Ahora número + unidad."
             },
             {
-              "clave": "b55_permanencia_meses",
-              "etiqueta": "Tiempo de permanencia: meses",
-              "tipo": "NUMERO",
-              "orden": 2
-            },
-            {
-              "clave": "b55_permanencia_anios",
-              "etiqueta": "Tiempo de permanencia: años",
-              "tipo": "NUMERO",
-              "orden": 3
+              "clave": "b55_tiempo_permanencia_unidad",
+              "etiqueta": "Unidad (días / meses / años)",
+              "tipo": "SELECT",
+              "orden": 2,
+              "opciones": [
+                "Días",
+                "Meses",
+                "Años"
+              ]
             },
             {
               "clave": "b55_actividad_que_desarrollo_durante_el_contagio",

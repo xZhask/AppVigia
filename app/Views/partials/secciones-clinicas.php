@@ -723,7 +723,7 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 </div><div class="fields" style="margin-bottom:16px"><?php
             }
             // B55 (Leishmaniasis, PDF pág. 45): "Lugar de contagio"
-            if (($campo['clave'] ?? '') === 'b55_permanencia_dias') {
+            if (($campo['clave'] ?? '') === 'b55_tiempo_permanencia') {
                 ?></div><div style="margin-bottom:14px">
                 <div class="eyebrow" style="margin-bottom:10px">Lugar de contagio</div>
                 <?php
