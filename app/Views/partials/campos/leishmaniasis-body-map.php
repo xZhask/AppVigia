@@ -87,30 +87,30 @@ $nombreCampoCicatricesB55 = $mapaClaveNombreCampos['b55_n_de_cicatrices'] ?? '';
                 <!-- Silueta Frente Hombre -->
                 <g class="silueta-hombre">
                   <!-- Cabeza -->
-                  <circle cx="50" cy="18" r="11" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <circle cx="50" cy="18" r="11" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Cuello -->
-                  <rect x="46" y="29" width="8" height="6" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <rect x="46" y="29" width="8" height="6" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Torso -->
-                  <path d="M 33 35 L 67 35 L 63 92 L 37 92 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <path d="M 33 35 L 67 35 L 63 92 L 37 92 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Brazos -->
-                  <path d="M 33 35 L 22 75 L 18 105 L 25 105 L 30 78 L 36 50 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <path d="M 67 35 L 78 75 L 82 105 L 75 105 L 70 78 L 64 50 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <path d="M 33 35 L 22 75 L 18 105 L 25 105 L 30 78 L 36 50 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <path d="M 67 35 L 78 75 L 82 105 L 75 105 L 70 78 L 64 50 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Pelvis / Piernas -->
-                  <path d="M 37 92 L 63 92 L 60 145 L 58 190 L 49 190 L 51 115 L 49 115 L 51 190 L 42 190 L 40 145 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <path d="M 37 92 L 63 92 L 60 145 L 58 190 L 49 190 L 51 115 L 49 115 L 51 190 L 42 190 L 40 145 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                 </g>
 
                 <!-- Silueta Frente Mujer (Oculta por defecto) -->
                 <g class="silueta-mujer" style="display: none;">
-                  <circle cx="50" cy="18" r="10" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <rect x="46" y="28" width="8" height="6" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <circle cx="50" cy="18" r="10" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <rect x="46" y="28" width="8" height="6" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Torso femenino con cintura -->
-                  <path d="M 35 34 Q 50 36 65 34 L 61 60 Q 50 63 39 60 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <path d="M 39 60 Q 50 63 61 60 L 66 94 L 34 94 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <path d="M 35 34 Q 50 36 65 34 L 61 60 Q 50 63 39 60 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <path d="M 39 60 Q 50 63 61 60 L 66 94 L 34 94 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Brazos -->
-                  <path d="M 35 34 L 23 72 L 20 102 L 26 102 L 31 75 L 37 48 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <path d="M 65 34 L 77 72 L 80 102 L 74 102 L 69 75 L 63 48 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <path d="M 35 34 L 23 72 L 20 102 L 26 102 L 31 75 L 37 48 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <path d="M 65 34 L 77 72 L 80 102 L 74 102 L 69 75 L 63 48 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Caderas y piernas -->
-                  <path d="M 34 94 Q 30 110 38 145 L 42 190 L 49 190 L 49 115 L 51 115 L 51 190 L 58 190 L 62 145 Q 70 110 66 94 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <path d="M 34 94 Q 30 110 38 145 L 42 190 L 49 190 L 49 115 L 51 115 L 51 190 L 58 190 L 62 145 Q 70 110 66 94 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                 </g>
               </svg>
               <div class="markers-layer" style="position: absolute; inset: 0; pointer-events: auto;"></div>
@@ -130,28 +130,28 @@ $nombreCampoCicatricesB55 = $mapaClaveNombreCampos['b55_n_de_cicatrices'] ?? '';
                 
                 <!-- Silueta Espalda Hombre -->
                 <g class="silueta-hombre">
-                  <circle cx="50" cy="18" r="11" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <rect x="46" y="29" width="8" height="6" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <circle cx="50" cy="18" r="11" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <rect x="46" y="29" width="8" height="6" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Columna/Espalda -->
-                  <path d="M 33 35 L 67 35 L 63 92 L 37 92 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <line x1="50" y1="38" x2="50" y2="88" stroke="var(--line-3, #6b7280)" stroke-width="0.8" />
+                  <path d="M 33 35 L 67 35 L 63 92 L 37 92 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <line x1="50" y1="38" x2="50" y2="88" stroke="var(--muted)" stroke-width="0.8" />
                   <!-- Brazos posteriores -->
-                  <path d="M 33 35 L 22 75 L 18 105 L 25 105 L 30 78 L 36 50 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <path d="M 67 35 L 78 75 L 82 105 L 75 105 L 70 78 L 64 50 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <path d="M 33 35 L 22 75 L 18 105 L 25 105 L 30 78 L 36 50 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <path d="M 67 35 L 78 75 L 82 105 L 75 105 L 70 78 L 64 50 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                   <!-- Piernas posteriores -->
-                  <path d="M 37 92 L 63 92 L 60 145 L 58 190 L 49 190 L 51 115 L 49 115 L 51 190 L 42 190 L 40 145 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <path d="M 37 92 L 63 92 L 60 145 L 58 190 L 49 190 L 51 115 L 49 115 L 51 190 L 42 190 L 40 145 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                 </g>
 
                 <!-- Silueta Espalda Mujer -->
                 <g class="silueta-mujer" style="display: none;">
-                  <circle cx="50" cy="18" r="10" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <rect x="46" y="28" width="8" height="6" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <path d="M 35 34 Q 50 36 65 34 L 61 60 Q 50 63 39 60 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <path d="M 39 60 Q 50 63 61 60 L 66 94 L 34 94 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <line x1="50" y1="36" x2="50" y2="88" stroke="var(--line-3, #6b7280)" stroke-width="0.8" />
-                  <path d="M 35 34 L 23 72 L 20 102 L 26 102 L 31 75 L 37 48 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <path d="M 65 34 L 77 72 L 80 102 L 74 102 L 69 75 L 63 48 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                  <path d="M 34 94 Q 30 110 38 145 L 42 190 L 49 190 L 49 115 L 51 115 L 51 190 L 58 190 L 62 145 Q 70 110 66 94 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                  <circle cx="50" cy="18" r="10" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <rect x="46" y="28" width="8" height="6" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <path d="M 35 34 Q 50 36 65 34 L 61 60 Q 50 63 39 60 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <path d="M 39 60 Q 50 63 61 60 L 66 94 L 34 94 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <line x1="50" y1="36" x2="50" y2="88" stroke="var(--muted)" stroke-width="0.8" />
+                  <path d="M 35 34 L 23 72 L 20 102 L 26 102 L 31 75 L 37 48 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <path d="M 65 34 L 77 72 L 80 102 L 74 102 L 69 75 L 63 48 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
+                  <path d="M 34 94 Q 30 110 38 145 L 42 190 L 49 190 L 49 115 L 51 115 L 51 190 L 58 190 L 62 145 Q 70 110 66 94 Z" fill="var(--line)" stroke="var(--muted)" stroke-width="1.2" />
                 </g>
               </svg>
               <div class="markers-layer" style="position: absolute; inset: 0; pointer-events: auto;"></div>
@@ -173,11 +173,17 @@ $nombreCampoCicatricesB55 = $mapaClaveNombreCampos['b55_n_de_cicatrices'] ?? '';
             <span style="font-size: 10.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px;">Perfil Der.</span>
             <div class="svg-map-wrapper" data-vista="cabeza_perfil_der" style="position: relative; width: 90px; height: 130px; background: rgba(0,0,0,0.015); border-radius: 8px; border: 1px dashed var(--line); cursor: crosshair;">
               <svg viewBox="0 0 100 140" style="width: 100%; height: 100%; pointer-events: none;">
-                <!-- Perfil mirando a la izquierda -->
-                <path d="M 65 130 L 65 95 C 75 80 75 40 60 20 C 45 5 25 15 20 30 C 18 35 22 45 20 52 C 16 55 10 65 14 70 C 18 73 22 73 20 78 C 17 83 22 88 28 88 C 35 90 40 100 45 130 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.4" />
-                <!-- Ojo / Oreja -->
-                <ellipse cx="28" cy="48" rx="4" ry="2" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                <path d="M 50 45 C 56 45 56 65 50 68" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                <!-- Perfil derecho: mira a la derecha, como en el PDF -->
+                <g>
+                  <path class="cara-base" d="M38 132 L40 104 C28 98 20 84 20 64 C20 34 36 16 58 16 C74 16 84 28 84 44 L83 54 L91 66 Q93 69 88 70 L84 71 L86 76 L83 78 L85 82 C85 88 82 94 74 95 L66 97 L67 132" />
+                  <path class="cara-sutil" d="M23 62 C24 38 38 22 58 21 C70 21 78 27 81 36" />
+                  <path class="cara-base" d="M50 55 C43 53 42 71 50 73 Q54 64 50 55 Z" />
+                  <path class="cara-trazo" d="M49 59 Q46 64 49 69" />
+                  <path class="cara-trazo" d="M70 47 Q75 45 80 47" />
+                  <path class="cara-trazo" d="M71 53 Q75 50 79 53 Q75 55 71 53 Z" />
+                  <path class="cara-trazo" d="M84 68 Q86 69.5 88 68.5" />
+                  <path class="cara-trazo" d="M83 78 L79 78.5" />
+                </g>
               </svg>
               <div class="markers-layer" style="position: absolute; inset: 0; pointer-events: auto;"></div>
             </div>
@@ -188,14 +194,18 @@ $nombreCampoCicatricesB55 = $mapaClaveNombreCampos['b55_n_de_cicatrices'] ?? '';
             <span style="font-size: 10.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px;">Frontal</span>
             <div class="svg-map-wrapper" data-vista="cabeza_frontal" style="position: relative; width: 90px; height: 130px; background: rgba(0,0,0,0.015); border-radius: 8px; border: 1px dashed var(--line); cursor: crosshair;">
               <svg viewBox="0 0 100 140" style="width: 100%; height: 100%; pointer-events: none;">
-                <!-- Rostro Frontal -->
-                <path d="M 30 130 L 32 95 C 20 85 15 65 15 45 C 15 15 85 15 85 45 C 85 65 80 85 68 95 L 70 130 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.4" />
-                <!-- Ojos / Nariz / Boca / Orejas -->
-                <ellipse cx="35" cy="50" rx="5" ry="3" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                <ellipse cx="65" cy="50" rx="5" ry="3" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                <path d="M 50 48 L 47 68 L 53 68 Z" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                <path d="M 40 80 Q 50 86 60 80" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                <path d="M 15 45 C 10 45 10 60 15 65 M 85 45 C 90 45 90 60 85 65" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                <!-- Rostro frontal -->
+                <path class="cara-base" d="M40 99 L39 124 L61 124 L60 99 Z" />
+                <path class="cara-linea" d="M39 124 Q24 128 12 136 M61 124 Q76 128 88 136" />
+                <path class="cara-base" d="M20 50 C14 48 13 63 19 67 Z M80 50 C86 48 87 63 81 67 Z" />
+                <path class="cara-base" d="M50 14 C70 14 80 30 80 52 C80 74 72 92 60 100 Q50 106 40 100 C28 92 20 74 20 52 C20 30 30 14 50 14 Z" />
+                <path class="cara-sutil" d="M23 44 C26 26 38 19 50 19 C62 19 74 26 77 44" />
+                <path class="cara-trazo" d="M31 45 Q37 42 43 45 M57 45 Q63 42 69 45" />
+                <path class="cara-trazo" d="M32 52 Q37 48.5 42 52 Q37 55 32 52 Z M58 52 Q63 48.5 68 52 Q63 55 58 52 Z" />
+                <circle class="cara-pupila" cx="37" cy="52" r="1.4" />
+                <circle class="cara-pupila" cx="63" cy="52" r="1.4" />
+                <path class="cara-trazo" d="M48.5 55 Q47 62 45.5 67 M45 68.5 Q50 72 55 68.5" />
+                <path class="cara-trazo" d="M41 81 Q45.5 78.5 50 79.5 Q54.5 78.5 59 81 Q50 86.5 41 81 Z" />
               </svg>
               <div class="markers-layer" style="position: absolute; inset: 0; pointer-events: auto;"></div>
             </div>
@@ -206,11 +216,17 @@ $nombreCampoCicatricesB55 = $mapaClaveNombreCampos['b55_n_de_cicatrices'] ?? '';
             <span style="font-size: 10.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px;">Perfil Izq.</span>
             <div class="svg-map-wrapper" data-vista="cabeza_perfil_izq" style="position: relative; width: 90px; height: 130px; background: rgba(0,0,0,0.015); border-radius: 8px; border: 1px dashed var(--line); cursor: crosshair;">
               <svg viewBox="0 0 100 140" style="width: 100%; height: 100%; pointer-events: none;">
-                <!-- Perfil mirando a la derecha -->
-                <path d="M 35 130 L 35 95 C 25 80 25 40 40 20 C 55 5 75 15 80 30 C 82 35 78 45 80 52 C 84 55 90 65 86 70 C 82 73 78 73 80 78 C 83 83 78 88 72 88 C 65 90 60 100 55 130 Z" fill="var(--paper-2, #e5e7eb)" stroke="var(--line-3, #6b7280)" stroke-width="1.4" />
-                <!-- Ojo / Oreja -->
-                <ellipse cx="72" cy="48" rx="4" ry="2" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
-                <path d="M 50 45 C 44 45 44 65 50 68" fill="none" stroke="var(--line-3, #6b7280)" stroke-width="1.2" />
+                <!-- Perfil izquierdo: el derecho reflejado (mira a la izquierda) -->
+                <g transform="translate(100 0) scale(-1 1)">
+                  <path class="cara-base" d="M38 132 L40 104 C28 98 20 84 20 64 C20 34 36 16 58 16 C74 16 84 28 84 44 L83 54 L91 66 Q93 69 88 70 L84 71 L86 76 L83 78 L85 82 C85 88 82 94 74 95 L66 97 L67 132" />
+                  <path class="cara-sutil" d="M23 62 C24 38 38 22 58 21 C70 21 78 27 81 36" />
+                  <path class="cara-base" d="M50 55 C43 53 42 71 50 73 Q54 64 50 55 Z" />
+                  <path class="cara-trazo" d="M49 59 Q46 64 49 69" />
+                  <path class="cara-trazo" d="M70 47 Q75 45 80 47" />
+                  <path class="cara-trazo" d="M71 53 Q75 50 79 53 Q75 55 71 53 Z" />
+                  <path class="cara-trazo" d="M84 68 Q86 69.5 88 68.5" />
+                  <path class="cara-trazo" d="M83 78 L79 78.5" />
+                </g>
               </svg>
               <div class="markers-layer" style="position: absolute; inset: 0; pointer-events: auto;"></div>
             </div>
@@ -251,7 +267,7 @@ $nombreCampoCicatricesB55 = $mapaClaveNombreCampos['b55_n_de_cicatrices'] ?? '';
       <div style="overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;">
         <table id="tablaLesionesB55" style="width: 100%; border-collapse: collapse; min-width: 780px; font-size: 12px;">
           <thead>
-            <tr style="background: var(--paper-2); border-bottom: 1px solid var(--line);">
+            <tr style="background: var(--paper); border-bottom: 1px solid var(--line);">
               <th style="padding: 8px 10px; width: 40px; text-align: center; color: var(--faint);">#</th>
               <th style="padding: 8px 10px; width: 125px; text-align: left; color: var(--faint);">Fecha Inicio</th>
               <th style="padding: 8px 10px; width: 120px; text-align: left; color: var(--faint);">Tipo</th>
@@ -277,6 +293,11 @@ $nombreCampoCicatricesB55 = $mapaClaveNombreCampos['b55_n_de_cicatrices'] ?? '';
 </div>
 
 <style>
+.svg-map-wrapper .cara-base { fill: var(--line); stroke: var(--muted); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+.svg-map-wrapper .cara-trazo { fill: none; stroke: var(--ink-2); stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round; }
+.svg-map-wrapper .cara-sutil { fill: none; stroke: var(--muted); stroke-width: .8; stroke-dasharray: 2 2; opacity: .7; }
+.svg-map-wrapper .cara-pupila { fill: var(--ink-2); }
+.svg-map-wrapper .cara-linea { fill: none; stroke: var(--muted); stroke-width: 1.3; stroke-linecap: round; }
 .leishmaniasis-lesiones-widget .marker-pin {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -323,19 +344,31 @@ $nombreCampoCicatricesB55 = $mapaClaveNombreCampos['b55_n_de_cicatrices'] ?? '';
   // Alternar género de silueta
   const btnHombre = document.getElementById('btnSiluetaHombre');
   const btnMujer = document.getElementById('btnSiluetaMujer');
+  function mostrarSilueta(genero) {
+    const mujer = genero === 'mujer';
+    btnMujer.classList.toggle('on', mujer);
+    btnHombre.classList.toggle('on', !mujer);
+    btnMujer.querySelector('input').checked = mujer;
+    btnHombre.querySelector('input').checked = !mujer;
+    document.querySelectorAll('.silueta-hombre').forEach(el => el.style.display = mujer ? 'none' : '');
+    document.querySelectorAll('.silueta-mujer').forEach(el => el.style.display = mujer ? '' : 'none');
+  }
   if (btnHombre && btnMujer) {
-    btnHombre.addEventListener('click', () => {
-      btnHombre.classList.add('on');
-      btnMujer.classList.remove('on');
-      document.querySelectorAll('.silueta-hombre').forEach(el => el.style.display = '');
-      document.querySelectorAll('.silueta-mujer').forEach(el => el.style.display = 'none');
-    });
-    btnMujer.addEventListener('click', () => {
-      btnMujer.classList.add('on');
-      btnHombre.classList.remove('on');
-      document.querySelectorAll('.silueta-hombre').forEach(el => el.style.display = 'none');
-      document.querySelectorAll('.silueta-mujer').forEach(el => el.style.display = '');
-    });
+    btnHombre.addEventListener('click', () => mostrarSilueta('hombre'));
+    btnMujer.addEventListener('click', () => mostrarSilueta('mujer'));
+    // La silueta sigue al "Sexo" del paciente (al cargar y al cambiarlo); los
+    // botones quedan para corregirla a mano. Sin sexo elegido, Hombre.
+    const sexoPaciente = document.querySelector('select[name="sexo"], input[name="sexo"]');
+    const seguirSexo = () => {
+      const valor = sexoPaciente.type === 'radio'
+        ? (document.querySelector('input[name="sexo"]:checked') || {}).value
+        : sexoPaciente.value;
+      if (valor === 'F' || valor === 'M') mostrarSilueta(valor === 'F' ? 'mujer' : 'hombre');
+    };
+    if (sexoPaciente) {
+      document.addEventListener('change', (e) => { if (e.target && e.target.name === 'sexo') seguirSexo(); });
+      seguirSexo();
+    }
   }
 
   function actualizarJson() {
