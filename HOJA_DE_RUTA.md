@@ -71,6 +71,7 @@ En este orden:
 
 ```
 php sql/migraciones/add_tablas_hijas_enfermedad.php
+php sql/migraciones/add_tipo_asentamiento_persona.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -85,6 +86,10 @@ php sql/migraciones/set_fecha_notif_en.php A37.0 B01 B26 A35 A33 A80 P35.0
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
   escribir esa columna.
+- `add_tipo_asentamiento_persona.php` (16/10, antes del cargador): agrega
+  `persona.tipo_asentamiento` y `persona.anterior_tipo_asentamiento` (sección
+  3, ítem 3) y copia `detalle_domicilio` y `nucleo_ajustes` de A00, A95 y B57.
+  Se puede correr más de una vez.
 - `set_o95_anexo2_campos_condicionados.php` (15/10, después del cargador):
   condiciona a Anexo 2 los 10 campos de O95 descritos en la sección 2. Hace
   falta porque, si O95 tiene casos, el cargador la bloquea y no aplica el
@@ -288,9 +293,20 @@ No tocar sin una respuesta explícita.
      equivalente (A95/B57: conocimiento local; B05: identificación local;
      Y59.0: DIRESA a CDC) y siguen igual; O95 ya usaba la del núcleo. Z21 no
      se tocó: su "Fecha de reporte de la ficha" es otra fecha.
-3. **Códigos de zona del PDF** (urbanización, AA.HH., cooperativa…): segundo eje
-   del domicilio, distinto de Urbano/Rural. Afecta a A00, A95, B57, A37.0 y
-   P35.0. Requiere columna nueva en `persona`.
+3. **Códigos de zona del PDF — resuelta (16/10).** Dato nuevo del domicilio
+   `TIPO_ASENTAMIENTO` (`persona.tipo_asentamiento` y
+   `anterior_tipo_asentamiento`): Urbanización, Villa, Cooperativa, Proyecto
+   municipal de vivienda, PPJJ/AA.HH., Otro (los códigos del pie de A00).
+   - A00: lo suma; su Urbano/Rural se llama "Zona de residencia", como en el
+     papel (`nucleo_ajustes.etiquetas.tipo_zona`, nuevo campo ajustable).
+   - A95 y B57: su "TIPO DE ZONA" va junto a "NOMBRE DE ZONA" (formato de
+     dirección), así que es el tipo de asentamiento, en el domicilio actual y
+     en el anterior; ya no preguntan Urbano/Rural (su papel no lo pide).
+   - A37.0 y P35.0 no cambian: su papel dice "Tipo de zona: 1 = Urbano;
+     2 = Periurbano; 3 = Rural", que es lo que ya tenían.
+   - El tipo de vía sigue en texto libre (los códigos de A00 son un atajo del
+     papel). "Ver" muestra el tipo de zona y el de asentamiento solo si la
+     ficha los pide (la persona es compartida).
 4. **Z21:** si Aborto y Mortinato tienen ficha propia; hoy `caso.clasificacion`
    de Z21 queda en SOSPECHOSO por defecto.
 

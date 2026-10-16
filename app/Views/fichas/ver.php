@@ -60,6 +60,13 @@ $etniaEtiquetas = [
     'AFRODESCENDIENTE' => 'Afrodescendiente', 'INDIGENA_AMAZONICO' => 'Indígena amazónico', 'OTRO' => 'Otro',
 ];
 $tipoZonaEtiquetas = ['URBANO' => 'Urbano', 'PERIURBANO' => 'Periurbano', 'RURAL' => 'Rural'];
+// Tipo de zona (Urbano/Rural) y tipo de asentamiento (2026-10-16): solo si la
+// ficha los pide (enfermedad.detalle_domicilio). Una persona puede traerlos de
+// otra ficha, y los dos se llaman "Tipo de zona" en su papel.
+$detalleDomicilioVer = json_decode((string) ($enfermedadVer['detalle_domicilio'] ?? ''), true) ?: [];
+$verTipoZona = in_array('TIPO_ZONA', $detalleDomicilioVer, true);
+$verTipoAsentamiento = in_array('TIPO_ASENTAMIENTO', $detalleDomicilioVer, true);
+$etiquetaTipoZonaVer = etiquetaNucleo($enfermedadVer ?? [], 'tipo_zona', 'Tipo de zona');
 $estadoCivilEtiquetas = ['SOLTERO' => 'Soltero(a)', 'CASADO' => 'Casado(a)', 'CONVIVIENTE' => 'Conviviente', 'SEPARADO' => 'Separado(a)', 'VIUDO' => 'Viudo(a)'];
 $accionEtiquetas = [
     'CREACION'      => 'Creación',
@@ -163,8 +170,11 @@ $accionEtiquetas = [
           <?php if (!empty($caso['referencia_localizar']) && !nucleoOmitido($enfermedadVer ?? [], 'referencia_localizar')): ?>
             <div class="field wide"><label class="fl">Referencia para localizar</label><div class="control" style="background:var(--paper)"><?= e($caso['referencia_localizar']) ?></div></div>
           <?php endif; ?>
-          <?php if (!empty($caso['tipo_zona'])): ?>
-            <div class="field"><label class="fl">Tipo de zona</label><div class="control" style="background:var(--paper)"><?= e($tipoZonaEtiquetas[$caso['tipo_zona']] ?? $caso['tipo_zona']) ?></div></div>
+          <?php if (!empty($caso['tipo_zona']) && $verTipoZona): ?>
+            <div class="field"><label class="fl"><?= e($etiquetaTipoZonaVer) ?></label><div class="control" style="background:var(--paper)"><?= e($tipoZonaEtiquetas[$caso['tipo_zona']] ?? $caso['tipo_zona']) ?></div></div>
+          <?php endif; ?>
+          <?php if (!empty($caso['tipo_asentamiento']) && $verTipoAsentamiento): ?>
+            <div class="field"><label class="fl">Tipo de zona</label><div class="control" style="background:var(--paper)"><?= e(TIPOS_ASENTAMIENTO[$caso['tipo_asentamiento']] ?? $caso['tipo_asentamiento']) ?></div></div>
           <?php endif; ?>
           <?php if (!empty($caso['nombre_zona'])): ?>
             <div class="field"><label class="fl">Nombre de zona</label><div class="control" style="background:var(--paper)"><?= e($caso['nombre_zona']) ?></div></div>
@@ -215,14 +225,17 @@ $accionEtiquetas = [
               <div class="field"><label class="fl">Tiempo que reside en domicilio actual</label><div class="control" style="background:var(--paper)"><?= (int) ($caso['tiempo_reside_anios'] ?? 0) ?> años, <?= (int) ($caso['tiempo_reside_meses'] ?? 0) ?> meses</div></div>
             <?php endif; ?>
           </div>
-          <?php if (!empty($caso['anterior_distrito_nombre']) || !empty($caso['anterior_tipo_zona']) || !empty($caso['anterior_nombre_zona']) || !empty($caso['anterior_tipo_via']) || !empty($caso['anterior_nombre_via']) || !empty($caso['anterior_numero']) || !empty($caso['anterior_mz_lote'])): ?>
+          <?php if (!empty($caso['anterior_distrito_nombre']) || !empty($caso['anterior_tipo_zona']) || !empty($caso['anterior_tipo_asentamiento']) || !empty($caso['anterior_nombre_zona']) || !empty($caso['anterior_tipo_via']) || !empty($caso['anterior_nombre_via']) || !empty($caso['anterior_numero']) || !empty($caso['anterior_mz_lote'])): ?>
             <div class="eyebrow" style="margin:14px 0 10px">Domicilio anterior</div>
             <div class="fields thirds">
               <?php if (!empty($caso['anterior_distrito_nombre'])): ?>
                 <div class="field"><label class="fl">Distrito</label><div class="control" style="background:var(--paper)"><?= e($caso['anterior_distrito_nombre']) ?></div></div>
               <?php endif; ?>
-              <?php if (!empty($caso['anterior_tipo_zona'])): ?>
-                <div class="field"><label class="fl">Tipo de zona</label><div class="control" style="background:var(--paper)"><?= e($tipoZonaEtiquetas[$caso['anterior_tipo_zona']] ?? $caso['anterior_tipo_zona']) ?></div></div>
+              <?php if (!empty($caso['anterior_tipo_zona']) && $verTipoZona): ?>
+                <div class="field"><label class="fl"><?= e($etiquetaTipoZonaVer) ?></label><div class="control" style="background:var(--paper)"><?= e($tipoZonaEtiquetas[$caso['anterior_tipo_zona']] ?? $caso['anterior_tipo_zona']) ?></div></div>
+              <?php endif; ?>
+              <?php if (!empty($caso['anterior_tipo_asentamiento']) && $verTipoAsentamiento): ?>
+                <div class="field"><label class="fl">Tipo de zona</label><div class="control" style="background:var(--paper)"><?= e(TIPOS_ASENTAMIENTO[$caso['anterior_tipo_asentamiento']] ?? $caso['anterior_tipo_asentamiento']) ?></div></div>
               <?php endif; ?>
               <?php if (!empty($caso['anterior_nombre_zona'])): ?>
                 <div class="field"><label class="fl">Nombre de zona</label><div class="control" style="background:var(--paper)"><?= e($caso['anterior_nombre_zona']) ?></div></div>

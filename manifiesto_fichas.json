@@ -2488,8 +2488,9 @@
       "nucleo_incluidos": [
         "estado_civil"
       ],
+      "_nota_tipo_zona": "Decisión 3 (2026-10-16): el 'TIPO DE ZONA' del papel va junto a 'NOMBRE DE ZONA' (formato de dirección: Urbanización, AA.HH., etc. + su nombre), también en el domicilio anterior; es TIPO_ASENTAMIENTO, no Urbano/Rural (que el papel no pide).",
       "detalle_domicilio": [
-        "TIPO_ZONA",
+        "TIPO_ASENTAMIENTO",
         "NOMBRE_ZONA",
         "TIPO_VIA",
         "NOMBRE_VIA",
@@ -3379,8 +3380,9 @@
       "nucleo_incluidos": [
         "estado_civil"
       ],
+      "_nota_tipo_zona": "Decisión 3 (2026-10-16): el 'TIPO DE ZONA' del papel va junto a 'NOMBRE DE ZONA' (formato de dirección: Urbanización, AA.HH., etc. + su nombre), también en el domicilio anterior; es TIPO_ASENTAMIENTO, no Urbano/Rural (que el papel no pide).",
       "detalle_domicilio": [
-        "TIPO_ZONA",
+        "TIPO_ASENTAMIENTO",
         "NOMBRE_ZONA",
         "TIPO_VIA",
         "NOMBRE_VIA",
@@ -5849,6 +5851,7 @@
       "_nota_edad": "'Edad: ___ Años ( ) / Meses ( ) / Días ( )' con las glosas 'Si es menor de 1 año, anotar meses' y 'Si es menor de 1 mes, anotar días'. Mismo trío que B04X. Modo híbrido (entrada F, 2026-08-27): si hay fecha de nacimiento la edad se calcula y los dos controles quedan deshabilitados; sin fecha, quedan editables como respaldo manual.",
       "detalle_domicilio": [
         "TIPO_ZONA",
+        "TIPO_ASENTAMIENTO",
         "NOMBRE_ZONA",
         "TIPO_VIA",
         "NOMBRE_VIA",
@@ -5914,6 +5917,8 @@
         }
       ],
       "nucleo_ajustes": {
+        "_nota_tipo_zona": "Decisión 3 (2026-10-16): el papel pide dos ejes; 'Zona de residencia: Urbana/Rural' es tipo_zona (con esa etiqueta) y 'Zona°' con los códigos del pie ([1] Urbanización ... [6] Otro) es TIPO_ASENTAMIENTO. Tipo de vía sigue en texto libre (sus códigos son un atajo del papel).",
+        "etiquetas": {"tipo_zona": "Zona de residencia"},
         "fecha_inicio_sintomas_desde": "a00_fecha_de_inicio_de_la_diarrea"
       },
       "secciones": [

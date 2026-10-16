@@ -205,6 +205,7 @@ class CasosController extends Controller
             'direccion'          => trim($_POST['direccion'] ?? ''),
             'referencia_localizar' => trim($_POST['referencia_localizar'] ?? ''),
             'tipo_zona'          => $_POST['tipo_zona'] ?? '',
+            'tipo_asentamiento'  => $_POST['tipo_asentamiento'] ?? '',
             'nombre_zona'        => trim($_POST['nombre_zona'] ?? ''),
             'tipo_via'           => trim($_POST['tipo_via'] ?? ''),
             'nombre_via'         => trim($_POST['nombre_via'] ?? ''),
@@ -215,6 +216,7 @@ class CasosController extends Controller
             'tiempo_reside_meses' => trim($_POST['tiempo_reside_meses'] ?? ''),
             'anterior_distrito_id' => $_POST['anterior_distrito_id'] ?? '',
             'anterior_tipo_zona'   => $_POST['anterior_tipo_zona'] ?? '',
+            'anterior_tipo_asentamiento' => $_POST['anterior_tipo_asentamiento'] ?? '',
             'anterior_nombre_zona' => trim($_POST['anterior_nombre_zona'] ?? ''),
             'anterior_tipo_via'    => trim($_POST['anterior_tipo_via'] ?? ''),
             'anterior_nombre_via'  => trim($_POST['anterior_nombre_via'] ?? ''),
@@ -800,6 +802,7 @@ class CasosController extends Controller
             'direccion'          => (string) ($caso['direccion'] ?? ''),
             'referencia_localizar' => (string) ($caso['referencia_localizar'] ?? ''),
             'tipo_zona'          => (string) ($caso['tipo_zona'] ?? ''),
+            'tipo_asentamiento'  => (string) ($caso['tipo_asentamiento'] ?? ''),
             'nombre_zona'        => (string) ($caso['nombre_zona'] ?? ''),
             'tipo_via'           => (string) ($caso['tipo_via'] ?? ''),
             'nombre_via'         => (string) ($caso['nombre_via'] ?? ''),
@@ -810,6 +813,7 @@ class CasosController extends Controller
             'tiempo_reside_meses' => (string) ($caso['tiempo_reside_meses'] ?? ''),
             'anterior_distrito_id' => (string) ($caso['anterior_distrito_id'] ?? ''),
             'anterior_tipo_zona'   => (string) ($caso['anterior_tipo_zona'] ?? ''),
+            'anterior_tipo_asentamiento' => (string) ($caso['anterior_tipo_asentamiento'] ?? ''),
             'anterior_nombre_zona' => (string) ($caso['anterior_nombre_zona'] ?? ''),
             'anterior_tipo_via'    => (string) ($caso['anterior_tipo_via'] ?? ''),
             'anterior_nombre_via'  => (string) ($caso['anterior_nombre_via'] ?? ''),
@@ -918,6 +922,7 @@ class CasosController extends Controller
             'direccion'          => trim($_POST['direccion'] ?? ''),
             'referencia_localizar' => trim($_POST['referencia_localizar'] ?? ''),
             'tipo_zona'          => $_POST['tipo_zona'] ?? '',
+            'tipo_asentamiento'  => $_POST['tipo_asentamiento'] ?? '',
             'nombre_zona'        => trim($_POST['nombre_zona'] ?? ''),
             'tipo_via'           => trim($_POST['tipo_via'] ?? ''),
             'nombre_via'         => trim($_POST['nombre_via'] ?? ''),
@@ -928,6 +933,7 @@ class CasosController extends Controller
             'tiempo_reside_meses' => trim($_POST['tiempo_reside_meses'] ?? ''),
             'anterior_distrito_id' => $_POST['anterior_distrito_id'] ?? '',
             'anterior_tipo_zona'   => $_POST['anterior_tipo_zona'] ?? '',
+            'anterior_tipo_asentamiento' => $_POST['anterior_tipo_asentamiento'] ?? '',
             'anterior_nombre_zona' => trim($_POST['anterior_nombre_zona'] ?? ''),
             'anterior_tipo_via'    => trim($_POST['anterior_tipo_via'] ?? ''),
             'anterior_nombre_via'  => trim($_POST['anterior_nombre_via'] ?? ''),
@@ -2117,6 +2123,7 @@ class CasosController extends Controller
             'direccion'          => '',
             'referencia_localizar' => '',
             'tipo_zona'          => '',
+            'tipo_asentamiento'  => '',
             'nombre_zona'        => '',
             'tipo_via'           => '',
             'nombre_via'         => '',
@@ -2127,6 +2134,7 @@ class CasosController extends Controller
             'tiempo_reside_meses' => '',
             'anterior_distrito_id' => '',
             'anterior_tipo_zona'   => '',
+            'anterior_tipo_asentamiento' => '',
             'anterior_nombre_zona' => '',
             'anterior_tipo_via'    => '',
             'anterior_nombre_via'  => '',
@@ -2273,6 +2281,9 @@ class CasosController extends Controller
         $tiposZona = ['URBANO', 'PERIURBANO', 'RURAL'];
         $tipoZona = (in_array('TIPO_ZONA', $detalleDomicilioPermitido, true) && in_array($valoresFijos['tipo_zona'] ?? '', $tiposZona, true))
             ? $valoresFijos['tipo_zona'] : null;
+        // TIPO_ASENTAMIENTO (2026-10-16): Urbanización, AA.HH., etc.
+        $tipoAsentamiento = (in_array('TIPO_ASENTAMIENTO', $detalleDomicilioPermitido, true) && isset(TIPOS_ASENTAMIENTO[$valoresFijos['tipo_asentamiento'] ?? '']))
+            ? $valoresFijos['tipo_asentamiento'] : null;
         $tipoVia = (in_array('TIPO_VIA', $detalleDomicilioPermitido, true) && ($valoresFijos['tipo_via'] ?? '') !== '')
             ? $valoresFijos['tipo_via'] : null;
         $nombreVia = (in_array('NOMBRE_VIA', $detalleDomicilioPermitido, true) && ($valoresFijos['nombre_via'] ?? '') !== '')
@@ -2317,6 +2328,7 @@ class CasosController extends Controller
         $tiempoResideMeses = null;
         $anteriorDistritoId = null;
         $anteriorTipoZona = null;
+        $anteriorTipoAsentamiento = null;
         $anteriorNombreZona = null;
         $anteriorTipoVia = null;
         $anteriorNombreVia = null;
@@ -2333,6 +2345,8 @@ class CasosController extends Controller
                 $anteriorDistritoId = ($valoresFijos['anterior_distrito_id'] ?? '') !== '' ? $valoresFijos['anterior_distrito_id'] : null;
                 $anteriorTipoZona = (in_array('TIPO_ZONA', $detalleDomicilioPermitido, true) && in_array($valoresFijos['anterior_tipo_zona'] ?? '', $tiposZona, true))
                     ? $valoresFijos['anterior_tipo_zona'] : null;
+                $anteriorTipoAsentamiento = (in_array('TIPO_ASENTAMIENTO', $detalleDomicilioPermitido, true) && isset(TIPOS_ASENTAMIENTO[$valoresFijos['anterior_tipo_asentamiento'] ?? '']))
+                    ? $valoresFijos['anterior_tipo_asentamiento'] : null;
                 $anteriorNombreZona = (in_array('NOMBRE_ZONA', $detalleDomicilioPermitido, true) && ($valoresFijos['anterior_nombre_zona'] ?? '') !== '')
                     ? $valoresFijos['anterior_nombre_zona'] : null;
                 $anteriorTipoVia = (in_array('TIPO_VIA', $detalleDomicilioPermitido, true) && ($valoresFijos['anterior_tipo_via'] ?? '') !== '')
@@ -2405,6 +2419,7 @@ class CasosController extends Controller
         $pedidoSi($residenciaActiva && !$omite('referencia_localizar'), ['referencia_localizar']);
         $detallePedido = fn(string $codigo): bool => $residenciaActiva && in_array($codigo, $detalleDomicilioPermitido, true);
         $pedidoSi($detallePedido('TIPO_ZONA'), ['tipo_zona']);
+        $pedidoSi($detallePedido('TIPO_ASENTAMIENTO'), ['tipo_asentamiento']);
         $pedidoSi($detallePedido('NOMBRE_ZONA'), ['nombre_zona']);
         $pedidoSi($detallePedido('TIPO_VIA'), ['tipo_via']);
         $pedidoSi($detallePedido('NOMBRE_VIA'), ['nombre_via']);
@@ -2412,7 +2427,7 @@ class CasosController extends Controller
         $pedidoSi($detallePedido('MZ_LOTE'), ['mz_lote']);
         $pedidoSi($detallePedido('TIEMPO_RESIDENCIA'), ['tiempo_residencia']);
         $pedidoSi(!empty($enfermedad['migracion_reciente']), [
-            'tiempo_reside_anios', 'tiempo_reside_meses', 'anterior_distrito_id', 'anterior_tipo_zona',
+            'tiempo_reside_anios', 'tiempo_reside_meses', 'anterior_distrito_id', 'anterior_tipo_zona', 'anterior_tipo_asentamiento',
             'anterior_nombre_zona', 'anterior_tipo_via', 'anterior_nombre_via', 'anterior_numero', 'anterior_mz_lote',
         ]);
         $pedidoSi(in_array('n_historia_clinica', $nucleoIncluidosPermitido, true), ['n_historia_clinica']);
@@ -2451,6 +2466,7 @@ class CasosController extends Controller
                 'direccion'          => $valoresFijos['direccion'] !== '' ? $valoresFijos['direccion'] : null,
                 'referencia_localizar' => $valoresFijos['referencia_localizar'] !== '' ? $valoresFijos['referencia_localizar'] : null,
                 'tipo_zona'          => $tipoZona,
+                'tipo_asentamiento'  => $tipoAsentamiento,
                 'nombre_zona'        => $nombreZona,
                 'tipo_via'           => $tipoVia,
                 'nombre_via'         => $nombreVia,
@@ -2461,6 +2477,7 @@ class CasosController extends Controller
                 'tiempo_reside_meses' => $tiempoResideMeses,
                 'anterior_distrito_id' => $anteriorDistritoId,
                 'anterior_tipo_zona'   => $anteriorTipoZona,
+                'anterior_tipo_asentamiento' => $anteriorTipoAsentamiento,
                 'anterior_nombre_zona' => $anteriorNombreZona,
                 'anterior_tipo_via'    => $anteriorTipoVia,
                 'anterior_nombre_via'  => $anteriorNombreVia,

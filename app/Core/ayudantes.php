@@ -778,6 +778,20 @@ function etiquetaFechaNacimiento(array $enfermedad, array $valoresCampos): strin
 const VALOR_DESCONOCIDO = 'DESCONOCIDO';
 
 /**
+ * Tipo de asentamiento del domicilio (2026-10-16, "Códigos de Zona" del pie
+ * de A00; "TIPO DE ZONA" de A95/B57): persona.tipo_asentamiento y
+ * anterior_tipo_asentamiento. Es otro eje que tipo_zona (Urbano/Rural).
+ */
+const TIPOS_ASENTAMIENTO = [
+    'URBANIZACION'       => 'Urbanización',
+    'VILLA'              => 'Villa',
+    'COOPERATIVA'        => 'Cooperativa',
+    'PROYECTO_MUNICIPAL' => 'Proyecto municipal de vivienda',
+    'PPJJ_AAHH'          => 'PPJJ / AA.HH.',
+    'OTRO'               => 'Otro',
+];
+
+/**
  * La ficha ofrece la casilla "Desconocido" junto a la fecha de nacimiento del
  * núcleo (nucleo_ajustes.fecha_nac_desconocida, o por rama en
  * nucleo_condicional.ajustes). A50, 2026-09-14: ítem 13, la fecha de parto o

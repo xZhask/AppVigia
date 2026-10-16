@@ -10,20 +10,36 @@
  *
  * Variables esperadas:
  *   $prefijoNombreCampo         string, '' (domicilio actual) o 'anterior_' (domicilio anterior)
- *   $valoresDetalle             array con claves SIN prefijo: tipo_zona, nombre_zona, tipo_via, nombre_via, numero, mz_lote
- *   $detalleDomicilioPermitido  array de claves permitidas (TIPO_ZONA, NOMBRE_ZONA, TIPO_VIA, NOMBRE_VIA, NUMERO, MZ_LOTE)
+ *   $valoresDetalle             array con claves SIN prefijo: tipo_zona, tipo_asentamiento, nombre_zona, tipo_via, nombre_via, numero, mz_lote
+ *   $detalleDomicilioPermitido  array de claves permitidas (TIPO_ZONA, TIPO_ASENTAMIENTO, NOMBRE_ZONA, TIPO_VIA, NOMBRE_VIA, NUMERO, MZ_LOTE)
+ *   $enfermedad                 (opcional) para la etiqueta de tipo_zona (nucleo_ajustes.etiquetas)
+ *
+ * TIPO_ASENTAMIENTO (2026-10-16): Urbanización, AA.HH., etc. -- el "Zona°"
+ * de A00 y el "TIPO DE ZONA" de A95/B57 --, otro eje que TIPO_ZONA
+ * (Urbano/Periurbano/Rural).
  */
 $tieneDetalleDomicilioCampo = fn(string $campo): bool => in_array($campo, $detalleDomicilioPermitido, true);
 ?>
 <div class="fields thirds" style="margin-top:14px" data-detalle-domicilio-bloque="<?= $prefijoNombreCampo === '' ? 'actual' : 'anterior' ?>">
   <div class="field" data-detalle-domicilio-campo="TIPO_ZONA" <?= $tieneDetalleDomicilioCampo('TIPO_ZONA') ? '' : 'hidden style="display:none;"' ?>>
-    <label class="fl">Tipo de zona</label>
+    <label class="fl"><?= e(etiquetaNucleo($enfermedad ?? [], 'tipo_zona', 'Tipo de zona')) ?></label>
     <div class="control">
       <select name="<?= e($prefijoNombreCampo) ?>tipo_zona" data-nosearch="true">
         <option value="">Seleccionar…</option>
         <option value="URBANO" <?= seleccionado($valoresDetalle['tipo_zona'] ?? '', 'URBANO') ?>>Urbano</option>
         <option value="PERIURBANO" <?= seleccionado($valoresDetalle['tipo_zona'] ?? '', 'PERIURBANO') ?>>Periurbano</option>
         <option value="RURAL" <?= seleccionado($valoresDetalle['tipo_zona'] ?? '', 'RURAL') ?>>Rural</option>
+      </select>
+    </div>
+  </div>
+  <div class="field" data-detalle-domicilio-campo="TIPO_ASENTAMIENTO" <?= $tieneDetalleDomicilioCampo('TIPO_ASENTAMIENTO') ? '' : 'hidden style="display:none;"' ?>>
+    <label class="fl">Tipo de zona <span class="hint">(Urbanización, AA.HH., etc.)</span></label>
+    <div class="control">
+      <select name="<?= e($prefijoNombreCampo) ?>tipo_asentamiento" data-nosearch="true">
+        <option value="">Seleccionar…</option>
+        <?php foreach (TIPOS_ASENTAMIENTO as $codigoAsentamiento => $etiquetaAsentamiento): ?>
+          <option value="<?= e($codigoAsentamiento) ?>" <?= seleccionado($valoresDetalle['tipo_asentamiento'] ?? '', $codigoAsentamiento) ?>><?= e($etiquetaAsentamiento) ?></option>
+        <?php endforeach; ?>
       </select>
     </div>
   </div>

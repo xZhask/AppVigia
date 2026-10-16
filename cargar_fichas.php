@@ -245,7 +245,7 @@ const NUCLEO_AJUSTES_VALIDOS = [
 // Campos del núcleo cuya etiqueta una ficha puede cambiar con
 // nucleo_ajustes.etiquetas (B24, 2026-09-14). Solo cambia el texto: el dato y
 // sus opciones son los mismos.
-const ETIQUETAS_NUCLEO = ['sexo', 'localidad'];
+const ETIQUETAS_NUCLEO = ['sexo', 'localidad', 'tipo_zona'];
 
 // Ajustes por rama (A50, 2026-09-14): los que una regla de nucleo_condicional
 // puede declarar en "ajustes" para que valgan solo con su valor (el producto de
@@ -325,7 +325,9 @@ const UNIDADES_EDAD_VALIDAS = ['ANIOS', 'MESES', 'DIAS', 'HORAS', 'MINUTOS'];
 // mismo criterio opt-in. Se reutiliza también dentro de "domicilio
 // anterior" (Migración) cuando la ficha declara migracion_reciente --
 // mismo conjunto de campos habilitados para ambos bloques.
-const DETALLE_DOMICILIO_VALIDO = ['TIPO_ZONA', 'NOMBRE_ZONA', 'TIPO_VIA', 'NOMBRE_VIA', 'NUMERO', 'MZ_LOTE', 'TIEMPO_RESIDENCIA'];
+// 'TIPO_ASENTAMIENTO' (2026-10-16): Urbanización, AA.HH., etc. ("Zona°" de
+// A00, "TIPO DE ZONA" de A95/B57), persona.tipo_asentamiento.
+const DETALLE_DOMICILIO_VALIDO = ['TIPO_ZONA', 'TIPO_ASENTAMIENTO', 'NOMBRE_ZONA', 'TIPO_VIA', 'NOMBRE_VIA', 'NUMERO', 'MZ_LOTE', 'TIEMPO_RESIDENCIA'];
 
 // Columnas reales de caso_sujeto que una ficha multi_sujeto puede declarar
 // para un rol secundario (PETICION_P35_RUBEOLA_CONGENITA.md Fase 2):

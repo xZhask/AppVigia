@@ -56,13 +56,14 @@
 <?php
 $valoresDetalleActual = [
     'tipo_zona'   => $valoresFijos['tipo_zona'] ?? '',
+    'tipo_asentamiento' => $valoresFijos['tipo_asentamiento'] ?? '',
     'nombre_zona' => $valoresFijos['nombre_zona'] ?? '',
     'tipo_via'    => $valoresFijos['tipo_via'] ?? '',
     'nombre_via'  => $valoresFijos['nombre_via'] ?? '',
     'numero'      => $valoresFijos['numero'] ?? '',
     'mz_lote'     => $valoresFijos['mz_lote'] ?? '',
 ];
-(function (string $prefijoNombreCampo, array $valoresDetalle, array $detalleDomicilioPermitido) {
+(function (string $prefijoNombreCampo, array $valoresDetalle, array $detalleDomicilioPermitido) use ($enfermedad) {
     require __DIR__ . '/detalle-domicilio-campos.php';
 })('', $valoresDetalleActual, $detalleDomicilio);
 ?>
