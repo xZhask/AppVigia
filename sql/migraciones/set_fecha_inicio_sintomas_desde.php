@@ -4,10 +4,11 @@
  * HOJA_DE_RUTA.md): las fichas que la piden con otro nombre declaran en
  * nucleo_ajustes.fecha_inicio_sintomas_desde de qué campo (o campos) sale
  * caso.fecha_inicio_sintomas: A35, A37.0, A97, B57, B04X, A00, B01, A95 (la
- * más temprana de sus síntomas) y B55 (solo la de la enfermedad mucosa).
+ * más temprana de sus síntomas), B55 (solo la de la enfermedad mucosa), A80
+ * (deficiencia motora), B05 (inicio de la erupción) y A44.
  * P35.0 (congénita) la omite (nucleo_omitidos).
  *
- * Uso: php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0
+ * Uso: php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0 A80 B05 A44
  *
  * El manifiesto ya lo declara; este script es para las bases donde esas
  * fichas tienen casos y cargar_fichas.php las deja bloqueadas. Por cada

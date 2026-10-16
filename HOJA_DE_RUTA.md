@@ -79,7 +79,7 @@ php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
 php sql/migraciones/set_b26_condiciones.php
 php sql/migraciones/set_p350_clasificacion_propia.php
 php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B05 A80 O95
-php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0
+php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0 A80 B05 A44
 php sql/migraciones/set_fecha_notif_en.php A37.0 B01 B26 A35 A33 A80 P35.0
 ```
 
@@ -271,8 +271,12 @@ No tocar sin una respuesta explícita.
      la erupción dérmica; A95 la más temprana de los síntomas marcados Sí; B55
      solo la de la enfermedad mucosa (las fechas de las lesiones cutáneas no
      sirven: el mapa las rellena con la de hoy). P35.0 (congénita) la omite.
-     Se quitó la lista fija de CIE-10 del controlador y de la vista, y "ver"
-     ya no pinta la fila vacía. Ningún reporte usaba esa fecha (la semana
+     Después, A80 (fecha de la deficiencia motora), B05 (inicio de la
+     erupción) y A44 (inicio de la enfermedad): tampoco pintaban la genérica y
+     el servidor tomaba la primera fecha llena de la ficha (en A80 y B05, una
+     de notificación); sin ninguna, la ficha no se registraba. Se quitó la
+     lista fija de CIE-10 del controlador y de la vista (queda solo B26, que
+     la pinta en su partial), y "ver" ya no pinta la fila vacía. Ningún reporte usaba esa fecha (la semana
      epidemiológica sale de `fecha_notif`).
    - **Fecha de notificación — resuelta (16/10).** A37.0, B01, B26, A35, A33,
      A80 y P35.0 la pedían dos veces: la del núcleo en la tarjeta

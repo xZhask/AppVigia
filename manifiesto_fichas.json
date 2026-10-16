@@ -3999,6 +3999,10 @@
       "detalle_domicilio": [
         "TIEMPO_RESIDENCIA"
       ],
+      "nucleo_ajustes": {
+        "_nota_fecha_inicio_sintomas": "caso.fecha_inicio_sintomas (2026-10-16): la de inicio de la enfermedad. Antes el servidor tomaba la primera fecha llena de la ficha (en A80/B05, una de notificación).",
+        "fecha_inicio_sintomas_desde": "a44_fecha_de_inicio_de_enfermedad"
+      },
       "secciones": [
         {
           "nombre": "Inicio de la enfermedad",
@@ -7530,6 +7534,8 @@
         }
       ],
       "nucleo_ajustes": {
+        "_nota_fecha_inicio_sintomas": "caso.fecha_inicio_sintomas (2026-10-16): la de la deficiencia motora (inicio de la parálisis). Antes el servidor tomaba la primera fecha llena de la ficha (en A80/B05, una de notificación).",
+        "fecha_inicio_sintomas_desde": "a80_fecha_de_la_deficiencia_motora",
         "_nota_fecha_notif": "2026-10-16: la fecha de notificación del núcleo (caso.fecha_notif: SE, edad, duplicados) se pinta en el sitio de esta fecha de la cadena del PDF, que antes se pedía aparte y repetida.",
         "fecha_notif_en": "a80_fecha_notificacion_eess_red"
       },
@@ -8601,6 +8607,10 @@
           "clasificar": "SOSPECHOSO"
         }
       ],
+      "nucleo_ajustes": {
+        "_nota_fecha_inicio_sintomas": "caso.fecha_inicio_sintomas (2026-10-16): la de inicio de la erupción (como B01). Antes el servidor tomaba la primera fecha llena de la ficha (en A80/B05, una de notificación).",
+        "fecha_inicio_sintomas_desde": "b05_fecha_de_inicio_de_erupcion"
+      },
       "secciones": [
         {
           "nombre": "Datos de notificación e identificación del caso",
