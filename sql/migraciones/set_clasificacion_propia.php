@@ -5,10 +5,12 @@
  * (nucleo_omitidos 'clasificacion') y caso.clasificacion se calcula de la
  * clasificación propia de la ficha con reglas_campos "clasificar". Cuando el
  * chip exigía elegir (Confirmado/Descartado), el campo propio pasa a ser
- * obligatorio. Hecho así en A35, A33 y B57 (P35.0 tiene su propio script,
+ * obligatorio. Hecho así en A35, A33, B57 y A95, y después en A00, B04X,
+ * A97, B05, A80 y O95, donde el campo propio vacío también da una
+ * clasificación (P35.0 tiene su propio script,
  * set_p350_clasificacion_propia.php).
  *
- * Uso: php sql/migraciones/set_clasificacion_propia.php A35 A33 B57
+ * Uso: php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B05 A80 O95
  *
  * El manifiesto ya lo declara; este script es para las bases donde esas
  * fichas tienen casos y cargar_fichas.php las deja bloqueadas. Por cada

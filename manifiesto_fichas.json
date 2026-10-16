@@ -54,10 +54,114 @@
         "nacionalidad",
         "etnia",
         "nombre_tutor",
-        "celular_tutor"
+        "celular_tutor",
+        "clasificacion"
       ],
       "nucleo_incluidos": [
         "n_historia_clinica"
+      ],
+      "reglas_campos": [
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, con la equivalencia que antes aplicaba ficha.js. Solo una de las 3 está visible según la enfermedad notificada; Síndrome febril va a Sospechoso.",
+          "si": {
+            "clave": "a97_clasificacion",
+            "valores": [
+              "PROBABLE"
+            ]
+          },
+          "clasificar": "PROBABLE"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion_zika",
+            "valores": [
+              "SOSPECHOSO"
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion_zika",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion_zika",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion_fiebre_amarilla",
+            "valores": [
+              "SINDROME_FEBRIL"
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion_fiebre_amarilla",
+            "valores": [
+              "PROBABLE"
+            ]
+          },
+          "clasificar": "PROBABLE"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion_fiebre_amarilla",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a97_clasificacion_fiebre_amarilla",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "_nota": "Ninguna de las 3 elegida (las reglas anteriores ya cubren cualquier valor).",
+          "si": {
+            "clave": "a97_clasificacion",
+            "valores": [
+              ""
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        }
       ],
       "secciones": [
         {
@@ -4729,7 +4833,8 @@
         "ocupacion",
         "nombre_tutor",
         "celular_tutor",
-        "localidad"
+        "localidad",
+        "clasificacion"
       ],
       "unidades_edad": [
         "ANIOS",
@@ -4738,6 +4843,54 @@
       ],
       "detalle_domicilio": [
         "TIEMPO_RESIDENCIA"
+      ],
+      "reglas_campos": [
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, con la equivalencia que antes aplicaba ficha.js.",
+          "si": {
+            "clave": "b04x_clasificacion",
+            "valores": [
+              "SOSPECHOSO"
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        },
+        {
+          "si": {
+            "clave": "b04x_clasificacion",
+            "valores": [
+              "PROBABLE"
+            ]
+          },
+          "clasificar": "PROBABLE"
+        },
+        {
+          "si": {
+            "clave": "b04x_clasificacion",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "b04x_clasificacion",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "si": {
+            "clave": "b04x_clasificacion",
+            "valores": [
+              ""
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        }
       ],
       "secciones": [
         {
@@ -5646,7 +5799,8 @@
         "celular_tutor",
         "nacionalidad",
         "direccion",
-        "gestante"
+        "gestante",
+        "clasificacion"
       ],
       "_nota_nucleo": "II. DATOS DEL PACIENTE (pág. 50). 'ocupacion' salió de nucleo_omitidos en el cotejo 2026-09-07: el PDF sí la pide ('Ocupación: ____'), y desde 2026-08-06 es campo núcleo de persona, no un campo_def a crear. Se omiten en cambio celular, celular del tutor, etnia, pueblo étnico, nacionalidad, gestante y referencia para localizar (ninguno aparece en el papel), y 'direccion' (el domicilio del PDF viene desglosado en Zona/Vía/Número/Int., que es lo que cubre detalle_domicilio, no una línea de dirección libre). 'nombre_tutor' SÍ se conserva: es 'Si es menor de edad, anotar el nombre del padre, madre o apoderado'. 'localidad' también, el PDF la pide dentro de Domicilio actual.",
       "nucleo_incluidos": [
@@ -5668,6 +5822,63 @@
         "MZ_LOTE"
       ],
       "_nota_domicilio": "Mismo bloque de domicilio MINSA que A95 y B57 (Zona° / Vía° / Número-Km-Mz / Int-Dep-Lote). 'Zona de residencia: Urbana ( ) Rural ( )' se cubre con TIPO_ZONA, cuyo vocabulario en la app es Urbano/Periurbano/Rural (superset del par del papel). Los 'Códigos de Zona' del pie de página ([1] Urbanización, [2] Villa, [3] Cooperativa, [4] Proyecto Municipal de vivienda, [5] PPJJ/AAHH, [6] Otro) NO tienen dónde vivir hoy: son un eje distinto de tipo_zona y afectan igual a A95/B57/A37.0/P35.0 -- ver PENDIENTES.md.",
+      "reglas_campos": [
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, con la equivalencia que antes aplicaba ficha.js.",
+          "si": {
+            "clave": "a00_clasificacion_final",
+            "valores": [
+              "SOSPECHOSO"
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        },
+        {
+          "si": {
+            "clave": "a00_clasificacion_final",
+            "valores": [
+              "PROBABLE"
+            ]
+          },
+          "clasificar": "PROBABLE"
+        },
+        {
+          "si": {
+            "clave": "a00_clasificacion_final",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a00_clasificacion_final",
+            "valores": [
+              "COMPATIBLE"
+            ]
+          },
+          "clasificar": "COMPATIBLE"
+        },
+        {
+          "si": {
+            "clave": "a00_clasificacion_final",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "si": {
+            "clave": "a00_clasificacion_final",
+            "valores": [
+              ""
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        }
+      ],
       "secciones": [
         {
           "nombre": "Datos generales",
@@ -7235,7 +7446,8 @@
         "celular_tutor",
         "referencia_localizar",
         "pueblo_etnico",
-        "ocupacion"
+        "ocupacion",
+        "clasificacion"
       ],
       "campos_notificacion": [
         "a80_nro_ficha",
@@ -7244,6 +7456,40 @@
         "a80_fecha_notificacion_eess_red",
         "a80_fecha_notificacion_red_disa",
         "a80_fecha_notificacion_disa_dge"
+      ],
+      "reglas_campos": [
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, con la equivalencia que antes aplicaba ficha.js.",
+          "si": {
+            "clave": "a80_clasificacion_final",
+            "valores": [
+              "POLIO_SALVAJE",
+              "POLIO_DERIVADO_DE_LA_VACUNA",
+              "POLIO_ASOCIADO_A_LA_VACUNA",
+              "POLIO_COMPATIBLE"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a80_clasificacion_final",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "_nota": "Sin clasificación final, el caso notificado de PFA queda en Probable.",
+          "si": {
+            "clave": "a80_clasificacion_final",
+            "valores": [
+              ""
+            ]
+          },
+          "clasificar": "PROBABLE"
+        }
       ],
       "secciones": [
         {
@@ -8279,6 +8525,40 @@
         }
       },
       "_nota_columnas": "PENDIENTES_POST_FASE5.md sugería también 'direccion' para caso_contacto, pero esa tabla no tiene esa columna -- se deja fuera en vez de inventar una columna nueva para esto. caso_muestra (PENDIENTES.md ítem C, 2026-08-01): las 7 columnas de serología que antes pintaba a mano muestras.php dentro de un if ($esB05) -- tipo_muestra/fecha_toma/fecha_envio_ins/fecha_recepcion_ins siguen fuera de esta lista porque siguen renderizándose sin pasar por \"columnas_tablas_hija\" (etiquetas propias de B05, no las genéricas; fecha_recepcion_ins ni siquiera está en COLUMNAS_TABLA_HIJA_VALIDAS) -- esta declaración solo cubre lo que se volvió declarativo.",
+      "nucleo_omitidos": [
+        "clasificacion"
+      ],
+      "reglas_campos": [
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, con la equivalencia que antes aplicaba ficha.js.",
+          "si": {
+            "clave": "b05_clasificacion",
+            "valores": [
+              "SARAMPION",
+              "RUBEOLA"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "b05_clasificacion",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "si": {
+            "clave": "b05_clasificacion",
+            "valores": [
+              ""
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        }
+      ],
       "secciones": [
         {
           "nombre": "Datos de notificación e identificación del caso",
@@ -13489,7 +13769,8 @@
         "gestante",
         "referencia_localizar",
         "pueblo_etnico",
-        "ocupacion"
+        "ocupacion",
+        "clasificacion"
       ],
       "nucleo_incluidos": [
         "n_historia_clinica"
@@ -13547,6 +13828,79 @@
             "o95_fecha_ingreso_eess_destino",
             "o95_hora_ingreso_eess_destino"
           ]
+        },
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, con la equivalencia que antes aplicaba ficha.js. Manda la clasificación final; sin ella, la inicial.",
+          "si": {
+            "clave": "o95_clasificacion_final_de_la_muerte",
+            "valores": [
+              "DIRECTA"
+            ]
+          },
+          "clasificar": "DIRECTA"
+        },
+        {
+          "si": {
+            "clave": "o95_clasificacion_final_de_la_muerte",
+            "valores": [
+              "INDIRECTA"
+            ]
+          },
+          "clasificar": "INDIRECTA"
+        },
+        {
+          "si": {
+            "clave": "o95_clasificacion_final_de_la_muerte",
+            "valores": [
+              "INCIDENTAL"
+            ]
+          },
+          "clasificar": "INCIDENTAL"
+        },
+        {
+          "si": {
+            "clave": "o95_clasificacion_inicial",
+            "valores": [
+              "DIRECTA"
+            ]
+          },
+          "clasificar": "DIRECTA"
+        },
+        {
+          "si": {
+            "clave": "o95_clasificacion_inicial",
+            "valores": [
+              "INDIRECTA"
+            ]
+          },
+          "clasificar": "INDIRECTA"
+        },
+        {
+          "si": {
+            "clave": "o95_clasificacion_inicial",
+            "valores": [
+              "INCIDENTAL"
+            ]
+          },
+          "clasificar": "INCIDENTAL"
+        },
+        {
+          "si": {
+            "clave": "o95_clasificacion_inicial",
+            "valores": [
+              "POR_DETERMINAR"
+            ]
+          },
+          "clasificar": "POR_DETERMINAR"
+        },
+        {
+          "si": {
+            "clave": "o95_clasificacion_inicial",
+            "valores": [
+              ""
+            ]
+          },
+          "clasificar": "POR_DETERMINAR"
         }
       ],
       "secciones": [

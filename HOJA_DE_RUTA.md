@@ -78,7 +78,7 @@ php sql/migraciones/set_o95_condiciones_lugar_referencia.php
 php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
 php sql/migraciones/set_b26_condiciones.php
 php sql/migraciones/set_p350_clasificacion_propia.php
-php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95
+php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B05 A80 O95
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -110,9 +110,12 @@ php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95
   del manifiesto `nucleo_omitidos`, `reglas_campos` y `bloques_condicionales`
   y recalcula `caso.clasificacion`. Se puede correr más de una vez.
 - `set_clasificacion_propia.php <fichas>` (16/10): lo mismo, genérico, para
-  las fichas que se van pasando a clasificación única (hoy A35, A33, B57, A95):
+  las fichas pasadas a clasificación única (A35, A33, B57, A95, A00, B04X,
+  A97, B05, A80 y O95):
   copia `nucleo_omitidos`, `reglas_campos` y la obligatoriedad de sus campos,
-  y recalcula `caso.clasificacion`. Al sumar una ficha, agregarla a la línea.
+  y recalcula `caso.clasificacion`. En las 6 últimas el campo propio vacío
+  también da una clasificación, así que un caso viejo con el chip elegido a
+  mano y el campo propio vacío pasa a la de "vacío" (los casos son de prueba).
 - El cargador va **sin** `--cie10`: el 15/10 cambió `tablas_hijas` en las 24
   fichas. Si una ficha sale "bloqueada por datos capturados", igual recibe sus
   tablas hijas (el cargador las aplica aparte); el resto de esa ficha queda
@@ -229,17 +232,22 @@ php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95
 
 No tocar sin una respuesta explícita.
 
-1. **Clasificación duplicada en 6 fichas.** Muestran el chip genérico
-   "Clasificación del caso" y además su propio campo: A97, B04X, A00, A80,
-   B05, O95. Resueltas: A37.0 (14/10), P35.0, A35, A33, B57 y A95 (16/10; en
-   las cuatro últimas el campo propio pasó a obligatorio, porque el chip exigía
-   elegir Confirmado o Descartado). Se resolvió
-   ocultando el chip y calculando `caso.clasificacion` desde el campo propio
-   (reglas `clasificar`); el usuario aprobó ir ficha por ficha. En P35.0,
-   "Infección congénita" queda en Sospechoso (como ya hacía ficha.js) y el
-   bloque de seguimiento de excreción viral depende ahora de la clasificación
-   propia (`bloques_condicionales.depende_de` acepta la clave de un SELECT). Ojo: A97, A80, B57, Y59.0 y A00 tienen vocabularios propios
-   que no caben en las 4 clasificaciones genéricas.
+1. **Clasificación duplicada — resuelta (16/10).** Ninguna ficha muestra ya
+   el chip genérico "Clasificación del caso" junto a su propio campo. En las
+   12 que lo tenían (A37.0 el 14/10; P35.0, A35, A33, B57, A95, A00, B04X,
+   A97, B05, A80 y O95 el 16/10) el chip se ocultó y `caso.clasificacion` se
+   calcula del campo propio con reglas `clasificar`, la misma equivalencia que
+   aplicaba ficha.js. El usuario la aprobó ficha por ficha.
+   - A35, A33, B57 y A95: el campo propio pasó a obligatorio, porque el chip
+     exigía elegir Confirmado o Descartado.
+   - Con el campo propio vacío: Sospechoso (P35.0, A37.0, A00, B04X, A97,
+     B05), Probable en A80 (caso de PFA notificado) y Por determinar en O95.
+   - A80: las 4 polio, "compatible" incluida, van a Confirmado. O95: manda la
+     clasificación final; sin ella, la inicial. A97: "Síndrome febril" va a
+     Sospechoso.
+   - P35.0: "Infección congénita" queda en Sospechoso y el bloque de
+     seguimiento de excreción viral depende de la clasificación propia
+     (`bloques_condicionales.depende_de` acepta la clave de un SELECT).
 2. **Fechas que podrían derivarse del campo propio de cada ficha.**
    - `caso.fecha_inicio_sintomas` queda vacía en 10 fichas que la piden con
      otro nombre (P35.0, A35, A37.0, B01, A97, B57, A95, B55, B04X, A00). Los

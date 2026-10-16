@@ -604,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (subrow) actualizarTipoExposicionOtro(subrow);
   });
 
-  // ---------- PFA: Clasificación final -> Criterios y Clasificación del caso inferior ----------
+  // ---------- PFA: Clasificación final -> Criterio de clasificación ----------
   function sincronizarDescartadoPfa() {
     var tagCie = document.getElementById('cieTag');
     var cieText = tagCie ? tagCie.textContent : '';
@@ -661,14 +661,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
 
-    // 2. Sincronizar Clasificación del caso (chips de radio al final del formulario)
-    var radioAbajoTarget = esDescartado ?
-      document.querySelector('input[name="clasificacion"][value="DESCARTADO"]') :
-      document.querySelector('input[name="clasificacion"][value="CONFIRMADO"]');
-
-    if (radioAbajoTarget) {
-      radioAbajoTarget.checked = true;
-    }
+    // A80 (2026-10-16): la clasificación del caso ya no se copia a un chip
+    // genérico: el chip no se pinta (nucleo_omitidos) y el servidor la calcula
+    // con reglas_campos "clasificar".
   }
 
   sincronizarDescartadoPfa();
@@ -690,63 +685,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
   // caso.clasificacion con reglas_campos "clasificar".
 
-  // ---------- A97: "Clasificación" propia (3 variantes) -> "clasificacion" genérico ----------
-  // A97 (Dengue/chikungunya/zika/arbovirosis/fiebre amarilla, pág. 49 del PDF)
-  // reemplazó su SELECT combinado de 24 opciones por 3 campos propios
-  // gateados según "Enfermedad / evento a notificar" (a97_enfermedad_evento):
-  // a97_clasificacion (Probable/Confirmado/Descartado, Dengue x3 +
-  // Chikungunya x2), a97_clasificacion_zika (Sospechoso/Confirmado/
-  // Descartado) y a97_clasificacion_fiebre_amarilla (Síndrome
-  // febril/Probable/Confirmado/Descartado) -- solo uno está visible
-  // (.dep-wrap sin `hidden`) a la vez. A diferencia de A35/A33,
-  // enfermedad.opciones_clasificacion NO se restringe acá: A97 es la única
-  // ficha que legítimamente necesita los 4 valores genéricos a la vez
-  // (Sospechoso para Zika, Probable para el resto). "Síndrome febril" no
-  // tiene equivalente genérico directo -- cae a SOSPECHOSO, mismo criterio
-  // que "Infección congénita" en sincronizarClasificacionP350().
-  function sincronizarClasificacionA97() {
-    var tagCie = document.getElementById('cieTag');
-    var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('A97') === -1) return;
-
-    var clavesPropias = ['a97_clasificacion', 'a97_clasificacion_zika', 'a97_clasificacion_fiebre_amarilla'];
-    var selectPropio = clavesPropias
-      .map(function (clave) { return document.querySelector('[name="' + campoPorClave(clave) + '"]'); })
-      .filter(function (sel) {
-        if (!sel) return false;
-        var wrap = sel.closest('.dep-wrap');
-        return !wrap || !wrap.hidden;
-      })[0];
-    if (!selectPropio || !selectPropio.value) return;
-
-    var EQUIVALENTES_CLASIFICACION_A97 = {
-      PROBABLE: 'PROBABLE',
-      CONFIRMADO: 'CONFIRMADO',
-      DESCARTADO: 'DESCARTADO',
-      SOSPECHOSO: 'SOSPECHOSO',
-      SINDROME_FEBRIL: 'SOSPECHOSO'
-    };
-    var valorGenerico = EQUIVALENTES_CLASIFICACION_A97[selectPropio.value];
-    if (!valorGenerico) return;
-
-    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + valorGenerico + '"]');
-    if (radioGenerico && !radioGenerico.checked) {
-      radioGenerico.checked = true;
-      evaluarDependencias();
-    }
-  }
-
-  sincronizarClasificacionA97();
-  document.addEventListener('change', function (e) {
-    var nombresPropiosA97 = [
-      campoPorClave('a97_clasificacion'),
-      campoPorClave('a97_clasificacion_zika'),
-      campoPorClave('a97_clasificacion_fiebre_amarilla')
-    ];
-    if (e.target && nombresPropiosA97.indexOf(e.target.name) !== -1) {
-      sincronizarClasificacionA97();
-    }
-  });
+  // A97 (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
   // ---------- A97: fechas de toma de muestra encadenadas a Fecha de inicio de síntomas ----------
   // Dependencias del usuario (2026-08-14): "Fecha de toma primera muestra"
@@ -829,122 +770,13 @@ document.addEventListener('DOMContentLoaded', function () {
   // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
   // caso.clasificacion con reglas_campos "clasificar".
 
-  // ---------- B04X: "Clasificación" propia <-> "clasificacion" genérico ----------
-  // B04X (Viruela del mono/Mpox) tiene su propio SELECT "Clasificación"
-  // (sección VIII del PDF) además del "clasificacion" genérico compartido
-  // (chips al fondo del formulario). A diferencia de B57/A95/A35/A33, acá los
-  // dos controles ofrecen EXACTAMENTE las mismas 4 opciones -- el catálogo
-  // propio son literalmente SOSPECHOSO/PROBABLE/CONFIRMADO/DESCARTADO y
-  // enfermedad.opciones_clasificacion es NULL para esta ficha, así que el chip
-  // muestra las 4 genéricas. Siendo 1 a 1 en ambos sentidos, se sincroniza
-  // BIDIRECCIONAL como sincronizarClasificacionO95() (el patrón ya probado en
-  // producción) en vez de solo copiar campo propio -> chip: ninguno de los dos
-  // es "el bueno", y tocar cualquiera deja el otro alineado, así que la
-  // discrepancia deja de ser posible en vez de solo corregirse en un sentido.
-  function sincronizarClasificacionB04X(origenElemento) {
-    var tagCie = document.getElementById('cieTag');
-    var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('B04X') === -1) return;
+  // B04X (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
-    var selectPropio = document.querySelector('[name="' + campoPorClave('b04x_clasificacion') + '"]');
-    var radiosGenericos = Array.prototype.slice.call(document.querySelectorAll('input[name="clasificacion"]'));
-    if (!selectPropio || !radiosGenericos.length) return;
-
-    if (origenElemento && origenElemento.name === 'clasificacion') {
-      if (selectPropio.value === origenElemento.value) return;
-      selectPropio.value = origenElemento.value;
-    } else {
-      // Sin origen (carga inicial) o cambio del select propio: el select manda.
-      var valorDestino = selectPropio.value;
-      if (!valorDestino) {
-        // En la carga inicial, un select vacío NO toca el chip: una ficha ya
-        // guardada puede traer un genérico real que nunca se capturó en la
-        // sección VIII, y rellenarlo hacia atrás inventaría el dato del PDF.
-        if (!origenElemento) return;
-        // Si en cambio el usuario acaba de vaciar el select, el genérico
-        // vuelve a Sospechoso -- misma decisión ya tomada para
-        // sincronizarClasificacionP350(): así no queda pegado en CONFIRMADO
-        // tras haber pasado por ahí y cambiar de opinión.
-        valorDestino = 'SOSPECHOSO';
-      }
-      var radioDestino = null;
-      for (var i = 0; i < radiosGenericos.length; i++) {
-        if (radiosGenericos[i].value === valorDestino) { radioDestino = radiosGenericos[i]; break; }
-      }
-      if (!radioDestino || radioDestino.checked) return;
-      radiosGenericos.forEach(function (r) { r.checked = (r === radioDestino); });
-    }
-
-    // Asignar .value/.checked por JS no dispara el 'change' nativo que el motor
-    // de dependencias escucha; hay que llamarlo a mano (mismo motivo que en
-    // sincronizarClasificacionP350()).
-    evaluarDependencias();
-  }
-
-  sincronizarClasificacionB04X();
-  document.addEventListener('change', function (e) {
-    if (!e.target) return;
-    if (e.target.name === 'clasificacion' || e.target.name === campoPorClave('b04x_clasificacion')) {
-      sincronizarClasificacionB04X(e.target);
-    }
-  });
-
-  // ---------- A00: "Clasificación final del caso probable" <-> "clasificacion" genérico ----------
-  // A00 (EDA grave / cólera, "VI. CLASIFICACIÓN" de la pág. 51) repite el
-  // mismo caso que B04X: un SELECT propio del PDF más los chips genéricos al
-  // fondo del formulario, con EXACTAMENTE las mismas opciones en ambos --
-  // acá son 5, porque enfermedad.opciones_clasificacion de A00 declara
-  // SOSPECHOSO,PROBABLE,CONFIRMADO,COMPATIBLE,DESCARTADO (COMPATIBLE se
-  // agregó a CATALOGO_CLASIFICACION y al ENUM caso.clasificacion en este
-  // mismo cotejo). Siendo 1 a 1 en ambos sentidos se sincroniza BIDIRECCIONAL,
-  // igual que sincronizarClasificacionB04X()/sincronizarClasificacionO95():
-  // ninguno de los dos controles es "el bueno", y tocar cualquiera deja el
-  // otro alineado.
-  function sincronizarClasificacionA00(origenElemento) {
-    var tagCie = document.getElementById('cieTag');
-    var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('A00') === -1) return;
-
-    var selectPropio = document.querySelector('[name="' + campoPorClave('a00_clasificacion_final') + '"]');
-    var radiosGenericos = Array.prototype.slice.call(document.querySelectorAll('input[name="clasificacion"]'));
-    if (!selectPropio || !radiosGenericos.length) return;
-
-    if (origenElemento && origenElemento.name === 'clasificacion') {
-      if (selectPropio.value === origenElemento.value) return;
-      selectPropio.value = origenElemento.value;
-    } else {
-      var valorDestino = selectPropio.value;
-      if (!valorDestino) {
-        // Carga inicial con el select vacío: no se toca el chip -- una ficha
-        // ya guardada puede traer un genérico real que nunca se capturó en la
-        // sección VI, y rellenarlo hacia atrás inventaría el dato del PDF.
-        if (!origenElemento) return;
-        // Si en cambio el usuario acaba de vaciar el select, el genérico
-        // vuelve a Sospechoso (misma decisión que B04X/P35.0): así no queda
-        // pegado en CONFIRMADO tras haber pasado por ahí y cambiar de idea.
-        valorDestino = 'SOSPECHOSO';
-      }
-      var radioDestino = null;
-      for (var i = 0; i < radiosGenericos.length; i++) {
-        if (radiosGenericos[i].value === valorDestino) { radioDestino = radiosGenericos[i]; break; }
-      }
-      if (!radioDestino || radioDestino.checked) return;
-      radiosGenericos.forEach(function (r) { r.checked = (r === radioDestino); });
-    }
-
-    // Asignar .value/.checked por JS no dispara el 'change' nativo que el
-    // motor de dependencias escucha (de a00_clasificacion_final cuelga
-    // "Causa del descarte"); hay que llamarlo a mano.
-    evaluarDependencias();
-  }
-
-  sincronizarClasificacionA00();
-  document.addEventListener('change', function (e) {
-    if (!e.target) return;
-    if (e.target.name === 'clasificacion' || e.target.name === campoPorClave('a00_clasificacion_final')) {
-      sincronizarClasificacionA00(e.target);
-    }
-  });
+  // A00 (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
   // ---------- A00: ítem 3.7 "Para los menores de 2 años" ----------
   // El propio encabezado del PDF (pág. 50) acota la pregunta a menores de 2
@@ -3464,25 +3296,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  function sincronizarClasificacionO95(origenElemento) {
-    var selClasifFinal   = document.querySelector('[name="' + campoPorClave('o95_clasificacion_final_de_la_muerte') + '"]');
-    var selClasifInicial = document.querySelector('[name="' + campoPorClave('o95_clasificacion_inicial') + '"]');
-    var radiosClasif     = Array.from(document.querySelectorAll('input[name="clasificacion"]'));
-    if (!radiosClasif.length) return;
-
-    if (origenElemento && origenElemento.name === 'clasificacion') {
-      var valRadio = origenElemento.value;
-      if (selClasifFinal) selClasifFinal.value = valRadio;
-      if (selClasifInicial && !selClasifInicial.value) selClasifInicial.value = valRadio;
-    } else {
-      var valSelect = (selClasifFinal && selClasifFinal.value) ? selClasifFinal.value : (selClasifInicial ? selClasifInicial.value : '');
-      if (valSelect) {
-        radiosClasif.forEach(function(r) {
-          r.checked = (r.value === valSelect);
-        });
-      }
-    }
-  }
+  // O95 (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
   function actualizarCausasDefuncionO95() {
     var selGen = document.getElementById('o95CausaGenericaSel');
@@ -3494,7 +3310,6 @@ document.addEventListener('DOMContentLoaded', function () {
       wrapOtra.hidden = !esOtra;
       wrapOtra.style.display = esOtra ? '' : 'none';
     }
-    sincronizarClasificacionO95();
   }
 
   function actualizarAntecedentesPatologicosObstetricosO95() {
@@ -4222,9 +4037,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.target.name === 'etnia' || e.target.id === 'etniaSel') {
       actualizarEtniaOtra(true);
     }
-    if (e.target.name === 'clasificacion' || e.target.name === campoPorClave('o95_clasificacion_final_de_la_muerte') || e.target.name === campoPorClave('o95_clasificacion_inicial')) {
-      sincronizarClasificacionO95(e.target);
-    }
     if (e.target.id === 'investigadorProfesionSel') {
       actualizarInvestigadorProfesion();
     }
@@ -4326,34 +4138,9 @@ document.addEventListener('DOMContentLoaded', function () {
   actualizarDatosComunitariosO95();
   actualizarInvestigadorProfesion();
 
-  // B05 Clasificación final -> Sincronizar clasificación del caso al final del formulario
-  function actualizarClasificacionCasoB05() {
-    var selectClasif = document.querySelector('[name="' + campoPorClave('b05_clasificacion') + '"]');
-    if (!selectClasif) {
-      selectClasif = Array.from(document.querySelectorAll('select')).find(function(sel) {
-        return Array.from(sel.options).some(function(opt) { return opt.value === 'SARAMPION'; });
-      });
-    }
-    if (!selectClasif) return;
-
-    var valClasif = selectClasif.value;
-    var radioDescartado = document.querySelector('input[name="clasificacion"][value="DESCARTADO"]');
-    var radioConfirmado = document.querySelector('input[name="clasificacion"][value="CONFIRMADO"]');
-
-    if (valClasif === 'DESCARTADO') {
-      if (radioDescartado) radioDescartado.checked = true;
-    } else if (valClasif === 'SARAMPION' || valClasif === 'RUBEOLA') {
-      if (radioConfirmado) radioConfirmado.checked = true;
-    }
-  }
-
-  document.addEventListener('change', function(e) {
-    if (e.target && (e.target.name === campoPorClave('b05_clasificacion') || (e.target.tagName === 'SELECT' && e.target.querySelector('option[value="SARAMPION"]')))) {
-      actualizarClasificacionCasoB05();
-    }
-  });
-
-  actualizarClasificacionCasoB05();
+  // B05 (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
   // B05 Cálculos automáticos para Sección VIII (Investigación epidemiológica)
   function calcularTotalesB05() {
