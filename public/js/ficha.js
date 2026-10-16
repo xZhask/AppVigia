@@ -4459,6 +4459,10 @@ document.addEventListener('DOMContentLoaded', function () {
 // catálogo al guardar (codigoCie10DelCatalogo()), así que escribir un código
 // a mano sigue funcionando. Usa los estilos de la lista de selector-busqueda
 // (.sel-list/.sel-option).
+// Cotejo por sexo (2026-10-16): la lista omite los códigos que el catálogo
+// reserva al otro sexo que el del paciente, y un código escrito a mano (o ya
+// elegido cuando cambia el sexo) se coteja con ?codigo=: el aviso sale debajo
+// del campo con el mismo texto que dará el servidor al guardar.
 document.addEventListener('DOMContentLoaded', function () {
   var lista = null;
   var campoActivo = null;
@@ -4484,6 +4488,34 @@ document.addEventListener('DOMContentLoaded', function () {
   function descripcionDe(input) {
     var campo = input.closest('.field');
     return campo ? campo.querySelector('[data-cie10-descripcion]') : null;
+  }
+
+  // El último name="sexo" es el que llega al servidor (O95 manda un hidden F).
+  function sexoDelPaciente() {
+    var campos = document.querySelectorAll('[name="sexo"]');
+    var campo = campos.length ? campos[campos.length - 1] : null;
+    var valor = campo ? (campo.value || '') : '';
+    return (valor === 'M' || valor === 'F') ? valor : '';
+  }
+
+  function mostrarDescripcion(input, texto, esError) {
+    var desc = descripcionDe(input);
+    if (!desc) return;
+    desc.textContent = texto;
+    desc.classList.toggle('err', !!esError);
+  }
+
+  function cotejar(input) {
+    var escrito = input.value.trim();
+    if (!escrito) { mostrarDescripcion(input, '', false); return; }
+    fetch('/cie10/buscar?codigo=' + encodeURIComponent(escrito) + '&sexo=' + sexoDelPaciente(), { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (datos) {
+        if (!datos || input.value.trim() !== escrito) return;
+        if (datos.codigo && datos.codigo !== escrito) input.value = datos.codigo;
+        mostrarDescripcion(input, datos.error || datos.descripcion || '', !!datos.error);
+      })
+      .catch(function () {});
   }
 
   function cerrar() {
@@ -4527,8 +4559,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var op = opciones[i];
     if (!op || !campoActivo) return;
     campoActivo.value = op.codigo;
-    var desc = descripcionDe(campoActivo);
-    if (desc) desc.textContent = op.descripcion;
+    mostrarDescripcion(campoActivo, op.descripcion, false);
     campoActivo.dispatchEvent(new Event('change', { bubbles: true }));
     cerrar();
   }
@@ -4537,7 +4568,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var texto = input.value.trim();
     if (texto.length < 2) { cerrar(); return; }
     ultimaConsulta = texto;
-    fetch('/cie10/buscar?q=' + encodeURIComponent(texto), { headers: { 'Accept': 'application/json' } })
+    fetch('/cie10/buscar?q=' + encodeURIComponent(texto) + '&sexo=' + sexoDelPaciente(), { headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (datos) {
         if (input !== campoActivo || texto !== ultimaConsulta) return;
@@ -4552,8 +4583,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('input', function (e) {
     if (!e.target || !e.target.matches || !e.target.matches('input[data-cie10]')) return;
     campoActivo = e.target;
-    var desc = descripcionDe(e.target);
-    if (desc) desc.textContent = '';
+    mostrarDescripcion(e.target, '', false);
     clearTimeout(temporizador);
     temporizador = setTimeout(function () { consultar(e.target); }, 200);
   });
@@ -4574,6 +4604,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.addEventListener('focusout', function (e) {
     if (e.target === campoActivo) setTimeout(cerrar, 120);
+  });
+
+  // Escrito a mano sin elegir de la lista: se coteja al salir del campo
+  // (elegir() también dispara change, y el cotejo confirma lo elegido).
+  document.addEventListener('change', function (e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('input[data-cie10]')) {
+      cotejar(e.target);
+    } else if (e.target.name === 'sexo') {
+      document.querySelectorAll('input[data-cie10]').forEach(cotejar);
+    }
   });
   window.addEventListener('scroll', function () { if (lista && !lista.hidden && campoActivo) posicionar(); }, true);
   window.addEventListener('resize', function () { if (lista && !lista.hidden && campoActivo) posicionar(); });

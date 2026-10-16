@@ -49,26 +49,43 @@ class Cie10 extends Model
     }
 
     /**
+     * Cotejo por sexo del catálogo (2026-10-16): un código MUJER no va con un
+     * paciente masculino ('M') ni uno HOMBRE con uno femenino ('F'). Sin sexo
+     * del paciente no se excluye nada.
+     */
+    private const SEXO_EXCLUIDO = ['M' => 'MUJER', 'F' => 'HOMBRE'];
+
+    /** ¿El código de la fila puede ir con un paciente de este sexo ('M', 'F' o '')? */
+    public static function compatibleConSexo(array $fila, string $sexoPaciente): bool
+    {
+        $excluido = self::SEXO_EXCLUIDO[$sexoPaciente] ?? null;
+
+        return $excluido === null || ($fila['sexo'] ?? 'AMBOS') !== $excluido;
+    }
+
+    /**
      * Códigos activos para el buscador: primero los que empiezan por lo
      * escrito (como código), luego los que lo contienen en la descripción
-     * (sin distinguir tildes ni mayúsculas, por la colación).
+     * (sin distinguir tildes ni mayúsculas, por la colación). Con el sexo del
+     * paciente ('M'/'F') se omiten los que el catálogo reserva al otro sexo.
      *
-     * @return array<int, array{codigo: string, descripcion: string}>
+     * @return array<int, array{codigo: string, descripcion: string, sexo: string}>
      */
-    public static function sugerencias(string $texto, int $limite = 15): array
+    public static function sugerencias(string $texto, int $limite = 15, string $sexoPaciente = ''): array
     {
         $texto = trim($texto);
         if (mb_strlen($texto) < 2) {
             return [];
         }
         $consulta = Database::conexion()->prepare(
-            'SELECT codigo, descripcion FROM cie10
-              WHERE activo = 1 AND (clave LIKE :prefijo OR descripcion LIKE :contiene)
+            'SELECT codigo, descripcion, sexo FROM cie10
+              WHERE activo = 1 AND sexo <> :excluido AND (clave LIKE :prefijo OR descripcion LIKE :contiene)
               ORDER BY (clave LIKE :prefijo2) DESC, codigo
               LIMIT ' . max(1, min(50, $limite))
         );
         $prefijo = self::clave($texto) . '%';
         $consulta->execute([
+            'excluido' => self::SEXO_EXCLUIDO[$sexoPaciente] ?? '',
             'prefijo'  => $prefijo,
             'prefijo2' => $prefijo,
             'contiene' => '%' . $texto . '%',

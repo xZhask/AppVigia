@@ -1084,6 +1084,26 @@ function descripcionCie10(string $codigo): ?string
     return $fila ? (string) $fila['descripcion'] : null;
 }
 
+/**
+ * Cotejo por sexo del catálogo CIE-10 (2026-10-16): mensaje si el código
+ * (ya validado por codigoCie10DelCatalogo()) está reservado al otro sexo que
+ * el del paciente ('M'/'F'); null si es compatible o no hay sexo.
+ */
+function errorSexoCie10(string $codigo, string $sexoPaciente): ?string
+{
+    if ($sexoPaciente === '' || !\App\Models\Cie10::hayCatalogo()) {
+        return null;
+    }
+    $fila = \App\Models\Cie10::buscarPorCodigo($codigo);
+    if (!$fila || \App\Models\Cie10::compatibleConSexo($fila, $sexoPaciente)) {
+        return null;
+    }
+    $soloPara = $fila['sexo'] === 'MUJER' ? 'mujeres' : 'hombres';
+    $paciente = $sexoPaciente === 'F' ? 'femenino' : 'masculino';
+
+    return "El código {$fila['codigo']} ({$fila['descripcion']}) es solo para {$soloPara} en el catálogo CIE-10 del MINSA y el paciente es de sexo {$paciente}. Revisa el código o el sexo del paciente.";
+}
+
 /** "P21.9 — Asfixia del nacimiento, no especificada", o el código solo si no está en el catálogo. */
 function cie10Legible(string $codigo): string
 {

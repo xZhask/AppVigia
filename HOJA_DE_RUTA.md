@@ -353,8 +353,10 @@ No tocar sin una respuesta explícita.
     entregó el usuario). Los TEXTO con `"formato": "cie10"` (P96, V99, B24)
     buscan por código o diagnóstico mientras se escribe, el servidor exige un
     código activo del catálogo y "ver" muestra el código con su descripción.
-    El cotejo por sexo del catálogo (MUJER/HOMBRE) se guarda pero todavía no
-    se valida.
+    Cotejo por sexo (16/10): los códigos que el catálogo reserva a MUJER u
+    HOMBRE no se sugieren ni se aceptan al guardar si el paciente es del otro
+    sexo (sin sexo no se restringe); el aviso sale también al escribir el
+    código a mano o al cambiar el sexo.
 
 ## 5. Cómo se ha trabajado (para mantener el criterio)
 

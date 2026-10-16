@@ -1663,6 +1663,10 @@ class CasosController extends Controller
                             'provincia' => 'Selecciona una provincia válida.',
                             default    => errorCodigoCie10($valor),
                         };
+                    } elseif ($formatoTexto === 'cie10' && ($errorSexo = errorSexoCie10($valorNormalizado, (string) ($valoresNucleo['sexo'] ?? ''))) !== null) {
+                        // Cotejo por sexo del catálogo (2026-10-16).
+                        $valoresCampos[$campoId] = $valorNormalizado;
+                        $erroresCampos[$campoId] = $errorSexo;
                     } else {
                         $valoresCampos[$campoId] = $valorNormalizado;
                         $paraGuardar[$campoId] = $valorNormalizado;
@@ -3887,13 +3891,28 @@ class CasosController extends Controller
 
     /**
      * Buscador de los campos CIE-10 (2026-10-16): códigos activos del
-     * catálogo MINSA por código o por parte de la descripción.
+     * catálogo MINSA por código o por parte de la descripción, sin los que el
+     * catálogo reserva al otro sexo que el del paciente (?sexo=M|F). Con
+     * ?codigo= coteja uno solo (escrito a mano, o al cambiar el sexo):
+     * {codigo, descripcion, error}, con los mismos mensajes que al guardar.
      */
     public function buscarCie10(): void
     {
         Auth::exigirRol(...self::ROLES_REGISTRO);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(\App\Models\Cie10::sugerencias((string) ($_GET['q'] ?? '')), JSON_UNESCAPED_UNICODE);
+        $sexo = in_array($_GET['sexo'] ?? '', ['M', 'F'], true) ? $_GET['sexo'] : '';
+        if (isset($_GET['codigo'])) {
+            $escrito = trim((string) $_GET['codigo']);
+            $codigo = codigoCie10DelCatalogo($escrito);
+            $fila = $codigo !== null ? \App\Models\Cie10::buscarPorCodigo($codigo) : null;
+            echo json_encode([
+                'codigo'      => $codigo,
+                'descripcion' => $fila['descripcion'] ?? '',
+                'error'       => $codigo === null ? errorCodigoCie10($escrito) : errorSexoCie10($codigo, $sexo),
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        echo json_encode(\App\Models\Cie10::sugerencias((string) ($_GET['q'] ?? ''), 15, $sexo), JSON_UNESCAPED_UNICODE);
     }
 
     /**
