@@ -825,41 +825,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // ---------- A95: "Resultado de clasificación" propio -> "clasificacion" genérico ----------
-  // Mismo patrón que sincronizarClasificacionB57() arriba: A95 tiene su
-  // propio SELECT "Resultado de clasificación" (Confirmado/Descartado,
-  // "VIII. Clasificación final" del PDF) además del "clasificacion"
-  // genérico compartido (chip al fondo del formulario). 3.ª revisión del
-  // cotejo (2026-08-23): la 2.ª revisión gateaba "Criterios de
-  // confirmación"/"Dx de descarte" contra el radio núcleo con un wrap a
-  // medida -- el usuario pidió en cambio este campo propio, así que ahora
-  // esos 2 campos usan depende_de/valor_activador NORMAL (evaluarDependencias()
-  // ya los resuelve solo, son campo_def de la MISMA ficha) y lo único que
-  // falta es reflejar la elección hacia el chip genérico del fondo, igual
-  // que B57. Los códigos son literalmente CONFIRMADO/DESCARTADO en ambos
-  // lados (enfermedad.opciones_clasificacion ya restringe el chip genérico
-  // a esos 2), sin tabla de equivalencias.
-  function sincronizarClasificacionA95() {
-    var tagCie = document.getElementById('cieTag');
-    var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('A95') === -1) return;
-
-    var selectPropio = document.querySelector('[name="' + campoPorClave('a95_resultado_de_clasificacion') + '"]');
-    if (!selectPropio || !selectPropio.value) return;
-
-    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + selectPropio.value + '"]');
-    if (radioGenerico && !radioGenerico.checked) {
-      radioGenerico.checked = true;
-      evaluarDependencias();
-    }
-  }
-
-  sincronizarClasificacionA95();
-  document.addEventListener('change', function (e) {
-    if (e.target && e.target.name === campoPorClave('a95_resultado_de_clasificacion')) {
-      sincronizarClasificacionA95();
-    }
-  });
+  // A95 (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
   // ---------- B04X: "Clasificación" propia <-> "clasificacion" genérico ----------
   // B04X (Viruela del mono/Mpox) tiene su propio SELECT "Clasificación"

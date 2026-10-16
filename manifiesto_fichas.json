@@ -2361,7 +2361,8 @@
         "direccion",
         "nombre_tutor",
         "celular_tutor",
-        "gestante"
+        "gestante",
+        "clasificacion"
       ],
       "_nota_nucleo": "Cotejo 2026-08-22 (pág. 26 del PDF): 'I. Datos generales', 'II. Datos del paciente' y 'III. Migración' de A95 coinciden casi 1:1 con B57 (pág. 40) -- mismo nucleo_omitidos/nucleo_incluidos/detalle_domicilio/migracion_reciente que B57. 'referencia_localizar' y 'ocupacion' ya NO se omiten (el PDF los pide; la config anterior los omitía sin base documental, mismo bug que tuvo B57 antes de su cotejo).",
       "nucleo_incluidos": [
@@ -2376,6 +2377,27 @@
         "MZ_LOTE"
       ],
       "migracion_reciente": true,
+      "reglas_campos": [
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, que pasa a ser obligatoria (el chip exigía elegir Confirmado o Descartado).",
+          "si": {
+            "clave": "a95_resultado_de_clasificacion",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a95_resultado_de_clasificacion",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        }
+      ],
       "secciones": [
         {
           "nombre": "Cuadro clínico",
@@ -2725,6 +2747,7 @@
               "clave": "a95_resultado_de_clasificacion",
               "etiqueta": "Resultado de clasificación",
               "tipo": "SELECT",
+              "obligatorio": true,
               "orden": 2,
               "opciones": [
                 "Confirmado",
