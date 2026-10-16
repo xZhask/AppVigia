@@ -10,9 +10,10 @@ Servidor: MySQL 8.4.3 de Laragon. La app se conecta según
 
 ### 1.1 Instalar la base desde cero (estación sin `vigia`)
 
-`sql/01_esquema_actual.sql` trae la estructura de las 32 tablas y la
+`sql/01_esquema_actual.sql` trae la estructura de las 33 tablas y la
 configuración de las 24 fichas (enfermedades, secciones, campos, catálogos,
-ubigeo, establecimientos, grados), ya cargada con el manifiesto del 15/10. No
+ubigeo, establecimientos, grados y el catálogo CIE-10 del MINSA), ya cargada
+con el manifiesto del 16/10. No
 trae casos, personas ni usuarios. Desde la raíz del proyecto:
 
 ```
@@ -50,7 +51,7 @@ Para que no vuelva a pasar:
 
   ```
   mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --routines --triggers --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-data --result-file=estructura.sql vigia
-  mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-create-info --skip-triggers --result-file=datos.sql vigia campo_def catalogo catalogo_item departamento distrito enfermedad establecimiento grado_pnp provincia red_salud seccion_def
+  mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-create-info --skip-triggers --result-file=datos.sql vigia campo_def catalogo catalogo_item cie10 departamento distrito enfermedad establecimiento grado_pnp provincia red_salud seccion_def
   ```
 
   Armar el archivo en este orden: la cabecera de comentarios (agregar arriba
@@ -60,7 +61,7 @@ Para que no vuelva a pasar:
   `estructura.sql`.
 - **Probar que se instala antes de commitear:** crear `vigia_limpia`, importar
   el archivo tal cual y comparar contra `vigia` las columnas, índices y claves
-  foráneas (`information_schema`) y el contenido de las 11 tablas de
+  foráneas (`information_schema`) y el contenido de las 12 tablas de
   configuración. Luego borrar `vigia_limpia`. El 15/10 dio 403 columnas,
   115 índices y 53 claves foráneas idénticas, 24 enfermedades, 195 secciones,
   1216 campos, 338 catálogos y 1861 ítems.
@@ -72,6 +73,7 @@ En este orden:
 ```
 php sql/migraciones/add_tablas_hijas_enfermedad.php
 php sql/migraciones/add_tipo_asentamiento_persona.php
+php sql/migraciones/add_cie10.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -91,6 +93,9 @@ php sql/migraciones/set_o95_categoria_desde_ipress.php
   `persona.tipo_asentamiento` y `persona.anterior_tipo_asentamiento` (sección
   3, ítem 3) y copia `detalle_domicilio` y `nucleo_ajustes` de A00, A95 y B57.
   Se puede correr más de una vez.
+- `add_cie10.php` (16/10): crea la tabla `cie10` y la carga desde
+  `sql/datos/cie10_minsa_2025-01-27.csv` (catálogo oficial del MINSA, 13 023
+  códigos). Se puede correr más de una vez (vuelve a cargar el CSV).
 - `set_o95_anexo2_campos_condicionados.php` (15/10, después del cargador):
   condiciona a Anexo 2 los 10 campos de O95 descritos en la sección 2. Hace
   falta porque, si O95 tiene casos, el cargador la bloquea y no aplica el
@@ -343,7 +348,13 @@ No tocar sin una respuesta explícita.
   - Falta estilo para `input[readonly]`.
   - En P96 la edad muestra "0 años".
   - Una persona sin documento no puede recibir uno después.
-  - Falta un catálogo CIE-10 para el diagnóstico de P96.
+  - ~~Falta un catálogo CIE-10 para el diagnóstico de P96.~~ Resuelto el 16/10:
+    tabla `cie10` con el catálogo oficial del MINSA (ene. 2025, del Excel que
+    entregó el usuario). Los TEXTO con `"formato": "cie10"` (P96, V99, B24)
+    buscan por código o diagnóstico mientras se escribe, el servidor exige un
+    código activo del catálogo y "ver" muestra el código con su descripción.
+    El cotejo por sexo del catálogo (MUJER/HOMBRE) se guarda pero todavía no
+    se valida.
 
 ## 5. Cómo se ha trabajado (para mantener el criterio)
 

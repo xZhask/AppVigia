@@ -129,6 +129,10 @@ $router->get('/casos/nuevo/vinculo', function () {
     (new CasosController())->buscarVinculo();
 });
 
+$router->get('/cie10/buscar', function () {
+    (new CasosController())->buscarCie10();
+});
+
 $router->get('/casos/importar', function () {
     (new ImportacionController())->formulario();
 });

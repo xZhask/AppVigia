@@ -1047,6 +1047,52 @@ function codigoCie10Normalizado(string $codigo): ?string
 }
 
 /**
+ * Código CIE-10 de un campo con "formato": "cie10", contra el catálogo oficial
+ * del MINSA (tabla cie10, 2026-10-16): el código tal como figura en el
+ * catálogo ("p219" -> "P21.9", "a18 51" -> "A1851") si existe y está activo;
+ * null si no. Sin catálogo cargado, solo se valida la forma
+ * (codigoCie10Normalizado()).
+ */
+function codigoCie10DelCatalogo(string $valor): ?string
+{
+    if (!\App\Models\Cie10::hayCatalogo()) {
+        return codigoCie10Normalizado($valor);
+    }
+    $fila = \App\Models\Cie10::buscarPorCodigo($valor);
+
+    return $fila && (int) $fila['activo'] === 1 ? $fila['codigo'] : null;
+}
+
+/** Mensaje para un código que codigoCie10DelCatalogo() rechazó. */
+function errorCodigoCie10(string $valor): string
+{
+    if (!\App\Models\Cie10::hayCatalogo()) {
+        return 'Ingresa un código CIE-10 válido: una letra, dos dígitos y, si corresponde, el subcódigo (P21.9).';
+    }
+    $fila = \App\Models\Cie10::buscarPorCodigo($valor);
+
+    return $fila
+        ? "El código {$fila['codigo']} está inactivo en el catálogo CIE-10 del MINSA."
+        : 'No es un código del catálogo CIE-10 del MINSA. Escribe el código o parte del diagnóstico y elígelo de la lista.';
+}
+
+/** Descripción del catálogo CIE-10 del MINSA para ese código, o null. */
+function descripcionCie10(string $codigo): ?string
+{
+    $fila = $codigo !== '' && \App\Models\Cie10::hayCatalogo() ? \App\Models\Cie10::buscarPorCodigo($codigo) : null;
+
+    return $fila ? (string) $fila['descripcion'] : null;
+}
+
+/** "P21.9 — Asfixia del nacimiento, no especificada", o el código solo si no está en el catálogo. */
+function cie10Legible(string $codigo): string
+{
+    $descripcion = descripcionCie10($codigo);
+
+    return $descripcion !== null ? $codigo . ' — ' . $descripcion : $codigo;
+}
+
+/**
  * Campo TEXTO "calculado": "iniciales_fecha_nac" (B24, 2026-09-14). Código del
  * paciente de la NTS 115 (Anexo 3, ítem 6): primera letra del apellido paterno
  * (AP), del materno (AM), del primer nombre (N1) y del segundo nombre (N2), y
@@ -1526,6 +1572,10 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             }
             if (in_array($formatoTextoVer, ['departamento', 'provincia'], true)) {
                 return trim((string) (filaUbigeo($formatoTextoVer, $valorCrudo)['nombre'] ?? '')) ?: $valorCrudo;
+            }
+            // "cie10" (2026-10-16): el código con su descripción del catálogo MINSA.
+            if ($formatoTextoVer === 'cie10') {
+                return cie10Legible($valorCrudo);
             }
             return $valorCrudo;
     }

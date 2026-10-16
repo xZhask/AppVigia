@@ -4450,3 +4450,131 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
+
+// ---------- Campos CIE-10: buscador del catálogo MINSA (2026-10-16) ----------
+// Los TEXTO con "formato": "cie10" (data-cie10, partials/campos/texto.php)
+// sugieren códigos activos de GET /cie10/buscar mientras se escribe, por
+// código o por parte del diagnóstico. Al elegir, el campo queda con el código
+// y la descripción se muestra debajo. El servidor vuelve a validar contra el
+// catálogo al guardar (codigoCie10DelCatalogo()), así que escribir un código
+// a mano sigue funcionando. Usa los estilos de la lista de selector-busqueda
+// (.sel-list/.sel-option).
+document.addEventListener('DOMContentLoaded', function () {
+  var lista = null;
+  var campoActivo = null;
+  var opciones = [];
+  var indiceActivo = -1;
+  var temporizador = null;
+  var ultimaConsulta = '';
+
+  function crearLista() {
+    lista = document.createElement('div');
+    lista.className = 'sel-list';
+    lista.setAttribute('role', 'listbox');
+    lista.hidden = true;
+    document.body.appendChild(lista);
+    lista.addEventListener('mousedown', function (e) {
+      var opcion = e.target.closest('.sel-option');
+      if (!opcion) return;
+      e.preventDefault();
+      elegir(parseInt(opcion.getAttribute('data-indice'), 10));
+    });
+  }
+
+  function descripcionDe(input) {
+    var campo = input.closest('.field');
+    return campo ? campo.querySelector('[data-cie10-descripcion]') : null;
+  }
+
+  function cerrar() {
+    if (lista) lista.hidden = true;
+    opciones = [];
+    indiceActivo = -1;
+  }
+
+  function posicionar() {
+    var r = campoActivo.closest('.control').getBoundingClientRect();
+    lista.style.left = r.left + 'px';
+    lista.style.top = (r.bottom + 4) + 'px';
+    lista.style.width = Math.max(r.width, 360) + 'px';
+  }
+
+  function pintar() {
+    lista.textContent = '';
+    if (!opciones.length) {
+      var vacio = document.createElement('div');
+      vacio.className = 'sel-empty';
+      vacio.textContent = 'Ningún código activo del catálogo coincide.';
+      lista.appendChild(vacio);
+    }
+    opciones.forEach(function (op, i) {
+      var div = document.createElement('div');
+      div.className = 'sel-option' + (i === indiceActivo ? ' active' : '');
+      div.setAttribute('role', 'option');
+      div.setAttribute('data-indice', String(i));
+      var codigo = document.createElement('b');
+      codigo.className = 'mono';
+      codigo.textContent = op.codigo;
+      div.appendChild(codigo);
+      div.appendChild(document.createTextNode(' — ' + op.descripcion));
+      lista.appendChild(div);
+    });
+    posicionar();
+    lista.hidden = false;
+  }
+
+  function elegir(i) {
+    var op = opciones[i];
+    if (!op || !campoActivo) return;
+    campoActivo.value = op.codigo;
+    var desc = descripcionDe(campoActivo);
+    if (desc) desc.textContent = op.descripcion;
+    campoActivo.dispatchEvent(new Event('change', { bubbles: true }));
+    cerrar();
+  }
+
+  function consultar(input) {
+    var texto = input.value.trim();
+    if (texto.length < 2) { cerrar(); return; }
+    ultimaConsulta = texto;
+    fetch('/cie10/buscar?q=' + encodeURIComponent(texto), { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (datos) {
+        if (input !== campoActivo || texto !== ultimaConsulta) return;
+        opciones = Array.isArray(datos) ? datos : [];
+        indiceActivo = opciones.length ? 0 : -1;
+        if (!lista) crearLista();
+        pintar();
+      })
+      .catch(function () { cerrar(); });
+  }
+
+  document.addEventListener('input', function (e) {
+    if (!e.target || !e.target.matches || !e.target.matches('input[data-cie10]')) return;
+    campoActivo = e.target;
+    var desc = descripcionDe(e.target);
+    if (desc) desc.textContent = '';
+    clearTimeout(temporizador);
+    temporizador = setTimeout(function () { consultar(e.target); }, 200);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (!lista || lista.hidden || e.target !== campoActivo) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!opciones.length) return;
+      indiceActivo = (indiceActivo + (e.key === 'ArrowDown' ? 1 : -1) + opciones.length) % opciones.length;
+      pintar();
+    } else if (e.key === 'Enter') {
+      if (indiceActivo >= 0) { e.preventDefault(); elegir(indiceActivo); }
+    } else if (e.key === 'Escape') {
+      cerrar();
+    }
+  });
+
+  document.addEventListener('focusout', function (e) {
+    if (e.target === campoActivo) setTimeout(cerrar, 120);
+  });
+  window.addEventListener('scroll', function () { if (lista && !lista.hidden && campoActivo) posicionar(); }, true);
+  window.addEventListener('resize', function () { if (lista && !lista.hidden && campoActivo) posicionar(); });
+});

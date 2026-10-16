@@ -48,7 +48,10 @@ if ($formatoTexto === 'distrito'):
 endif;
 $atributosTexto = match ($formatoTexto) {
     'hora'  => 'type="time"',
-    'cie10' => 'type="text" maxlength="8" placeholder="P21.9" autocomplete="off" pattern="[A-Za-z][0-9]{2}(\.?[0-9A-Za-z]{1,2})?" title="Código CIE-10: una letra, dos dígitos y, si corresponde, el subcódigo (P21.9)" style="text-transform:uppercase"',
+    // 2026-10-16: busca en el catálogo CIE-10 del MINSA (ficha.js,
+    // data-cie10); ya no lleva pattern, el catálogo trae códigos fuera del
+    // formato estándar ("A1851", "Z21X1").
+    'cie10' => 'type="text" maxlength="10" placeholder="Código o diagnóstico (P21.9, asfixia…)" autocomplete="off" data-cie10="1" title="Escribe el código CIE-10 o parte del diagnóstico y elígelo de la lista" style="text-transform:uppercase"',
     default => 'type="text"',
 };
 ?>
@@ -57,5 +60,6 @@ $atributosTexto = match ($formatoTexto) {
   <div class="control <?= $formatoTexto !== null ? 'mono ' : '' ?><?= $error ? 'err' : '' ?>">
     <input <?= $atributosTexto ?> name="<?= e($nombreCampo) ?>" value="<?= e($valor) ?>">
   </div>
+  <?php if ($formatoTexto === 'cie10'): ?><span class="hint" data-cie10-descripcion><?= $error ? '' : e(descripcionCie10((string) $valor) ?? '') ?></span><?php endif; ?>
   <?php if ($error): ?><span class="hint err"><?= e($error) ?></span><?php endif; ?>
 </div>

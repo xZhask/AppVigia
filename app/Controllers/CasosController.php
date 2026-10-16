@@ -1646,7 +1646,8 @@ class CasosController extends Controller
                         : null;
                     $valorNormalizado = match ($formatoTexto) {
                         'hora'  => horaValida($valor),
-                        'cie10' => codigoCie10Normalizado($valor),
+                        // 2026-10-16: contra el catálogo CIE-10 del MINSA.
+                        'cie10' => codigoCie10DelCatalogo($valor),
                         // V99, 2026-10-08: id de un distrito real del padrón.
                         'distrito' => \App\Models\Distrito::buscarPorId($valor) ? $valor : null,
                         // O95, 2026-10-15: los otros dos niveles, cuando la
@@ -1660,7 +1661,7 @@ class CasosController extends Controller
                             'distrito' => 'Selecciona un distrito válido.',
                             'departamento' => 'Selecciona un departamento válido.',
                             'provincia' => 'Selecciona una provincia válida.',
-                            default    => 'Ingresa un código CIE-10 válido: una letra, dos dígitos y, si corresponde, el subcódigo (P21.9).',
+                            default    => errorCodigoCie10($valor),
                         };
                     } else {
                         $valoresCampos[$campoId] = $valorNormalizado;
@@ -3882,6 +3883,17 @@ class CasosController extends Controller
         $soloNumeroBuscado = ltrim(preg_replace('/^F/', '', $buscado), '0');
 
         return $soloNumeroCodigo !== '' && $soloNumeroCodigo === $soloNumeroBuscado;
+    }
+
+    /**
+     * Buscador de los campos CIE-10 (2026-10-16): códigos activos del
+     * catálogo MINSA por código o por parte de la descripción.
+     */
+    public function buscarCie10(): void
+    {
+        Auth::exigirRol(...self::ROLES_REGISTRO);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(\App\Models\Cie10::sugerencias((string) ($_GET['q'] ?? '')), JSON_UNESCAPED_UNICODE);
     }
 
     /**
