@@ -480,6 +480,47 @@ function condicionReglaCampos(array $si, callable $valorPorClave): bool
 }
 
 /**
+ * Un lugar de "Contactos por lugar" (B26, B01, A37.0) en texto: "Colegio:
+ * IE 123 (Av. Lima 1) · sanos 20 · enfermos 3". Los tipos son los de
+ * lugar-probable-infeccion-b26.php/-b01.php y secciones-clinicas.php (A37.0).
+ * Una fila sin nombre, dirección ni conteos queda fuera ('').
+ */
+function textoContactoPorLugar(mixed $fila): string
+{
+    if (!is_array($fila)) {
+        return '';
+    }
+    $tipos = [
+        'CASA' => 'Casa', 'NIDO_GUARDERIA' => 'Nido / guardería', 'COLEGIO' => 'Colegio',
+        'ESCUELA_MILITAR' => 'Escuela militar / policial', 'UNIVERSIDAD_INSTITUTO' => 'Universidad / instituto',
+        'CENTRO_TRABAJO' => 'Centro de trabajo', 'ESTABLECIMIENTO_SALUD' => 'Establecimiento de salud', 'OTROS' => 'Otro',
+    ];
+    $conteos = [
+        'sanos' => 'sanos', 'enfermos' => 'enfermos', 'total' => 'total', 'con_sintomas' => 'con síntomas',
+        'esquema_completo' => 'esquema completo', 'esquema_incompleto' => 'esquema incompleto',
+        'recibieron_vacunacion' => 'recibieron vacunación', 'recibieron_antibioticos' => 'recibieron antibióticos',
+    ];
+    $nombre = trim((string) ($fila['nombre'] ?? ''));
+    $direccion = trim((string) ($fila['direccion'] ?? ''));
+    $partes = [];
+    foreach ($conteos as $clave => $etiqueta) {
+        $valor = trim((string) ($fila[$clave] ?? ''));
+        if ($valor !== '') {
+            $partes[] = "{$etiqueta} {$valor}";
+        }
+    }
+    if ($nombre === '' && $direccion === '' && !$partes) {
+        return '';
+    }
+    $tipo = (string) ($fila['tipo'] ?? '');
+    $lugar = ($tipos[$tipo] ?? ($tipo !== '' ? $tipo : 'Lugar'))
+        . ($nombre !== '' ? ": {$nombre}" : '')
+        . ($direccion !== '' ? " ({$direccion})" : '');
+
+    return implode(' · ', array_merge([$lugar], $partes));
+}
+
+/**
  * Una lesión del mapa de B55 (Leishmaniasis) en texto: "#1: Úlcera en cabeza,
  * perfil izquierdo (5×3 mm)". Los códigos son los de leishmaniasis-body-map.php
  * (tipo sin tilde, vista por clave del dibujo).
@@ -1266,6 +1307,12 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             $decoded = json_decode($valorCrudo, true);
             if (!is_array($decoded) || empty($decoded)) {
                 return '—';
+            }
+            // "Contactos por lugar" (B26, B01, A37.0; 2026-10-15, pedido del
+            // usuario): una línea por lugar en vez de "Registrado (n ítems)".
+            if (str_ends_with((string) ($campo['clave'] ?? ''), '_contactos_por_lugar') && array_is_list($decoded)) {
+                $lineasLugar = array_values(array_filter(array_map('textoContactoPorLugar', $decoded)));
+                return $lineasLugar ? implode(' | ', $lineasLugar) : '—';
             }
             if (($campo['clave'] ?? '') === 'b55_lesiones') {
                 $items = [];

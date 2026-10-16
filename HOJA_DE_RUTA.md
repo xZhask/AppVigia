@@ -201,6 +201,9 @@ php sql/migraciones/set_b26_condiciones.php
 - **"Ver" con `campos_notificacion`:** esos campos se leen en la tarjeta
   "Notificación", como en el formulario (Z21 ya no muestra "Registro" aparte;
   en A80 las fechas de notificación pasan a esa tarjeta).
+- **"Ver", contactos por lugar (B26, B01, A37.0):** una línea por lugar
+  ("Colegio: IE 123 · sanos 20 · enfermos 3") en vez de "Registrado (n
+  ítems)"; aprobado por el usuario el 16/10.
 - **"Ver" sin campos que no aplican:** los campos sueltos con `depende_de` o
   con una regla `mostrar` que no se cumple ya no salen con "—" (24 fichas;
   helper `camposOcultosDelCaso()`, mismas reglas que al guardar). Un dato
@@ -243,9 +246,6 @@ No tocar sin una respuesta explícita.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
-- **"Ver":** `b26_contactos_por_lugar` (y los de B01 y A37.0) no sale como
-  JSON pero solo dice "Registrado (n ítems)"; el código lo dejó así a
-  propósito para no cambiar fichas revisadas. Decidir si se muestra cada fila.
 - **Reportes:** el orden y las columnas por clasificación solo conocen las 4
   genéricas; el filtro del listado de fichas también.
 - **Padrón RENIPRESS:** revisar categorías dudosas (Centro de Salud Mental
