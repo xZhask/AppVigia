@@ -24,7 +24,7 @@ use App\Models\CampoDef;
 
 $fichas = array_slice($argv, 1);
 if (!$fichas) {
-    fwrite(STDERR, "Uso: php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0\n");
+    fwrite(STDERR, "Uso: php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0 A80 B05 A44\n");
     exit(1);
 }
 
