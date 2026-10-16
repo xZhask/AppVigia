@@ -14342,6 +14342,7 @@
             },
             {
               "clave": "o95_categoria_del_ee_ss",
+              "categoria_de_ipress": "o95_establecimiento_sanidad_pnp",
               "etiqueta": "Categoría del EE.SS.",
               "tipo": "SELECT",
               "orden": 27,

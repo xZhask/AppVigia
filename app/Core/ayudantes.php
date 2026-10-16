@@ -368,6 +368,31 @@ function opcionesClasificacionPara(array $enfermedad): array
 }
 
 /**
+ * Categoría RENIPRESS (establecimiento.categoria) de la IPRESS del padrón con
+ * ese nombre exacto; null si no está o no tiene categoría. Para los campos
+ * con "categoria_de_ipress" (O95, 2026-10-16).
+ */
+function categoriaDeIpress(string $nombre): ?string
+{
+    if (trim($nombre) === '') {
+        return null;
+    }
+    $consulta = \App\Core\Database::conexion()->prepare('SELECT categoria FROM establecimiento WHERE nombre = ? LIMIT 1');
+    $consulta->execute([trim($nombre)]);
+    $categoria = $consulta->fetchColumn();
+
+    return is_string($categoria) && $categoria !== '' ? $categoria : null;
+}
+
+/** Clave del campo con el nombre de la IPRESS del padrón ("categoria_de_ipress"), o null. */
+function claveCategoriaDeIpress(array $campo): ?string
+{
+    $clave = (json_decode((string) ($campo['config'] ?? ''), true) ?: [])['categoria_de_ipress'] ?? null;
+
+    return is_string($clave) && $clave !== '' ? $clave : null;
+}
+
+/**
  * Clasificaciones que muestran el listado, el panel y los reportes
  * (2026-10-16): las de la enfermedad filtrada (opcionesClasificacionPara()) o,
  * sin filtro, las 4 genéricas; más cualquier otra que aparezca en los datos
@@ -498,8 +523,13 @@ function camposOcultosDelCaso(array $campos, array $valoresCrudos, array $reglas
                     $valores
                 ))
                 && (empty($campo['depende_de']) || campoVisiblePorDependencia($campo, $valores));
+            // "categoria_de_ipress" (O95, 2026-10-16): con la IPRESS elegida, la
+            // categoría la puso el servidor desde el padrón aunque una regla
+            // "mostrar" no la pida en pantalla.
+            $claveIpress = claveCategoriaDeIpress($campo);
+            $categoriaDelPadron = $claveIpress !== null && (string) $valorPorClave($claveIpress) !== '';
             foreach ($reglas as $regla) {
-                if ($visible && in_array($campo['clave'], $regla['mostrar'] ?? [], true) && !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                if ($visible && !$categoriaDelPadron && in_array($campo['clave'], $regla['mostrar'] ?? [], true) && !condicionReglaCampos($regla['si'], $valorPorClave)) {
                     $visible = false;
                 }
             }

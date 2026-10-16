@@ -573,6 +573,13 @@ function validarManifiesto(array $manifiesto): void
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\": \"con_hora\" solo admite true y no se combina con \"desconocido\".");
                     }
                 }
+                // "categoria_de_ipress" (O95, 2026-10-16): clave del campo con el
+                // nombre de una IPRESS del padrón; la categoría se toma de ahí.
+                if (array_key_exists('categoria_de_ipress', $campo)) {
+                    if ($tipo !== 'SELECT' || !is_string($campo['categoria_de_ipress']) || ($tiposPorClaveFicha[$campo['categoria_de_ipress']] ?? null) === null) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\": \"categoria_de_ipress\" va en un SELECT y debe ser la clave de un campo de esta ficha.");
+                    }
+                }
                 if (array_key_exists('grupo', $campo) && (!is_string($campo['grupo']) || trim($campo['grupo']) === '')) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"grupo\" vacío o no es texto.");
                 }
@@ -1773,6 +1780,14 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
     if (array_key_exists('con_hora', $campo)) {
         $config = json_encode(
             (json_decode((string) $config, true) ?: []) + ['con_hora' => true],
+            JSON_UNESCAPED_UNICODE
+        );
+    }
+
+    // "categoria_de_ipress" (O95, 2026-10-16): mismo criterio, se suma al config.
+    if (array_key_exists('categoria_de_ipress', $campo)) {
+        $config = json_encode(
+            (json_decode((string) $config, true) ?: []) + ['categoria_de_ipress' => $campo['categoria_de_ipress']],
             JSON_UNESCAPED_UNICODE
         );
     }

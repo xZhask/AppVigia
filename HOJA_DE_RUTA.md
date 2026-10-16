@@ -82,6 +82,7 @@ php sql/migraciones/set_p350_clasificacion_propia.php
 php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B05 A80 O95
 php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0 A80 B05 A44
 php sql/migraciones/set_fecha_notif_en.php A37.0 B01 B26 A35 A33 A80 P35.0
+php sql/migraciones/set_o95_categoria_desde_ipress.php
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -323,9 +324,19 @@ No tocar sin una respuesta explícita.
   genéricas, más las que traigan los datos, en el orden del catálogo) en la
   tabla y el Excel del reporte, la distribución del reporte y del panel, el
   agrupado por clasificación y el filtro del listado.
-- **Padrón RENIPRESS:** revisar categorías dudosas (Centro de Salud Mental
+- ~~**Padrón RENIPRESS:** revisar categorías dudosas (Centro de Salud Mental
   Comunitario PNP figura I-2). A50 "Nivel del establecimiento" y O95 "Categoría
-  del EE.SS." podrían tomarse del padrón.
+  del EE.SS." podrían tomarse del padrón.~~ Cerrado el 16/10:
+  - El I-2 del Centro de Salud Mental Comunitario PNP es correcto (el usuario
+    lo confirmó con la fuente oficial).
+  - A50 "Nivel del establecimiento" es el del parto (cualquier EE.SS., escrito
+    a mano): el padrón solo tiene las 82 IPRESS PNP, así que sigue capturado.
+    Lo mismo la categoría del EE.SS. de la atención prenatal de O95.
+  - O95, Anexo 2: si falleció en una IPRESS de Sanidad PNP, la categoría no se
+    pedía ni se guardaba. Ahora el campo declara `"categoria_de_ipress"` y el
+    servidor guarda `establecimiento.categoria` de la IPRESS elegida (después
+    de las reglas; "ver" la muestra). MINSA/EsSalud/Privado la siguen
+    capturando. Bases con casos: `set_o95_categoria_desde_ipress.php`.
 - **Menores, de interfaz:**
   - Hueco vertical en datos de la persona cuando una rama oculta Etnia y
     Residencia.

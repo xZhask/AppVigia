@@ -1675,6 +1675,42 @@ class CasosController extends Controller
         if ($reglasCampos) {
             [$valoresCampos, $erroresCampos, $paraGuardar] = $this->aplicarReglasCampos($reglasCampos, $campos, $valoresCampos, $erroresCampos, $paraGuardar, $valoresNucleo);
         }
+        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->completarCategoriaDeIpress($campos, $valoresCampos, $erroresCampos, $paraGuardar);
+
+        return [$valoresCampos, $erroresCampos, $paraGuardar];
+    }
+
+    /**
+     * "categoria_de_ipress" (O95, 2026-10-16): con una IPRESS del padrón
+     * elegida en el campo declarado (la de Sanidad PNP donde falleció), la
+     * categoría se toma de establecimiento.categoria y no se pide en pantalla.
+     * Va después de las reglas: su "mostrar" la vacía cuando el EE.SS. es de
+     * Sanidad. Respeta su propio depende_de (solo Anexo 2) y que la categoría
+     * sea una de sus opciones.
+     */
+    private function completarCategoriaDeIpress(array $campos, array $valoresCampos, array $erroresCampos, array $paraGuardar): array
+    {
+        $idPorClave = [];
+        foreach ($campos as $campoId => $campo) {
+            $idPorClave[$campo['clave']] = (int) $campoId;
+        }
+        foreach ($campos as $campoId => $campo) {
+            $claveIpress = claveCategoriaDeIpress($campo);
+            if ($claveIpress === null || !campoVisiblePorDependencia($campo, $valoresCampos)) {
+                continue;
+            }
+            $categoria = categoriaDeIpress((string) ($valoresCampos[$idPorClave[$claveIpress] ?? 0] ?? ''));
+            if ($categoria === null) {
+                continue;
+            }
+            $opciones = $campo['catalogo_id'] ? array_column(CatalogoItem::porCatalogo((int) $campo['catalogo_id']), 'valor') : [];
+            if (!in_array($categoria, $opciones, true)) {
+                continue;
+            }
+            $valoresCampos[$campoId] = $categoria;
+            $paraGuardar[$campoId] = $categoria;
+            unset($erroresCampos[$campoId]);
+        }
 
         return [$valoresCampos, $erroresCampos, $paraGuardar];
     }
