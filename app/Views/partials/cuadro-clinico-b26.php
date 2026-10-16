@@ -49,7 +49,12 @@ $campoCausaMuerte = $campoB26('b26_causa_de_muerte');
 // nucleo caso.fecha_inicio_sintomas (name="fecha_inicio_sintomas" literal, mas
 // abajo). El campo_def duplicado b26_fecha_de_inicio_de_sintomas, al que nada
 // posteaba, se quito del manifiesto el 2026-10-08.
-$valFechaInicioSintomas = $valoresFijos['fecha_inicio_sintomas'] ?? '';
+// $fechaInicioSintomas es lo que nuevo()/editar() pasan a la vista (en
+// editar, la guardada; tras un error, la enviada). Hasta el 2026-10-15 se leía
+// solo $valoresFijos, que ahí no la trae: al editar el input salía vacío y lo
+// tapaba el genérico de secciones-clinicas.php (mismo name); sin el genérico,
+// el servidor la reemplazaba por el primer FECHA lleno.
+$valFechaInicioSintomas = (string) (($fechaInicioSintomas ?? '') !== '' ? $fechaInicioSintomas : ($valoresFijos['fecha_inicio_sintomas'] ?? ''));
 
 // Glándulas parótidas
 $rawParotidas = $campoParotidas['val'];
@@ -133,7 +138,8 @@ $valCausaMuerte = $campoCausaMuerte['val'];
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>
         <div class="control mono <?= $errorFechaInicioSintomas ? 'err' : '' ?>">
-          <input type="date" id="fechaInicioSintomasB26" name="fecha_inicio_sintomas" value="<?= e($valFechaInicioSintomas) ?>" max="<?= date('Y-m-d') ?>">
+          <?php /* Deshabilitado fuera de B26 (2026-10-15): esta tarjeta se pinta oculta en todas las fichas y el input viajaba con el mismo name que la fecha genérica. */ ?>
+          <input type="date" id="fechaInicioSintomasB26" name="fecha_inicio_sintomas" value="<?= e($valFechaInicioSintomas) ?>" max="<?= date('Y-m-d') ?>"<?= $esB26Cuadro ? '' : ' disabled' ?>>
         </div>
         <?php if ($errorFechaInicioSintomas): ?><span class="hint err"><?= e($errorFechaInicioSintomas) ?></span><?php endif; ?>
       </div>

@@ -1401,6 +1401,12 @@ class CasosController extends Controller
             // literal como si fuera campo_def_id. Acá $campoId SÍ es el
             // id real (viene del foreach de $campos), solo cambia de
             // dónde se lee el valor en $_POST.
+            // Solo con "¿Estuvo en contacto con otro caso?" = Sí (depende_de,
+            // 2026-10-15): la lista viaja aunque su bloque esté oculto.
+            if ($campo['clave'] === 'b26_contactos_por_lugar' && !$this->campoDinamicoVisible($campo, $valoresCampos)) {
+                $valoresCampos[$campoId] = [];
+                continue;
+            }
             if ($campo['clave'] === 'b26_contactos_por_lugar' && isset($_POST['b26_lugar_tipo']) && is_array($_POST['b26_lugar_tipo'])) {
                 $matrizLugares = [];
                 foreach ($_POST['b26_lugar_tipo'] as $idx => $tipo) {
@@ -1534,8 +1540,11 @@ class CasosController extends Controller
                 // bug_booleano_select_isset_vacio.md). Se lee el valor
                 // real cuando está presente; ausente del todo (casilla sin
                 // marcar) sigue guardando '0', igual que antes.
+                // 'SI' (2026-10-15): los radios Sí/No de los partials de B26
+                // mandan SI/NO; hasta ahora se guardaba '0' aunque se
+                // marcara Sí (parótidas, hospitalización, vacunación SPR).
                 $valorPostBooleano = $_POST[$nombreCampo] ?? '';
-                $marcado = ($valorPostBooleano === '1') ? '1' : '0';
+                $marcado = in_array($valorPostBooleano, ['1', 'SI'], true) ? '1' : '0';
                 $valoresCampos[$campoId] = $marcado;
                 $paraGuardar[$campoId] = $marcado;
                 continue;

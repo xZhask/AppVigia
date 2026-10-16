@@ -1710,13 +1710,17 @@
               "clave": "b26_fecha_de_inicio_de_parotiditis",
               "etiqueta": "Fecha de inicio de parotiditis",
               "tipo": "FECHA",
-              "orden": 3
+              "orden": 3,
+              "depende_de": "b26_presento_inflamacion_de_glandulas_parotidas",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_n_de_dias_de_duracion",
               "etiqueta": "N.° de días de duración",
               "tipo": "NUMERO",
-              "orden": 4
+              "orden": 4,
+              "depende_de": "b26_presento_inflamacion_de_glandulas_parotidas",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_localizacion",
@@ -1726,7 +1730,9 @@
               "opciones": [
                 "Unilateral",
                 "Bilateral"
-              ]
+              ],
+              "depende_de": "b26_presento_inflamacion_de_glandulas_parotidas",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_inflamacion_de_glandulas_submandibulares",
@@ -1798,19 +1804,25 @@
               "clave": "b26_establecimiento",
               "etiqueta": "Establecimiento",
               "tipo": "TEXTO",
-              "orden": 2
+              "orden": 2,
+              "depende_de": "b26_hospitalizacion",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_fecha_de_hospitalizacion",
               "etiqueta": "Fecha de hospitalización",
               "tipo": "FECHA",
-              "orden": 3
+              "orden": 3,
+              "depende_de": "b26_hospitalizacion",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_n_de_dias",
               "etiqueta": "N.° de días",
               "tipo": "NUMERO",
-              "orden": 4
+              "orden": 4,
+              "depende_de": "b26_hospitalizacion",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_condicion_de_egreso",
@@ -1834,13 +1846,17 @@
               "clave": "b26_referido_a",
               "etiqueta": "Referido a",
               "tipo": "TEXTO",
-              "orden": 7
+              "orden": 7,
+              "depende_de": "b26_condicion_de_egreso",
+              "valor_activador": "REFERIDO"
             },
             {
               "clave": "b26_causa_de_muerte",
               "etiqueta": "Causa de muerte",
               "tipo": "TEXTO",
-              "orden": 8
+              "orden": 8,
+              "depende_de": "b26_condicion_de_egreso",
+              "valor_activador": "FALLECIDO"
             }
           ]
         },
@@ -1911,19 +1927,30 @@
                 "N.° de contactos sanos",
                 "N.° de contactos enfermos"
               ],
-              "_corregido": "igual que Varicela: columnas reales son solo nombre/dirección/sanos/enfermos, no el detalle de vacunación de Tos ferina"
+              "_corregido": "igual que Varicela: columnas reales son solo nombre/dirección/sanos/enfermos, no el detalle de vacunación de Tos ferina",
+              "depende_de": "b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con",
+              "valor_activador": "SI"
             },
             {
               "clave": "b26_tuvo_contacto_con_gestante",
               "etiqueta": "¿Tuvo contacto con gestante?",
-              "tipo": "BOOLEANO",
-              "orden": 8
+              "tipo": "SELECT",
+              "orden": 8,
+              "opciones": [
+                "Sí",
+                "No",
+                "Ignorado"
+              ],
+              "depende_de": "b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con",
+              "valor_activador": "SI"
             },
             {
               "clave": "b26_fecha_contacto_gestante",
               "etiqueta": "Fecha del contacto con gestante",
               "tipo": "FECHA",
-              "orden": 9
+              "orden": 9,
+              "depende_de": "b26_tuvo_contacto_con_gestante",
+              "valor_activador": "SI"
             },
             {
               "clave": "b26_trimestre_de_gestacion_contacto",
@@ -1935,7 +1962,9 @@
                 "II",
                 "III"
               ],
-              "_corregido": "v1.0 lo tenía como NUMERO; el PDF (pág. 4) pide trimestre (I/II/III), no un número de semanas como en Varicela"
+              "_corregido": "v1.0 lo tenía como NUMERO; el PDF (pág. 4) pide trimestre (I/II/III), no un número de semanas como en Varicela",
+              "depende_de": "b26_tuvo_contacto_con_gestante",
+              "valor_activador": "SI"
             }
           ]
         },
@@ -1954,19 +1983,25 @@
               "clave": "b26_dosis_spr",
               "etiqueta": "N.° de dosis recibida",
               "tipo": "NUMERO",
-              "orden": 2
+              "orden": 2,
+              "depende_de": "b26_vacunacion_spr",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_fecha_ultima_dosis_spr",
               "etiqueta": "Fecha de última dosis",
               "tipo": "FECHA",
-              "orden": 3
+              "orden": 3,
+              "depende_de": "b26_vacunacion_spr",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_eess_vacunacion_spr",
               "etiqueta": "EE.SS. donde se vacunó",
               "tipo": "TEXTO",
-              "orden": 4
+              "orden": 4,
+              "depende_de": "b26_vacunacion_spr",
+              "valor_activador": "1"
             },
             {
               "clave": "b26_observaciones",

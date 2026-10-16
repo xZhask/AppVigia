@@ -25,6 +25,15 @@ $camposPersonaVer = array_filter(array_map(
     fn(string $clave) => CampoDef::porClave((int) ($enfermedadVer['id'] ?? 0), $clave),
     $clavesCamposPersonaVer
 ));
+// campos_notificacion (2026-10-15): igual que en el formulario
+// (notificacion-campos-declarados.php), van en la tarjeta "Notificación" y
+// no en la de su sección. Antes "ver" los dejaba en su sección (Z21 mostraba
+// "Tipo de registro" en una tarjeta "Registro" aparte).
+$clavesCamposNotificacionVer = jsonDeEnfermedad($enfermedadVer ?? [], 'campos_notificacion');
+$camposNotificacionVer = array_filter(array_map(
+    fn(string $clave) => CampoDef::porClave((int) ($enfermedadVer['id'] ?? 0), $clave),
+    $clavesCamposNotificacionVer
+));
 $edad = edadDesdeFecha($caso['fecha_nac']);
 
 // Entrada F: si la ficha declaró unidades_edad, la edad capturada con su
@@ -97,6 +106,11 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Registrado por</label><div class="control" style="background:var(--paper)"><?= e($caso['usuario_nombre']) ?></div></div>
           <div class="field"><label class="fl">Fecha de registro</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['creado_en'])) ?></div></div>
         </div>
+        <?php if ($camposNotificacionVer): ?>
+        <div class="fields thirds" style="margin-top:14px">
+          <?php foreach ($camposNotificacionVer as $campoNotificacionVer): ?><div class="field"><label class="fl"><?= e($campoNotificacionVer['etiqueta']) ?></label><div class="control" style="background:var(--paper)"><?= e(campoValorTexto($campoNotificacionVer, $valoresCampos[$campoNotificacionVer['id']] ?? null)) ?></div></div><?php endforeach; ?>
+        </div>
+        <?php endif; ?>
         <?php if (!in_array($enfermedad['cie10'] ?? null, ['A80', 'B05'], true) && ($caso['tipo_captacion'] || $caso['lugar_captacion'] || $caso['clasificacion_captacion'])): ?>
           <div class="eyebrow" style="margin:18px 0 10px">Captación</div>
           <div class="fields thirds">
@@ -292,12 +306,13 @@ $accionEtiquetas = [
         $camposSeccionVer = array_values(array_filter(
             CampoDef::porSeccion((int) $seccion['id']),
             fn(array $campoSeccion) => !in_array($campoSeccion['clave'], $clavesCamposPersonaVer, true)
+                && !in_array($campoSeccion['clave'], $clavesCamposNotificacionVer, true)
                 // Un dato guardado se muestra igual: lo oculto que llegó a
                 // grabarse antes de una regla debe seguir a la vista.
                 && !(isset($camposOcultosVer[(int) $campoSeccion['id']]) && (string) ($valoresCampos[$campoSeccion['id']] ?? '') === '')
         ));
         if (!$camposSeccionVer && CampoDef::porSeccion((int) $seccion['id'])) {
-            continue; // todos sus campos ya están en "Datos del paciente" o no aplican a este caso
+            continue; // todos sus campos ya están en "Notificación"/"Datos del paciente" o no aplican a este caso
         }
     ?>
       <div class="card section">

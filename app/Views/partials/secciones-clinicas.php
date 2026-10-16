@@ -63,6 +63,16 @@ $CLAVES_CUBIERTAS_POR_PARTIAL_A_MEDIDA = [
         // lugar-probable-infeccion-b26.php
         'b26_en_las_ultimas_2_a_4_semanas_estuvo_en_contacto_con', 'b26_contactos_por_lugar',
         'b26_tuvo_contacto_con_gestante', 'b26_trimestre_de_gestacion_contacto',
+        // 2026-10-15: los 11 campo_def creados el 2026-08-10 para los inputs
+        // que ya pintaban estos partials nunca se sumaron acá, así que el
+        // render genérico los volvía a pintar en dos tarjetas repetidas
+        // ("Lugar probable de infección", "Antecedentes de vacunación") y,
+        // con el mismo name, el input vacío de abajo pisaba lo escrito arriba.
+        'b26_inf_direccion', 'b26_inf_departamento_id', 'b26_inf_provincia_id', 'b26_inf_distrito_id',
+        'b26_inf_localidad', 'b26_fecha_contacto_gestante',
+        // antecedentes-vacunacion-b26.php
+        'b26_vacunacion_spr', 'b26_dosis_spr', 'b26_fecha_ultima_dosis_spr', 'b26_eess_vacunacion_spr',
+        'b26_observaciones',
     ],
     'O95' => [
         // notificacion-fechas-o95.php (mecanismo de name literal remapeado, ítem N.2)
@@ -247,7 +257,7 @@ $claveCubiertaPorPartial = fn(string $clave): bool => in_array(
 
 $SECCIONES_CON_PARTIAL_A_MEDIDA = [
     'B05' => ['Datos de notificación e identificación del caso', 'Datos de filiación y tutor'],
-    'B26' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Cuadro clínico', 'Complicaciones', 'Hospitalización y egreso'],
+    'B26' => ['Datos de notificación e investigación del caso', 'Lugar probable de infección', 'Cuadro clínico', 'Complicaciones', 'Hospitalización y egreso', 'Antecedentes de vacunación (SPR) y observaciones'],
     'O95' => ['Datos de notificación'],
     'P35.0' => ['Datos de notificación e investigación del caso', 'Clasificación del caso'],
     'A35' => ['Datos de notificación e investigación del caso'],
@@ -1468,8 +1478,11 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     <?php // nucleo_omitidos: 'fecha_inicio_sintomas' (cotejo Z21,
     // 2026-09-11) es la versión declarativa de esta lista de CIE-10 -- las
     // 14 fichas que ya estaban siguen igual. CasosController hace lo propio
-    // del lado servidor ($sinFechaInicioSintomasObligatoria). ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55', 'B04X', 'A00'], true) && !nucleoOmitido($enfermedad, 'fecha_inicio_sintomas')): ?>
+    // del lado servidor ($sinFechaInicioSintomasObligatoria). B26
+    // (2026-10-15) la pinta en cuadro-clinico-b26.php con el mismo name: con
+    // las dos visibles el POST se quedaba con esta, y llenar solo la de
+    // "Cuadro clínico" daba "Ingresa la fecha de inicio de síntomas". ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55', 'B04X', 'A00', 'B26'], true) && !nucleoOmitido($enfermedad, 'fecha_inicio_sintomas')): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>

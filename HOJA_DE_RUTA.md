@@ -76,6 +76,7 @@ php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
 php sql/migraciones/set_o95_condiciones_lugar_referencia.php
 php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
+php sql/migraciones/set_b26_condiciones.php
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -99,6 +100,10 @@ php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
   `nucleo_ajustes.fecha_inicio_sintomas_desde`, vuelve obligatoria la fecha de
   fallecimiento y copia esa fecha a `caso.fecha_inicio_sintomas` en los casos
   guardados. Se puede correr más de una vez.
+- `set_b26_condiciones.php` (15/10): mismo motivo para B26; fija sus
+  `depende_de`, pasa "¿Tuvo contacto con gestante?" a SELECT (de sus valores
+  viejos, `1` → `SI` y `0` se borra) y borra los valores que ya no aplican.
+  Se puede correr más de una vez.
 - El cargador va **sin** `--cie10`: el 15/10 cambió `tablas_hijas` en las 24
   fichas. Si una ficha sale "bloqueada por datos capturados", igual recibe sus
   tablas hijas (el cargador las aplica aparte); el resto de esa ficha queda
@@ -172,6 +177,30 @@ php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
   sale de la fecha de fallecimiento, ahora obligatoria y con su error en
   pantalla. Lo que llegue en el POST para la genérica se ignora. Sirve para
   resolver ficha por ficha el ítem 2 de la sección 3.
+- **B26 (Parotiditis), bugs que perdían datos:**
+  - El formulario repetía las tarjetas "Lugar probable de infección" y
+    "Antecedentes de vacunación": 11 `campo_def` creados el 10/08 nunca se
+    sumaron a la lista de claves que pintan los partials de B26, y el input
+    genérico vacío (mismo `name`, más abajo) pisaba lo escrito arriba: se
+    perdían dirección, ubigeo y localidad del lugar de infección, fecha de
+    contacto con gestante, dosis, fecha y EE.SS. de la vacuna SPR y
+    observaciones.
+  - La fecha de inicio de síntomas salía dos veces; con la de "Cuadro
+    clínico" sola no se registraba. Queda solo esa, y en "editar" ya trae la
+    guardada (antes salía vacía).
+  - Los radios Sí/No mandan `SI` y el servidor solo aceptaba `1` para un
+    BOOLEANO: parótidas, hospitalización y vacunación SPR se guardaban "No"
+    aunque se marcara Sí. El servidor ahora acepta `SI`.
+  - 15 campos declaran `depende_de` (sus bloques se ocultaban solo en el
+    navegador) y "¿Tuvo contacto con gestante?" es SELECT Sí/No/Ignorado (el
+    BOOLEANO perdía "Ignorado").
+  - El input de fecha de B26, que se pinta oculto en todas las fichas, va
+    deshabilitado fuera de B26. Recorrido de las 24 fichas: sin `name`
+    repetidos que lleguen al servidor (los de O95 son a propósito o de otra
+    ficha).
+- **"Ver" con `campos_notificacion`:** esos campos se leen en la tarjeta
+  "Notificación", como en el formulario (Z21 ya no muestra "Registro" aparte;
+  en A80 las fechas de notificación pasan a esa tarjeta).
 - **"Ver" sin campos que no aplican:** los campos sueltos con `depende_de` o
   con una regla `mostrar` que no se cumple ya no salen con "—" (24 fichas;
   helper `camposOcultosDelCaso()`, mismas reglas que al guardar). Un dato
@@ -214,10 +243,9 @@ No tocar sin una respuesta explícita.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
-- **"Ver":**
-  - No aplica `campos_notificacion` (Z21 muestra "Tipo de registro" en una
-    tarjeta aparte).
-  - Por verificar si `b26_contactos_por_lugar` se lee bien o sale como JSON.
+- **"Ver":** `b26_contactos_por_lugar` (y los de B01 y A37.0) no sale como
+  JSON pero solo dice "Registrado (n ítems)"; el código lo dejó así a
+  propósito para no cambiar fichas revisadas. Decidir si se muestra cada fila.
 - **Reportes:** el orden y las columnas por clasificación solo conocen las 4
   genéricas; el filtro del listado de fichas también.
 - **Padrón RENIPRESS:** revisar categorías dudosas (Centro de Salud Mental
