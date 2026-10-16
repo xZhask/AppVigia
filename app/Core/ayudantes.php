@@ -1305,6 +1305,21 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             $decodSiNo = json_decode($valorCrudo, true);
             $marcado = is_array($decodSiNo) ? ($decodSiNo['marcado'] ?? '') : '';
             return ['SI' => 'Sí', 'NO' => 'No', 'IGNORADO' => 'Ignorado'][$marcado] ?? '—';
+        case 'SI_NO_FECHA':
+            // {"marcado": SI|NO|IGNORADO, "fecha": AAAA-MM-DD, "especificar": texto}
+            // (partials/campos/si-no-fecha.php): "Sí · 08/10/2026 · texto".
+            // Antes caía al final y "ver" mostraba el JSON (2026-10-16).
+            $decodSiNoFecha = json_decode($valorCrudo, true);
+            if (!is_array($decodSiNoFecha)) {
+                return $valorCrudo;
+            }
+            $marcado = (string) ($decodSiNoFecha['marcado'] ?? '');
+            $partes = [['SI' => 'Sí', 'NO' => 'No', 'IGNORADO' => 'Ignorado'][$marcado] ?? ''];
+            if ($marcado === 'SI') {
+                $partes[] = fechaIsoADmy((string) ($decodSiNoFecha['fecha'] ?? ''));
+                $partes[] = trim((string) ($decodSiNoFecha['especificar'] ?? ''));
+            }
+            return implode(' · ', array_filter($partes, fn($parte) => $parte !== '')) ?: '—';
         case 'FECHA':
             if (!empty((json_decode((string) ($campo['config'] ?? ''), true) ?: [])['con_hora'])) {
                 $fechaHora = fechaHoraIsoValida($valorCrudo);
