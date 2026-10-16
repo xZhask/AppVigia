@@ -378,6 +378,15 @@ class CasosController extends Controller
         $sinFechaInicioSintomasObligatoria = $fechaInicioSintomasOmitida
             || in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
         $fechaInicioSintomas = $fechaInicioSintomasOmitida ? '' : trim($_POST['fecha_inicio_sintomas'] ?? '');
+        // nucleo_ajustes.fecha_inicio_sintomas_desde (O95, 2026-10-15): la
+        // ficha no pinta la fecha genérica y declara cuál de sus campos FECHA
+        // la da (en O95, la fecha de fallecimiento). Lo exige ese campo, no
+        // el núcleo: no hay error propio aunque llegue vacío o inválido.
+        $fechaInicioSintomasDesde = $this->fechaInicioSintomasDesdeCampo($enfermedad);
+        if ($fechaInicioSintomasDesde !== null) {
+            $sinFechaInicioSintomasObligatoria = true;
+            $fechaInicioSintomas = $fechaInicioSintomasDesde;
+        }
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
@@ -1063,6 +1072,15 @@ class CasosController extends Controller
         $sinFechaInicioSintomasObligatoria = $fechaInicioSintomasOmitida
             || in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
         $fechaInicioSintomas = $fechaInicioSintomasOmitida ? '' : trim($_POST['fecha_inicio_sintomas'] ?? '');
+        // nucleo_ajustes.fecha_inicio_sintomas_desde (O95, 2026-10-15): la
+        // ficha no pinta la fecha genérica y declara cuál de sus campos FECHA
+        // la da (en O95, la fecha de fallecimiento). Lo exige ese campo, no
+        // el núcleo: no hay error propio aunque llegue vacío o inválido.
+        $fechaInicioSintomasDesde = $this->fechaInicioSintomasDesdeCampo($enfermedad);
+        if ($fechaInicioSintomasDesde !== null) {
+            $sinFechaInicioSintomasObligatoria = true;
+            $fechaInicioSintomas = $fechaInicioSintomasDesde;
+        }
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
@@ -4174,6 +4192,28 @@ class CasosController extends Controller
             }
         }
         return '';
+    }
+
+    /**
+     * Fecha (AAAA-MM-DD) del campo FECHA que declara
+     * nucleo_ajustes.fecha_inicio_sintomas_desde, tal como llega en el POST;
+     * '' si viene vacío o no es una fecha válida (el error lo da el campo), y
+     * null si la ficha no lo declara.
+     */
+    private function fechaInicioSintomasDesdeCampo(array $enfermedad): ?string
+    {
+        $clave = nucleoAjuste($enfermedad, 'fecha_inicio_sintomas_desde');
+        if (!is_string($clave) || $clave === '') {
+            return null;
+        }
+        $campo = CampoDef::porClave((int) $enfermedad['id'], $clave);
+        if (!$campo) {
+            return '';
+        }
+        $valor = trim((string) ($_POST['campo_' . $campo['id']] ?? ''));
+        $fechaHora = fechaHoraIsoValida($valor);
+
+        return $fechaHora !== null ? substr($fechaHora, 0, 10) : (fechaIsoValida($valor) ?? '');
     }
 
     private function extraerFechaInicioSintomas(int $enfermedadId): string

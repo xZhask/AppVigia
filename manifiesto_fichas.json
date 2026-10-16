@@ -13335,6 +13335,10 @@
       "nucleo_incluidos": [
         "n_historia_clinica"
       ],
+      "nucleo_ajustes": {
+        "_nota": "O95 no pinta la fecha de inicio de síntomas genérica: caso.fecha_inicio_sintomas (semana epidemiológica, reportes) sale de la fecha de fallecimiento.",
+        "fecha_inicio_sintomas_desde": "o95_fecha_de_fallecimiento"
+      },
       "reglas_campos": [
         {
           "_nota": "Categoría del EE.SS. (Anexo 2): solo si falleció en un EE.SS. que no es de Sanidad FFAA/PNP (con Sanidad sale de la IPRESS). Si el lugar no es un EE.SS., el tipo queda oculto y vacío.",
@@ -13637,6 +13641,7 @@
               "clave": "o95_fecha_de_fallecimiento",
               "etiqueta": "Fecha de fallecimiento",
               "tipo": "FECHA",
+              "obligatorio": true,
               "orden": 15,
               "requerido": false,
               "sensible": false

@@ -134,9 +134,10 @@ if ($provSelFall) {
   <div class="fields halves" style="margin-bottom:14px;">
     <div class="field">
       <label class="fl">Fecha de fallecimiento <span class="req">*</span></label>
-      <div class="control mono">
+      <div class="control mono <?= $campoFechaFallecimiento['err'] ? 'err' : '' ?>">
         <input type="date" name="<?= $campoFechaFallecimiento['name'] ?>" value="<?= e($campoFechaFallecimiento['val']) ?>" max="<?= date('Y-m-d') ?>">
       </div>
+      <?php if ($campoFechaFallecimiento['err']): ?><span class="hint err"><?= e($campoFechaFallecimiento['err']) ?></span><?php endif; ?>
     </div>
     <div class="field">
       <label class="fl">Hora de fallecimiento (HH:MM) <span class="req">*</span></label>

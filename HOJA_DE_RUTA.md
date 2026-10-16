@@ -75,6 +75,7 @@ php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
 php sql/migraciones/set_o95_condiciones_lugar_referencia.php
+php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -94,6 +95,10 @@ php sql/migraciones/set_o95_condiciones_lugar_referencia.php
   `reglas_campos` de "Datos del fallecimiento" y "Referencia" (ver sección 2),
   los fija en los `campo_def` existentes y borra en los casos guardados los
   valores que ya no corresponden. Se puede correr más de una vez.
+- `set_o95_fecha_inicio_desde_fallecimiento.php` (15/10): mismo motivo; fija
+  `nucleo_ajustes.fecha_inicio_sintomas_desde`, vuelve obligatoria la fecha de
+  fallecimiento y copia esa fecha a `caso.fecha_inicio_sintomas` en los casos
+  guardados. Se puede correr más de una vez.
 - El cargador va **sin** `--cie10`: el 15/10 cambió `tablas_hijas` en las 24
   fichas. Si una ficha sale "bloqueada por datos capturados", igual recibe sus
   tablas hijas (el cargador las aplica aparte); el resto de esa ficha queda
@@ -160,6 +165,13 @@ php sql/migraciones/set_o95_condiciones_lugar_referencia.php
   - Verificado con Playwright: 6 escenarios al registrar (positivos por la
     interfaz y POST forjados), editar (Anexo 2 → Domicilio y No referida
     borra los datos), "ver" y "editar"; la migración con datos sembrados.
+- **O95, fecha de inicio de síntomas:** la ficha no la pinta pero el
+  servidor la exigía (la tomaba del primer FECHA lleno; sin ninguno, no se
+  registraba y el aviso pedía un campo que no está en pantalla). Ajuste nuevo
+  `nucleo_ajustes.fecha_inicio_sintomas_desde`: `caso.fecha_inicio_sintomas`
+  sale de la fecha de fallecimiento, ahora obligatoria y con su error en
+  pantalla. Lo que llegue en el POST para la genérica se ignora. Sirve para
+  resolver ficha por ficha el ítem 2 de la sección 3.
 - **B01:** un registro por tipo de muestra. Revisadas las demás candidatas:
   repiten tipo a propósito y no lo llevan.
 - **Motor nuevo:** `indicacion` de campo (nota del papel antes del campo),
@@ -182,10 +194,9 @@ No tocar sin una respuesta explícita.
    - `caso.fecha_inicio_sintomas` queda vacía en 10 fichas que la piden con
      otro nombre (P35.0, A35, A37.0, B01, A97, B57, A95, B55, B04X, A00). Los
      reportes por fecha de síntomas no las ven.
-   - O95 no pinta la fecha de inicio de síntomas pero la exige: el servidor
-     la toma del primer FECHA lleno (fecha de fallecimiento, en la práctica).
-     Sin ninguna fecha, la ficha no se registra y el aviso pide un campo que
-     no está en pantalla.
+   - Ya existe la forma declarativa: `nucleo_ajustes.fecha_inicio_sintomas_desde`
+     (estrenada en O95 con la fecha de fallecimiento). Falta decidir el campo
+     de cada una de las 10 fichas.
    - `fecha_notif` se pide aparte aunque la ficha tenga su cadena de fechas
      de notificación (`PENDIENTES.md` ítem 5).
    - Propuesta posible: declarar por ficha qué campo es la fecha canónica.

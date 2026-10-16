@@ -228,6 +228,10 @@ const NUCLEO_AJUSTES_VALIDOS = [
     // del paciente, si está vacío (el lesionado que es el conductor). Solo
     // del lado del navegador; se guarda lo que quede escrito.
     'copiar_a_sujeto'      => 'copiar_a_sujeto',
+    // O95, 2026-10-15: clave de un FECHA de la ficha que da
+    // caso.fecha_inicio_sintomas cuando la ficha no pinta la genérica (la
+    // fecha de fallecimiento). Ese campo debe ser obligatorio.
+    'fecha_inicio_sintomas_desde' => 'clave_fecha',
 ];
 
 // Campos del núcleo cuya etiqueta una ficha puede cambiar con
@@ -869,6 +873,19 @@ function validarManifiesto(array $manifiesto): void
                 }
                 if ($tipoAjuste === 'bool' && $valorAjuste !== true) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} solo admite true (para no activarlo, no se declara).");
+                }
+                if ($tipoAjuste === 'clave_fecha') {
+                    if (!is_string($valorAjuste) || ($tiposPorClaveFicha[$valorAjuste] ?? null) !== 'FECHA') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser la clave de un campo FECHA de esta ficha.");
+                    }
+                    foreach ($ficha['secciones'] as $seccionFis) {
+                        foreach ($seccionFis['campos'] as $campoFis) {
+                            if (($campoFis['clave'] ?? null) === $valorAjuste
+                                && (empty($campoFis['obligatorio']) || !empty($campoFis['depende_de']) || !empty($seccionFis['depende_de']))) {
+                                throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}: \"{$valorAjuste}\" debe ser obligatorio y estar siempre visible (sin depende_de).");
+                            }
+                        }
+                    }
                 }
                 if ($tipoAjuste === 'texto' && (!is_string($valorAjuste) || trim($valorAjuste) === '')) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser un texto no vacío.");
