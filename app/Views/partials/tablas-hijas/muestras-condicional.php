@@ -4,13 +4,14 @@
  * PETICION_HC_Y_LABORATORIO.md Parte 2, ítem 43 de P35.0): un SEGUNDO
  * conjunto de filas de la misma tabla (hoy solo caso_muestra), separado del
  * bloque principal por la columna `contexto`, visible solo cuando la
- * Clasificación del caso (núcleo) toma uno de sus "valores_activadores".
+ * Clasificación del caso (núcleo) o el campo de la ficha que declare en
+ * depende_de (P35.0, 2026-10-16) toma uno de sus "valores_activadores".
  *
  * Variables esperadas: $bloqueMuestra (['tabla','contexto','titulo',
  * 'columnas','depende_de','valores_activadores'] -- una entrada de
  * bloques_condicionales), $filasBloque (filas ya filtradas a este
- * contexto), $erroresBloque, $clasificacionActualBloque (valor actual de
- * "clasificacion" para computar la visibilidad inicial en servidor),
+ * contexto), $erroresBloque, $clasificacionActualBloque (valor actual del
+ * disparador, para computar la visibilidad inicial en servidor),
  * $opcionesResultado, $opcionesTipoMuestra (catalogo_item, reutilizados de
  * datosMuestrasCatalogo() si el bloque declara "resultado"/"tipo_muestra").
  */
@@ -72,7 +73,7 @@ $filaBloque = function (array $fila = ['tipo_muestra' => 'HNF_FAR', 'fecha_toma'
   </div>
 <?php };
 ?>
-<div class="card section dep-wrap bloque-condicional-muestra" data-contexto="<?= e($contexto) ?>" data-depende-de="<?= e($bloqueMuestra['depende_de']) ?>" data-valor-activador="<?= e(implode(',', $bloqueMuestra['valores_activadores'])) ?>" <?= $visible ? '' : 'hidden' ?>>
+<div class="card section dep-wrap bloque-condicional-muestra" data-contexto="<?= e($contexto) ?>" data-depende-de="<?= e($bloqueMuestra['nombre_padre'] ?? $bloqueMuestra['depende_de']) ?>" data-valor-activador="<?= e(implode(',', $bloqueMuestra['valores_activadores'])) ?>" <?= $visible ? '' : 'hidden' ?>>
   <div class="section-head">
     <?php if (isset($numeroSeccion)): ?><span class="section-num"><?= $numeroSeccion ?></span><?php endif; ?>
     <h3><?= e($bloqueMuestra['titulo']) ?></h3>

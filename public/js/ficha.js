@@ -674,43 +674,9 @@ document.addEventListener('DOMContentLoaded', function () {
   sincronizarDescartadoPfa();
   document.addEventListener('change', sincronizarDescartadoPfa);
 
-  // ---------- P35.0: "Clasificación del caso" propio -> "clasificacion" genérico ----------
-  // Mismo patrón que sincronizarDescartadoPfa() (A80) arriba: P35.0 tiene su
-  // propio campo "Clasificación del caso" (Sospechoso/Confirmado/Descartado/
-  // Infección congénita, ítem 7 del PDF) además del "clasificacion" genérico
-  // compartido por todas las fichas (paneles/reportes, y del que depende el
-  // bloque "Seguimiento de excreción viral" -- ítem 43, capacidad 6). Sin
-  // esto, marcar "Confirmado" en el campo propio de P35.0 no revela el
-  // bloque, porque este escucha al genérico, que sigue en su valor por
-  // defecto. Los 3 valores con equivalente directo se sincronizan tal cual;
-  // "Infección congénita" (sin equivalente en el genérico) y vacío caen a
-  // "Sospechoso" -- así el genérico nunca queda pegado en "Confirmado" tras
-  // pasar por Confirmado y luego cambiar a otra cosa (el ítem 43 exige
-  // "Confirmado" estricto, no debe seguir activo con ningún otro valor).
-  function sincronizarClasificacionP350() {
-    var tagCie = document.getElementById('cieTag');
-    var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('P35.0') === -1) return;
-
-    var selectPropio = document.querySelector('[name="' + campoPorClave('p35_0_clasificacion_del_caso') + '"]');
-    if (!selectPropio) return;
-
-    var EQUIVALENTES_CLASIFICACION_P350 = { SOSPECHOSO: 'SOSPECHOSO', CONFIRMADO: 'CONFIRMADO', DESCARTADO: 'DESCARTADO' };
-    var valorGenerico = EQUIVALENTES_CLASIFICACION_P350[selectPropio.value] || 'SOSPECHOSO';
-
-    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + valorGenerico + '"]');
-    if (radioGenerico && !radioGenerico.checked) {
-      radioGenerico.checked = true;
-      evaluarDependencias();
-    }
-  }
-
-  sincronizarClasificacionP350();
-  document.addEventListener('change', function (e) {
-    if (e.target && e.target.name === campoPorClave('p35_0_clasificacion_del_caso')) {
-      sincronizarClasificacionP350();
-    }
-  });
+  // P35.0 (2026-10-16): su "Clasificación del caso" propia ya no se copia a
+  // un chip genérico: el chip no se pinta (nucleo_omitidos) y el servidor
+  // calcula caso.clasificacion con reglas_campos "clasificar".
 
   // ---------- A35: "Diagnóstico definitivo" propio -> "clasificacion" genérico ----------
   // Mismo patrón que sincronizarClasificacionP350() arriba: A35 tiene su

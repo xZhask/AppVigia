@@ -827,8 +827,11 @@ function validarManifiesto(array $manifiesto): void
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].columnas incluye \"{$col}\", que no es una columna configurable de {$tabla}.");
                     }
                 }
-                if (($bloque['depende_de'] ?? null) !== 'clasificacion') {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].depende_de debe ser \"clasificacion\" (único disparador implementado hoy: el núcleo, no un campo_def).");
+                // "clasificacion" (el chip del núcleo) o, desde el 2026-10-16,
+                // la clave de un SELECT de la ficha (P35.0 ya no pinta el chip).
+                $dependeBloque = $bloque['depende_de'] ?? null;
+                if ($dependeBloque !== 'clasificacion' && ($tiposPorClaveFicha[(string) $dependeBloque] ?? null) !== 'SELECT') {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / bloques_condicionales[{$i}].depende_de debe ser \"clasificacion\" o la clave de un SELECT de esta ficha.");
                 }
                 $valoresActivadores = $bloque['valores_activadores'] ?? null;
                 if (!is_array($valoresActivadores) || empty($valoresActivadores) || !array_is_list($valoresActivadores)) {

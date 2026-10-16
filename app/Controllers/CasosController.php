@@ -2915,9 +2915,12 @@ class CasosController extends Controller
     /**
      * Capacidad 6 (PETICION_HC_Y_LABORATORIO.md, Parte 2, ítem 43 de
      * P35.0): bloques adicionales de una tabla hija, visibles solo cuando
-     * la Clasificación del caso (núcleo) toma uno de sus
-     * "valores_activadores". Ausente = [] (ninguna ficha declara ninguno
-     * salvo P35.0), mismo criterio "opt-in" que columnas_tablas_hija.
+     * su "depende_de" toma uno de sus "valores_activadores". Ausente = []
+     * (ninguna ficha declara ninguno salvo P35.0), mismo criterio "opt-in"
+     * que columnas_tablas_hija. depende_de es "clasificacion" (el chip del
+     * núcleo) o, desde el 2026-10-16, la clave de un campo de la ficha (P35.0,
+     * que ya no pinta el chip): se agregan 'nombre_padre' (el name del
+     * disparador en el formulario) y 'campo_padre_id' (null con el chip).
      */
     private function resolverBloquesCondicionales(array $enfermedad, string $tabla): array
     {
@@ -2929,7 +2932,17 @@ class CasosController extends Controller
         if (!is_array($decodificado)) {
             return [];
         }
-        return array_values(array_filter($decodificado, fn($b) => ($b['tabla'] ?? null) === $tabla));
+        $bloques = array_values(array_filter($decodificado, fn($b) => ($b['tabla'] ?? null) === $tabla));
+        foreach ($bloques as &$bloque) {
+            $campoPadre = ($bloque['depende_de'] ?? 'clasificacion') !== 'clasificacion'
+                ? CampoDef::porClave((int) ($enfermedad['id'] ?? 0), (string) $bloque['depende_de'])
+                : null;
+            $bloque['campo_padre_id'] = $campoPadre ? (int) $campoPadre['id'] : null;
+            $bloque['nombre_padre'] = $campoPadre ? 'campo_' . $campoPadre['id'] : 'clasificacion';
+        }
+        unset($bloque);
+
+        return $bloques;
     }
 
     /**
@@ -3698,6 +3711,13 @@ class CasosController extends Controller
         // solo reemplazo por caso) sin mezclarlos al re-renderizar
         // (separarFilasMuestrasPorContexto() los separa de vuelta).
         foreach ($this->resolverBloquesCondicionales($enfermedad ?? [], 'caso_muestra') as $bloque) {
+            // Disparador en un campo de la ficha (2026-10-16): sin su valor
+            // activador las filas no se guardan, aunque viajen en el POST
+            // (el bloque solo se oculta en el navegador).
+            if ($bloque['campo_padre_id'] !== null
+                && !in_array(trim((string) ($_POST[$bloque['nombre_padre']] ?? '')), $bloque['valores_activadores'], true)) {
+                continue;
+            }
             $contexto = $bloque['contexto'];
             $columnasBloque = $bloque['columnas'];
             $arraysPost = [];

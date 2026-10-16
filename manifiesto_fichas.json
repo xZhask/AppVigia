@@ -11397,7 +11397,7 @@
             "fecha_result",
             "resultado"
           ],
-          "depende_de": "clasificacion",
+          "depende_de": "p35_0_clasificacion_del_caso",
           "valores_activadores": [
             "CONFIRMADO"
           ]
@@ -11407,7 +11407,8 @@
         "gestante",
         "celular",
         "nombre_tutor",
-        "ocupacion"
+        "ocupacion",
+        "clasificacion"
       ],
       "nucleo_incluidos": [
         "n_historia_clinica"
@@ -11439,6 +11440,39 @@
       "titulo_sujeto": {
         "MADRE": "Datos de la madre"
       },
+      "reglas_campos": [
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos): caso.clasificacion sale de la clasificación propia. Infección congénita por rubéola no tiene equivalente en las 4 genéricas y queda en Sospechoso, como hacía ficha.js antes del 2026-10-16.",
+          "si": {
+            "clave": "p35_0_clasificacion_del_caso",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "p35_0_clasificacion_del_caso",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "_nota": "Sospechoso, Infección congénita o sin elegir. Explícito para que al editar y vaciarla no quede la clasificación anterior.",
+          "si": {
+            "clave": "p35_0_clasificacion_del_caso",
+            "valores": [
+              "SOSPECHOSO",
+              "INFECCION_CONGENITA",
+              ""
+            ]
+          },
+          "clasificar": "SOSPECHOSO"
+        }
+      ],
       "secciones": [
         {
           "nombre": "Datos de notificación e investigación del caso",

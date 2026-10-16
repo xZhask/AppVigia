@@ -417,7 +417,9 @@ if ($isB01) require __DIR__ . '/../partials/observaciones-b01.php';
 foreach (($bloquesCondicionalesMuestra ?? []) as $bloqueMuestra):
     $filasBloque = $filasBloquesMuestra[$bloqueMuestra['contexto']] ?? [];
     $erroresBloque = [];
-    $clasificacionActualBloque = $caso['clasificacion'];
+    $clasificacionActualBloque = $bloqueMuestra['campo_padre_id'] !== null
+        ? (string) ($valoresCampos[$bloqueMuestra['campo_padre_id']] ?? '')
+        : $caso['clasificacion'];
     require __DIR__ . '/../partials/tablas-hijas/muestras-condicional.php';
     $numeroSeccion++;
 endforeach;

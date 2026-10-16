@@ -531,7 +531,9 @@ if ($isB01) require __DIR__ . '/../partials/observaciones-b01.php';
 foreach (($bloquesCondicionalesMuestra ?? []) as $bloqueMuestra):
     $filasBloque = $filasBloquesMuestra[$bloqueMuestra['contexto']] ?? [];
     $erroresBloque = [];
-    $clasificacionActualBloque = $clasificacionActual ?? opcionesClasificacionPara($enfermedad)[0];
+    $clasificacionActualBloque = $bloqueMuestra['campo_padre_id'] !== null
+        ? (string) ($valoresCampos[$bloqueMuestra['campo_padre_id']] ?? '')
+        : ($clasificacionActual ?? opcionesClasificacionPara($enfermedad)[0]);
     require __DIR__ . '/../partials/tablas-hijas/muestras-condicional.php';
     $numeroSeccion++;
 endforeach;
