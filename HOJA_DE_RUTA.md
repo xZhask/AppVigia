@@ -307,8 +307,13 @@ No tocar sin una respuesta explícita.
    - El tipo de vía sigue en texto libre (los códigos de A00 son un atajo del
      papel). "Ver" muestra el tipo de zona y el de asentamiento solo si la
      ficha los pide (la persona es compartida).
-4. **Z21:** si Aborto y Mortinato tienen ficha propia; hoy `caso.clasificacion`
-   de Z21 queda en SOSPECHOSO por defecto.
+4. **Z21 — ya estaba resuelta (13/09; la hoja la arrastraba).** Aborto y
+   Mortinato no son fichas propias: son la clasificación calculada de la ficha
+   de la gestante (reglas `clasificar`, 4 categorías del registro de búsqueda
+   activa de la pág. 15: Gestante con VIH, Aborto, Mortinato, Niño nacido
+   expuesto al VIH). Sospechoso no es una opción de Z21 y "Tipo de registro"
+   es obligatorio, así que todo caso queda clasificado. El cuadro está en
+   Reportes ("Registro de Búsqueda Activa"). Comprobado de nuevo el 16/10.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
