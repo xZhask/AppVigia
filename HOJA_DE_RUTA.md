@@ -78,6 +78,7 @@ php sql/migraciones/set_o95_condiciones_lugar_referencia.php
 php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
 php sql/migraciones/set_b26_condiciones.php
 php sql/migraciones/set_p350_clasificacion_propia.php
+php sql/migraciones/set_clasificacion_propia.php A35 A33 B57
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -108,6 +109,10 @@ php sql/migraciones/set_p350_clasificacion_propia.php
 - `set_p350_clasificacion_propia.php` (16/10): mismo motivo para P35.0; copia
   del manifiesto `nucleo_omitidos`, `reglas_campos` y `bloques_condicionales`
   y recalcula `caso.clasificacion`. Se puede correr más de una vez.
+- `set_clasificacion_propia.php <fichas>` (16/10): lo mismo, genérico, para
+  las fichas que se van pasando a clasificación única (hoy A35, A33, B57):
+  copia `nucleo_omitidos`, `reglas_campos` y la obligatoriedad de sus campos,
+  y recalcula `caso.clasificacion`. Al sumar una ficha, agregarla a la línea.
 - El cargador va **sin** `--cie10`: el 15/10 cambió `tablas_hijas` en las 24
   fichas. Si una ficha sale "bloqueada por datos capturados", igual recibe sus
   tablas hijas (el cargador las aplica aparte); el resto de esa ficha queda
@@ -224,9 +229,11 @@ php sql/migraciones/set_p350_clasificacion_propia.php
 
 No tocar sin una respuesta explícita.
 
-1. **Clasificación duplicada en 10 fichas.** Muestran el chip genérico
-   "Clasificación del caso" y además su propio campo: A97, A95, B57, B04X, A00,
-   A35, A33, A80, B05, O95. En A37.0 (14/10) y P35.0 (16/10) se resolvió
+1. **Clasificación duplicada en 7 fichas.** Muestran el chip genérico
+   "Clasificación del caso" y además su propio campo: A97, A95, B04X, A00,
+   A80, B05, O95. Resueltas: A37.0 (14/10), P35.0, A35, A33 y B57 (16/10; en
+   las tres últimas el campo propio pasó a obligatorio, porque el chip exigía
+   elegir Confirmado o Descartado). Se resolvió
    ocultando el chip y calculando `caso.clasificacion` desde el campo propio
    (reglas `clasificar`); el usuario aprobó ir ficha por ficha. En P35.0,
    "Infección congénita" queda en Sospechoso (como ya hacía ficha.js) y el

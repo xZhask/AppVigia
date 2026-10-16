@@ -678,111 +678,17 @@ document.addEventListener('DOMContentLoaded', function () {
   // un chip genérico: el chip no se pinta (nucleo_omitidos) y el servidor
   // calcula caso.clasificacion con reglas_campos "clasificar".
 
-  // ---------- A35: "Diagnóstico definitivo" propio -> "clasificacion" genérico ----------
-  // Mismo patrón que sincronizarClasificacionP350() arriba: A35 tiene su
-  // propio campo "Diagnóstico definitivo" (Confirmado/Descartado, sección
-  // "III. Diagnóstico definitivo" del PDF) además del "clasificacion"
-  // genérico compartido (chips al final del formulario). Sin esto, elegir
-  // Confirmado/Descartado en el campo propio no movía el chip inferior.
-  // A diferencia de P35.0/A80, acá NO hace falta un valor de respaldo para
-  // cuando el campo propio está vacío: enfermedad.opciones_clasificacion ya
-  // restringe los chips genéricos de A35 a solo Confirmado/Descartado
-  // (mismo mecanismo que Difteria, ver PENDIENTES.md A35.14) -- "Sospechoso"
-  // y "Probable" ni siquiera existen en el DOM para esta ficha, así que no
-  // hay combinación posible que discrepe con el campo propio.
-  function sincronizarDiagnosticoDefinitivoA35() {
-    var tagCie = document.getElementById('cieTag');
-    var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('A35') === -1) return;
+  // A35 (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
-    var selectPropio = document.querySelector('[name="' + campoPorClave('a35_diagnostico_definitivo') + '"]');
-    if (!selectPropio || !selectPropio.value) return;
+  // B57 (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
-    var EQUIVALENTES_DIAGNOSTICO_A35 = { CONFIRMADO: 'CONFIRMADO', DESCARTADO: 'DESCARTADO' };
-    var valorGenerico = EQUIVALENTES_DIAGNOSTICO_A35[selectPropio.value];
-    if (!valorGenerico) return;
-
-    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + valorGenerico + '"]');
-    if (radioGenerico && !radioGenerico.checked) {
-      radioGenerico.checked = true;
-      evaluarDependencias();
-    }
-  }
-
-  sincronizarDiagnosticoDefinitivoA35();
-  document.addEventListener('change', function (e) {
-    if (e.target && e.target.name === campoPorClave('a35_diagnostico_definitivo')) {
-      sincronizarDiagnosticoDefinitivoA35();
-    }
-  });
-
-  // ---------- B57: "Clasificación final" propio -> "clasificacion" genérico ----------
-  // Mismo patrón que sincronizarDiagnosticoDefinitivoA35() arriba: B57 tiene
-  // su propio SELECT "Clasificación final" (Confirmado/Descartado, "VII.
-  // Clasificación final" del PDF) además del "clasificacion" genérico
-  // compartido (chips al final del formulario, cotejo 2026-08-22, 2.ª
-  // revisión: reestructurado de 6 opciones combinadas -forma x resultado- a
-  // Confirmado/Descartado + "Tipo de Chagas" en cascada, así que ahora los
-  // códigos son literalmente CONFIRMADO/DESCARTADO, iguales al genérico, sin
-  // tabla de equivalencias). enfermedad.opciones_clasificacion ya restringe
-  // esos chips a solo Confirmado/Descartado
-  // (sql/migraciones/set_opciones_clasificacion_b57.php, mismo mecanismo que
-  // A35/Difteria) -- igual que A35, no hace falta un valor de respaldo para
-  // cuando el campo propio está vacío.
-  function sincronizarClasificacionB57() {
-    var tagCie = document.getElementById('cieTag');
-    var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('B57') === -1) return;
-
-    var selectPropio = document.querySelector('[name="' + campoPorClave('b57_clasificacion_final') + '"]');
-    if (!selectPropio || !selectPropio.value) return;
-
-    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + selectPropio.value + '"]');
-    if (radioGenerico && !radioGenerico.checked) {
-      radioGenerico.checked = true;
-      evaluarDependencias();
-    }
-  }
-
-  sincronizarClasificacionB57();
-  document.addEventListener('change', function (e) {
-    if (e.target && e.target.name === campoPorClave('b57_clasificacion_final')) {
-      sincronizarClasificacionB57();
-    }
-  });
-
-  // ---------- A33: "Diagnóstico definitivo" propio -> "clasificacion" genérico ----------
-  // Mismo patrón que sincronizarDiagnosticoDefinitivoA35() arriba (A33.8): A33
-  // (Tétanos neonatal) tiene su propio campo "Diagnóstico definitivo"
-  // (Confirmado/Descartado, idéntico en forma al de A35) además del
-  // "clasificacion" genérico. enfermedad.opciones_clasificacion también se
-  // restringió a 'CONFIRMADO,DESCARTADO' para A33, así que tampoco hace
-  // falta valor de respaldo: Sospechoso/Probable no existen en el DOM.
-  function sincronizarDiagnosticoDefinitivoA33() {
-    var tagCie = document.getElementById('cieTag');
-    var cieText = tagCie ? tagCie.textContent : '';
-    if (cieText.indexOf('A33') === -1) return;
-
-    var selectPropio = document.querySelector('[name="' + campoPorClave('a33_diagnostico_definitivo') + '"]');
-    if (!selectPropio || !selectPropio.value) return;
-
-    var EQUIVALENTES_DIAGNOSTICO_A33 = { CONFIRMADO: 'CONFIRMADO', DESCARTADO: 'DESCARTADO' };
-    var valorGenerico = EQUIVALENTES_DIAGNOSTICO_A33[selectPropio.value];
-    if (!valorGenerico) return;
-
-    var radioGenerico = document.querySelector('input[name="clasificacion"][value="' + valorGenerico + '"]');
-    if (radioGenerico && !radioGenerico.checked) {
-      radioGenerico.checked = true;
-      evaluarDependencias();
-    }
-  }
-
-  sincronizarDiagnosticoDefinitivoA33();
-  document.addEventListener('change', function (e) {
-    if (e.target && e.target.name === campoPorClave('a33_diagnostico_definitivo')) {
-      sincronizarDiagnosticoDefinitivoA33();
-    }
-  });
+  // A33 (2026-10-16): su clasificación propia ya no se copia a un chip
+  // genérico: el chip no se pinta (nucleo_omitidos) y el servidor calcula
+  // caso.clasificacion con reglas_campos "clasificar".
 
   // ---------- A97: "Clasificación" propia (3 variantes) -> "clasificacion" genérico ----------
   // A97 (Dengue/chikungunya/zika/arbovirosis/fiebre amarilla, pág. 49 del PDF)

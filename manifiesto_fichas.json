@@ -3222,7 +3222,8 @@
         "direccion",
         "nombre_tutor",
         "celular_tutor",
-        "gestante"
+        "gestante",
+        "clasificacion"
       ],
       "nucleo_incluidos": [
         "estado_civil"
@@ -3236,6 +3237,27 @@
         "MZ_LOTE"
       ],
       "migracion_reciente": true,
+      "reglas_campos": [
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, que pasa a ser obligatoria (el chip exigía elegir Confirmado o Descartado).",
+          "si": {
+            "clave": "b57_clasificacion_final",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "b57_clasificacion_final",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        }
+      ],
       "secciones": [
         {
           "nombre": "Fechas de notificación",
@@ -3740,6 +3762,7 @@
               "clave": "b57_clasificacion_final",
               "etiqueta": "Clasificación final",
               "tipo": "SELECT",
+              "obligatorio": true,
               "orden": 1,
               "opciones": [
                 "Confirmado",
@@ -6221,7 +6244,8 @@
         "nombre_tutor",
         "celular_tutor",
         "ocupacion",
-        "fecha_inicio_sintomas"
+        "fecha_inicio_sintomas",
+        "clasificacion"
       ],
       "nucleo_ajustes": {
         "_nota": "VI. Investigador de campo (cotejo 2026-10-12): nombre, cargo y teléfono. La 'Fecha' ya está en la cabecera (Fecha de investigación) y el 'Establecimiento' es el EESS notificante; profesión y email no los pide el PDF.",
@@ -6297,6 +6321,25 @@
           "mostrar": [
             "a35_dosis_5d"
           ]
+        },
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, que pasa a ser obligatoria (el chip exigía elegir Confirmado o Descartado).",
+          "si": {
+            "clave": "a35_diagnostico_definitivo",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a35_diagnostico_definitivo",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
         }
       ],
       "secciones": [
@@ -6623,6 +6666,7 @@
               "clave": "a35_diagnostico_definitivo",
               "etiqueta": "Diagnóstico definitivo",
               "tipo": "SELECT",
+              "obligatorio": true,
               "orden": 1,
               "opciones": [
                 "Confirmado",
@@ -6655,7 +6699,8 @@
         "direccion",
         "ocupacion",
         "nacionalidad",
-        "gestante"
+        "gestante",
+        "clasificacion"
       ],
       "nucleo_ajustes": {
         "_nota": "Cotejo 2026-10-08 (págs. 21-22): el paciente es un recién nacido de menos de 28 días. El PDF no pide documento de identidad (casi nunca lo tiene), nacionalidad ni gestante, y un neonato no puede ser efectivo PNP (titular).",
@@ -6667,11 +6712,13 @@
           "_nota": "Fallecido = Sí (ítem III) marca el caso como defunción (caso.fallecido).",
           "si": {
             "clave": "a33_fallecido",
-            "valores": ["SI"]
+            "valores": [
+              "SI"
+            ]
           },
           "fallecido": true
         },
-              {
+        {
           "_nota": "Regla de dosis (2026-10-14, pedido del usuario para A35/A33/A37.0): la fecha de la última dosis y dónde se vacunó solo se registra si hay al menos una dosis marcada.",
           "si": {
             "claves": [
@@ -6735,6 +6782,25 @@
           "mostrar": [
             "a33_dosis_5a"
           ]
+        },
+        {
+          "_nota": "El chip genérico no se pinta (nucleo_omitidos, 2026-10-16): caso.clasificacion sale de esta clasificación propia, que pasa a ser obligatoria (el chip exigía elegir Confirmado o Descartado).",
+          "si": {
+            "clave": "a33_diagnostico_definitivo",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "a33_diagnostico_definitivo",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
         }
       ],
       "secciones": [
@@ -7090,6 +7156,7 @@
               "clave": "a33_diagnostico_definitivo",
               "etiqueta": "Diagnóstico definitivo",
               "tipo": "SELECT",
+              "obligatorio": true,
               "orden": 1,
               "opciones": [
                 "Confirmado",
