@@ -1,12 +1,27 @@
 <?php
 use App\Models\Persona;
 
-$clasificaciones = [
-    'SOSPECHOSO' => ['dot' => 'dot-sos', 'etiqueta' => 'Sospechoso'],
-    'PROBABLE'   => ['dot' => 'dot-pro', 'etiqueta' => 'Probable'],
-    'CONFIRMADO' => ['dot' => 'dot-con', 'etiqueta' => 'Confirmado'],
-    'DESCARTADO' => ['dot' => 'dot-des', 'etiqueta' => 'Descartado'],
-];
+// Filtro de clasificación (2026-10-16): las de la enfermedad elegida o, sin
+// enfermedad, las de todas las fichas, en el orden del catálogo. Antes solo
+// ofrecía las 4 genéricas y no se podía filtrar Compatible, Directa, Aborto...
+$enfermedadFiltrada = null;
+foreach ($enfermedades as $enfermedadLista) {
+    if ((string) $enfermedadLista['id'] === (string) ($filtros['enfermedad_id'] ?? '')) {
+        $enfermedadFiltrada = $enfermedadLista;
+    }
+}
+$codigosFiltroClasificacion = $enfermedadFiltrada
+    ? clasificacionesParaMostrar($enfermedadFiltrada)
+    : clasificacionesParaMostrar(null, array_merge([], ...array_map('opcionesClasificacionPara', $enfermedades)));
+$clasificaciones = [];
+foreach ($codigosFiltroClasificacion as $codigoFiltro) {
+    $clasificaciones[$codigoFiltro] = datosClasificacion($codigoFiltro);
+}
+// Una clasificación elegida que no está en la lista (se cambió la
+// enfermedad) igual se muestra, para no filtrar a ciegas.
+if (($filtros['clasificacion'] ?? '') !== '' && !isset($clasificaciones[$filtros['clasificacion']])) {
+    $clasificaciones[$filtros['clasificacion']] = datosClasificacion((string) $filtros['clasificacion']);
+}
 $estados = [
     'ABIERTA'    => ['dot' => 'st-open',   'etiqueta' => 'Abierta'],
     'VALIDACION' => ['dot' => 'st-val',    'etiqueta' => 'Validación'],

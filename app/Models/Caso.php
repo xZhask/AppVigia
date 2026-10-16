@@ -447,16 +447,18 @@ class Caso extends Model
         $sql = "SELECT clasificacion, COUNT(*) AS total
                   FROM caso
                  WHERE $where
-              GROUP BY clasificacion
-              ORDER BY FIELD(clasificacion, 'SOSPECHOSO','PROBABLE','CONFIRMADO','DESCARTADO')";
+              GROUP BY clasificacion";
 
         $consulta = Database::conexion()->prepare($sql);
         $consulta->execute($parametros);
 
-        $filas = $consulta->fetchAll();
-        $porClasificacion = ['SOSPECHOSO' => 0, 'PROBABLE' => 0, 'CONFIRMADO' => 0, 'DESCARTADO' => 0];
-        foreach ($filas as $fila) {
-            $porClasificacion[$fila['clasificacion']] = (int) $fila['total'];
+        $totales = array_column($consulta->fetchAll(), 'total', 'clasificacion');
+        // Las de la enfermedad filtrada (o las 4 genéricas) aunque estén en
+        // 0, más las que traigan los datos, en el orden del catálogo.
+        $enfermedad = !empty($filtros['enfermedad_id']) ? Enfermedad::buscar((int) $filtros['enfermedad_id']) : null;
+        $porClasificacion = [];
+        foreach (clasificacionesParaMostrar($enfermedad ?: null, array_keys($totales)) as $codigo) {
+            $porClasificacion[$codigo] = (int) ($totales[$codigo] ?? 0);
         }
 
         return $porClasificacion;
@@ -480,12 +482,16 @@ class Caso extends Model
         $r = $filtros['rango_se'];
         $condiciones[] = self::condicionRangoSE($r['anio_desde'], $r['se_desde'], $r['anio_hasta'], $r['se_hasta'], $parametros);
 
-        $sumaClasificacion = "
-            SUM(CASE WHEN c.clasificacion = 'SOSPECHOSO' THEN 1 ELSE 0 END) AS sospechoso,
-            SUM(CASE WHEN c.clasificacion = 'PROBABLE'   THEN 1 ELSE 0 END) AS probable,
-            SUM(CASE WHEN c.clasificacion = 'CONFIRMADO' THEN 1 ELSE 0 END) AS confirmado,
-            SUM(CASE WHEN c.clasificacion = 'DESCARTADO' THEN 1 ELSE 0 END) AS descartado,
-            COUNT(*) AS total";
+        // Una suma por cada clasificación del catálogo (2026-10-16; antes solo
+        // las 4 genéricas): columnas cl_<CÓDIGO>, que abajo pasan a
+        // 'por_clasificacion'. Los códigos son de CATALOGO_CLASIFICACION, no
+        // de la petición.
+        $codigosCatalogo = array_keys(CATALOGO_CLASIFICACION);
+        $sumaClasificacion = implode(',', array_map(
+            fn(string $codigo) => "SUM(CASE WHEN c.clasificacion = '{$codigo}' THEN 1 ELSE 0 END) AS cl_{$codigo}",
+            $codigosCatalogo
+        )) . ', COUNT(*) AS total';
+        $ordenCatalogo = "'" . implode("','", $codigosCatalogo) . "'";
 
         switch ($agrupacion) {
             case 'red':
@@ -509,7 +515,7 @@ class Caso extends Model
                           FROM caso c
                          WHERE " . implode(' AND ', $condiciones) . "
                       GROUP BY c.clasificacion
-                      ORDER BY FIELD(c.clasificacion, 'SOSPECHOSO','PROBABLE','CONFIRMADO','DESCARTADO')";
+                      ORDER BY FIELD(c.clasificacion, $ordenCatalogo) = 0, FIELD(c.clasificacion, $ordenCatalogo), c.clasificacion";
                 break;
             case 'categoria_pnp':
                 $sql = "SELECT COALESCE(p.categoria_pnp, 'Sin categoría PNP') AS etiqueta, $sumaClasificacion
@@ -542,6 +548,34 @@ class Caso extends Model
         $consulta = Database::conexion()->prepare($sql);
         $consulta->execute($parametros);
 
-        return $consulta->fetchAll();
+        return array_map(function (array $fila) use ($codigosCatalogo): array {
+            $fila['por_clasificacion'] = [];
+            foreach ($codigosCatalogo as $codigo) {
+                $fila['por_clasificacion'][$codigo] = (int) $fila["cl_{$codigo}"];
+                unset($fila["cl_{$codigo}"]);
+            }
+            return $fila;
+        }, $consulta->fetchAll());
+    }
+
+    /**
+     * Columnas de clasificación de la tabla del reporte (2026-10-16): las de
+     * la enfermedad filtrada o las 4 genéricas, más las que traigan las filas.
+     *
+     * @return string[]
+     */
+    public static function columnasClasificacionReporte(?int $enfermedadId, array $filas): array
+    {
+        $presentes = [];
+        foreach ($filas as $fila) {
+            foreach ($fila['por_clasificacion'] as $codigo => $total) {
+                if ($total > 0) {
+                    $presentes[] = $codigo;
+                }
+            }
+        }
+        $enfermedad = $enfermedadId ? Enfermedad::buscar($enfermedadId) : null;
+
+        return clasificacionesParaMostrar($enfermedad ?: null, $presentes);
     }
 }

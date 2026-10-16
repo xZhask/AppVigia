@@ -368,6 +368,27 @@ function opcionesClasificacionPara(array $enfermedad): array
 }
 
 /**
+ * Clasificaciones que muestran el listado, el panel y los reportes
+ * (2026-10-16): las de la enfermedad filtrada (opcionesClasificacionPara()) o,
+ * sin filtro, las 4 genéricas; más cualquier otra que aparezca en los datos
+ * (O95, A00, Z21...). Siempre en el orden de CATALOGO_CLASIFICACION. Antes
+ * todo asumía las 4 genéricas y los casos con otra clasificación entraban en
+ * el total pero en ninguna columna.
+ *
+ * @param string[] $presentes códigos que traen los datos
+ * @return string[]
+ */
+function clasificacionesParaMostrar(?array $enfermedad, array $presentes = []): array
+{
+    $base = $enfermedad ? opcionesClasificacionPara($enfermedad) : ['SOSPECHOSO', 'PROBABLE', 'CONFIRMADO', 'DESCARTADO'];
+    $codigos = array_values(array_unique(array_merge($base, array_map('strval', $presentes))));
+    $orden = array_flip(array_keys(CATALOGO_CLASIFICACION));
+    usort($codigos, fn($a, $b) => ($orden[$a] ?? PHP_INT_MAX) <=> ($orden[$b] ?? PHP_INT_MAX) ?: strcmp($a, $b));
+
+    return $codigos;
+}
+
+/**
  * Una ficha "requiere elección explícita" de Clasificación del caso cuando
  * su primera opción permitida (opcionesClasificacionPara()[0]) ya es un
  * resultado definitivo tipo CONFIRMADO, en vez de un estado neutral tipo

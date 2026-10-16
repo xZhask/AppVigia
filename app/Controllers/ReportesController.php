@@ -42,6 +42,7 @@ class ReportesController extends Controller
             'etiquetaColumna' => self::ETIQUETAS_AGRUPACION[$agrupacion],
             'rangoSe'     => $rangoSe,
             'filas'       => $filas,
+            'columnasClasificacion' => Caso::columnasClasificacionReporte($enfermedadId, $filas),
             'distribucionClasificacion' => Caso::distribucionPorClasificacion($filtros),
             'totalPeriodo' => array_sum(array_column($filas, 'total')),
             'totalEstablecimientos' => $totalEstablecimientos,
@@ -67,16 +68,21 @@ class ReportesController extends Controller
         $salida = fopen('php://output', 'w');
         fwrite($salida, "\xEF\xBB\xBF"); // BOM UTF-8
 
-        fputcsv($salida, [self::ETIQUETAS_AGRUPACION[$agrupacion], 'Sospechoso', 'Probable', 'Confirmado', 'Descartado', 'Total'], ';', '"', '');
+        // Las mismas columnas de clasificación que en pantalla (2026-10-16).
+        $columnas = Caso::columnasClasificacionReporte($enfermedadId, $filas);
+        $etiquetaFila = fn(array $fila): string => $agrupacion === 'clasificacion'
+            ? datosClasificacion((string) $fila['etiqueta'])['etiqueta'] : (string) $fila['etiqueta'];
+        fputcsv($salida, array_merge(
+            [self::ETIQUETAS_AGRUPACION[$agrupacion]],
+            array_map(fn(string $codigo) => datosClasificacion($codigo)['etiqueta'], $columnas),
+            ['Total']
+        ), ';', '"', '');
         foreach ($filas as $fila) {
-            fputcsv($salida, [
-                $fila['etiqueta'],
-                $fila['sospechoso'],
-                $fila['probable'],
-                $fila['confirmado'],
-                $fila['descartado'],
-                $fila['total'],
-            ], ';', '"', '');
+            fputcsv($salida, array_merge(
+                [$etiquetaFila($fila)],
+                array_map(fn(string $codigo) => $fila['por_clasificacion'][$codigo] ?? 0, $columnas),
+                [$fila['total']]
+            ), ';', '"', '');
         }
 
         fclose($salida);

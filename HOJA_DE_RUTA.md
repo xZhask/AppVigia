@@ -317,8 +317,12 @@ No tocar sin una respuesta explícita.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
-- **Reportes:** el orden y las columnas por clasificación solo conocen las 4
-  genéricas; el filtro del listado de fichas también.
+- ~~**Reportes:** el orden y las columnas por clasificación solo conocen las 4
+  genéricas; el filtro del listado de fichas también.~~ Resuelto el 16/10:
+  `clasificacionesParaMostrar()` (las de la enfermedad filtrada o las 4
+  genéricas, más las que traigan los datos, en el orden del catálogo) en la
+  tabla y el Excel del reporte, la distribución del reporte y del panel, el
+  agrupado por clasificación y el filtro del listado.
 - **Padrón RENIPRESS:** revisar categorías dudosas (Centro de Salud Mental
   Comunitario PNP figura I-2). A50 "Nivel del establecimiento" y O95 "Categoría
   del EE.SS." podrían tomarse del padrón.

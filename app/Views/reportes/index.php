@@ -109,15 +109,17 @@ $maxClasificacion = !empty($distribucionClasificacion) ? max($distribucionClasif
     <div class="report-out">
       <div style="overflow-x:auto">
       <table>
-        <thead><tr><th><?= $etiquetaColumna ?></th><th style="text-align:right">Sospech.</th><th style="text-align:right">Probable</th><th style="text-align:right">Confirm.</th><th style="text-align:right">Descart.</th><th style="text-align:right">Total</th></tr></thead>
+        <?php // Columnas de clasificación (2026-10-16): las de la enfermedad
+        // filtrada o las 4 genéricas, más las que traigan los datos
+        // (Caso::columnasClasificacionReporte()); así cada fila suma su total. ?>
+        <thead><tr><th><?= $etiquetaColumna ?></th><?php foreach ($columnasClasificacion as $codigoColumna): ?><th style="text-align:right"><?= e(datosClasificacion($codigoColumna)['etiqueta']) ?></th><?php endforeach; ?><th style="text-align:right">Total</th></tr></thead>
         <tbody>
           <?php foreach ($filas as $fila): ?>
             <tr>
               <td class="pt-name"><?= e($agrupacion === 'clasificacion' ? datosClasificacion((string) $fila['etiqueta'])['etiqueta'] : $fila['etiqueta']) ?></td>
-              <td class="mono" style="text-align:right"><?= (int) $fila['sospechoso'] ?></td>
-              <td class="mono" style="text-align:right"><?= (int) $fila['probable'] ?></td>
-              <td class="mono" style="text-align:right"><?= (int) $fila['confirmado'] ?></td>
-              <td class="mono" style="text-align:right"><?= (int) $fila['descartado'] ?></td>
+              <?php foreach ($columnasClasificacion as $codigoColumna): ?>
+              <td class="mono" style="text-align:right"><?= (int) ($fila['por_clasificacion'][$codigoColumna] ?? 0) ?></td>
+              <?php endforeach; ?>
               <td class="mono" style="text-align:right"><b><?= (int) $fila['total'] ?></b></td>
             </tr>
           <?php endforeach; ?>
