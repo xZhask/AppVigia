@@ -271,6 +271,16 @@ $accionEtiquetas = [
         <?php
     };
     $rolesSujetoPintadosVer = [];
+    // Campos sueltos que no aplican a este caso (depende_de, reglas_campos
+    // "mostrar"; 2026-10-15) y están vacíos: no se pintan, igual que no se
+    // guardan. Antes salían con "—" (p. ej. "Especificar otro idioma" sin
+    // idioma "Otra").
+    $camposOcultosVer = camposOcultosDelCaso(
+        CampoDef::porEnfermedad((int) ($enfermedadVer['id'] ?? 0)),
+        $valoresCampos,
+        jsonDeEnfermedad($enfermedadVer ?? [], 'reglas_campos') ?: [],
+        $caso
+    );
     $numeroSeccion = 3;
     foreach ($secciones as $seccion):
         if (!empty($seccion['depende_de']) && !campoVisiblePorDependencia(
@@ -282,9 +292,12 @@ $accionEtiquetas = [
         $camposSeccionVer = array_values(array_filter(
             CampoDef::porSeccion((int) $seccion['id']),
             fn(array $campoSeccion) => !in_array($campoSeccion['clave'], $clavesCamposPersonaVer, true)
+                // Un dato guardado se muestra igual: lo oculto que llegó a
+                // grabarse antes de una regla debe seguir a la vista.
+                && !(isset($camposOcultosVer[(int) $campoSeccion['id']]) && (string) ($valoresCampos[$campoSeccion['id']] ?? '') === '')
         ));
-        if (!$camposSeccionVer && $clavesCamposPersonaVer && CampoDef::porSeccion((int) $seccion['id'])) {
-            continue; // todos sus campos ya están en "Datos del paciente"
+        if (!$camposSeccionVer && CampoDef::porSeccion((int) $seccion['id'])) {
+            continue; // todos sus campos ya están en "Datos del paciente" o no aplican a este caso
         }
     ?>
       <div class="card section">
@@ -299,7 +312,8 @@ $accionEtiquetas = [
               }
           }
           ?>
-          <?php if ($numeroSeccion === 3 && !nucleoOmitido($enfermedadVer ?? [], 'fecha_inicio_sintomas')): ?>
+          <?php // Con nucleo_ajustes.fecha_inicio_sintomas_desde (O95) la fecha ya se lee en su propio campo.
+          if ($numeroSeccion === 3 && !nucleoOmitido($enfermedadVer ?? [], 'fecha_inicio_sintomas') && !nucleoAjuste($enfermedadVer ?? [], 'fecha_inicio_sintomas_desde')): ?>
             <div class="fields" style="margin-bottom:16px">
               <div class="field"><label class="fl">Fecha de inicio de síntomas</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_inicio_sintomas'])) ?: '—' ?></div></div>
             </div>

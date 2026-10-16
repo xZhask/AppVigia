@@ -172,6 +172,12 @@ php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
   sale de la fecha de fallecimiento, ahora obligatoria y con su error en
   pantalla. Lo que llegue en el POST para la genérica se ignora. Sirve para
   resolver ficha por ficha el ítem 2 de la sección 3.
+- **"Ver" sin campos que no aplican:** los campos sueltos con `depende_de` o
+  con una regla `mostrar` que no se cumple ya no salen con "—" (24 fichas;
+  helper `camposOcultosDelCaso()`, mismas reglas que al guardar). Un dato
+  guardado se muestra igual. Con todas las de una sección ocultas, la sección
+  no se pinta. Comparado antes/después en todos los casos de la base: solo
+  desaparecen campos vacíos.
 - **B01:** un registro por tipo de muestra. Revisadas las demás candidatas:
   repiten tipo a propósito y no lo llevan.
 - **Motor nuevo:** `indicacion` de campo (nota del papel antes del campo),
@@ -212,10 +218,6 @@ No tocar sin una respuesta explícita.
   - No aplica `campos_notificacion` (Z21 muestra "Tipo de registro" en una
     tarjeta aparte).
   - Por verificar si `b26_contactos_por_lugar` se lee bien o sale como JSON.
-  - Oculta las secciones condicionadas pero no los campos sueltos con
-    `depende_de`: los muestra con "—" aunque no apliquen (p. ej. "Especificar
-    otro idioma", o los 10 de Anexo 2 de O95 en un caso de Anexo 1). Pasa en
-    las 24 fichas.
 - **Reportes:** el orden y las columnas por clasificación solo conocen las 4
   genéricas; el filtro del listado de fichas también.
 - **Padrón RENIPRESS:** revisar categorías dudosas (Centro de Salud Mental

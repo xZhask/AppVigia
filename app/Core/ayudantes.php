@@ -373,6 +373,76 @@ function campoVisiblePorDependencia(array $campo, array $valoresCampos): bool
 }
 
 /**
+ * Ids de los campos dinámicos de un caso guardado que no aplican: su sección
+ * condicionada, su depende_de o una regla "mostrar" de reglas_campos no se
+ * cumple con lo guardado. Es lo mismo que decide el servidor al guardar
+ * (CasosController::validarCamposDinamicos/aplicarReglasCampos), para que
+ * "ver" no pinte con "—" lo que la ficha no pide en este caso. Un campo
+ * oculto cuenta como vacío para sus hijos (hasta un punto fijo).
+ *
+ * $campos: CampoDef::porEnfermedad() (id => campo); $valoresCrudos: caso_valor
+ * tal cual (id => texto); $valoresNucleo: columnas del caso para las reglas
+ * con "nucleo:<columna>".
+ */
+function camposOcultosDelCaso(array $campos, array $valoresCrudos, array $reglas = [], array $valoresNucleo = []): array
+{
+    // Mismas formas que arma validarCamposDinamicos(): listas para MULTISELECT
+    // y JSON decodificado para los tipos que se guardan así.
+    $valores = [];
+    foreach ($campos as $id => $campo) {
+        $crudo = $valoresCrudos[$id] ?? null;
+        if ($crudo === null || $crudo === '') {
+            continue;
+        }
+        if ($campo['tipo'] === 'MULTISELECT') {
+            $valores[$id] = array_values(array_filter(explode(',', (string) $crudo), 'strlen'));
+        } elseif (in_array($campo['tipo'], ['GRUPO_SI_NO', 'SI_NO_FECHA', 'SI_NO', 'MATRIZ', 'CRONOLOGIA'], true)) {
+            $decodificado = json_decode((string) $crudo, true);
+            $valores[$id] = is_array($decodificado) ? $decodificado : (string) $crudo;
+        } else {
+            $valores[$id] = (string) $crudo;
+        }
+    }
+    $idPorClave = [];
+    foreach ($campos as $id => $campo) {
+        $idPorClave[$campo['clave']] = $id;
+    }
+    $valorPorClave = function (string $clave) use (&$valores, $idPorClave, $valoresNucleo) {
+        if (str_starts_with($clave, 'nucleo:')) {
+            return (string) ($valoresNucleo[substr($clave, 7)] ?? '');
+        }
+        return $valores[$idPorClave[$clave] ?? 0] ?? '';
+    };
+
+    $ocultos = [];
+    do {
+        $huboCambio = false;
+        foreach ($campos as $id => $campo) {
+            if (isset($ocultos[$id])) {
+                continue;
+            }
+            $visible = (empty($campo['seccion_depende_de']) || campoVisiblePorDependencia(
+                    ['depende_de' => $campo['seccion_depende_de'], 'valor_activador' => $campo['seccion_valor_activador']],
+                    $valores
+                ))
+                && (empty($campo['depende_de']) || campoVisiblePorDependencia($campo, $valores));
+            foreach ($reglas as $regla) {
+                if ($visible && in_array($campo['clave'], $regla['mostrar'] ?? [], true) && !condicionReglaCampos($regla['si'], $valorPorClave)) {
+                    $visible = false;
+                }
+            }
+            if (!$visible) {
+                $ocultos[$id] = true;
+                unset($valores[$id]);
+                $huboCambio = true;
+            }
+        }
+    } while ($huboCambio);
+
+    return $ocultos;
+}
+
+/**
  * reglas_campos (Z21, 2026-09-13, "Culminación del embarazo"): ¿se cumple la
  * condición "si" de una regla? Dos formas, las que valida cargar_fichas.php:
  *   {"clave": ..., "valores": [...]}             el valor del campo es uno de esos
