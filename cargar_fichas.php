@@ -258,7 +258,12 @@ const FILAS_CAMPOS_PERSONA = ['documento', 'nacimiento'];
 // CIE-10 (P21.9) hasta que el catálogo CIE-10 esté en el sistema.
 // "distrito" (V99, 2026-10-08): un lugar del PDF (Departamento/Provincia/
 // Distrito) con el selector encadenado de siempre; se guarda el id del distrito.
-const FORMATOS_TEXTO = ['hora', 'cie10', 'distrito'];
+// "departamento"/"provincia" (O95, 2026-10-15): el id de ese nivel del padrón,
+// para fichas que guardan los tres niveles en campos aparte (los pinta su
+// partial). La provincia y el distrito pueden declarar "dentro_de": la clave
+// del nivel de arriba; el servidor lo deriva del de abajo.
+const FORMATOS_TEXTO = ['hora', 'cie10', 'distrito', 'departamento', 'provincia'];
+const FORMATO_DENTRO_DE = ['provincia' => 'departamento', 'distrito' => 'provincia'];
 
 // "calculado" de un campo TEXTO (B24, 2026-09-14): el valor no se escribe, lo
 // arma el servidor al guardar con datos del núcleo y se pinta de solo lectura.
@@ -544,6 +549,16 @@ function validarManifiesto(array $manifiesto): void
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"desconocido\" distinto de true (para no usarlo, no se declara).");
                     }
                 }
+                // "con_hora" (O95, 2026-10-15): FECHA que el papel pide con su
+                // hora ("Fecha y hora de ingreso al EE.SS.").
+                if (array_key_exists('con_hora', $campo)) {
+                    if ($tipo !== 'FECHA') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"con_hora\" pero no es FECHA (es {$tipo}).");
+                    }
+                    if ($campo['con_hora'] !== true || array_key_exists('desconocido', $campo)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\": \"con_hora\" solo admite true y no se combina con \"desconocido\".");
+                    }
+                }
                 if (array_key_exists('grupo', $campo) && (!is_string($campo['grupo']) || trim($campo['grupo']) === '')) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"grupo\" vacío o no es texto.");
                 }
@@ -553,6 +568,15 @@ function validarManifiesto(array $manifiesto): void
                     }
                     if (!in_array($campo['formato'], FORMATOS_TEXTO, true)) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"formato\" = " . json_encode($campo['formato']) . '. Válidos: ' . implode(', ', FORMATOS_TEXTO) . '.');
+                    }
+                }
+                if (array_key_exists('dentro_de', $campo)) {
+                    $nivelPadre = FORMATO_DENTRO_DE[$campo['formato'] ?? ''] ?? null;
+                    if ($nivelPadre === null) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"dentro_de\" pero su \"formato\" no es provincia ni distrito.");
+                    }
+                    if (($formatoPorClaveFicha[(string) $campo['dentro_de']] ?? null) !== $nivelPadre) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\".dentro_de debe ser la clave de un TEXTO con \"formato\": \"{$nivelPadre}\" de esta ficha.");
                     }
                 }
                 if (array_key_exists('calculado', $campo)) {
@@ -1675,7 +1699,7 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
     // <input type="time">) o "cie10" (forma de código CIE-10). Solo se
     // serializa si se declara.
     if ($tipo === 'TEXTO' && array_key_exists('formato', $campo)) {
-        $config = json_encode(['formato' => $campo['formato']], JSON_UNESCAPED_UNICODE);
+        $config = json_encode(['formato' => $campo['formato']] + (array_key_exists('dentro_de', $campo) ? ['dentro_de' => $campo['dentro_de']] : []), JSON_UNESCAPED_UNICODE);
     }
 
     // "obligatorio" (cotejo Z21, 2026-09-11): hasta acá siempre se insertaba
@@ -1700,6 +1724,14 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
     if (array_key_exists('desconocido', $campo)) {
         $config = json_encode(
             (json_decode((string) $config, true) ?: []) + ['desconocido' => true],
+            JSON_UNESCAPED_UNICODE
+        );
+    }
+
+    // "con_hora" (O95, 2026-10-15): mismo criterio, se suma al config.
+    if (array_key_exists('con_hora', $campo)) {
+        $config = json_encode(
+            (json_decode((string) $config, true) ?: []) + ['con_hora' => true],
             JSON_UNESCAPED_UNICODE
         );
     }

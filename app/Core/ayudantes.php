@@ -1040,6 +1040,23 @@ function fechaIsoValida(?string $iso): ?string
     return $iso;
 }
 
+/**
+ * "AAAA-MM-DDTHH:MM" válido (lo que envía un <input type="datetime-local">;
+ * también se acepta con espacio) o null. Mismos límites de año que
+ * fechaIsoValida(). Para las FECHA con "con_hora" (O95, 2026-10-15).
+ */
+function fechaHoraIsoValida(?string $valor): ?string
+{
+    if (!preg_match('#^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})(?::\d{2})?$#', trim((string) $valor), $m)) {
+        return null;
+    }
+    if (!fechaIsoValida($m[1]) || (int) $m[2] > 23 || (int) $m[3] > 59) {
+        return null;
+    }
+
+    return "{$m[1]}T{$m[2]}:{$m[3]}";
+}
+
 function fechaIsoADmy(?string $iso): string
 {
     if (empty($iso)) {
@@ -1141,6 +1158,10 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             $marcado = is_array($decodSiNo) ? ($decodSiNo['marcado'] ?? '') : '';
             return ['SI' => 'Sí', 'NO' => 'No', 'IGNORADO' => 'Ignorado'][$marcado] ?? '—';
         case 'FECHA':
+            if (!empty((json_decode((string) ($campo['config'] ?? ''), true) ?: [])['con_hora'])) {
+                $fechaHora = fechaHoraIsoValida($valorCrudo);
+                return $fechaHora ? fechaIsoADmy($fechaHora) . ' ' . substr($fechaHora, 11, 5) : (fechaIsoADmy($valorCrudo) ?: '—');
+            }
             return fechaIsoADmy($valorCrudo) ?: '—';
         case 'GRUPO_SI_NO':
             // {"CODIGO": "SI"|"NO"|"IGNORADO", ...}, en el orden del catálogo
@@ -1255,8 +1276,26 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             if ($formatoTextoVer === 'distrito') {
                 return ubigeoLegible($valorCrudo) ?? $valorCrudo;
             }
+            if (in_array($formatoTextoVer, ['departamento', 'provincia'], true)) {
+                return trim((string) (filaUbigeo($formatoTextoVer, $valorCrudo)['nombre'] ?? '')) ?: $valorCrudo;
+            }
             return $valorCrudo;
     }
+}
+
+/**
+ * Fila del padrón de un nivel del ubigeo ('departamento', 'provincia' o
+ * 'distrito') por id, tal cual string (01 no es 1); null si no existe.
+ */
+function filaUbigeo(string $nivel, string $id): ?array
+{
+    if (!in_array($nivel, ['departamento', 'provincia', 'distrito'], true)) {
+        throw new \InvalidArgumentException("Nivel de ubigeo desconocido: {$nivel}");
+    }
+    $consulta = \App\Core\Database::conexion()->prepare("SELECT * FROM {$nivel} WHERE id = :id");
+    $consulta->execute(['id' => $id]);
+    $fila = $consulta->fetch();
+    return $fila ?: null;
 }
 
 /** "Distrito, Provincia, Departamento" de un id de distrito; null si no existe. */

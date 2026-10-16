@@ -13335,6 +13335,57 @@
       "nucleo_incluidos": [
         "n_historia_clinica"
       ],
+      "reglas_campos": [
+        {
+          "_nota": "Categoría del EE.SS. (Anexo 2): solo si falleció en un EE.SS. que no es de Sanidad FFAA/PNP (con Sanidad sale de la IPRESS). Si el lugar no es un EE.SS., el tipo queda oculto y vacío.",
+          "si": {
+            "clave": "o95_tipo_eess_fallecimiento",
+            "valores": [
+              "EESS MINSA / IGSS",
+              "EESS EsSalud",
+              "EESS Privado"
+            ]
+          },
+          "mostrar": [
+            "o95_categoria_del_ee_ss"
+          ]
+        },
+        {
+          "_nota": "Fecha y hora de ingreso al EE.SS. (Anexo 2): solo si falleció en un EE.SS.",
+          "si": {
+            "clave": "o95_lugar_del_fallecimiento",
+            "valores": [
+              "Establecimiento de salud"
+            ]
+          },
+          "mostrar": [
+            "o95_fecha_y_hora_de_ingreso_al_ee_ss"
+          ]
+        },
+        {
+          "_nota": "Detalle de la referencia: solo en Anexo 2 (además de ¿Referida? = Sí, que declara cada campo).",
+          "si": {
+            "clave": "o95_tipo_de_ficha",
+            "valores": [
+              "ANEXO_2"
+            ]
+          },
+          "mostrar": [
+            "o95_n_de_referencias_institucionales",
+            "o95_fecha_ingreso_eess_origen",
+            "o95_hora_ingreso_eess_origen",
+            "o95_fecha_egreso_eess_origen",
+            "o95_hora_egreso_eess_origen",
+            "o95_demora_referencia_dias",
+            "o95_demora_referencia_horas",
+            "o95_responsable_atencion_eess_origen",
+            "o95_institucion_destino_referencia",
+            "o95_eess_destino_referencia",
+            "o95_fecha_ingreso_eess_destino",
+            "o95_hora_ingreso_eess_destino"
+          ]
+        }
+      ],
       "secciones": [
         {
           "nombre": "Datos de notificación",
@@ -13605,6 +13656,8 @@
               "orden": 17,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_lugar_del_fallecimiento",
+              "valor_activador": "Establecimiento de salud",
               "opciones": [
                 "EESS Sanidad FFAA/PNP",
                 "EESS MINSA / IGSS",
@@ -13618,7 +13671,9 @@
               "tipo": "TEXTO",
               "orden": 18,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_tipo_eess_fallecimiento",
+              "valor_activador": "EESS Sanidad FFAA/PNP"
             },
             {
               "clave": "o95_nombre_eess_fallecimiento",
@@ -13626,32 +13681,44 @@
               "tipo": "TEXTO",
               "orden": 19,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_tipo_eess_fallecimiento",
+              "valor_activador": "EESS MINSA / IGSS,EESS EsSalud,EESS Privado"
             },
             {
               "clave": "o95_departamento_fallecimiento",
               "etiqueta": "Departamento (Fallecimiento)",
               "tipo": "TEXTO",
+              "formato": "departamento",
               "orden": 20,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_lugar_del_fallecimiento",
+              "valor_activador": "Establecimiento de salud,Otro"
             },
             {
               "clave": "o95_provincia_fallecimiento",
               "etiqueta": "Provincia (Fallecimiento)",
               "tipo": "TEXTO",
+              "formato": "provincia",
+              "dentro_de": "o95_departamento_fallecimiento",
               "orden": 21,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_lugar_del_fallecimiento",
+              "valor_activador": "Establecimiento de salud,Otro"
             },
             {
               "clave": "o95_distrito_fallecimiento",
               "etiqueta": "Distrito (Fallecimiento)",
               "tipo": "TEXTO",
               "formato": "distrito",
+              "dentro_de": "o95_provincia_fallecimiento",
               "orden": 22,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_lugar_del_fallecimiento",
+              "valor_activador": "Establecimiento de salud,Otro"
             },
             {
               "clave": "o95_permanencia_dias",
@@ -13659,7 +13726,9 @@
               "tipo": "NUMERO",
               "orden": 23,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_lugar_del_fallecimiento",
+              "valor_activador": "Establecimiento de salud"
             },
             {
               "clave": "o95_permanencia_horas",
@@ -13667,7 +13736,9 @@
               "tipo": "NUMERO",
               "orden": 24,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_lugar_del_fallecimiento",
+              "valor_activador": "Establecimiento de salud"
             },
             {
               "clave": "o95_permanencia_minutos",
@@ -13675,7 +13746,9 @@
               "tipo": "NUMERO",
               "orden": 25,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_lugar_del_fallecimiento",
+              "valor_activador": "Establecimiento de salud"
             },
             {
               "clave": "o95_lugar_fallecimiento_otro_especificar",
@@ -13683,7 +13756,9 @@
               "tipo": "TEXTO",
               "orden": 26,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_lugar_del_fallecimiento",
+              "valor_activador": "Otro,Trayecto"
             },
             {
               "clave": "o95_categoria_del_ee_ss",
@@ -13712,6 +13787,7 @@
               "clave": "o95_fecha_y_hora_de_ingreso_al_ee_ss",
               "etiqueta": "Fecha y hora de ingreso al EE.SS.",
               "tipo": "FECHA",
+              "con_hora": true,
               "orden": 28,
               "requerido": false,
               "sensible": false,
@@ -14260,7 +14336,9 @@
               "tipo": "TEXTO",
               "orden": 2,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_n_de_referencias_institucionales",
@@ -14268,32 +14346,44 @@
               "tipo": "NUMERO",
               "orden": 3,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_departamento_origen_de_la_referencia",
               "etiqueta": "Departamento (Origen de la referencia)",
               "tipo": "TEXTO",
+              "formato": "departamento",
               "orden": 4,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_provincia_origen_de_la_referencia",
               "etiqueta": "Provincia (Origen de la referencia)",
               "tipo": "TEXTO",
+              "formato": "provincia",
+              "dentro_de": "o95_departamento_origen_de_la_referencia",
               "orden": 5,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_distrito_origen_de_la_referencia",
               "etiqueta": "Distrito (Origen de la referencia)",
               "tipo": "TEXTO",
               "formato": "distrito",
+              "dentro_de": "o95_provincia_origen_de_la_referencia",
               "orden": 6,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_fecha_ingreso_eess_origen",
@@ -14301,7 +14391,9 @@
               "tipo": "FECHA",
               "orden": 7,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_hora_ingreso_eess_origen",
@@ -14309,7 +14401,9 @@
               "tipo": "TEXTO",
               "orden": 8,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_fecha_egreso_eess_origen",
@@ -14317,7 +14411,9 @@
               "tipo": "FECHA",
               "orden": 9,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_hora_egreso_eess_origen",
@@ -14325,7 +14421,9 @@
               "tipo": "TEXTO",
               "orden": 10,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_demora_referencia_dias",
@@ -14333,7 +14431,9 @@
               "tipo": "NUMERO",
               "orden": 11,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_demora_referencia_horas",
@@ -14341,7 +14441,9 @@
               "tipo": "NUMERO",
               "orden": 12,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_responsable_atencion_eess_origen",
@@ -14350,6 +14452,8 @@
               "orden": 13,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI",
               "opciones": [
                 "Médico G-O",
                 "Médico intensivista",
@@ -14380,6 +14484,8 @@
               "orden": 15,
               "requerido": false,
               "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI",
               "opciones": [
                 "EESS IGSS / Gobierno Regional",
                 "EESS EsSalud",
@@ -14393,7 +14499,9 @@
               "tipo": "TEXTO",
               "orden": 16,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_fecha_ingreso_eess_destino",
@@ -14401,7 +14509,9 @@
               "tipo": "FECHA",
               "orden": 17,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             },
             {
               "clave": "o95_hora_ingreso_eess_destino",
@@ -14409,7 +14519,9 @@
               "tipo": "TEXTO",
               "orden": 18,
               "requerido": false,
-              "sensible": false
+              "sensible": false,
+              "depende_de": "o95_referida",
+              "valor_activador": "SI"
             }
           ]
         },

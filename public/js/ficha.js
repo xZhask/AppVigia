@@ -3367,15 +3367,19 @@ document.addEventListener('DOMContentLoaded', function () {
       wrapEess.hidden = !esEess;
       wrapEess.style.display = esEess ? '' : 'none';
     }
+    // "Especificar lugar" (Otro) y "Especificar trayecto" son el mismo campo:
+    // solo el input del bloque visible queda habilitado y viaja en el POST.
     if (wrapOtro) {
       var esOtro = (valLugar === 'Otro');
       wrapOtro.hidden = !esOtro;
       wrapOtro.style.display = esOtro ? '' : 'none';
+      wrapOtro.querySelectorAll('input').forEach(function (el) { el.disabled = !esOtro; });
     }
     if (wrapTrayecto) {
       var esTrayecto = (valLugar === 'Trayecto');
       wrapTrayecto.hidden = !esTrayecto;
       wrapTrayecto.style.display = esTrayecto ? '' : 'none';
+      wrapTrayecto.querySelectorAll('input').forEach(function (el) { el.disabled = !esTrayecto; });
     }
 
     var selTipoEess = document.getElementById('o95TipoEessSel');

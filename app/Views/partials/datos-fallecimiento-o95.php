@@ -231,7 +231,7 @@ if ($provSelFall) {
     <div class="field" style="margin-bottom:14px;">
       <label class="fl">Especificar lugar</label>
       <div class="control">
-        <input type="text" name="<?= $campoLugarOtroEspecificar['name'] ?>" value="<?= e($campoLugarOtroEspecificar['val']) ?>" placeholder="Especificar otro lugar…">
+        <input type="text" name="<?= $campoLugarOtroEspecificar['name'] ?>" value="<?= e($campoLugarOtroEspecificar['val']) ?>" placeholder="Especificar otro lugar…" <?= $valLugar !== 'Otro' ? 'disabled' : '' ?>>
       </div>
     </div>
   </div>
@@ -241,8 +241,8 @@ if ($provSelFall) {
     <div class="field" style="margin-bottom:14px;">
       <label class="fl">Ubicación / Especificar trayecto (Opcional)</label>
       <div class="control">
-        <?php /* name con sufijo _trayecto a propósito, igual que antes de la migración: no calza con ningún campo_def.id real, así que este valor no se guarda hoy si Lugar=Trayecto (bug preexistente, fuera de alcance de esta petición — no se resuelve por mecánica). */ ?>
-        <input type="text" name="<?= $campoLugarOtroEspecificar['name'] ?>_trayecto" value="<?= e($campoLugarOtroEspecificar['val']) ?>" placeholder="Ej: Vía pública, ambulancia…">
+        <?php /* Mismo campo que "Especificar lugar" (Otro): los dos inputs llevan su name y el del bloque oculto va deshabilitado para que solo viaje el visible (ficha.js, actualizarDatosFallecimientoO95). Hasta el 2026-10-15 este llevaba name="..._trayecto" y lo escrito con Trayecto no se guardaba. */ ?>
+        <input type="text" name="<?= $campoLugarOtroEspecificar['name'] ?>" value="<?= e($campoLugarOtroEspecificar['val']) ?>" placeholder="Ej: Vía pública, ambulancia…" <?= $valLugar !== 'Trayecto' ? 'disabled' : '' ?>>
       </div>
     </div>
   </div>
@@ -279,9 +279,10 @@ if ($provSelFall) {
       <?php $mostrarIngreso = $esAnexo2Activo && ($valLugar === 'Establecimiento de salud'); ?>
       <div class="field o95-anexo-2-elem" id="campoFechaHoraIngresoO95" <?= !$mostrarIngreso ? 'hidden style="display:none;"' : '' ?>>
         <label class="fl">Fecha y hora de ingreso al EE.SS. (Calculado)</label>
-        <div class="control mono">
-          <input type="datetime-local" id="o95FechaHoraIngresoInput" name="<?= $campoFechaHoraIngreso['name'] ?>" value="<?= e($campoFechaHoraIngreso['val']) ?>">
+        <div class="control mono <?= $campoFechaHoraIngreso['err'] ? 'err' : '' ?>">
+          <input type="datetime-local" id="o95FechaHoraIngresoInput" name="<?= $campoFechaHoraIngreso['name'] ?>" value="<?= e($campoFechaHoraIngreso['val']) ?>" max="<?= date('Y-m-d') ?>T23:59">
         </div>
+        <?php if ($campoFechaHoraIngreso['err']): ?><span class="hint err"><?= e($campoFechaHoraIngreso['err']) ?></span><?php endif; ?>
         <span class="hint">Se calcula de la fecha de fallecimiento menos la permanencia</span>
       </div>
     </div>
@@ -317,7 +318,8 @@ if ($provSelFall) {
     $provinciaSeleccionada = $provSelFall;
     $distritoSeleccionado = $distSelFall;
     $nombreCampoDistrito = $campoDistFallecimiento['name'];
-    $errorDistrito = $campoDistFallecimiento['err']; // formato "distrito": código que no existe en el padrón
+    // formatos distrito/provincia/departamento: código que no existe en el padrón
+    $errorDistrito = $campoDistFallecimiento['err'] ?: $campoProvFallecimiento['err'] ?: $campoDepFallecimiento['err'];
     $distritoRequerido = false;
     require __DIR__ . '/selector-ubigeo.php';
     ?>

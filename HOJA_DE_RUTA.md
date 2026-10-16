@@ -73,6 +73,8 @@ En este orden:
 php sql/migraciones/add_tablas_hijas_enfermedad.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
+php sql/migraciones/set_o95_ubigeo_formatos.php
+php sql/migraciones/set_o95_condiciones_lugar_referencia.php
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -83,6 +85,15 @@ php sql/migraciones/set_o95_anexo2_campos_condicionados.php
   cambio del manifiesto. Actualiza esos `campo_def` (no los recrea) y borra
   los valores de Anexo 2 que hayan quedado grabados en casos que no son de
   Anexo 2. Se puede correr más de una vez.
+- `set_o95_ubigeo_formatos.php` (15/10, después del cargador): mismo motivo;
+  fija el `config` de los 6 campos de ubigeo de O95 (ver sección 2) y corrige
+  en los casos guardados el departamento o la provincia que no correspondan
+  al nivel de abajo. Se puede correr más de una vez.
+- `set_o95_condiciones_lugar_referencia.php` (15/10, después de la anterior):
+  mismo motivo; toma del manifiesto los `depende_de`, el `con_hora` y las
+  `reglas_campos` de "Datos del fallecimiento" y "Referencia" (ver sección 2),
+  los fija en los `campo_def` existentes y borra en los casos guardados los
+  valores que ya no corresponden. Se puede correr más de una vez.
 - El cargador va **sin** `--cie10`: el 15/10 cambió `tablas_hijas` en las 24
   fichas. Si una ficha sale "bloqueada por datos capturados", igual recibe sus
   tablas hijas (el cargador las aplica aparte); el resto de esa ficha queda
@@ -124,6 +135,31 @@ php sql/migraciones/set_o95_anexo2_campos_condicionados.php
   - Los valores grabados antes del arreglo en casos de Anexo 1 los borra la
     misma migración (verificado: borra solo esos campos y solo en casos que no
     son de Anexo 2).
+- **O95, departamento y provincia del ubigeo** (fallecimiento y origen de la
+  referencia): formatos nuevos `departamento` y `provincia`, y `dentro_de` en
+  provincia y distrito (la clave del nivel de arriba). El servidor valida los
+  tres contra el padrón y deriva el nivel de arriba del de abajo, así que un
+  departamento o una provincia que no corresponden no se guardan; el error
+  sale bajo el selector. "Ver" muestra el nombre en vez del id. Verificado con
+  Playwright (coherente, dos POST forjados y un id inexistente) y la migración
+  con datos sembrados.
+- **O95, datos que dependen del lugar del fallecimiento y de la referencia:**
+  los bloques se ocultaban solo en el navegador y lo escrito se guardaba igual
+  (p. ej. el ubigeo con lugar = Domicilio). Ahora 26 campos declaran
+  `depende_de` (lugar, tipo de EE.SS., ¿Referida?) y `reglas_campos`
+  "mostrar" exige además Anexo 2 donde corresponde (categoría y fecha y hora
+  de ingreso al EE.SS., detalle de la referencia). Con Sanidad PNP el ubigeo
+  sigue guardándose (sale de la IPRESS).
+  - "Especificar trayecto" no se guardaba nunca (`name=…_trayecto`): ahora
+    usa el campo real, como "Especificar lugar"; solo viaja el visible.
+  - "Fecha y hora de ingreso al EE.SS." (Anexo 2) bloqueaba el registro sin
+    mensaje: el `datetime-local` mandaba fecha y hora a un FECHA. Motor
+    nuevo: `con_hora` en FECHA (se guarda `AAAA-MM-DDTHH:MM`, "ver" muestra
+    `dd/mm/aaaa HH:MM`); el error ya se ve bajo el campo, y el sustituto de
+    la fecha de inicio de síntomas toma solo la fecha.
+  - Verificado con Playwright: 6 escenarios al registrar (positivos por la
+    interfaz y POST forjados), editar (Anexo 2 → Domicilio y No referida
+    borra los datos), "ver" y "editar"; la migración con datos sembrados.
 - **B01:** un registro por tipo de muestra. Revisadas las demás candidatas:
   repiten tipo a propósito y no lo llevan.
 - **Motor nuevo:** `indicacion` de campo (nota del papel antes del campo),
@@ -146,6 +182,10 @@ No tocar sin una respuesta explícita.
    - `caso.fecha_inicio_sintomas` queda vacía en 10 fichas que la piden con
      otro nombre (P35.0, A35, A37.0, B01, A97, B57, A95, B55, B04X, A00). Los
      reportes por fecha de síntomas no las ven.
+   - O95 no pinta la fecha de inicio de síntomas pero la exige: el servidor
+     la toma del primer FECHA lleno (fecha de fallecimiento, en la práctica).
+     Sin ninguna fecha, la ficha no se registra y el aviso pide un campo que
+     no está en pantalla.
    - `fecha_notif` se pide aparte aunque la ficha tenga su cadena de fechas
      de notificación (`PENDIENTES.md` ítem 5).
    - Propuesta posible: declarar por ficha qué campo es la fecha canónica.
@@ -157,8 +197,6 @@ No tocar sin una respuesta explícita.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
-- **O95:** departamento y provincia del ubigeo de fallecimiento y referencia no
-  se validan (el distrito sí).
 - **"Ver":**
   - No aplica `campos_notificacion` (Z21 muestra "Tipo de registro" en una
     tarjeta aparte).

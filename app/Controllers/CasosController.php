@@ -1468,11 +1468,7 @@ class CasosController extends Controller
             // guarda vacío aunque el cliente haya enviado algo (el valor se
             // limpia en el navegador al ocultarse, pero no hay que confiar
             // en eso del lado servidor).
-            $seccionOculta = !empty($campo['seccion_depende_de']) && !campoVisiblePorDependencia(
-                ['depende_de' => $campo['seccion_depende_de'], 'valor_activador' => $campo['seccion_valor_activador']],
-                $valoresCampos
-            );
-            if ($seccionOculta || (!empty($campo['depende_de']) && !campoVisiblePorDependencia($campo, $valoresCampos))) {
+            if (!$this->campoDinamicoVisible($campo, $valoresCampos)) {
                 $valoresCampos[$campoId] = in_array($tipo, ['MULTISELECT', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'SI_NO', 'MATRIZ', 'CRONOLOGIA'], true) ? [] : '';
                 continue;
             }
@@ -1640,9 +1636,11 @@ class CasosController extends Controller
                     }
                     break;
                 case 'FECHA':
-                    $iso = fechaIsoValida($valor);
+                    // "con_hora" (O95, 2026-10-15): se guarda AAAA-MM-DDTHH:MM.
+                    $conHora = !empty((json_decode((string) ($campo['config'] ?? ''), true) ?: [])['con_hora']);
+                    $iso = $conHora ? fechaHoraIsoValida($valor) : fechaIsoValida($valor);
                     if (!$iso) {
-                        $erroresCampos[$campoId] = 'Ingresa una fecha válida.';
+                        $erroresCampos[$campoId] = $conHora ? 'Ingresa una fecha y hora válidas.' : 'Ingresa una fecha válida.';
                     } else {
                         $paraGuardar[$campoId] = $iso;
                     }
@@ -1668,12 +1666,17 @@ class CasosController extends Controller
                         'cie10' => codigoCie10Normalizado($valor),
                         // V99, 2026-10-08: id de un distrito real del padrón.
                         'distrito' => \App\Models\Distrito::buscarPorId($valor) ? $valor : null,
+                        // O95, 2026-10-15: los otros dos niveles, cuando la
+                        // ficha los guarda en campos aparte.
+                        'departamento', 'provincia' => filaUbigeo($formatoTexto, $valor) ? $valor : null,
                         default => $valor,
                     };
                     if ($valorNormalizado === null) {
                         $erroresCampos[$campoId] = match ($formatoTexto) {
                             'hora'     => 'Ingresa una hora válida (HH:MM).',
                             'distrito' => 'Selecciona un distrito válido.',
+                            'departamento' => 'Selecciona un departamento válido.',
+                            'provincia' => 'Selecciona una provincia válida.',
                             default    => 'Ingresa un código CIE-10 válido: una letra, dos dígitos y, si corresponde, el subcódigo (P21.9).',
                         };
                     } else {
@@ -1683,12 +1686,62 @@ class CasosController extends Controller
             }
         }
 
+        [$valoresCampos, $erroresCampos, $paraGuardar] = $this->derivarUbigeoDentroDe($campos, $valoresCampos, $erroresCampos, $paraGuardar);
+
         $reglasCampos = jsonDeEnfermedad(Enfermedad::buscar($enfermedadId) ?? [], 'reglas_campos');
         if ($reglasCampos) {
             [$valoresCampos, $erroresCampos, $paraGuardar] = $this->aplicarReglasCampos($reglasCampos, $campos, $valoresCampos, $erroresCampos, $paraGuardar, $valoresNucleo);
         }
 
         return [$valoresCampos, $erroresCampos, $paraGuardar];
+    }
+
+    /**
+     * "dentro_de" de un TEXTO con formato provincia o distrito (O95,
+     * 2026-10-15): el nivel de arriba se toma del padrón a partir del de
+     * abajo, que ya se validó, así que un departamento o una provincia que no
+     * corresponden (POST forjado o un selector desincronizado) no llegan a
+     * guardarse; si el de arriba traía un id que no existe, queda corregido
+     * y sin error. Se recorre de abajo hacia arriba: el distrito fija la
+     * provincia y esa provincia fija el departamento. Un nivel vacío no toca
+     * al de arriba, y un padre oculto por depende_de tampoco se escribe.
+     */
+    private function derivarUbigeoDentroDe(array $campos, array $valoresCampos, array $erroresCampos, array $paraGuardar): array
+    {
+        $idPorClave = array_column(array_map(fn ($id, $c) => ['clave' => $c['clave'], 'id' => $id], array_keys($campos), $campos), 'id', 'clave');
+        $columnaPadre = ['distrito' => 'provincia_id', 'provincia' => 'departamento_id'];
+        foreach (['distrito', 'provincia'] as $nivel) {
+            foreach ($campos as $campoId => $campo) {
+                $config = $campo['tipo'] === 'TEXTO' ? (json_decode((string) ($campo['config'] ?? ''), true) ?: []) : [];
+                if (($config['formato'] ?? null) !== $nivel || empty($config['dentro_de'])) {
+                    continue;
+                }
+                $padreId = $idPorClave[$config['dentro_de']] ?? null;
+                $valor = (string) ($paraGuardar[$campoId] ?? '');
+                if ($padreId === null || $valor === '' || isset($erroresCampos[$campoId]) || !$this->campoDinamicoVisible($campos[$padreId], $valoresCampos)) {
+                    continue;
+                }
+                $fila = filaUbigeo($nivel, $valor);
+                if ($fila) {
+                    $paraGuardar[$padreId] = $fila[$columnaPadre[$nivel]];
+                    $valoresCampos[$padreId] = $fila[$columnaPadre[$nivel]];
+                    unset($erroresCampos[$padreId]);
+                }
+            }
+        }
+
+        return [$valoresCampos, $erroresCampos, $paraGuardar];
+    }
+
+    /** Lo mismo que decide en validarCamposDinamicos() si un campo se lee o queda oculto. */
+    private function campoDinamicoVisible(array $campo, array $valoresCampos): bool
+    {
+        $seccionOculta = !empty($campo['seccion_depende_de']) && !campoVisiblePorDependencia(
+            ['depende_de' => $campo['seccion_depende_de'], 'valor_activador' => $campo['seccion_valor_activador']],
+            $valoresCampos
+        );
+
+        return !$seccionOculta && (empty($campo['depende_de']) || campoVisiblePorDependencia($campo, $valoresCampos));
     }
 
     /**
@@ -4131,6 +4184,12 @@ class CasosController extends Controller
             foreach ($campos as $c) {
                 if ($c['tipo'] === 'FECHA') {
                     $val = trim($_POST['campo_' . $c['id']] ?? '');
+                    // FECHA "con_hora" (O95, 2026-10-15): llega AAAA-MM-DDTHH:MM;
+                    // como sustituto vale solo la fecha.
+                    $fechaHora = fechaHoraIsoValida($val);
+                    if ($fechaHora !== null) {
+                        $val = substr($fechaHora, 0, 10);
+                    }
                     if ($val !== '') {
                         return $val;
                     }

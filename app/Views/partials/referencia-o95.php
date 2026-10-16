@@ -121,7 +121,8 @@ $esRespOrigenOtro = (strtoupper((string)$valRespOrigen) === 'OTRO');
       $nombreCampoDepartamento = $campoDepReferencia['name'];
       $nombreCampoProvincia = $campoProvReferencia['name'];
       $nombreCampoDistrito = $campoDistReferencia['name'];
-      $errorDistrito = $campoDistReferencia['err']; // formato "distrito": código que no existe en el padrón
+      // formatos distrito/provincia/departamento: código que no existe en el padrón
+      $errorDistrito = $campoDistReferencia['err'] ?: $campoProvReferencia['err'] ?: $campoDepReferencia['err'];
       $distritoRequerido = false;
       require __DIR__ . '/selector-ubigeo.php';
       ?>
