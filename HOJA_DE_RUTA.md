@@ -79,6 +79,7 @@ php sql/migraciones/set_o95_fecha_inicio_desde_fallecimiento.php
 php sql/migraciones/set_b26_condiciones.php
 php sql/migraciones/set_p350_clasificacion_propia.php
 php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B05 A80 O95
+php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -116,6 +117,11 @@ php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B0
   y recalcula `caso.clasificacion`. En las 6 últimas el campo propio vacío
   también da una clasificación, así que un caso viejo con el chip elegido a
   mano y el campo propio vacío pasa a la de "vacío" (los casos son de prueba).
+- `set_fecha_inicio_sintomas_desde.php <fichas>` (16/10): mismo motivo para la
+  fecha de inicio de síntomas por ficha (sección 3, ítem 2); copia
+  `nucleo_ajustes` y `nucleo_omitidos` y recalcula
+  `caso.fecha_inicio_sintomas` como al editar y guardar. Se puede correr más
+  de una vez.
 - El cargador va **sin** `--cie10`: el 15/10 cambió `tablas_hijas` en las 24
   fichas. Si una ficha sale "bloqueada por datos capturados", igual recibe sus
   tablas hijas (el cargador las aplica aparte); el resto de esa ficha queda
@@ -187,8 +193,11 @@ php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B0
   registraba y el aviso pedía un campo que no está en pantalla). Ajuste nuevo
   `nucleo_ajustes.fecha_inicio_sintomas_desde`: `caso.fecha_inicio_sintomas`
   sale de la fecha de fallecimiento, ahora obligatoria y con su error en
-  pantalla. Lo que llegue en el POST para la genérica se ignora. Sirve para
-  resolver ficha por ficha el ítem 2 de la sección 3.
+  pantalla. Lo que llegue en el POST para la genérica se ignora. Desde el
+  16/10 acepta también una lista de campos FECHA o SI_NO_FECHA (toma la más
+  temprana; un SI_NO_FECHA cuenta solo marcado Sí), se calcula después de
+  validar (un campo oculto no cuenta) y el campo ya no tiene que ser
+  obligatorio.
 - **B26 (Parotiditis), bugs que perdían datos:**
   - El formulario repetía las tarjetas "Lugar probable de infección" y
     "Antecedentes de vacunación": 11 `campo_def` creados el 10/08 nunca se
@@ -249,15 +258,19 @@ No tocar sin una respuesta explícita.
      seguimiento de excreción viral depende de la clasificación propia
      (`bloques_condicionales.depende_de` acepta la clave de un SELECT).
 2. **Fechas que podrían derivarse del campo propio de cada ficha.**
-   - `caso.fecha_inicio_sintomas` queda vacía en 10 fichas que la piden con
-     otro nombre (P35.0, A35, A37.0, B01, A97, B57, A95, B55, B04X, A00). Los
-     reportes por fecha de síntomas no las ven.
-   - Ya existe la forma declarativa: `nucleo_ajustes.fecha_inicio_sintomas_desde`
-     (estrenada en O95 con la fecha de fallecimiento). Falta decidir el campo
-     de cada una de las 10 fichas.
-   - `fecha_notif` se pide aparte aunque la ficha tenga su cadena de fechas
-     de notificación (`PENDIENTES.md` ítem 5).
-   - Propuesta posible: declarar por ficha qué campo es la fecha canónica.
+   - **Fecha de inicio de síntomas — resuelta (16/10).** Las 10 fichas que la
+     piden con otro nombre la declaran en
+     `nucleo_ajustes.fecha_inicio_sintomas_desde`, sin pedir nada nuevo ni
+     volver obligatorio ningún campo: A35, A37.0, A97, B57 y B04X su "Fecha de
+     inicio de síntomas"; A00 la de inicio de la diarrea; B01 la de inicio de
+     la erupción dérmica; A95 la más temprana de los síntomas marcados Sí; B55
+     solo la de la enfermedad mucosa (las fechas de las lesiones cutáneas no
+     sirven: el mapa las rellena con la de hoy). P35.0 (congénita) la omite.
+     Se quitó la lista fija de CIE-10 del controlador y de la vista, y "ver"
+     ya no pinta la fila vacía. Ningún reporte usaba esa fecha (la semana
+     epidemiológica sale de `fecha_notif`).
+   - **Pendiente:** `fecha_notif` se pide aparte aunque la ficha tenga su
+     cadena de fechas de notificación (`PENDIENTES.md` ítem 5).
 3. **Códigos de zona del PDF** (urbanización, AA.HH., cooperativa…): segundo eje
    del domicilio, distinto de Urbano/Rural. Afecta a A00, A95, B57, A37.0 y
    P35.0. Requiere columna nueva en `persona`.

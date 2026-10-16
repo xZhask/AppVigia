@@ -163,6 +163,9 @@
           "clasificar": "SOSPECHOSO"
         }
       ],
+      "nucleo_ajustes": {
+        "fecha_inicio_sintomas_desde": "a97_fecha_de_inicio_de_sintomas"
+      },
       "secciones": [
         {
           "nombre": "Enfermedad / evento a notificar",
@@ -601,6 +604,7 @@
       "lote": 1,
       "pdf_paginas": "1-2",
       "nucleo_ajustes": {
+        "fecha_inicio_sintomas_desde": "a37_0_fecha_de_inicio_de_sintomas",
         "_nota": "XI. Investigador (cotejo 2026-10-12, ítems 69-71): nombre, cargo y N.° de celular. La fecha de investigación ya está en la cabecera y profesión/email no los pide el PDF. 'Firma y sello' es del papel.",
         "investigador": {
           "campos": {
@@ -1404,6 +1408,10 @@
         "pueblo_etnico",
         "ocupacion"
       ],
+      "nucleo_ajustes": {
+        "_nota_fecha_inicio_sintomas": "caso.fecha_inicio_sintomas (2026-10-16): la de inicio de la erupción dérmica.",
+        "fecha_inicio_sintomas_desde": "b01_fecha_de_inicio_de_erupcion_dermica"
+      },
       "secciones": [
         {
           "nombre": "Datos de notificación e investigación del caso",
@@ -2502,6 +2510,10 @@
           "clasificar": "DESCARTADO"
         }
       ],
+      "nucleo_ajustes": {
+        "_nota_fecha_inicio_sintomas": "caso.fecha_inicio_sintomas (2026-10-16): la más temprana de los síntomas del cuadro clínico marcados Sí (cada uno lleva su fecha).",
+        "fecha_inicio_sintomas_desde": ["a95_fiebre", "a95_ictericia", "a95_pulso_lento_en_relacion_a_la_fiebre", "a95_hemorragia_nasal", "a95_melena_hematemesis", "a95_petequias", "a95_diarreas", "a95_hipertension", "a95_oliguria", "a95_proteinuria", "a95_coluria", "a95_hepatomegalia"]
+      },
       "secciones": [
         {
           "nombre": "Cuadro clínico",
@@ -2974,6 +2986,10 @@
           }
         }
       },
+      "nucleo_ajustes": {
+        "_nota_fecha_inicio_sintomas": "caso.fecha_inicio_sintomas (2026-10-16): solo la de la enfermedad mucosa; las fechas de las lesiones cutáneas no sirven (el mapa las rellena con la de hoy).",
+        "fecha_inicio_sintomas_desde": "b55_fecha_de_inicio_de_sintomas_mucosa"
+      },
       "secciones": [
         {
           "nombre": "Antecedente epidemiológico",
@@ -3385,6 +3401,9 @@
           "clasificar": "DESCARTADO"
         }
       ],
+      "nucleo_ajustes": {
+        "fecha_inicio_sintomas_desde": "b57_fecha_de_inicio_de_sintomas"
+      },
       "secciones": [
         {
           "nombre": "Fechas de notificación",
@@ -4892,6 +4911,9 @@
           "clasificar": "SOSPECHOSO"
         }
       ],
+      "nucleo_ajustes": {
+        "fecha_inicio_sintomas_desde": "b04x_fecha_de_inicio_de_sintomas_fis"
+      },
       "secciones": [
         {
           "nombre": "Datos de notificación e investigación del caso",
@@ -5879,6 +5901,9 @@
           "clasificar": "SOSPECHOSO"
         }
       ],
+      "nucleo_ajustes": {
+        "fecha_inicio_sintomas_desde": "a00_fecha_de_inicio_de_la_diarrea"
+      },
       "secciones": [
         {
           "nombre": "Datos generales",
@@ -6482,6 +6507,7 @@
         "clasificacion"
       ],
       "nucleo_ajustes": {
+        "fecha_inicio_sintomas_desde": "a35_fecha_de_inicio_de_sintomas",
         "_nota": "VI. Investigador de campo (cotejo 2026-10-12): nombre, cargo y teléfono. La 'Fecha' ya está en la cabecera (Fecha de investigación) y el 'Establecimiento' es el EESS notificante; profesión y email no los pide el PDF.",
         "investigador": {
           "campos": {
@@ -11778,7 +11804,8 @@
         "celular",
         "nombre_tutor",
         "ocupacion",
-        "clasificacion"
+        "clasificacion",
+        "fecha_inicio_sintomas"
       ],
       "nucleo_incluidos": [
         "n_historia_clinica"

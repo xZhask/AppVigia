@@ -1482,7 +1482,10 @@ $atributosDependenciaSeccion = function (array $seccion) use ($valoresCampos): s
     // (2026-10-15) la pinta en cuadro-clinico-b26.php con el mismo name: con
     // las dos visibles el POST se quedaba con esta, y llenar solo la de
     // "Cuadro clínico" daba "Ingresa la fecha de inicio de síntomas". ?>
-    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'O95', 'P35.0', 'A35', 'A37.0', 'B01', 'A97', 'A44', 'B57', 'A95', 'B55', 'B04X', 'A00', 'B26'], true) && !nucleoOmitido($enfermedad, 'fecha_inicio_sintomas')): ?>
+    <?php // nucleo_ajustes.fecha_inicio_sintomas_desde (2026-10-16): las
+    // fichas que la sacan de un campo propio tampoco la pintan; quedan en la
+    // lista las que la pintan en su partial a medida. ?>
+    <?php if (!in_array(($enfermedad['cie10'] ?? null), ['A80', 'B05', 'A44', 'B26'], true) && !nucleoOmitido($enfermedad, 'fecha_inicio_sintomas') && !clavesFechaInicioSintomas($enfermedad)): ?>
     <div class="fields" style="margin-bottom:16px">
       <div class="field">
         <label class="fl">Fecha de inicio de síntomas <span class="req">*</span></label>

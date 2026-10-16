@@ -265,6 +265,43 @@ function clasificacionDerivada(array $enfermedad, callable $valorPorClave): ?str
 }
 
 /**
+ * nucleo_ajustes.fecha_inicio_sintomas_desde (O95, 2026-10-15; lista,
+ * 2026-10-16): la ficha no pinta la fecha genérica y declara de qué campo (o
+ * campos) sale caso.fecha_inicio_sintomas. Con varios, la más temprana (A95:
+ * cada síntoma lleva su fecha). Un FECHA cuenta con su valor (sin la hora, si
+ * es "con_hora"); un SI_NO_FECHA, solo si está marcado Sí. null si ninguno
+ * trae una fecha válida.
+ *
+ * @return string[] claves declaradas ([] si la ficha no lo declara)
+ */
+function clavesFechaInicioSintomas(array $enfermedad): array
+{
+    $declarado = nucleoAjuste($enfermedad, 'fecha_inicio_sintomas_desde');
+    $claves = is_string($declarado) ? [$declarado] : (is_array($declarado) ? $declarado : []);
+
+    return array_values(array_filter($claves, fn($clave) => is_string($clave) && $clave !== ''));
+}
+
+function fechaInicioSintomasDerivada(array $enfermedad, callable $valorPorClave): ?string
+{
+    $fechas = [];
+    foreach (clavesFechaInicioSintomas($enfermedad) as $clave) {
+        $valor = $valorPorClave($clave);
+        if (is_array($valor)) {
+            $valor = ($valor['marcado'] ?? '') === 'SI' ? ($valor['fecha'] ?? '') : '';
+        }
+        $valor = trim((string) $valor);
+        $fechaHora = fechaHoraIsoValida($valor);
+        $fecha = $fechaHora !== null ? substr($fechaHora, 0, 10) : fechaIsoValida($valor);
+        if ($fecha !== null) {
+            $fechas[] = $fecha;
+        }
+    }
+
+    return $fechas ? min($fechas) : null;
+}
+
+/**
  * reglas_campos "fallecido" (A50, 2026-09-14): el caso es una defunción cuando
  * se cumple alguna de estas reglas (estado vital "Nació vivo, luego falleció",
  * "Mortinato" o "Aborto"). 1 o 0; null si la ficha no declara ninguna, así

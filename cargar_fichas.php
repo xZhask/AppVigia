@@ -230,7 +230,10 @@ const NUCLEO_AJUSTES_VALIDOS = [
     'copiar_a_sujeto'      => 'copiar_a_sujeto',
     // O95, 2026-10-15: clave de un FECHA de la ficha que da
     // caso.fecha_inicio_sintomas cuando la ficha no pinta la genérica (la
-    // fecha de fallecimiento). Ese campo debe ser obligatorio.
+    // fecha de fallecimiento). Desde 2026-10-16 también una lista de claves
+    // FECHA o SI_NO_FECHA (A95: la más temprana de sus síntomas). No hace
+    // falta que sean obligatorias: sin fecha, caso.fecha_inicio_sintomas
+    // queda vacía.
     'fecha_inicio_sintomas_desde' => 'clave_fecha',
 ];
 
@@ -878,15 +881,14 @@ function validarManifiesto(array $manifiesto): void
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} solo admite true (para no activarlo, no se declara).");
                 }
                 if ($tipoAjuste === 'clave_fecha') {
-                    if (!is_string($valorAjuste) || ($tiposPorClaveFicha[$valorAjuste] ?? null) !== 'FECHA') {
-                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser la clave de un campo FECHA de esta ficha.");
+                    $clavesFis = is_string($valorAjuste) ? [$valorAjuste] : $valorAjuste;
+                    $tiposFis = is_string($valorAjuste) ? ['FECHA'] : ['FECHA', 'SI_NO_FECHA'];
+                    if (!is_array($clavesFis) || !$clavesFis || !array_is_list($clavesFis) || count(array_unique($clavesFis)) !== count($clavesFis)) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser la clave de un campo FECHA o una lista sin repetidos de claves FECHA/SI_NO_FECHA de esta ficha.");
                     }
-                    foreach ($ficha['secciones'] as $seccionFis) {
-                        foreach ($seccionFis['campos'] as $campoFis) {
-                            if (($campoFis['clave'] ?? null) === $valorAjuste
-                                && (empty($campoFis['obligatorio']) || !empty($campoFis['depende_de']) || !empty($seccionFis['depende_de']))) {
-                                throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}: \"{$valorAjuste}\" debe ser obligatorio y estar siempre visible (sin depende_de).");
-                            }
+                    foreach ($clavesFis as $claveFis) {
+                        if (!is_string($claveFis) || !in_array($tiposPorClaveFicha[$claveFis] ?? null, $tiposFis, true)) {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}: \"" . (is_string($claveFis) ? $claveFis : '?') . "\" no es un campo " . implode('/', $tiposFis) . " de esta ficha.");
                         }
                     }
                 }

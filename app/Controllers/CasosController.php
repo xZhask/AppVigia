@@ -324,69 +324,21 @@ class CasosController extends Controller
             $erroresFijos['distrito_id'] = 'Selecciona el distrito de domicilio.';
         }
 
-        // P35.0 no pide "fecha de inicio de síntomas" en el PDF (SRC es
-        // congénito, no un cuadro con inicio agudo) -- ni la muestra el
-        // formulario ni la exige el servidor; caso.fecha_inicio_sintomas
-        // queda NULL para esta ficha, columna ya nullable. A35 (Tétanos)
-        // se suma por el mismo motivo: su propia "Fecha de inicio de
-        // lesión" no es obligatoria en el manifiesto (día exacto no
-        // siempre se conoce, de ahí "No recuerda día") y no hay un solo
-        // campo estándar equivalente -- forzar aquí un valor la haría
-        // obligatoria por la puerta de atrás. A37.0 se suma por un motivo
-        // distinto: sí tiene un campo estándar único y siempre determinable
-        // (ítem 26 del PDF), pero vive en su propio campo_def dentro de
-        // "Cuadro clínico" -- el genérico no puede mostrarse ahí porque
-        // secciones-clinicas.php lo ancla a $secciones[0], que para A37.0
-        // es "Datos del paciente (adicionales)" (queda antes de Cuadro
-        // clínico en el manifiesto). Exigir el genérico duplicaría el dato
-        // y, peor, extraerFechaInicioSintomas() tomaría la primera FECHA
-        // enviada (probablemente "Fecha de conocimiento local del caso" de
-        // la cabecera de notificación), no la fecha de síntomas real.
-        // B01 (2026-08-10): igual que los 3 anteriores, el campo está oculto
-        // del todo en secciones-clinicas.php -- Varicela no lo requiere en
-        // absoluto (no solo "no obligatorio", decisión revisada el
-        // 2026-08-09 y corregida al día siguiente por el usuario). No hace
-        // falta ninguna otra rama acá: al no llegar en $_POST, sigue
-        // guardando NULL sin error, mismo camino que P35.0/A35/A37.0.
-        // A97 (2026-08-14): ver el comentario largo en secciones-clinicas.php
-        // -- "Subsistema de vigilancia" trae su propio campo FECHA antes que
-        // "Cuadro clínico" en el manifiesto, así que el fallback de
-        // extraerFechaInicioSintomas() (primer campo FECHA en orden) agarraría
-        // esa fecha por error si A97 no estuviera en esta lista.
-        // A95 (2026-08-23, pedido del usuario: quitar el genérico
-        // hardcodeado de "Cuadro clínico" -- el PDF pág. 26-27 no lo trae,
-        // "IV. CUADRO CLINICO" empieza directo con la tabla de síntomas
-        // SI/NO/IGN/FECHA): a diferencia de A44 (cuyo primer campo FECHA es
-        // "Fecha de inicio de enfermedad", un sustituto razonable),
-        // extraerFechaInicioSintomas() encontraría primero
-        // a95_fecha_de_hospitalizacion ("Hospitalización" es la 1.ª sección
-        // con un campo tipo FECHA -- "Cuadro clínico"/"Migración" no tienen
-        // ninguno) -- fecha de hospitalización no es un sustituto válido de
-        // inicio de síntomas (ni siquiera existe si el paciente no fue
-        // hospitalizado), así que A95 se suma acá en vez de dejar que el
-        // fallback la capture por error.
-        // B04X (cotejo 2026-08-29): mismo motivo que A97/B57/A95 -- su
-        // propia "Fecha de inicio de síntomas (FIS)" vive en "Cuadro
-        // clínico" (orden 5), pero "Antecedentes" (orden 4, ANTES) trae un
-        // FECHA suelto (b04x_fecha_de_diagnostico_vih) que
-        // extraerFechaInicioSintomas() agarraría por error como fallback.
-        // nucleo_omitidos: 'fecha_inicio_sintomas' (cotejo Z21, 2026-09-11) es
-        // la versión declarativa de esta lista de CIE-10. Con el bloque
-        // omitido el valor se descarta aunque venga forzado en el POST: el
-        // campo ni siquiera se pinta.
+        // Fecha de inicio de síntomas (2026-10-16): las fichas que la piden
+        // con otro nombre (A35, A37.0, A97, B57, B04X, A00, B01, A95, B55) la
+        // declaran en nucleo_ajustes.fecha_inicio_sintomas_desde, como O95, y
+        // P35.0 (congénita) la omite. Antes una lista fija de CIE-10 solo
+        // evitaba que extraerFechaInicioSintomas() tomara una fecha ajena y
+        // caso.fecha_inicio_sintomas quedaba vacía. La derivada se calcula
+        // después de validar los campos (un campo oculto no cuenta) y no
+        // tiene error propio: si hace falta, lo exige su campo.
+        // nucleo_omitidos: 'fecha_inicio_sintomas' (cotejo Z21, 2026-09-11):
+        // con el bloque omitido el valor se descarta aunque venga forzado en
+        // el POST: el campo ni siquiera se pinta.
         $fechaInicioSintomasOmitida = nucleoOmitido($enfermedad, 'fecha_inicio_sintomas');
-        $sinFechaInicioSintomasObligatoria = $fechaInicioSintomasOmitida
-            || in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
-        $fechaInicioSintomas = $fechaInicioSintomasOmitida ? '' : trim($_POST['fecha_inicio_sintomas'] ?? '');
-        // nucleo_ajustes.fecha_inicio_sintomas_desde (O95, 2026-10-15): la
-        // ficha no pinta la fecha genérica y declara cuál de sus campos FECHA
-        // la da (en O95, la fecha de fallecimiento). Lo exige ese campo, no
-        // el núcleo: no hay error propio aunque llegue vacío o inválido.
-        $fechaInicioSintomasDesde = $this->fechaInicioSintomasDesdeCampo($enfermedad);
-        if ($fechaInicioSintomasDesde !== null) {
-            $sinFechaInicioSintomasObligatoria = true;
-            $fechaInicioSintomas = $fechaInicioSintomasDesde;
-        }
+        $fechaInicioSintomasEsDerivada = clavesFechaInicioSintomas($enfermedad) !== [];
+        $sinFechaInicioSintomasObligatoria = $fechaInicioSintomasOmitida || $fechaInicioSintomasEsDerivada;
+        $fechaInicioSintomas = $sinFechaInicioSintomasObligatoria ? '' : trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
@@ -445,6 +397,9 @@ class CasosController extends Controller
         // La fecha de nacimiento del núcleo va para las reglas
         // "comparar_fechas"/"maximo_dias_entre" (P96).
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
+        if ($fechaInicioSintomasEsDerivada) {
+            $fechaInicioSintomasIso = $this->fechaInicioSintomasCalculada($enfermedad, $valoresCampos);
+        }
 
         // reglas_campos "clasificar" (Z21, 2026-09-13): en las fichas que la
         // calculan, la clasificación sale de los campos ya validados y no del
@@ -1046,41 +1001,21 @@ class CasosController extends Controller
             $erroresFijos['distrito_id'] = 'Selecciona el distrito de domicilio.';
         }
 
-        // Ver comentario en crear(): P35.0 y A35 no tienen un campo
-        // estándar de "fecha de inicio de síntomas" -- no se muestra ni
-        // se exige. A37.0 sí lo tiene, pero dentro de su propio Cuadro
-        // clínico -- ver el motivo completo en crear().
-        // B01 (2026-08-10): igual que los 3 anteriores, el campo está oculto
-        // del todo en secciones-clinicas.php -- Varicela no lo requiere en
-        // absoluto (no solo "no obligatorio", decisión revisada el
-        // 2026-08-09 y corregida al día siguiente por el usuario). No hace
-        // falta ninguna otra rama acá: al no llegar en $_POST, sigue
-        // guardando NULL sin error, mismo camino que P35.0/A35/A37.0.
-        // A97 (2026-08-14): ver el comentario largo en secciones-clinicas.php
-        // -- "Subsistema de vigilancia" trae su propio campo FECHA antes que
-        // "Cuadro clínico" en el manifiesto, así que el fallback de
-        // extraerFechaInicioSintomas() (primer campo FECHA en orden) agarraría
-        // esa fecha por error si A97 no estuviera en esta lista.
-        // A95 (2026-08-23): ver el motivo completo en crear() -- el primer
-        // campo FECHA que encontraría extraerFechaInicioSintomas() es
-        // a95_fecha_de_hospitalizacion, no un sustituto válido.
-        // B04X (2026-08-29): ver el motivo completo en crear() -- el primer
-        // campo FECHA que encontraría extraerFechaInicioSintomas() es
-        // b04x_fecha_de_diagnostico_vih, no un sustituto válido.
-        // nucleo_omitidos: 'fecha_inicio_sintomas' -- ver crear().
+        // Fecha de inicio de síntomas (2026-10-16): las fichas que la piden
+        // con otro nombre (A35, A37.0, A97, B57, B04X, A00, B01, A95, B55) la
+        // declaran en nucleo_ajustes.fecha_inicio_sintomas_desde, como O95, y
+        // P35.0 (congénita) la omite. Antes una lista fija de CIE-10 solo
+        // evitaba que extraerFechaInicioSintomas() tomara una fecha ajena y
+        // caso.fecha_inicio_sintomas quedaba vacía. La derivada se calcula
+        // después de validar los campos (un campo oculto no cuenta) y no
+        // tiene error propio: si hace falta, lo exige su campo.
+        // nucleo_omitidos: 'fecha_inicio_sintomas' (cotejo Z21, 2026-09-11):
+        // con el bloque omitido el valor se descarta aunque venga forzado en
+        // el POST: el campo ni siquiera se pinta.
         $fechaInicioSintomasOmitida = nucleoOmitido($enfermedad, 'fecha_inicio_sintomas');
-        $sinFechaInicioSintomasObligatoria = $fechaInicioSintomasOmitida
-            || in_array($enfermedad['cie10'] ?? '', ['P35.0', 'A35', 'A37.0', 'B01', 'A97', 'B57', 'A95', 'B55', 'B04X', 'A00'], true);
-        $fechaInicioSintomas = $fechaInicioSintomasOmitida ? '' : trim($_POST['fecha_inicio_sintomas'] ?? '');
-        // nucleo_ajustes.fecha_inicio_sintomas_desde (O95, 2026-10-15): la
-        // ficha no pinta la fecha genérica y declara cuál de sus campos FECHA
-        // la da (en O95, la fecha de fallecimiento). Lo exige ese campo, no
-        // el núcleo: no hay error propio aunque llegue vacío o inválido.
-        $fechaInicioSintomasDesde = $this->fechaInicioSintomasDesdeCampo($enfermedad);
-        if ($fechaInicioSintomasDesde !== null) {
-            $sinFechaInicioSintomasObligatoria = true;
-            $fechaInicioSintomas = $fechaInicioSintomasDesde;
-        }
+        $fechaInicioSintomasEsDerivada = clavesFechaInicioSintomas($enfermedad) !== [];
+        $sinFechaInicioSintomasObligatoria = $fechaInicioSintomasOmitida || $fechaInicioSintomasEsDerivada;
+        $fechaInicioSintomas = $sinFechaInicioSintomasObligatoria ? '' : trim($_POST['fecha_inicio_sintomas'] ?? '');
         if ($fechaInicioSintomas === '' && !$sinFechaInicioSintomasObligatoria) {
             $fechaInicioSintomas = $this->extraerFechaInicioSintomas((int) $enfermedad['id']);
         }
@@ -1102,6 +1037,9 @@ class CasosController extends Controller
             $erroresFijos['condicion'] = $datosPnp['error'];
         }
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
+        if ($fechaInicioSintomasEsDerivada) {
+            $fechaInicioSintomasIso = $this->fechaInicioSintomasCalculada($enfermedad, $valoresCampos);
+        }
 
         // ---------- vinculo_caso (cotejo Z21, 2026-09-11) ----------
         // Guarda de integridad: si otras fichas apuntan a esta, no se puede
@@ -4224,25 +4162,17 @@ class CasosController extends Controller
     }
 
     /**
-     * Fecha (AAAA-MM-DD) del campo FECHA que declara
-     * nucleo_ajustes.fecha_inicio_sintomas_desde, tal como llega en el POST;
-     * '' si viene vacío o no es una fecha válida (el error lo da el campo), y
-     * null si la ficha no lo declara.
+     * nucleo_ajustes.fecha_inicio_sintomas_desde: la fecha del caso según los
+     * valores ya validados (fechaInicioSintomasDerivada() en ayudantes.php).
      */
-    private function fechaInicioSintomasDesdeCampo(array $enfermedad): ?string
+    private function fechaInicioSintomasCalculada(array $enfermedad, array $valoresCampos): ?string
     {
-        $clave = nucleoAjuste($enfermedad, 'fecha_inicio_sintomas_desde');
-        if (!is_string($clave) || $clave === '') {
-            return null;
+        $idPorClave = [];
+        foreach (CampoDef::porEnfermedad((int) $enfermedad['id']) as $campoId => $campo) {
+            $idPorClave[$campo['clave']] = (int) $campoId;
         }
-        $campo = CampoDef::porClave((int) $enfermedad['id'], $clave);
-        if (!$campo) {
-            return '';
-        }
-        $valor = trim((string) ($_POST['campo_' . $campo['id']] ?? ''));
-        $fechaHora = fechaHoraIsoValida($valor);
 
-        return $fechaHora !== null ? substr($fechaHora, 0, 10) : (fechaIsoValida($valor) ?? '');
+        return fechaInicioSintomasDerivada($enfermedad, fn(string $clave) => $valoresCampos[$idPorClave[$clave] ?? 0] ?? '');
     }
 
     private function extraerFechaInicioSintomas(int $enfermedadId): string

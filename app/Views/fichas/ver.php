@@ -327,8 +327,8 @@ $accionEtiquetas = [
               }
           }
           ?>
-          <?php // Con nucleo_ajustes.fecha_inicio_sintomas_desde (O95) la fecha ya se lee en su propio campo.
-          if ($numeroSeccion === 3 && !nucleoOmitido($enfermedadVer ?? [], 'fecha_inicio_sintomas') && !nucleoAjuste($enfermedadVer ?? [], 'fecha_inicio_sintomas_desde')): ?>
+          <?php // Con nucleo_ajustes.fecha_inicio_sintomas_desde la fecha ya se lee en su propio campo.
+          if ($numeroSeccion === 3 && !nucleoOmitido($enfermedadVer ?? [], 'fecha_inicio_sintomas') && !clavesFechaInicioSintomas($enfermedadVer ?? [])): ?>
             <div class="fields" style="margin-bottom:16px">
               <div class="field"><label class="fl">Fecha de inicio de síntomas</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_inicio_sintomas'])) ?: '—' ?></div></div>
             </div>
