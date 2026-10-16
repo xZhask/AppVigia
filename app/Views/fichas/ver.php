@@ -101,7 +101,10 @@ $accionEtiquetas = [
         <div class="fields thirds">
           <div class="field"><label class="fl">Establecimiento</label><div class="control" style="background:var(--paper)"><?= e($caso['establecimiento_nombre']) ?></div></div>
           <div class="field"><label class="fl">Red de salud</label><div class="control" style="background:var(--paper)"><?= e($caso['red_nombre'] ?? '—') ?></div></div>
+          <?php // nucleo_ajustes.fecha_notif_en (2026-10-16): la fecha se lee en su sitio de la cadena del PDF. ?>
+          <?php if (!claveFechaNotifEn($enfermedadVer ?? [])): ?>
           <div class="field"><label class="fl">Fecha de notificación</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_notif'])) ?></div></div>
+          <?php endif; ?>
           <div class="field"><label class="fl">Semana epidemiológica</label><div class="control mono" style="background:var(--paper)">SE <?= (int) $caso['semana_epi'] ?> · <?= (int) $caso['anio_epi'] ?></div></div>
           <div class="field"><label class="fl">Registrado por</label><div class="control" style="background:var(--paper)"><?= e($caso['usuario_nombre']) ?></div></div>
           <div class="field"><label class="fl">Fecha de registro</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['creado_en'])) ?></div></div>

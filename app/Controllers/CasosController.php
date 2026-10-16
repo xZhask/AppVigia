@@ -1319,8 +1319,20 @@ class CasosController extends Controller
         // ORDER BY de CampoDef::porEnfermedad lo garantiza) y se aplica más
         // abajo, sin confiar en que el cliente ya lo haya ocultado/limpiado.
         $valorOtrosLabA97Post = '';
+        // nucleo_ajustes.fecha_notif_en (2026-10-16): ese campo no se pinta;
+        // en su sitio va la fecha de notificación del núcleo, que se guarda
+        // también acá. Su error lo da el núcleo (fecha_notif).
+        $claveFechaNotifEn = claveFechaNotifEn(Enfermedad::buscar($enfermedadId) ?: []);
 
         foreach ($campos as $campoId => $campo) {
+            if ($claveFechaNotifEn !== null && $campo['clave'] === $claveFechaNotifEn) {
+                $valorFechaNotif = fechaIsoValida(trim((string) ($_POST['fecha_notif'] ?? ''))) ?? '';
+                $valoresCampos[$campoId] = $valorFechaNotif;
+                if ($valorFechaNotif !== '') {
+                    $paraGuardar[$campoId] = $valorFechaNotif;
+                }
+                continue;
+            }
             // Peticion 2, Fase 5: estos son casos especiales que escapan el
             // motor de tipos (arman o combinan valores de $_POST con nombres
             // literales, no campo_NNNN) y se identifican por clave, no por

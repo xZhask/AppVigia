@@ -57,7 +57,7 @@ $_SESSION['usuario'] = ['id' => 1, 'nombre' => 'verificar_render', 'rol' => 'ADM
 
 $pdo = Database::conexion();
 
-$enfermedades = $pdo->query('SELECT id, nombre, cie10 FROM enfermedad ORDER BY cie10')->fetchAll();
+$enfermedades = $pdo->query('SELECT id, nombre, cie10, nucleo_ajustes FROM enfermedad ORDER BY cie10')->fetchAll();
 
 $campos = $pdo->query(
     'SELECT cd.id, cd.clave, cd.etiqueta, cd.tipo, sd.nombre AS seccion_nombre, sd.enfermedad_id
@@ -114,6 +114,11 @@ foreach ($enfermedades as $enf) {
             ];
             if (isset(CLAVES_MECANISMO_NO_ESTANDAR[$campo['clave']])) {
                 $datosCampo['mecanismo'] = CLAVES_MECANISMO_NO_ESTANDAR[$campo['clave']];
+                $noEstandar[] = $datosCampo;
+            } elseif ($campo['clave'] === claveFechaNotifEn($enf) && substr_count($html, 'name="fecha_notif"') === 1) {
+                // nucleo_ajustes.fecha_notif_en (2026-10-16): en su sitio va la
+                // fecha del núcleo (una sola vez en la página).
+                $datosCampo['mecanismo'] = 'nucleo_ajustes.fecha_notif_en: en su sitio se pinta name="fecha_notif" (partials/campos/fecha-notif-nucleo.php), copiado al campo en CasosController::validarCamposDinamicos().';
                 $noEstandar[] = $datosCampo;
             } else {
                 $faltantes[] = $datosCampo;

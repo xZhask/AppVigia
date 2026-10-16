@@ -235,6 +235,11 @@ const NUCLEO_AJUSTES_VALIDOS = [
     // falta que sean obligatorias: sin fecha, caso.fecha_inicio_sintomas
     // queda vacía.
     'fecha_inicio_sintomas_desde' => 'clave_fecha',
+    // 2026-10-16: clave del FECHA de la cadena de notificación del PDF en
+    // cuyo sitio se pinta la fecha de notificación del núcleo
+    // (caso.fecha_notif); se guarda el mismo valor en ese campo. Sin
+    // depende_de: la fecha del núcleo es obligatoria y siempre visible.
+    'fecha_notif_en' => 'clave_fecha_visible',
 ];
 
 // Campos del núcleo cuya etiqueta una ficha puede cambiar con
@@ -889,6 +894,18 @@ function validarManifiesto(array $manifiesto): void
                     foreach ($clavesFis as $claveFis) {
                         if (!is_string($claveFis) || !in_array($tiposPorClaveFicha[$claveFis] ?? null, $tiposFis, true)) {
                             throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}: \"" . (is_string($claveFis) ? $claveFis : '?') . "\" no es un campo " . implode('/', $tiposFis) . " de esta ficha.");
+                        }
+                    }
+                }
+                if ($tipoAjuste === 'clave_fecha_visible') {
+                    if (!is_string($valorAjuste) || ($tiposPorClaveFicha[$valorAjuste] ?? null) !== 'FECHA') {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser la clave de un campo FECHA de esta ficha.");
+                    }
+                    foreach ($ficha['secciones'] as $seccionNotif) {
+                        foreach ($seccionNotif['campos'] as $campoNotif) {
+                            if (($campoNotif['clave'] ?? null) === $valorAjuste && (!empty($campoNotif['depende_de']) || !empty($seccionNotif['depende_de']))) {
+                                throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste}: \"{$valorAjuste}\" debe estar siempre visible (sin depende_de).");
+                            }
                         }
                     }
                 }

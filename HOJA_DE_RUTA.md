@@ -80,6 +80,7 @@ php sql/migraciones/set_b26_condiciones.php
 php sql/migraciones/set_p350_clasificacion_propia.php
 php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B05 A80 O95
 php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0
+php sql/migraciones/set_fecha_notif_en.php A37.0 B01 B26 A35 A33 A80 P35.0
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -122,6 +123,10 @@ php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A
   `nucleo_ajustes` y `nucleo_omitidos` y recalcula
   `caso.fecha_inicio_sintomas` como al editar y guardar. Se puede correr más
   de una vez.
+- `set_fecha_notif_en.php <fichas>` (16/10): mismo motivo para la fecha de
+  notificación en la cadena del PDF (sección 3, ítem 2); copia
+  `nucleo_ajustes` y pone `caso.fecha_notif` en ese campo de los casos
+  guardados. Se puede correr más de una vez.
 - El cargador va **sin** `--cie10`: el 15/10 cambió `tablas_hijas` en las 24
   fichas. Si una ficha sale "bloqueada por datos capturados", igual recibe sus
   tablas hijas (el cargador las aplica aparte); el resto de esa ficha queda
@@ -269,8 +274,16 @@ No tocar sin una respuesta explícita.
      Se quitó la lista fija de CIE-10 del controlador y de la vista, y "ver"
      ya no pinta la fila vacía. Ningún reporte usaba esa fecha (la semana
      epidemiológica sale de `fecha_notif`).
-   - **Pendiente:** `fecha_notif` se pide aparte aunque la ficha tenga su
-     cadena de fechas de notificación (`PENDIENTES.md` ítem 5).
+   - **Fecha de notificación — resuelta (16/10).** A37.0, B01, B26, A35, A33,
+     A80 y P35.0 la pedían dos veces: la del núcleo en la tarjeta
+     "Notificación" y su "Fecha de notificación EE.SS. a Red/Microred".
+     Ahora declaran `nucleo_ajustes.fecha_notif_en`: la del núcleo
+     (`caso.fecha_notif`: SE, edad, duplicados) se pinta en el sitio de la de
+     la cadena, con su etiqueta, y el servidor guarda el mismo valor en ese
+     campo; "ver" la muestra una sola vez. Las demás no tienen una fecha
+     equivalente (A95/B57: conocimiento local; B05: identificación local;
+     Y59.0: DIRESA a CDC) y siguen igual; O95 ya usaba la del núcleo. Z21 no
+     se tocó: su "Fecha de reporte de la ficha" es otra fecha.
 3. **Códigos de zona del PDF** (urbanización, AA.HH., cooperativa…): segundo eje
    del domicilio, distinto de Urbano/Rural. Afecta a A00, A95, B57, A37.0 y
    P35.0. Requiere columna nueva en `persona`.

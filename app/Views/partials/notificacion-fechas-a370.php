@@ -51,7 +51,10 @@ $casoCaptadoEn = $campoA370('a37_0_caso_captado_en');
     </div>
     <?php endif; ?>
 
-    <?php if ($fechaNotifEess['name']): ?>
+    <?php // nucleo_ajustes.fecha_notif_en (2026-10-16): aquí va la fecha de
+    // notificación del núcleo, que la tarjeta ya no pinta aparte.
+    if (claveFechaNotifEn($enfermedad) === 'a37_0_fecha_de_notificacion_ee_ss_a_red_microred'): $etiquetaFechaNotif = 'Fecha de notificación EE.SS a Red/Microred'; require __DIR__ . '/campos/fecha-notif-nucleo.php'; ?>
+    <?php elseif ($fechaNotifEess['name']): ?>
     <div class="field">
       <label class="fl">Fecha de notificación EE.SS a Red/Microred</label>
       <div class="control mono <?= $fechaNotifEess['err'] ? 'err' : '' ?>">

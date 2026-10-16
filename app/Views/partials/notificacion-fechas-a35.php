@@ -72,7 +72,10 @@ $fuenteOtraOculto   = !campoVisiblePorDependencia($fuenteOtra['campo'], $valores
     </div>
     <?php endif; ?>
 
-    <?php if ($fechaNotifEess['name']): ?>
+    <?php // nucleo_ajustes.fecha_notif_en (2026-10-16): aquí va la fecha de
+    // notificación del núcleo, que la tarjeta ya no pinta aparte.
+    if (claveFechaNotifEn($enfermedad) === 'a35_fecha_de_notificacion_ee_ss_a_red_microrred'): $etiquetaFechaNotif = 'Fecha de notificación EE SS a Red/Microrred'; require __DIR__ . '/campos/fecha-notif-nucleo.php'; ?>
+    <?php elseif ($fechaNotifEess['name']): ?>
     <div class="field">
       <label class="fl">Fecha de notificación EE SS a Red/Microrred</label>
       <div class="control mono <?= $fechaNotifEess['err'] ? 'err' : '' ?>">

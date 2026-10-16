@@ -604,6 +604,8 @@
       "lote": 1,
       "pdf_paginas": "1-2",
       "nucleo_ajustes": {
+        "_nota_fecha_notif": "2026-10-16: la fecha de notificación del núcleo (caso.fecha_notif: SE, edad, duplicados) se pinta en el sitio de esta fecha de la cadena del PDF, que antes se pedía aparte y repetida.",
+        "fecha_notif_en": "a37_0_fecha_de_notificacion_ee_ss_a_red_microred",
         "fecha_inicio_sintomas_desde": "a37_0_fecha_de_inicio_de_sintomas",
         "_nota": "XI. Investigador (cotejo 2026-10-12, ítems 69-71): nombre, cargo y N.° de celular. La fecha de investigación ya está en la cabecera y profesión/email no los pide el PDF. 'Firma y sello' es del papel.",
         "investigador": {
@@ -1409,6 +1411,8 @@
         "ocupacion"
       ],
       "nucleo_ajustes": {
+        "_nota_fecha_notif": "2026-10-16: la fecha de notificación del núcleo (caso.fecha_notif: SE, edad, duplicados) se pinta en el sitio de esta fecha de la cadena del PDF, que antes se pedía aparte y repetida.",
+        "fecha_notif_en": "b01_fecha_de_notificacion_ee_ss_a_red_microred",
         "_nota_fecha_inicio_sintomas": "caso.fecha_inicio_sintomas (2026-10-16): la de inicio de la erupción dérmica.",
         "fecha_inicio_sintomas_desde": "b01_fecha_de_inicio_de_erupcion_dermica"
       },
@@ -1759,6 +1763,10 @@
         "pueblo_etnico",
         "ocupacion"
       ],
+      "nucleo_ajustes": {
+        "_nota_fecha_notif": "2026-10-16: la fecha de notificación del núcleo (caso.fecha_notif: SE, edad, duplicados) se pinta en el sitio de esta fecha de la cadena del PDF, que antes se pedía aparte y repetida.",
+        "fecha_notif_en": "b26_fecha_de_notificacion_ee_ss_a_red_microred"
+      },
       "secciones": [
         {
           "nombre": "Datos de notificación e investigación del caso",
@@ -6507,6 +6515,8 @@
         "clasificacion"
       ],
       "nucleo_ajustes": {
+        "_nota_fecha_notif": "2026-10-16: la fecha de notificación del núcleo (caso.fecha_notif: SE, edad, duplicados) se pinta en el sitio de esta fecha de la cadena del PDF, que antes se pedía aparte y repetida.",
+        "fecha_notif_en": "a35_fecha_de_notificacion_ee_ss_a_red_microrred",
         "fecha_inicio_sintomas_desde": "a35_fecha_de_inicio_de_sintomas",
         "_nota": "VI. Investigador de campo (cotejo 2026-10-12): nombre, cargo y teléfono. La 'Fecha' ya está en la cabecera (Fecha de investigación) y el 'Establecimiento' es el EESS notificante; profesión y email no los pide el PDF.",
         "investigador": {
@@ -6963,6 +6973,8 @@
         "clasificacion"
       ],
       "nucleo_ajustes": {
+        "_nota_fecha_notif": "2026-10-16: la fecha de notificación del núcleo (caso.fecha_notif: SE, edad, duplicados) se pinta en el sitio de esta fecha de la cadena del PDF, que antes se pedía aparte y repetida.",
+        "fecha_notif_en": "a33_fecha_de_notificacion_ee_ss_a_red_microrred",
         "_nota": "Cotejo 2026-10-08 (págs. 21-22): el paciente es un recién nacido de menos de 28 días. El PDF no pide documento de identidad (casi nunca lo tiene), nacionalidad ni gestante, y un neonato no puede ser efectivo PNP (titular).",
         "sin_documento": true,
         "condiciones_paciente": ["DERECHOHABIENTE", "PARTICULAR"]
@@ -7517,6 +7529,10 @@
           "clasificar": "PROBABLE"
         }
       ],
+      "nucleo_ajustes": {
+        "_nota_fecha_notif": "2026-10-16: la fecha de notificación del núcleo (caso.fecha_notif: SE, edad, duplicados) se pinta en el sitio de esta fecha de la cadena del PDF, que antes se pedía aparte y repetida.",
+        "fecha_notif_en": "a80_fecha_notificacion_eess_red"
+      },
       "secciones": [
         {
           "nombre": "Fechas de notificación",
@@ -11870,6 +11886,10 @@
           "clasificar": "SOSPECHOSO"
         }
       ],
+      "nucleo_ajustes": {
+        "_nota_fecha_notif": "2026-10-16: la fecha de notificación del núcleo (caso.fecha_notif: SE, edad, duplicados) se pinta en el sitio de esta fecha de la cadena del PDF, que antes se pedía aparte y repetida.",
+        "fecha_notif_en": "p35_0_fecha_de_notificacion_eess_a_red_microred"
+      },
       "secciones": [
         {
           "nombre": "Datos de notificación e investigación del caso",

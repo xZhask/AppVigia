@@ -282,6 +282,20 @@ function clavesFechaInicioSintomas(array $enfermedad): array
     return array_values(array_filter($claves, fn($clave) => is_string($clave) && $clave !== ''));
 }
 
+/**
+ * nucleo_ajustes.fecha_notif_en (2026-10-16): clave del FECHA de la cadena de
+ * notificación del PDF ("Fecha de notificación EE.SS. a Red/Microred") en
+ * cuyo sitio se pinta la fecha de notificación del núcleo (caso.fecha_notif).
+ * El servidor guarda en ese campo_def el mismo valor. null si la ficha no lo
+ * declara.
+ */
+function claveFechaNotifEn(array $enfermedad): ?string
+{
+    $clave = nucleoAjuste($enfermedad, 'fecha_notif_en');
+
+    return is_string($clave) && $clave !== '' ? $clave : null;
+}
+
 function fechaInicioSintomasDerivada(array $enfermedad, callable $valorPorClave): ?string
 {
     $fechas = [];

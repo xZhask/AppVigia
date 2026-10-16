@@ -26,6 +26,15 @@ if ($clavesCamposNotificacion):
     };
 ?>
 <div class="fields thirds" id="notificacionCamposDeclarados" style="margin-top:14px">
-  <?php foreach ($clavesCamposNotificacion as $claveCampoNotificacion) { $pintarCampoNotificacion($campo($claveCampoNotificacion)); } ?>
+  <?php foreach ($clavesCamposNotificacion as $claveCampoNotificacion) {
+      // nucleo_ajustes.fecha_notif_en (A80, 2026-10-16): en el sitio de esa
+      // fecha va la fecha de notificación del núcleo.
+      if ($claveCampoNotificacion === claveFechaNotifEn($enfermedad)) {
+          $etiquetaFechaNotif = (string) ($campo($claveCampoNotificacion)['campo']['etiqueta'] ?? 'Fecha de notificación');
+          require __DIR__ . '/campos/fecha-notif-nucleo.php';
+          continue;
+      }
+      $pintarCampoNotificacion($campo($claveCampoNotificacion));
+  } ?>
 </div>
 <?php endif; ?>

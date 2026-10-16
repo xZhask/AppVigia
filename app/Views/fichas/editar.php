@@ -64,6 +64,9 @@ $es = $estados[$caso['estado']];
               </div>
               <span class="hint">No editable: crea una nueva ficha si cambió de establecimiento</span>
             </div>
+            <?php // nucleo_ajustes.fecha_notif_en (2026-10-16): la ficha la pinta en su
+            // cadena de fechas (partials/campos/fecha-notif-nucleo.php). ?>
+            <?php if (!claveFechaNotifEn($enfermedad)): ?>
             <div class="field">
               <!-- A44 (pág. 42, cotejo 2026-08-18): el PDF pide "FECHA ENCUESTA", no
                    "Fecha de notificación" -- mismo campo núcleo (fecha_notif), solo
@@ -76,6 +79,7 @@ $es = $estados[$caso['estado']];
                 <span class="hint err"><?= e($erroresFijos['fecha_notif']) ?></span>
               <?php endif; ?>
             </div>
+            <?php endif; ?>
           </div>
           <?php // nucleo_omitidos: 'captacion' -- ver el mismo comentario en
           // nueva/index.php (cotejo Z21, 2026-09-11). ?>

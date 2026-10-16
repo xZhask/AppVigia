@@ -95,6 +95,9 @@ if ($puedeElegirEstablecimiento) {
             <?php else: ?>
               <input type="hidden" name="establecimiento_id" value="<?= (int) $valoresFijos['establecimiento_id'] ?>">
             <?php endif; ?>
+            <?php // nucleo_ajustes.fecha_notif_en (2026-10-16): la ficha la pinta en su
+            // cadena de fechas (partials/campos/fecha-notif-nucleo.php). ?>
+            <?php if (!claveFechaNotifEn($enfermedad)): ?>
             <div class="field">
               <!-- A44 (pág. 42, cotejo 2026-08-18): el PDF pide "FECHA ENCUESTA", no
                    "Fecha de notificación" -- mismo campo núcleo (fecha_notif), solo
@@ -107,6 +110,7 @@ if ($puedeElegirEstablecimiento) {
                 <span class="hint err"><?= e($erroresFijos['fecha_notif']) ?></span>
               <?php endif; ?>
             </div>
+            <?php endif; ?>
           </div>
           <?php // nucleo_omitidos: 'captacion' (cotejo Z21, 2026-09-11) es la
           // versión declarativa de esta misma lista de CIE-10, para no
