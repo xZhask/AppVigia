@@ -1388,14 +1388,21 @@ document.addEventListener('DOMContentLoaded', function () {
   // formulario (su número varía según la enfermedad), marcada "done" cuando
   // todos sus campos obligatorios (marcados con .req) tienen algún control
   // con valor, y "cur" cuando contiene el campo con foco.
-  var formProgreso = document.querySelector('form');
+  // El formulario de la ficha, no el primero de la página: el de "Cerrar
+  // sesión" del menú lateral va antes en el HTML, y con
+  // document.querySelector('form') el panel buscaba secciones ahí y quedaba
+  // vacío (2026-10-16).
+  var seccionDeLaFicha = document.querySelector('form .card.section');
+  var formProgreso = seccionDeLaFicha ? seccionDeLaFicha.closest('form') : null;
   var progresoFicha = document.getElementById('progresoFicha');
 
   function campoTieneValor(campo) {
     // GRUPO_SI_NO / SI_NO_FECHA / CRONOLOGIA marcan cada fila como
     // "respondido" o "pendiente"; el campo solo cuenta como lleno cuando
     // todas sus filas están respondidas, no con que una lo esté.
-    var filas = campo.querySelectorAll('.grupo-si-no-row');
+    // Las filas de una MATRIZ llevan la misma clase pero nunca se marcan
+    // pendiente/respondido: esas se miran por sus controles, como el resto.
+    var filas = campo.querySelectorAll('.grupo-si-no-row.pendiente, .grupo-si-no-row.respondido, .grupo-si-no-row.is-si');
     if (filas.length > 0) {
       return campo.querySelectorAll('.grupo-si-no-row.pendiente').length === 0;
     }
@@ -1403,6 +1410,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var controles = campo.querySelectorAll('input, select, textarea');
     for (var i = 0; i < controles.length; i++) {
       var el = controles[i];
+      // El buscador de un selector (selector-busqueda.js) muestra
+      // "Seleccionar…" como valor: no es un dato. Lo deshabilitado tampoco
+      // viaja en el POST.
+      if (el.classList.contains('sel-input') || el.disabled) continue;
       if (el.type === 'checkbox' || el.type === 'radio') {
         if (el.checked) return true;
       } else if (el.value && el.value.trim() !== '') {
@@ -1412,17 +1423,28 @@ document.addEventListener('DOMContentLoaded', function () {
     return false;
   }
 
+  // Solo cuenta lo que se ve: las secciones y campos de otra rama o con una
+  // dependencia que no aplica están en el HTML pero ocultos (2026-10-16:
+  // antes aparecían repetidos en el panel y cumplían sin llenarse).
+  function visible(el) {
+    return el.offsetParent !== null;
+  }
+
+  // Completa: todos sus obligatorios visibles tienen dato. Una sección sin
+  // obligatorios cuenta como completa recién cuando tiene algún dato; antes
+  // salía marcada desde el inicio.
   function seccionCompleta(seccion) {
-    var campos = seccion.querySelectorAll('.field');
-    for (var i = 0; i < campos.length; i++) {
-      if (campos[i].querySelector('.req') && !campoTieneValor(campos[i])) return false;
+    var campos = Array.prototype.filter.call(seccion.querySelectorAll('.field'), visible);
+    var obligatorios = campos.filter(function (campo) { return campo.querySelector('.req'); });
+    if (obligatorios.length) {
+      return obligatorios.every(campoTieneValor);
     }
-    return true;
+    return campos.some(campoTieneValor);
   }
 
   function actualizarProgreso() {
     if (!progresoFicha || !formProgreso) return;
-    var secciones = formProgreso.querySelectorAll('.card.section');
+    var secciones = Array.prototype.filter.call(formProgreso.querySelectorAll('.card.section'), visible);
     var enFoco = document.activeElement ? document.activeElement.closest('.card.section') : null;
 
     var html = '';
@@ -1434,17 +1456,24 @@ document.addEventListener('DOMContentLoaded', function () {
       var marca = completa
         ? '<svg width="9" height="9" viewBox="0 0 9 9"><path d="M1.5 4.5 4 7l3.5-4.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         : '';
-      html += '<div class="' + clase + '"><span class="pd">' + marca + '</span> ' + titulo.textContent.trim() + '</div>';
+      html += '<div class="' + clase + '"><span class="pd">' + marca + '</span> ' + titulo.innerText.trim() + '</div>';
     });
     progresoFicha.innerHTML = html;
   }
 
   if (progresoFicha && formProgreso) {
+    // Diferido: el mismo "change" que elige una rama muestra sus secciones
+    // en otros listeners (de document, que corren después de este); contado
+    // en el acto, el panel no las veía hasta el siguiente evento.
+    var progresoPendiente = null;
+    var programarProgreso = function () {
+      clearTimeout(progresoPendiente);
+      progresoPendiente = setTimeout(actualizarProgreso, 0);
+    };
     actualizarProgreso();
-    formProgreso.addEventListener('input', actualizarProgreso);
-    formProgreso.addEventListener('change', actualizarProgreso);
-    formProgreso.addEventListener('focusin', actualizarProgreso);
-    formProgreso.addEventListener('focusout', actualizarProgreso);
+    ['input', 'change', 'focusin', 'focusout'].forEach(function (evento) {
+      formProgreso.addEventListener(evento, programarProgreso);
+    });
   }
 
   var fechaNac = document.getElementById('fechaNac');
@@ -2385,7 +2414,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   inicializarGruposSiNo();
 
-  var form = document.querySelector('form');
+  // El formulario de la ficha (formProgreso), no el primero de la página: con
+  // document.querySelector('form') este aviso se enganchaba al de "Cerrar
+  // sesión" y nunca corría al registrar (2026-10-16).
+  var form = formProgreso;
   if (form) {
     form.addEventListener('submit', function(e) {
       var grupos = document.querySelectorAll('.grupo-si-no-field');
@@ -2394,7 +2426,8 @@ document.addEventListener('DOMContentLoaded', function () {
       
       grupos.forEach(function(grupo) {
         var req = grupo.querySelector('.req');
-        if (req) {
+        // Oculto (rama o dependencia que no aplica): el servidor no lo exige.
+        if (req && grupo.offsetParent !== null) {
           // El campo es obligatorio
           var pendientes = grupo.querySelectorAll('.grupo-si-no-row.pendiente');
           if (pendientes.length > 0) {
