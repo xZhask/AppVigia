@@ -30,7 +30,7 @@
         <tr>
           <td class="pt-name"><?= e($enf['nombre']) ?></td>
           <td class="mono"><?= e($enf['cie10'] ?? '—') ?></td>
-          <td><?= e($enf['tipo_notif'] === 'INMEDIATA' ? 'Inmediata' : 'Semanal') ?></td>
+          <td><?= e(etiquetaTipoNotif($enf['tipo_notif'])) ?></td>
           <td><?= e($enf['grupo'] ?? '—') ?></td>
           <td><span class="state"><span class="dot <?= $enf['activo'] ? 'st-open' : 'st-closed' ?>"></span> <?= $enf['activo'] ? 'Activa' : 'Inactiva' ?></span></td>
           <td>

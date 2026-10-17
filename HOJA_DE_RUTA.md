@@ -74,6 +74,7 @@ En este orden:
 php sql/migraciones/add_tablas_hijas_enfermedad.php
 php sql/migraciones/add_tipo_asentamiento_persona.php
 php sql/migraciones/add_cie10.php
+php sql/migraciones/add_tipo_notif_mensual.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -94,6 +95,9 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   `persona.tipo_asentamiento` y `persona.anterior_tipo_asentamiento` (sección
   3, ítem 3) y copia `detalle_domicilio` y `nucleo_ajustes` de A00, A95 y B57.
   Se puede correr más de una vez.
+- `add_tipo_notif_mensual.php` (16/10): agrega MENSUAL a
+  `enfermedad.tipo_notif` y pasa B24 a mensual si seguía en semanal. Se puede
+  correr más de una vez.
 - `copiar_nucleo_ajustes.php <fichas>` (16/10): copia del manifiesto el
   `nucleo_ajustes` de esas fichas (P96: `edad_a_la_fecha`). No toca casos.
   Se puede correr más de una vez.
@@ -385,10 +389,12 @@ No tocar sin una respuesta explícita.
   - ~~P96: registrar un caso en una semana notificada sin casos no avisaba.~~
     Resuelto el 16/10: aviso al registrar y en "ver" de la ficha, con enlace
     al listado semanal para anular la notificación (no se anula sola).
-  - **Pendiente, decisión del usuario:** B24 figura como "Notificación
-    semanal", pero la NTS 115 (6.1.4) fija periodicidad mensual para VIH/SIDA
-    (semanal solo para gestantes y niños expuestos). Hoy solo existen
-    Inmediata y Semanal.
+  - ~~B24 figuraba como "Notificación semanal"~~, pero la NTS 115 (6.1.4) fija
+    periodicidad mensual para VIH/SIDA (semanal solo para gestantes y niños
+    expuestos). Resuelto el 16/10 con el visto bueno del usuario:
+    `enfermedad.tipo_notif` admite MENSUAL y B24 es mensual
+    (`add_tipo_notif_mensual.php`; también editable en Catálogos >
+    Enfermedades).
   - **Pendiente, decisión del usuario:** Z21, listado de la pág. 15: la
     columna "Observaciones" solo tiene dato en la rama del niño; la de la
     gestante no tiene campo de observaciones. Cotejar con el PDF.

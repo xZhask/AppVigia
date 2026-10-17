@@ -59,7 +59,7 @@ if ($puedeElegirEstablecimiento) {
     </div>
     <div class="disease-meta">
       <span class="tag" id="cieTag">CIE-10 · <?= e($enfermedad['cie10'] ?? '—') ?></span>
-      <span class="tag" id="tipoNotifTag"><?= $enfermedad['tipo_notif'] === 'INMEDIATA' ? 'Notificación inmediata' : 'Notificación semanal' ?></span>
+      <span class="tag" id="tipoNotifTag"><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'], true)) ?></span>
     </div>
   </div>
 
@@ -629,7 +629,7 @@ if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra')): ?>
           </div>
           <div style="display:flex;justify-content:space-between;gap:8px">
             <span style="color:var(--muted)">Notificación</span>
-            <span id="resumenTipoNotif" style="font-weight:600;text-align:right"><?= $enfermedad['tipo_notif'] === 'INMEDIATA' ? 'Inmediata' : 'Semanal' ?></span>
+            <span id="resumenTipoNotif" style="font-weight:600;text-align:right"><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'])) ?></span>
           </div>
         </div>
       </div>

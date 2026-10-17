@@ -1670,6 +1670,17 @@ function edadDesdeFecha(?string $fechaNacIso): ?int
 }
 
 /**
+ * Etiqueta de enfermedad.tipo_notif (2026-10-16: + MENSUAL, B24 según la
+ * NTS 115). $conPrefijo da "Notificación mensual" para el encabezado.
+ */
+function etiquetaTipoNotif(?string $tipo, bool $conPrefijo = false): string
+{
+    $etiqueta = ['INMEDIATA' => 'Inmediata', 'SEMANAL' => 'Semanal', 'MENSUAL' => 'Mensual'][$tipo] ?? (string) $tipo;
+
+    return $conPrefijo ? 'Notificación ' . mb_strtolower($etiqueta) : $etiqueta;
+}
+
+/**
  * Edad para mostrar en las fichas que no capturan edad con unidad
  * (2026-10-16): en años y, para menores de un año, en meses o días ("8
  * meses", "12 días"; antes "0 años"). $referenciaIso es la fecha hasta la que

@@ -9,7 +9,7 @@ use App\Models\Enfermedad;
 
 class EnfermedadesController extends Controller
 {
-    private const TIPOS_NOTIF = ['INMEDIATA', 'SEMANAL'];
+    private const TIPOS_NOTIF = ['INMEDIATA', 'SEMANAL', 'MENSUAL'];
     private const RUTA = 'catalogos/enfermedades';
 
     public function index(): void

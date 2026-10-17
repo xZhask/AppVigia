@@ -35,6 +35,7 @@ $accion = $esEdicion ? '/catalogos/enfermedades/' . (int) $enfermedad['id'] : '/
             <select name="tipo_notif">
               <option value="INMEDIATA" <?= seleccionado($enfermedad['tipo_notif'], 'INMEDIATA') ?>>Inmediata</option>
               <option value="SEMANAL" <?= seleccionado($enfermedad['tipo_notif'], 'SEMANAL') ?>>Semanal</option>
+              <option value="MENSUAL" <?= seleccionado($enfermedad['tipo_notif'], 'MENSUAL') ?>>Mensual</option>
             </select>
           </div>
           <?php if (isset($errores['tipo_notif'])): ?><span class="hint err"><?= e($errores['tipo_notif']) ?></span><?php endif; ?>
