@@ -371,6 +371,27 @@ No tocar sin una respuesta explícita.
     HOMBRE no se sugieren ni se aceptan al guardar si el paciente es del otro
     sexo (sin sexo no se restringe); el aviso sale también al escribir el
     código a mano o al cambiar el sexo.
+- **Observaciones viejas de `PENDIENTES.md`** (revisadas el 16/10; las demás ya
+  estaban resueltas):
+  - ~~Z21: un niño se podía vincular a una madre con 0 nacidos vivos~~ (y a
+    más niños que los declarados). Resuelto el 16/10: la búsqueda lo avisa y
+    el servidor lo rechaza al guardar (también con el id forzado en el POST);
+    al editar la madre, "N.° de nacidos vivos" no puede quedar por debajo de
+    los niños vinculados. Las fichas anuladas no cuentan.
+  - ~~Z21: el "Código de la madre" era una copia del día en que se guardó el
+    niño.~~ Resuelto el 16/10: al guardar la ficha de la madre se recalculan
+    los datos que copian sus fichas vinculadas (`vinculo_caso.copiar`; Z21 y
+    A50).
+  - ~~P96: registrar un caso en una semana notificada sin casos no avisaba.~~
+    Resuelto el 16/10: aviso al registrar y en "ver" de la ficha, con enlace
+    al listado semanal para anular la notificación (no se anula sola).
+  - **Pendiente, decisión del usuario:** B24 figura como "Notificación
+    semanal", pero la NTS 115 (6.1.4) fija periodicidad mensual para VIH/SIDA
+    (semanal solo para gestantes y niños expuestos). Hoy solo existen
+    Inmediata y Semanal.
+  - **Pendiente, decisión del usuario:** Z21, listado de la pág. 15: la
+    columna "Observaciones" solo tiene dato en la rama del niño; la de la
+    gestante no tiene campo de observaciones. Cotejar con el PDF.
 
 ## 5. Cómo se ha trabajado (para mantener el criterio)
 

@@ -100,6 +100,12 @@ $accionEtiquetas = [
     <div class="body"><b>Ficha anulada.</b> Motivo: <?= e($caso['motivo_anulacion']) ?></div>
   </div>
 <?php endif; ?>
+<?php if (!empty($avisoSinCasos)): // semana notificada sin casos (P96, 2026-10-16) ?>
+  <div class="dupe" style="margin-bottom:18px">
+    <span class="di"><svg width="17" height="17" viewBox="0 0 17 17"><path d="M8.5 1.5 16 15H1L8.5 1.5Z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M8.5 6.5v3.5M8.5 12.3v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+    <div class="body"><b>Semana notificada sin casos.</b> <?= e($avisoSinCasos['texto']) ?> <a href="<?= e($avisoSinCasos['url']) ?>">Ir al listado semanal</a></div>
+  </div>
+<?php endif; ?>
 
 <div class="grid form-grid">
   <div>

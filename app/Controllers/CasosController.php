@@ -565,6 +565,11 @@ class CasosController extends Controller
             exit;
         }
 
+        // Semana notificada sin casos (2026-10-16): se suma al mensaje de
+        // "Ficha registrada"; "ver" lo sigue mostrando mientras siga activa.
+        $avisoSinCasos = $this->avisoSemanaSinCasos($enfermedadId, (int) $establecimiento['id'], $semana['anio'], $semana['semana']);
+        $sufijoSinCasos = $avisoSinCasos ? ' — Aviso: ' . $avisoSinCasos['texto'] : '';
+
         // vinculo_caso.encadenar (pedido del usuario, 2026-09-11): al guardar
         // la ficha de una gestante que declara nacidos vivos, se abre su
         // propia ficha en vez de un formulario en blanco, con el aviso de
@@ -584,7 +589,7 @@ class CasosController extends Controller
                 ['{faltan}', '{total}'],
                 [(string) $esperadosEncadenar, (string) $esperadosEncadenar],
                 (string) $configEncadenar['encadenar']['mensaje']
-            ));
+            ) . $sufijoSinCasos);
             header('Location: /casos/' . $casoId);
             exit;
         }
@@ -597,7 +602,7 @@ class CasosController extends Controller
         // registrada. Sin el ajuste, todo sigue igual.
         if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra') === true) {
             if (($_POST['despues_de_registrar'] ?? '') === 'agregar_otra') {
-                Flash::set(sprintf('Ficha registrada: F-%05d (SE %d · %d). Registra la siguiente: se mantienen el establecimiento y la fecha de notificación.', $casoId, $semana['semana'], $semana['anio']));
+                Flash::set(sprintf('Ficha registrada: F-%05d (SE %d · %d). Registra la siguiente: se mantienen el establecimiento y la fecha de notificación.', $casoId, $semana['semana'], $semana['anio']) . $sufijoSinCasos);
                 header('Location: /casos/nuevo?' . http_build_query(array_merge(
                     ['enfermedad_id' => $enfermedadId],
                     $puedeElegirEstablecimiento ? ['establecimiento_id' => (int) $establecimiento['id']] : [],
@@ -605,12 +610,12 @@ class CasosController extends Controller
                 )));
                 exit;
             }
-            Flash::set('Ficha registrada: ' . sprintf('F-%05d', $casoId));
+            Flash::set('Ficha registrada: ' . sprintf('F-%05d', $casoId) . $sufijoSinCasos);
             header('Location: /casos/' . $casoId);
             exit;
         }
 
-        Flash::set('Ficha registrada: ' . sprintf('F-%05d', $casoId));
+        Flash::set('Ficha registrada: ' . sprintf('F-%05d', $casoId) . $sufijoSinCasos);
         header('Location: /casos/nuevo?enfermedad_id=' . $enfermedadId);
         exit;
     }
@@ -728,6 +733,7 @@ class CasosController extends Controller
             // A80/B05), y pisarlo cambiaría esas dos fichas ya cotejadas.
             'enfermedadVer' => $enfermedadVer,
             'vinculoVer'    => $this->datosVinculoVer($enfermedadVer, $caso, $valoresCampos),
+            'avisoSinCasos' => $caso['anulado'] ? null : $this->avisoSemanaSinCasos((int) $caso['enfermedad_id'], (int) $caso['establecimiento_id'], (int) $caso['anio_epi'], (int) $caso['semana_epi']),
             'contactos'   => CasoContacto::porCaso((int) $caso['id']),
             'viajes'      => CasoViaje::porCaso((int) $caso['id']),
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),
@@ -1090,6 +1096,9 @@ class CasosController extends Controller
             }
         }
         [$casoVinculadoId, $errorVinculoCaso] = $this->resolverVinculoCaso($enfermedad, $valoresCampos, $paraGuardar, (int) $caso['id']);
+        if ($errorEncadenar = $this->errorEncadenarMenorQueVinculadas($enfermedad, $valoresCampos, (int) $caso['id'])) {
+            $erroresCampos[$errorEncadenar[0]] = $errorEncadenar[1];
+        }
 
         // nucleo_omitidos: 'clasificacion' (cotejo Z21) -- con la tarjeta
         // oculta se conserva la clasificación guardada.
@@ -1234,6 +1243,12 @@ class CasosController extends Controller
                 $this->valoresSujetoPorRolDesdePost($enfermedad)
             );
             CasoSujeto::guardarSujetos((int) $caso['id'], $sujetos);
+
+            // vinculo_caso.copiar (2026-10-16): las fichas vinculadas a esta
+            // (los niños de una gestante) vuelven a copiar lo que toman de
+            // ella; antes conservaban el "Código de la madre" del día en que
+            // se guardaron.
+            $this->actualizarCopiasEnVinculadas($enfermedad, (int) $caso['id']);
 
             if ($clasificacion !== $caso['clasificacion']) {
                 CasoBitacora::registrar(
@@ -3973,6 +3988,10 @@ class CasosController extends Controller
             if (!$this->coincideVinculoBuscado($candidato, $consulta)) {
                 continue;
             }
+            if ($candidato['sin_cupo'] !== null) {
+                echo json_encode(['encontrado' => false, 'mensaje' => $candidato['sin_cupo']], JSON_UNESCAPED_UNICODE);
+                return;
+            }
             echo json_encode([
                 'encontrado' => true,
                 'id'         => $candidato['id'],
@@ -4061,10 +4080,105 @@ class CasosController extends Controller
                     . ' · ' . $casoCandidato['tipo_doc'] . ' ' . $casoCandidato['num_doc']
                     . ' · ' . fechaIsoADmy($casoCandidato['fecha_notif']),
                 'copiar_por_nombre' => $copiarPorNombre,
+                'sin_cupo' => $this->motivoVinculoSinCupo($config, $casoCandidato, $valoresCandidato, $excluirCasoId),
             ];
         }
 
         return $candidatos;
+    }
+
+    /**
+     * encadenar (2026-10-16): una ficha candidata solo admite tantas fichas
+     * vinculadas como dice su campo numérico (Z21: N.º de nacidos vivos). Con
+     * 0 declarado (aborto, solo óbitos fetales) o con el cupo ya lleno, el
+     * mensaje para quien intenta vincularle otra; null si la admite o si el
+     * campo está vacío (la madre pudo registrarse durante la gestación).
+     * $excluirCasoId es la ficha que se está editando: no cuenta contra el
+     * cupo. Las fichas anuladas tampoco.
+     */
+    private function motivoVinculoSinCupo(array $config, array $casoCandidato, array $valoresCandidato, ?int $excluirCasoId): ?string
+    {
+        $esperados = $this->fichasVinculadasEsperadas($config, $valoresCandidato);
+        if ($esperados === null) {
+            return null;
+        }
+        $vinculados = $this->cantidadFichasVinculadas((int) $casoCandidato['id'], $excluirCasoId);
+        if ($vinculados < $esperados) {
+            return null;
+        }
+        $etiqueta = $config['_encadenar']['etiqueta'];
+
+        return $esperados === 0
+            ? "La ficha {$casoCandidato['codigo']} declara «{$etiqueta}» = 0: no se le pueden vincular fichas. Si hubo nacidos vivos, corrige primero ese dato en esa ficha."
+            : "La ficha {$casoCandidato['codigo']} ya tiene {$vinculados} ficha(s) vinculada(s), tantas como su «{$etiqueta}» ({$esperados}). Si hubo más, corrige primero ese dato en esa ficha.";
+    }
+
+    /**
+     * vinculo_caso.copiar desde la ficha candidata hacia las que la apuntan:
+     * cada "copiar" se recalcula con los datos que la candidata acaba de
+     * guardar (en la misma transacción) y se escribe en cada ficha vinculada;
+     * vacío en la candidata => se quita en la vinculada, como al vincular.
+     */
+    private function actualizarCopiasEnVinculadas(array $enfermedad, int $casoId): void
+    {
+        $config = $this->configVinculoCaso($enfermedad);
+        $idsVinculados = $config && $config['_copiar'] ? Caso::idsVinculados($casoId) : [];
+        if (!$idsVinculados) {
+            return;
+        }
+        $candidata = Caso::conDetalle($casoId);
+        $valoresCandidata = CasoValor::porCaso($casoId);
+        $pdo = Database::conexion();
+        $guardar = $pdo->prepare(
+            'INSERT INTO caso_valor (caso_id, campo_def_id, valor) VALUES (:caso, :campo, :valor)
+             ON DUPLICATE KEY UPDATE valor = VALUES(valor)'
+        );
+        $quitar = $pdo->prepare('DELETE FROM caso_valor WHERE caso_id = :caso AND campo_def_id = :campo');
+        foreach ($config['_copiar'] as $copia) {
+            $valor = $this->valorCopiadoDeVinculo($copia['origen'], $candidata, $valoresCandidata, (int) $enfermedad['id']);
+            foreach ($idsVinculados as $idVinculado) {
+                $parametros = ['caso' => $idVinculado, 'campo' => (int) $copia['destino']['id']];
+                $valor !== '' ? $guardar->execute($parametros + ['valor' => $valor]) : $quitar->execute($parametros);
+            }
+        }
+    }
+
+    /** Fichas no anuladas vinculadas a $casoId, sin contar $excluirCasoId. */
+    private function cantidadFichasVinculadas(int $casoId, ?int $excluirCasoId = null): int
+    {
+        $consulta = Database::conexion()->prepare(
+            'SELECT COUNT(*) FROM caso WHERE caso_vinculado_id = :id AND anulado = 0 AND id <> :excluir'
+        );
+        $consulta->execute(['id' => $casoId, 'excluir' => $excluirCasoId ?? 0]);
+
+        return (int) $consulta->fetchColumn();
+    }
+
+    /**
+     * encadenar, del lado de la ficha candidata (2026-10-16): al editarla, su
+     * campo numérico no puede quedar por debajo de las fichas que ya tiene
+     * vinculadas (bajar "N.º de nacidos vivos" a 1 con dos niños
+     * registrados). [id del campo, mensaje] o null.
+     */
+    private function errorEncadenarMenorQueVinculadas(array $enfermedad, array $valoresCampos, int $casoId): ?array
+    {
+        $config = $this->configVinculoCaso($enfermedad);
+        if (!$config || empty($config['_encadenar'])) {
+            return null;
+        }
+        // Si deja de ser candidata, ya la frena la guarda de actualizar().
+        $esCandidato = (string) ($valoresCampos[(int) $config['_candidato']['id']] ?? '') === (string) $config['candidatos']['valor'];
+        $esperados = $this->fichasVinculadasEsperadas($config, $valoresCampos);
+        if (!$esCandidato || $esperados === null) {
+            return null;
+        }
+        $vinculados = $this->cantidadFichasVinculadas($casoId);
+        if ($esperados >= $vinculados) {
+            return null;
+        }
+
+        return [(int) $config['_encadenar']['id'],
+            "Esta ficha ya tiene {$vinculados} ficha(s) vinculada(s): «{$config['_encadenar']['etiqueta']}» no puede ser menor que {$vinculados}. Si alguna se registró por error, anúlala primero."];
     }
 
     /**
@@ -4110,6 +4224,30 @@ class CasosController extends Controller
     }
 
     /**
+     * Semana notificada sin casos (P96, 2026-10-16): si la semana y el
+     * establecimiento del caso tienen una notificación negativa activa, el
+     * aviso para la ficha y el enlace al listado semanal donde se anula.
+     * Registrar el caso no la anula solo: la decide quien la notificó o un
+     * ADMIN, como en Reportes.
+     *
+     * @return array{texto: string, url: string}|null
+     */
+    private function avisoSemanaSinCasos(int $enfermedadId, int $establecimientoId, int $anio, int $semana): ?array
+    {
+        $negativa = \App\Models\NotificacionNegativa::buscar($enfermedadId, $establecimientoId, $anio, $semana);
+        if (!$negativa || $negativa['anulada_en'] !== null) {
+            return null;
+        }
+
+        return [
+            'texto' => "La semana {$semana} de {$anio} de este establecimiento se notificó sin casos el "
+                . fechaIsoADmy(substr((string) $negativa['creado_en'], 0, 10)) . ' (' . $negativa['usuario_nombre'] . '), '
+                . 'pero ahora tiene esta ficha. Anula esa notificación en el listado semanal para que no lo contradiga.',
+            'url'   => '/reportes/muerte-fetal-neonatal?' . http_build_query(['anio' => $anio, 'semana' => $semana, 'establecimiento_id' => $establecimientoId]),
+        ];
+    }
+
+    /**
      * Revalida el caso vinculado que llegó por POST y copia sus datos a los
      * campos declarados en "copiar" -- no se confía en lo que el navegador
      * haya dejado escrito ahí (ficha.js solo los adelanta). Si el activador
@@ -4131,6 +4269,9 @@ class CasosController extends Controller
         foreach ($this->candidatosVinculo($enfermedad, $config, $casoIdActual) as $candidato) {
             if ($candidato['id'] !== $idElegido) {
                 continue;
+            }
+            if ($candidato['sin_cupo'] !== null) {
+                return [null, $candidato['sin_cupo']];
             }
             foreach ($candidato['copiar_por_nombre'] as $nombreDestino => $valorCopiado) {
                 $idDestino = (int) substr($nombreDestino, strlen('campo_'));

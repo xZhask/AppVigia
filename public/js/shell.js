@@ -39,5 +39,7 @@ function toast(mensaje) {
   elemento.textContent = mensaje;
   elemento.classList.add('show');
   clearTimeout(_toastTimeout);
-  _toastTimeout = setTimeout(function () { elemento.classList.remove('show'); }, 2200);
+  // Un mensaje largo (un aviso sumado al de "Ficha registrada") se queda
+  // más tiempo: ~60 ms por carácter, entre 2,2 y 12 s.
+  _toastTimeout = setTimeout(function () { elemento.classList.remove('show'); }, Math.min(12000, Math.max(2200, String(mensaje).length * 60)));
 }

@@ -507,7 +507,8 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (r) { return r.json(); })
       .then(function (datos) {
         if (!datos || !datos.encontrado) {
-          if (hint) { hint.textContent = caja.getAttribute('data-no-encontrada') || 'No se encontró la ficha.'; hint.classList.add('err'); }
+          // datos.mensaje (2026-10-16): la ficha existe pero no admite otra vinculada.
+          if (hint) { hint.textContent = (datos && datos.mensaje) || caja.getAttribute('data-no-encontrada') || 'No se encontró la ficha.'; hint.classList.add('err'); }
           return;
         }
         oculto.value = datos.id;
