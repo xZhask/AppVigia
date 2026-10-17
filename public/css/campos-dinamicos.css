@@ -14,6 +14,13 @@
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;
 }
+/* El input oculto se ubica respecto de su botón (2026-10-17). Sin un
+   ancestro posicionado se ubicaba respecto de la página, escapaba del
+   desplazamiento de las tablas MATRIZ y ensanchaba la página en móvil. */
+.seg-label,
+label:has(> .sr-only) {
+  position: relative;
+}
 .seg-label {
   border: 0; background: none; font-size: 12px; color: var(--muted); padding: 4px 0; border-radius: 6px; font-weight: 500;
   display: inline-block;
@@ -42,6 +49,10 @@ html[data-theme="dark"] .seg-label.on {
   .si-no-fecha-field .grupo-si-no-row > div {
     flex-direction: column;
     align-items: stretch !important;
+  }
+  /* El Sí/No (100% de ancho) baja debajo del texto en vez de salirse. */
+  .grupo-si-no-field .grupo-si-no-row > div {
+    flex-wrap: wrap;
   }
   .grupo-si-no-field .seg,
   .si-no-fecha-field .seg {
