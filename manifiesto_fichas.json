@@ -10136,12 +10136,19 @@
                 ]
               },
               "sensible": true
-            },
+            }
+          ]
+        },
+        {
+          "nombre": "Observaciones",
+          "orden": 7,
+          "_nota_seccion": "Cotejo 2026-10-16: en la ficha (pág. 16) 'Observaciones' es la última línea de la hoja, al pie de la Sección 11; el formulario de búsqueda activa (pág. 15) la pide en cada fila, de gestante o de niño. Antes iba dentro de la sección del niño y la rama de la gestante no tenía dónde escribirla. Sin depende_de: aplica a las dos ramas.",
+          "campos": [
             {
               "clave": "z21_observaciones",
               "etiqueta": "Observaciones",
               "tipo": "TEXTAREA",
-              "orden": 6,
+              "orden": 1,
               "sensible": true
             }
           ]

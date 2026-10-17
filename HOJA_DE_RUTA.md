@@ -86,6 +86,7 @@ php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B0
 php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0 A80 B05 A44
 php sql/migraciones/set_fecha_notif_en.php A37.0 B01 B26 A35 A33 A80 P35.0
 php sql/migraciones/set_o95_categoria_desde_ipress.php
+php sql/migraciones/set_z21_observaciones_ambas_ramas.php
 php sql/migraciones/copiar_nucleo_ajustes.php P96
 ```
 
@@ -98,6 +99,9 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
 - `add_tipo_notif_mensual.php` (16/10): agrega MENSUAL a
   `enfermedad.tipo_notif` y pasa B24 a mensual si seguía en semanal. Se puede
   correr más de una vez.
+- `set_z21_observaciones_ambas_ramas.php` (16/10): crea la sección final
+  "Observaciones" de Z21 y mueve ahí `z21_observaciones` (mismo id, no toca
+  valores). Se puede correr más de una vez.
 - `copiar_nucleo_ajustes.php <fichas>` (16/10): copia del manifiesto el
   `nucleo_ajustes` de esas fichas (P96: `edad_a_la_fecha`). No toca casos.
   Se puede correr más de una vez.
@@ -395,9 +399,11 @@ No tocar sin una respuesta explícita.
     `enfermedad.tipo_notif` admite MENSUAL y B24 es mensual
     (`add_tipo_notif_mensual.php`; también editable en Catálogos >
     Enfermedades).
-  - **Pendiente, decisión del usuario:** Z21, listado de la pág. 15: la
-    columna "Observaciones" solo tiene dato en la rama del niño; la de la
-    gestante no tiene campo de observaciones. Cotejar con el PDF.
+  - ~~Z21, listado de la pág. 15: "Observaciones" solo tenía dato en la rama
+    del niño.~~ Resuelto el 16/10: cotejado con el PDF (la pág. 15 la pide en
+    cada fila; en la ficha, pág. 16, es la última línea de la hoja). Pasa a
+    una sección final "Observaciones" visible en las dos ramas
+    (`set_z21_observaciones_ambas_ramas.php` para bases con casos).
 
 ## 5. Cómo se ha trabajado (para mantener el criterio)
 
