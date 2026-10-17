@@ -244,6 +244,9 @@
   function mejorarSelector(select) {
     if (!select || select.tagName !== 'SELECT' || select.disabled) return;
     if (select._selEstado) return; // ya mejorado
+    // data-sin-buscador: select oculto que se maneja con otra interfaz (el de
+    // enfermedad de Nueva ficha, que cambia la ventana "Cambiar enfermedad").
+    if (select.hasAttribute('data-sin-buscador')) return;
 
     var contenedor = select.parentNode;
     contenedor.classList.add('sel-wrap');

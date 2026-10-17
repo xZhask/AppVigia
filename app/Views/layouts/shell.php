@@ -142,7 +142,13 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
       <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Menú">
         <svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       </button>
-      <div class="crumb"><b><?= htmlspecialchars($crumbActual) ?></b> · vigilancia epidemiológica</div>
+      <?php // $crumbDetalle / $topbarContexto (2026-10-16): una vista puede
+      // nombrar lo que muestra (la enfermedad en Nueva ficha) y traer una
+      // barra compacta que reemplaza a la ruta al bajar (clase .compacto). ?>
+      <div class="topbar-ranura">
+        <div class="crumb"><b><?= htmlspecialchars($crumbActual) ?></b> · <?= htmlspecialchars($crumbDetalle ?? 'vigilancia epidemiológica') ?></div>
+        <?= $topbarContexto ?? '' ?>
+      </div>
       <div class="topbar-right">
         <?php if (($usuarioActual['rol'] ?? '') !== 'ADMIN' && !empty($usuarioActual['establecimiento_nombre'])): ?>
           <div class="se-badge" title="<?= e($usuarioActual['establecimiento_nombre']) ?>">
@@ -151,7 +157,7 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
             <?= e(mb_strlen($usuarioActual['establecimiento_nombre']) > 28 ? mb_substr($usuarioActual['establecimiento_nombre'], 0, 27) . '…' : $usuarioActual['establecimiento_nombre']) ?>
           </div>
         <?php endif; ?>
-        <div class="se-badge"><span class="se-dot"></span> Semana <b class="mono">SE&nbsp;<?= $semanaEpi ?></b> · <?= $anioEpi ?></div>
+        <div class="se-badge" title="Semana epidemiológica de hoy"><span class="se-dot"></span> Semana actual <b class="mono">SE&nbsp;<?= $semanaEpi ?></b> · <?= $anioEpi ?></div>
         <button class="icon-btn" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema">
           <svg class="ic-moon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 10.5a6.5 6.5 0 0 1-8.5-8.5A7 7 0 1 0 14 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <svg class="ic-sun" width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:none"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 2V1M8 15v-1M2 8H1M15 8h-1M4 4l-.5-.5M12.5 12.5l-.5-.5M4 12l-.5.5M12.5 3.5l-.5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>

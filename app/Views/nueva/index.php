@@ -30,23 +30,50 @@ if ($puedeElegirEstablecimiento) {
         }
     }
 }
-?>
-<div class="page-head">
-  <div>
-    <div class="page-title">Nueva ficha de notificación</div>
-    <div class="page-desc">El formulario se ajusta a la ficha modelo MINSA de la enfermedad seleccionada</div>
-  </div>
+
+// Encabezado de contexto (2026-10-16, revisión de UI): la enfermedad es el
+// título de la página y no una tarjeta más entre las secciones. Las mismas
+// variables las lee layouts/shell.php (View::render las comparte): la ruta
+// superior, el título de la pestaña y la barra compacta que aparece en la
+// barra superior al bajar.
+$nombreEnfermedad = $enfermedad['nombre_corto'] ?: $enfermedad['nombre'];
+$esInmediata = ($enfermedad['tipo_notif'] ?? '') === 'INMEDIATA';
+$tituloVista = 'Nueva ficha · ' . $nombreEnfermedad;
+$crumbDetalle = $nombreEnfermedad;
+ob_start(); ?>
+<div class="ctxbar" id="ctxBar" aria-hidden="true">
+  <span class="ctxbar-franja"></span>
+  <span class="ctxbar-nombre"><?= e($nombreEnfermedad) ?></span>
+  <span class="tag"><?= e($enfermedad['cie10'] ?? '—') ?></span>
+  <span class="badge-notif <?= $esInmediata ? 'inmediata' : '' ?>"><i></i><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'])) ?></span>
+  <span class="ctxbar-avance"><span class="barra-avance"><span data-avance-barra></span></span><span data-avance-texto></span></span>
+  <button type="button" class="btn-enlace" data-abrir-enfermedad>Cambiar</button>
 </div>
+<?php $topbarContexto = ob_get_clean();
+?>
 
 <form method="post" action="/casos/nuevo">
   <?= Csrf::campoOculto() ?>
   <script type="application/json" id="mapaCampos"><?= json_encode($mapaClaveNombreCampos, JSON_UNESCAPED_UNICODE) ?></script>
 
-  <div class="disease-pick">
-    <div class="ic"><svg width="19" height="19" viewBox="0 0 19 19"><circle cx="9.5" cy="9.5" r="7" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M9.5 6v7M6 9.5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
-    <div>
-      <div class="eyebrow" style="margin-bottom:2px">Enfermedad / evento bajo vigilancia</div>
-      <select class="disease" id="diseaseSel" name="enfermedad_id" data-min-width="420">
+  <section class="ctx-head" id="ctxHead">
+    <div class="ctx-main">
+      <div class="eyebrow ctx-eyebrow">Nueva ficha de notificación</div>
+      <h1 class="ctx-title"><?= e($nombreEnfermedad) ?></h1>
+      <div class="ctx-meta">
+        <span class="tag" id="cieTag">CIE-10 · <?= e($enfermedad['cie10'] ?? '—') ?></span>
+        <span class="badge-notif <?= $esInmediata ? 'inmediata' : '' ?>" id="tipoNotifTag"><i></i><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'], true)) ?></span>
+      </div>
+      <p class="ctx-desc">El formulario sigue la ficha modelo MINSA de esta enfermedad.</p>
+    </div>
+    <button type="button" class="btn btn-ghost ctx-cambiar" data-abrir-enfermedad>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg>
+      Cambiar enfermedad
+    </button>
+    <?php // El select sigue siendo el dato: viaja en el POST y lo leen varias
+    // partes de ficha.js (data-cie10, texto de la opción). Oculto y sin
+    // buscador; lo cambia la ventana "Cambiar enfermedad". ?>
+      <select class="disease" id="diseaseSel" name="enfermedad_id" hidden data-sin-buscador>
         <?php foreach ($enfermedadesPorGrupo as $familia => $lista): ?>
           <optgroup label="<?= e($familia) ?>">
             <?php foreach ($lista as $enf): ?>
@@ -56,12 +83,7 @@ if ($puedeElegirEstablecimiento) {
           </optgroup>
         <?php endforeach; ?>
       </select>
-    </div>
-    <div class="disease-meta">
-      <span class="tag" id="cieTag">CIE-10 · <?= e($enfermedad['cie10'] ?? '—') ?></span>
-      <span class="tag" id="tipoNotifTag"><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'], true)) ?></span>
-    </div>
-  </div>
+  </section>
 
   <div class="grid form-grid">
     <div>
@@ -163,10 +185,11 @@ if ($puedeElegirEstablecimiento) {
                   </select>
                 </div>
                 <div class="input-main mono <?= isset($erroresFijos['num_doc']) ? 'err' : '' ?>">
-                  <input type="text" id="numDoc" name="num_doc" value="<?= e($valoresFijos['num_doc']) ?>" placeholder="76540319">
+                  <input type="text" id="numDoc" name="num_doc" value="<?= e($valoresFijos['num_doc']) ?>" placeholder="8 dígitos" inputmode="numeric" autocomplete="off">
                 </div>
               </div>
-              <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span><?php endif; ?>
+              <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span>
+              <?php else: ?><span class="hint" id="ayudaDocumento">Con DNI, apellidos y nombres se completan del padrón o RENIEC.</span><?php endif; ?>
             </div>
             <?php // campos_persona (Z21, 2026-09-12): campo_def que la ficha declara
             // para esta tarjeta, junto al documento -- ver
@@ -262,8 +285,8 @@ if ($puedeElegirEstablecimiento) {
                 <?php // nucleo_ajustes.edad_a_la_fecha (P96, 2026-10-16): la edad se cuenta hasta esa fecha de la ficha.
                 $claveEdadALaFecha = nucleoAjuste($enfermedad, 'edad_a_la_fecha');
                 $campoEdadALaFecha = is_string($claveEdadALaFecha) ? \App\Models\CampoDef::porClave((int) $enfermedad['id'], $claveEdadALaFecha) : null; ?>
-                <span class="tag" id="edadCalculada"<?= $campoEdadALaFecha ? ' data-edad-a-la-fecha="campo_' . (int) $campoEdadALaFecha['id'] . '"' : '' ?>>—</span>
               </div>
+              <span class="hint">Edad: <b id="edadCalculada"<?= $campoEdadALaFecha ? ' data-edad-a-la-fecha="campo_' . (int) $campoEdadALaFecha['id'] . '"' : '' ?>>—</b></span>
 <?php // fecha_nac_desconocida (A50, 2026-09-14): casilla "Desconocido"; '' en las fichas que no la declaran. ?>
 <?= casillaFechaNacDesconocida($enfermedad, $valoresCampos, ($valoresFijos['fecha_nac_desconocida'] ?? '') === '1') ?>
               <?php if (isset($erroresFijos['fecha_nac'])): ?><span class="hint err"><?= e($erroresFijos['fecha_nac']) ?></span><?php endif; ?>
@@ -593,12 +616,9 @@ endforeach;
     <!-- Right rail -->
     <aside class="rail">
       <div class="card rail-card">
-        <div class="eyebrow" style="margin-bottom:12px">Avance de la ficha</div>
+        <div class="avance-cab"><span class="eyebrow">Avance de la ficha</span><b class="mono" data-avance-texto></b></div>
+        <div class="barra-avance"><span data-avance-barra></span></div>
         <div class="progress" id="progresoFicha"></div>
-      </div>
-      <div class="card rail-card">
-        <h4>Datos limpios desde el origen</h4>
-        <p>Distritos, establecimientos y campos clínicos vienen de catálogos oficiales. La ficha se valida en el servidor antes de guardar: obligatorios, fechas y valores de catálogo.</p>
       </div>
       <div class="rail-actions">
         <button class="btn btn-primary" type="submit">
@@ -615,6 +635,11 @@ if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra')): ?>
         </button>
 <?php endif; ?>
         <button class="btn btn-ghost" type="button" disabled title="Disponible en una próxima fase">Guardar borrador</button>
+      </div>
+      <?php // Antes una tarjeta fija encima del botón principal; ahora una ayuda a pedido. ?>
+      <div class="ayuda-rail">
+        <button type="button" class="btn-enlace" aria-expanded="false" aria-controls="ayudaValidacion" data-alternar-ayuda>¿Cómo se valida esta ficha?</button>
+        <p id="ayudaValidacion" hidden>Distritos, establecimientos y campos clínicos vienen de catálogos oficiales. Antes de guardar, el servidor valida obligatorios, fechas y valores de catálogo.</p>
       </div>
       <div class="card rail-card">
         <div class="eyebrow" style="margin-bottom:10px">Resumen de la ficha</div>
@@ -637,3 +662,47 @@ if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra')): ?>
   </div>
   <?= $avisoClavesFaltantesCampos() ?>
 </form>
+
+<?php // Ventana "Cambiar enfermedad" (2026-10-16): buscador por nombre o CIE-10,
+// agrupado como el selector anterior. Si ya se escribió algo, pide confirmar:
+// cambiar recarga el formulario y lo escrito no pasa a la otra ficha. ?>
+<div class="modal-fondo" id="modalEnfermedad" hidden>
+  <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="modalEnfermedadTitulo">
+    <div class="modal-cab">
+      <h3 id="modalEnfermedadTitulo">Cambiar enfermedad</h3>
+      <p>Elige la enfermedad o evento bajo vigilancia.</p>
+    </div>
+    <div data-paso="elegir">
+      <div class="modal-busca">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input type="text" placeholder="Buscar por nombre o CIE-10" autocomplete="off" data-buscar-enfermedad>
+      </div>
+      <div class="modal-lista" data-lista-enfermedades>
+        <?php foreach ($enfermedadesPorGrupo as $familia => $lista): ?>
+          <div class="modal-grupo"><?= e($familia) ?></div>
+          <?php foreach ($lista as $enf): ?>
+            <button type="button" class="modal-item<?= (int) $enf['id'] === (int) $enfermedad['id'] ? ' actual' : '' ?>"
+                    data-id="<?= (int) $enf['id'] ?>" data-nombre="<?= e($enf['nombre_corto'] ?: $enf['nombre']) ?>"
+                    data-busqueda="<?= e(mb_strtolower(($enf['nombre_corto'] ?: $enf['nombre']) . ' ' . $enf['nombre'] . ' ' . ($enf['cie10'] ?? '') . ' ' . ($enf['palabras_clave'] ?? ''))) ?>"
+                    <?= (int) $enf['tiene_definicion'] === 0 ? 'disabled' : '' ?>>
+              <span class="mono modal-cie"><?= e($enf['cie10'] ?? '') ?></span>
+              <span><?= e($enf['nombre_corto'] ?: $enf['nombre']) ?></span>
+              <?php if ($enf['tipo_notif'] === 'INMEDIATA'): ?><span class="modal-inm">Inmediata</span><?php endif; ?>
+            </button>
+          <?php endforeach; ?>
+        <?php endforeach; ?>
+        <div class="modal-vacio" hidden>Ninguna enfermedad coincide.</div>
+      </div>
+    </div>
+    <div class="modal-confirma" data-paso="confirmar" hidden>
+      <div class="modal-aviso">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <div>Ya ingresaste datos en la ficha de <b><?= e($nombreEnfermedad) ?></b>. Al cambiar a <b data-destino-enfermedad></b> se carga otro formulario y esos datos no pasan a la nueva ficha.</div>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" class="btn btn-ghost" data-volver>Volver</button>
+        <button type="button" class="btn btn-primary" data-cambiar-sin-guardar>Cambiar sin guardar</button>
+      </div>
+    </div>
+  </div>
+</div>

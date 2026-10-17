@@ -1430,35 +1430,67 @@ document.addEventListener('DOMContentLoaded', function () {
     return el.offsetParent !== null;
   }
 
-  // Completa: todos sus obligatorios visibles tienen dato. Una sección sin
-  // obligatorios cuenta como completa recién cuando tiene algún dato; antes
-  // salía marcada desde el inicio.
-  function seccionCompleta(seccion) {
+  // Estado de una sección: 'done' cuando todos sus obligatorios visibles
+  // tienen dato (una sin obligatorios, cuando tiene alguno; antes salía
+  // marcada desde el inicio), 'part' si se empezó y falta algo, '' si no.
+  function estadoSeccion(seccion) {
     var campos = Array.prototype.filter.call(seccion.querySelectorAll('.field'), visible);
+    var conDato = campos.filter(campoTieneValor);
     var obligatorios = campos.filter(function (campo) { return campo.querySelector('.req'); });
     if (obligatorios.length) {
-      return obligatorios.every(campoTieneValor);
+      if (obligatorios.every(campoTieneValor)) return 'done';
+      return conDato.length ? 'part' : '';
     }
-    return campos.some(campoTieneValor);
+    return conDato.length ? 'done' : '';
   }
 
+  var seccionesDelPanel = [];
+
+  // La sección que se está viendo: la que cruza una línea un poco por debajo
+  // de la barra superior (2026-10-16; antes, la que tenía el foco).
+  function seccionEnPantalla() {
+    var linea = 140;
+    for (var i = 0; i < seccionesDelPanel.length; i++) {
+      var r = seccionesDelPanel[i].getBoundingClientRect();
+      if (r.top <= linea && r.bottom > linea) return i;
+    }
+    return -1;
+  }
+
+  function marcarSeccionEnPantalla() {
+    var actual = seccionEnPantalla();
+    progresoFicha.querySelectorAll('.pstep').forEach(function (paso, i) {
+      paso.classList.toggle('on', i === actual);
+    });
+  }
+
+  // Panel "Avance de la ficha" (rehecho 2026-10-16, revisión de UI): estado
+  // por sección, "N de M" con barra (también en la barra compacta superior),
+  // clic para ir a la sección y resaltado de la que está en pantalla.
   function actualizarProgreso() {
     if (!progresoFicha || !formProgreso) return;
-    var secciones = Array.prototype.filter.call(formProgreso.querySelectorAll('.card.section'), visible);
-    var enFoco = document.activeElement ? document.activeElement.closest('.card.section') : null;
+    seccionesDelPanel = Array.prototype.filter.call(formProgreso.querySelectorAll('.card.section'), function (seccion) {
+      return visible(seccion) && seccion.querySelector('h3');
+    });
 
+    var completas = 0;
     var html = '';
-    secciones.forEach(function (seccion) {
-      var titulo = seccion.querySelector('h3');
-      if (!titulo) return;
-      var completa = seccionCompleta(seccion);
-      var clase = 'pstep' + (completa ? ' done' : (seccion === enFoco ? ' cur' : ''));
-      var marca = completa
+    seccionesDelPanel.forEach(function (seccion, i) {
+      var estado = estadoSeccion(seccion);
+      if (estado === 'done') completas++;
+      var marca = estado === 'done'
         ? '<svg width="9" height="9" viewBox="0 0 9 9"><path d="M1.5 4.5 4 7l3.5-4.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         : '';
-      html += '<div class="' + clase + '"><span class="pd">' + marca + '</span> ' + titulo.innerText.trim() + '</div>';
+      var titulo = seccion.querySelector('h3').innerText.trim().replace(/[<>&]/g, '');
+      html += '<div class="pstep' + (estado ? ' ' + estado : '') + '" data-indice="' + i + '" role="button" tabindex="0">'
+        + '<span class="pd">' + marca + '</span> ' + titulo + '</div>';
     });
     progresoFicha.innerHTML = html;
+
+    var total = seccionesDelPanel.length;
+    document.querySelectorAll('[data-avance-texto]').forEach(function (el) { el.textContent = completas + ' de ' + total; });
+    document.querySelectorAll('[data-avance-barra]').forEach(function (el) { el.style.width = (total ? completas / total * 100 : 0) + '%'; });
+    marcarSeccionEnPantalla();
   }
 
   if (progresoFicha && formProgreso) {
@@ -1471,9 +1503,24 @@ document.addEventListener('DOMContentLoaded', function () {
       progresoPendiente = setTimeout(actualizarProgreso, 0);
     };
     actualizarProgreso();
-    ['input', 'change', 'focusin', 'focusout'].forEach(function (evento) {
+    ['input', 'change'].forEach(function (evento) {
       formProgreso.addEventListener(evento, programarProgreso);
     });
+
+    var irASeccion = function (paso) {
+      var seccion = paso ? seccionesDelPanel[parseInt(paso.getAttribute('data-indice'), 10)] : null;
+      if (seccion) seccion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    progresoFicha.addEventListener('click', function (e) { irASeccion(e.target.closest('.pstep')); });
+    progresoFicha.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); irASeccion(e.target.closest('.pstep')); }
+    });
+    var marcaPendiente = false;
+    window.addEventListener('scroll', function () {
+      if (marcaPendiente) return;
+      marcaPendiente = true;
+      requestAnimationFrame(function () { marcaPendiente = false; marcarSeccionEnPantalla(); });
+    }, { passive: true });
   }
 
   var fechaNac = document.getElementById('fechaNac');
@@ -1745,6 +1792,9 @@ document.addEventListener('DOMContentLoaded', function () {
       } else if (tipo === 'CE') {
         numDocInput.value = numDocInput.value.replace(/\D/g, '').substring(0, 9);
       }
+
+      var ayudaDocumento = document.getElementById('ayudaDocumento');
+      if (ayudaDocumento) ayudaDocumento.hidden = (tipo !== 'DNI');
 
       var apPaterno = document.getElementById('apellidoPaterno');
       var apMaterno = document.getElementById('apellidoMaterno');
@@ -4675,4 +4725,152 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   window.addEventListener('scroll', function () { if (lista && !lista.hidden && campoActivo) posicionar(); }, true);
   window.addEventListener('resize', function () { if (lista && !lista.hidden && campoActivo) posicionar(); });
+});
+
+// ---------- Nueva ficha: encabezado de contexto (2026-10-16, revisión de UI) ----------
+// Barra compacta: cuando el encabezado con la enfermedad sale de la vista, la
+// barra superior muestra nombre, CIE-10, tipo de notificación y avance
+// (layouts/shell.php, $topbarContexto). Ventana "Cambiar enfermedad": busca
+// por nombre o CIE-10; si ya se escribió algo pide confirmar, porque cambiar
+// recarga el formulario. El dato sigue en el select #diseaseSel (oculto): al
+// elegir se cambia y su "change" hace la navegación de siempre.
+document.addEventListener('DOMContentLoaded', function () {
+  var encabezado = document.getElementById('ctxHead');
+  var barraSuperior = document.querySelector('.topbar');
+  if (encabezado && barraSuperior && document.getElementById('ctxBar') && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (entradas) {
+      var compacto = !entradas[0].isIntersecting;
+      barraSuperior.classList.toggle('compacto', compacto);
+      document.getElementById('ctxBar').setAttribute('aria-hidden', compacto ? 'false' : 'true');
+    }, { rootMargin: '-60px 0px 0px 0px' }).observe(encabezado);
+  }
+
+  var botonAyuda = document.querySelector('[data-alternar-ayuda]');
+  var textoAyuda = document.getElementById('ayudaValidacion');
+  if (botonAyuda && textoAyuda) {
+    botonAyuda.addEventListener('click', function () {
+      textoAyuda.hidden = !textoAyuda.hidden;
+      botonAyuda.setAttribute('aria-expanded', textoAyuda.hidden ? 'false' : 'true');
+    });
+  }
+
+  var modal = document.getElementById('modalEnfermedad');
+  var selectEnfermedad = document.getElementById('diseaseSel');
+  if (!modal || !selectEnfermedad) return;
+  var buscador = modal.querySelector('[data-buscar-enfermedad]');
+  var pasoElegir = modal.querySelector('[data-paso="elegir"]');
+  var pasoConfirmar = modal.querySelector('[data-paso="confirmar"]');
+  var titulo = document.getElementById('modalEnfermedadTitulo');
+  var subtitulo = titulo.nextElementSibling;
+  var items = Array.prototype.slice.call(modal.querySelectorAll('.modal-item'));
+  var vacio = modal.querySelector('.modal-vacio');
+  var destino = null;
+  var activo = -1;
+  var hayDatos = false;
+  var abridor = null;
+
+  // Solo lo que escribe o elige la persona (isTrusted): los valores que el
+  // propio formulario pone al cargar no cuentan como datos ingresados.
+  var formulario = selectEnfermedad.closest('form');
+  ['input', 'change'].forEach(function (evento) {
+    formulario.addEventListener(evento, function (e) { if (e.isTrusted) hayDatos = true; });
+  });
+
+  function sinTildes(texto) {
+    return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function visibles() {
+    return items.filter(function (item) { return !item.hidden && !item.disabled; });
+  }
+
+  function marcarActivo(indice) {
+    var lista = visibles();
+    items.forEach(function (item) { item.classList.remove('activo'); });
+    activo = lista.length ? Math.max(0, Math.min(indice, lista.length - 1)) : -1;
+    if (activo >= 0) {
+      lista[activo].classList.add('activo');
+      lista[activo].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function filtrar() {
+    var consulta = sinTildes(buscador.value.trim());
+    items.forEach(function (item) {
+      item.hidden = consulta !== '' && sinTildes(item.getAttribute('data-busqueda')).indexOf(consulta) === -1;
+    });
+    modal.querySelectorAll('.modal-grupo').forEach(function (grupo) {
+      var siguiente = grupo.nextElementSibling;
+      var alguno = false;
+      while (siguiente && siguiente.classList.contains('modal-item')) {
+        if (!siguiente.hidden) alguno = true;
+        siguiente = siguiente.nextElementSibling;
+      }
+      grupo.hidden = !alguno;
+    });
+    vacio.hidden = items.some(function (item) { return !item.hidden; });
+    marcarActivo(0);
+  }
+
+  function mostrarPaso(confirmar) {
+    pasoElegir.hidden = confirmar;
+    pasoConfirmar.hidden = !confirmar;
+    titulo.textContent = confirmar ? '¿Cambiar de ficha?' : 'Cambiar enfermedad';
+    subtitulo.textContent = confirmar ? 'Revisa qué hacer con lo que ya ingresaste.' : 'Elige la enfermedad o evento bajo vigilancia.';
+  }
+
+  function abrir(e) {
+    abridor = e && e.currentTarget;
+    mostrarPaso(false);
+    buscador.value = '';
+    filtrar();
+    modal.hidden = false;
+    setTimeout(function () { buscador.focus(); }, 30);
+  }
+
+  function cerrar() {
+    modal.hidden = true;
+    if (abridor) abridor.focus();
+  }
+
+  function cambiar() {
+    selectEnfermedad.value = destino.getAttribute('data-id');
+    selectEnfermedad.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function elegir(item) {
+    if (!item || item.disabled) return;
+    if (item.classList.contains('actual')) { cerrar(); return; }
+    destino = item;
+    if (!hayDatos) { cambiar(); return; }
+    modal.querySelector('[data-destino-enfermedad]').textContent = item.getAttribute('data-nombre');
+    mostrarPaso(true);
+    modal.querySelector('[data-volver]').focus();
+  }
+
+  document.querySelectorAll('[data-abrir-enfermedad]').forEach(function (boton) {
+    boton.addEventListener('click', abrir);
+  });
+  buscador.addEventListener('input', filtrar);
+  modal.querySelector('[data-lista-enfermedades]').addEventListener('click', function (e) {
+    elegir(e.target.closest('.modal-item'));
+  });
+  modal.querySelector('[data-volver]').addEventListener('click', function () {
+    mostrarPaso(false);
+    buscador.focus();
+  });
+  modal.querySelector('[data-cambiar-sin-guardar]').addEventListener('click', cambiar);
+  modal.addEventListener('click', function (e) { if (e.target === modal) cerrar(); });
+  document.addEventListener('keydown', function (e) {
+    if (modal.hidden) return;
+    if (e.key === 'Escape') { cerrar(); return; }
+    if (pasoElegir.hidden) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      marcarActivo(activo + (e.key === 'ArrowDown' ? 1 : -1));
+    } else if (e.key === 'Enter' && document.activeElement === buscador) {
+      e.preventDefault();
+      elegir(visibles()[activo]);
+    }
+  });
 });
