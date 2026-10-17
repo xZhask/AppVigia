@@ -15732,7 +15732,9 @@
           "PARTICULAR"
         ],
         "_nota_agregar_otra": "La hoja es un listado semanal: 'Registrar y agregar otra' abre la siguiente ficha con el mismo establecimiento y fecha de notificación.",
-        "registrar_y_agregar_otra": true
+        "registrar_y_agregar_otra": true,
+        "_nota_edad": "La edad del fallecido se cuenta hasta la fecha de muerte (2026-10-16), no hasta hoy: un neonato que vivió 3 días tiene 3 días, no los meses que pasan después.",
+        "edad_a_la_fecha": "p96_fecha_de_muerte"
       },
       "_nota_campos_persona": "Nacimiento (fecha y hora) va junto en la tarjeta de identidad: la fecha es la del núcleo y la hora se pinta a su lado.",
       "campos_persona": {

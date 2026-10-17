@@ -51,7 +51,9 @@ if (!empty($unidadesEdadDeclaradas)) {
         ? $caso['edad_valor'] . ' ' . ($etiquetasUnidadEdad[$caso['edad_unidad']] ?? mb_strtolower($caso['edad_unidad']))
         : '—';
 } else {
-    $edadTexto = $edad !== null ? $edad . ' años' : '—';
+    // 2026-10-16: meses o días bajo el año (antes "0 años"); P96 cuenta
+    // hasta la fecha de muerte (nucleo_ajustes.edad_a_la_fecha).
+    $edadTexto = edadLegible($caso['fecha_nac'], $caso['edad_fecha_referencia'] ?? null) ?? '—';
 }
 
 $situacionEtiquetas = ['ACTIVIDAD' => 'Actividad', 'RETIRO' => 'Retiro', 'DISPONIBILIDAD' => 'Disponibilidad'];

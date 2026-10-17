@@ -112,11 +112,34 @@ $es = $estados[$caso['estado']];
         <div class="section-head"><span class="section-num">2</span><h3><?= $tarjetaPersona['titulo'] ?></h3></div>
         <div class="section-body">
           <div class="fields thirds">
+            <?php if ($caso['tipo_doc'] === 'SIN_DOCUMENTO'): ?>
+            <?php // 2026-10-16: una persona registrada sin documento puede
+            // recibirlo al editar (CasosController::actualizar()); una vez
+            // guardado ya no se cambia. ?>
+            <div class="field">
+              <label class="fl">Documento de identidad</label>
+              <div class="control input-group doc-id-group">
+                <div class="addon" style="width: 75px;">
+                  <select name="tipo_doc" data-nosearch="true" data-min-width="75">
+                    <?php foreach (['DNI', 'CE', 'PTP', 'PAS', 'OTRO'] as $tipo): ?>
+                      <option value="<?= $tipo ?>" <?= seleccionado($valoresFijos['tipo_doc'], $tipo) ?>><?= $tipo ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="input-main mono <?= isset($erroresFijos['num_doc']) ? 'err' : '' ?>">
+                  <input type="text" name="num_doc" maxlength="20" value="<?= e($valoresFijos['tipo_doc'] === 'SIN_DOCUMENTO' ? '' : (string) $valoresFijos['num_doc']) ?>" placeholder="Sin documento">
+                </div>
+              </div>
+              <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span>
+              <?php else: ?><span class="hint">Se registró sin documento. Si ya lo tiene, ingrésalo: después de guardar no se podrá cambiar.</span><?php endif; ?>
+            </div>
+            <?php else: ?>
             <div class="field">
               <label class="fl">Documento</label>
               <div class="control mono" style="color:var(--muted)"><?= e(documentoParaMostrar($valoresFijos['tipo_doc'], $valoresFijos['num_doc'])) ?></div>
               <span class="hint">No editable: es la identidad de la persona</span>
             </div>
+            <?php endif; ?>
             <?php // campos_persona (Z21, 2026-09-12): campo_def que la ficha declara
             // para esta tarjeta, junto al documento -- ver
             // persona-campos-declarados.php. No imprime nada en las demás fichas.

@@ -240,6 +240,10 @@ const NUCLEO_AJUSTES_VALIDOS = [
     // (caso.fecha_notif); se guarda el mismo valor en ese campo. Sin
     // depende_de: la fecha del núcleo es obligatoria y siempre visible.
     'fecha_notif_en' => 'clave_fecha_visible',
+    // P96, 2026-10-16: clave de un FECHA de la ficha hasta el que se cuenta
+    // la edad que muestran el formulario, "ver" y el listado (la fecha de
+    // muerte: la edad al fallecer). Sin ella, hasta hoy.
+    'edad_a_la_fecha' => 'clave_fecha',
 ];
 
 // Campos del núcleo cuya etiqueta una ficha puede cambiar con

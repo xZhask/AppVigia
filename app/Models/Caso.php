@@ -110,6 +110,9 @@ class Caso extends Model
 
         $sql = "SELECT c.*, p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                        e.nombre AS enfermedad_nombre, e.cie10, e.unidades_edad AS enfermedad_unidades_edad,
+                       -- nucleo_ajustes.edad_a_la_fecha (P96, 2026-10-16): la edad se cuenta hasta esa fecha.
+                       (SELECT cv_edad.valor FROM caso_valor cv_edad JOIN campo_def cd_edad ON cd_edad.id = cv_edad.campo_def_id
+                         WHERE cv_edad.caso_id = c.id AND cd_edad.clave = JSON_UNQUOTE(JSON_EXTRACT(e.nucleo_ajustes, '$.edad_a_la_fecha'))) AS edad_fecha_referencia,
                        est.nombre AS establecimiento_nombre, r.nombre AS red_nombre
                   FROM caso c
                   JOIN persona p         ON p.id = c.persona_id
@@ -148,6 +151,8 @@ class Caso extends Model
                        e.multi_sujeto AS enfermedad_multi_sujeto, e.roles_sujeto AS enfermedad_roles_sujeto,
                        e.columnas_sujeto AS enfermedad_columnas_sujeto, e.titulo_sujeto AS enfermedad_titulo_sujeto,
                        e.unidades_edad AS enfermedad_unidades_edad,
+                       (SELECT cv_edad.valor FROM caso_valor cv_edad JOIN campo_def cd_edad ON cd_edad.id = cv_edad.campo_def_id
+                         WHERE cv_edad.caso_id = c.id AND cd_edad.clave = JSON_UNQUOTE(JSON_EXTRACT(e.nucleo_ajustes, \'$.edad_a_la_fecha\'))) AS edad_fecha_referencia,
                        est.nombre AS establecimiento_nombre, est.id AS establecimiento_id,
                        r.nombre AS red_nombre,
                        u.nombre AS usuario_nombre,

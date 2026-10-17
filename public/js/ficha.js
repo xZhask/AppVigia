@@ -1462,7 +1462,7 @@ document.addEventListener('DOMContentLoaded', function () {
       (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate());
     if (aunNoCumple) edad--;
 
-    edadCalculada.textContent = edad >= 0 ? edad + ' años' : '—';
+    edadCalculada.textContent = edad >= 0 ? edadLegible(nacimiento) : '—';
 
     if (edad >= 0) {
       document.querySelectorAll('label.sym').forEach(function(lbl) {
@@ -1496,7 +1496,30 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
   }
+  // Texto de la edad (2026-10-16, como edadLegible() de ayudantes.php):
+  // meses o días bajo el año, antes "0 años". Con data-edad-a-la-fecha (P96)
+  // se cuenta hasta esa fecha de la ficha, si ya está escrita.
+  function edadLegible(nacimiento) {
+    var referencia = new Date();
+    referencia.setHours(0, 0, 0, 0);
+    var nombreHasta = edadCalculada.getAttribute('data-edad-a-la-fecha');
+    var campoHasta = nombreHasta ? document.querySelector('[name="' + nombreHasta + '"]') : null;
+    var partesHasta = campoHasta ? (campoHasta.value || '').match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+    if (partesHasta) referencia = new Date(partesHasta[1], partesHasta[2] - 1, partesHasta[3]);
+    if (referencia < nacimiento) return '—';
+    var meses = (referencia.getFullYear() - nacimiento.getFullYear()) * 12 + referencia.getMonth() - nacimiento.getMonth();
+    if (referencia.getDate() < nacimiento.getDate()) meses--;
+    if (meses >= 12) { var anios = Math.floor(meses / 12); return anios + (anios === 1 ? ' año' : ' años'); }
+    if (meses >= 1) return meses + (meses === 1 ? ' mes' : ' meses');
+    var dias = Math.round((referencia - nacimiento) / 86400000);
+    return dias === 0 ? 'menos de 1 día' : dias + (dias === 1 ? ' día' : ' días');
+  }
   if (fechaNac) fechaNac.addEventListener('change', calcularEdad);
+  if (edadCalculada && edadCalculada.getAttribute('data-edad-a-la-fecha')) {
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.name === edadCalculada.getAttribute('data-edad-a-la-fecha')) calcularEdad();
+    });
+  }
   calcularEdad();
 
   // ---------- Condición del paciente: EFECTIVO / DERECHOHABIENTE / PARTICULAR ----------

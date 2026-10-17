@@ -126,8 +126,7 @@ $abreviaturasUnidadEdad = ['ANIOS' => 'a', 'MESES' => 'm', 'DIAS' => 'd', 'HORAS
                   ? $ficha['edad_valor'] . ($abreviaturasUnidadEdad[$ficha['edad_unidad']] ?? '')
                   : null;
           } else {
-              $edad = edadDesdeFecha($ficha['fecha_nac']);
-              $edadCompacta = $edad !== null ? $edad . 'a' : null;
+              $edadCompacta = edadLegible($ficha['fecha_nac'], $ficha['edad_fecha_referencia'] ?? null, true);
           }
         ?>
           <tr<?= $ficha['anulado'] ? ' style="opacity:.55"' : '' ?>>

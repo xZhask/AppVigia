@@ -85,6 +85,7 @@ php sql/migraciones/set_clasificacion_propia.php A35 A33 B57 A95 A00 B04X A97 B0
 php sql/migraciones/set_fecha_inicio_sintomas_desde.php A35 A37.0 A97 B57 B04X A00 B01 A95 B55 P35.0 A80 B05 A44
 php sql/migraciones/set_fecha_notif_en.php A37.0 B01 B26 A35 A33 A80 P35.0
 php sql/migraciones/set_o95_categoria_desde_ipress.php
+php sql/migraciones/copiar_nucleo_ajustes.php P96
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -92,6 +93,9 @@ php sql/migraciones/set_o95_categoria_desde_ipress.php
 - `add_tipo_asentamiento_persona.php` (16/10, antes del cargador): agrega
   `persona.tipo_asentamiento` y `persona.anterior_tipo_asentamiento` (sección
   3, ítem 3) y copia `detalle_domicilio` y `nucleo_ajustes` de A00, A95 y B57.
+  Se puede correr más de una vez.
+- `copiar_nucleo_ajustes.php <fichas>` (16/10): copia del manifiesto el
+  `nucleo_ajustes` de esas fichas (P96: `edad_a_la_fecha`). No toca casos.
   Se puede correr más de una vez.
 - `add_cie10.php` (16/10): crea la tabla `cie10` y la carga desde
   `sql/datos/cie10_minsa_2025-01-27.csv` (catálogo oficial del MINSA, 13 023
@@ -342,12 +346,22 @@ No tocar sin una respuesta explícita.
     servidor guarda `establecimiento.categoria` de la IPRESS elegida (después
     de las reglas; "ver" la muestra). MINSA/EsSalud/Privado la siguen
     capturando. Bases con casos: `set_o95_categoria_desde_ipress.php`.
-- **Menores, de interfaz:**
-  - Hueco vertical en datos de la persona cuando una rama oculta Etnia y
-    Residencia.
-  - Falta estilo para `input[readonly]`.
-  - En P96 la edad muestra "0 años".
-  - Una persona sin documento no puede recibir uno después.
+- **Menores, de interfaz:** resueltos el 16/10.
+  - ~~Hueco vertical en datos de la persona cuando una rama oculta Etnia y
+    Residencia.~~ Una grilla `.fields` con todos sus hijos ocultos ya no ocupa
+    lugar (theme.css); en Z21, rama del niño, eran 4 grillas vacías con su
+    margen. En las 8 fichas revisadas no cambia nada.
+  - ~~Falta estilo para `input[readonly]`.~~ Fondo gris y borde punteado, sin
+    el realce al enfocar (no toca los selectores). Se nota sobre todo en
+    Apellidos y Nombres con DNI, que se llenan con la búsqueda del documento.
+  - ~~En P96 la edad muestra "0 años".~~ Bajo el año la edad se muestra en
+    meses o días en el formulario, "ver" y el listado (todas las fichas sin
+    edad con unidad). P96 la cuenta hasta la fecha de muerte
+    (`nucleo_ajustes.edad_a_la_fecha`): un neonato que vivió 3 días, "3 días".
+  - ~~Una persona sin documento no puede recibir uno después.~~ En "editar",
+    una persona SIN_DOCUMENTO muestra el tipo y el número; guardado, ya no se
+    cambia. Se rechaza un documento de otra persona registrada y un DNI que no
+    tenga 8 dígitos.
   - ~~Falta un catálogo CIE-10 para el diagnóstico de P96.~~ Resuelto el 16/10:
     tabla `cie10` con el catálogo oficial del MINSA (ene. 2025, del Excel que
     entregó el usuario). Los TEXTO con `"formato": "cie10"` (P96, V99, B24)

@@ -1670,6 +1670,34 @@ function edadDesdeFecha(?string $fechaNacIso): ?int
 }
 
 /**
+ * Edad para mostrar en las fichas que no capturan edad con unidad
+ * (2026-10-16): en años y, para menores de un año, en meses o días ("8
+ * meses", "12 días"; antes "0 años"). $referenciaIso es la fecha hasta la que
+ * se cuenta (nucleo_ajustes.edad_a_la_fecha: P96, la edad al fallecer); sin
+ * ella, hoy. $compacta da "34a", "8m", "12d" para el listado.
+ */
+function edadLegible(?string $fechaNacIso, ?string $referenciaIso = null, bool $compacta = false): ?string
+{
+    if (empty($fechaNacIso)) {
+        return null;
+    }
+    $referenciaIso = $referenciaIso && fechaIsoValida(substr($referenciaIso, 0, 10)) ? substr($referenciaIso, 0, 10) : null;
+    $edad = edadConUnidadDesdeFecha($fechaNacIso, $referenciaIso, ['ANIOS', 'MESES', 'DIAS']);
+    if ($edad === null) {
+        return null;
+    }
+    if ($edad['valor'] === 0) {
+        return $compacta ? '0d' : 'menos de 1 día';
+    }
+    if ($compacta) {
+        return $edad['valor'] . ['ANIOS' => 'a', 'MESES' => 'm', 'DIAS' => 'd'][$edad['unidad']];
+    }
+    $unidades = ['ANIOS' => ['año', 'años'], 'MESES' => ['mes', 'meses'], 'DIAS' => ['día', 'días']][$edad['unidad']];
+
+    return $edad['valor'] . ' ' . $unidades[$edad['valor'] === 1 ? 0 : 1];
+}
+
+/**
  * Edad (valor + unidad) calculada desde fecha de nacimiento hasta una
  * fecha de referencia (por defecto hoy), para fichas que declaran
  * `unidades_edad` (Entrada F, PETICION_MAPEO_Y_EDAD.md Parte 2 -- híbrido

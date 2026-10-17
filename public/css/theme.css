@@ -233,12 +233,24 @@
      (cotejo B57, 2026-08-21). ".fields{display:grid}" arriba también le
      gana a [hidden] sin esta regla. */
   .fields[hidden]{display:none}
+  /* Una grilla .fields con todos sus hijos ocultos no ocupa lugar (2026-10-16):
+     antes quedaba con 0 px de alto pero con su margin-top, y varias seguidas
+     abrían un hueco (Z21, rama del niño: sin Etnia ni Residencia). */
+  .fields:not(:has(> :not([hidden], [style*="display:none"], [style*="display: none"]))){display:none}
   label.fl{font-size:12px;color:var(--muted);font-weight:500}
   label.fl .req{color:var(--s-confirmado)}
   .control{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;color:var(--ink);transition:border-color .15s,box-shadow .15s}
   .control:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
   .control input,.control select{border:0;background:none;outline:none;font-family:inherit;font-size:13.5px;color:var(--ink);width:100%}
   .control.mono input{font-family:"IBM Plex Mono",monospace}
+  /* Campo de solo lectura (calculado, fijado por una regla, traído del
+     padrón o del vínculo; 2026-10-16): se ve como dato, no como casilla para
+     escribir. No toca el input de los selectores (.sel-input). */
+  .control:has(> input[readonly]:not(.sel-input)),
+  .input-main:has(> input[readonly]:not(.sel-input)){background:var(--paper);border-style:dashed}
+  .control:has(> input[readonly]:not(.sel-input)):focus-within{border-color:var(--line);box-shadow:none}
+  .control > input[readonly]:not(.sel-input),
+  .input-main > input[readonly]:not(.sel-input){color:var(--muted);cursor:default}
   .control.ok{border-color:#B8DED4}
   .control.err{border-color:var(--s-confirmado)}
   .control .lead{color:var(--faint);flex-shrink:0}

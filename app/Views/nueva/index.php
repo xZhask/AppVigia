@@ -259,7 +259,10 @@ if ($puedeElegirEstablecimiento) {
                 <div class="control mono <?= isset($erroresFijos['fecha_nac']) ? 'err' : '' ?>" style="flex:1">
                   <input type="date" id="fechaNac" name="fecha_nac" value="<?= e($valoresFijos['fecha_nac']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>"<?= atributosFechaNacDesconocida($enfermedad, ($valoresFijos['fecha_nac_desconocida'] ?? '') === '1') ?>>
                 </div>
-                <span class="tag" id="edadCalculada">—</span>
+                <?php // nucleo_ajustes.edad_a_la_fecha (P96, 2026-10-16): la edad se cuenta hasta esa fecha de la ficha.
+                $claveEdadALaFecha = nucleoAjuste($enfermedad, 'edad_a_la_fecha');
+                $campoEdadALaFecha = is_string($claveEdadALaFecha) ? \App\Models\CampoDef::porClave((int) $enfermedad['id'], $claveEdadALaFecha) : null; ?>
+                <span class="tag" id="edadCalculada"<?= $campoEdadALaFecha ? ' data-edad-a-la-fecha="campo_' . (int) $campoEdadALaFecha['id'] . '"' : '' ?>>—</span>
               </div>
 <?php // fecha_nac_desconocida (A50, 2026-09-14): casilla "Desconocido"; '' en las fichas que no la declaran. ?>
 <?= casillaFechaNacDesconocida($enfermedad, $valoresCampos, ($valoresFijos['fecha_nac_desconocida'] ?? '') === '1') ?>

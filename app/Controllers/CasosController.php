@@ -973,6 +973,35 @@ class CasosController extends Controller
             $erroresFijos['fecha_notif'] = 'La fecha de notificación no puede ser futura.';
         }
 
+        // Documento para una persona registrada sin él (2026-10-16): el
+        // documento sigue sin poder cambiarse, pero una persona SIN_DOCUMENTO
+        // (P96, A50) puede recibirlo después. Si ya es de otra persona
+        // registrada, es un número mal digitado o la misma persona registrada
+        // dos veces: no se toca a ninguna de las dos.
+        $documentoNuevo = null;
+        $numDocPost = trim((string) ($_POST['num_doc'] ?? ''));
+        if ($caso['tipo_doc'] === 'SIN_DOCUMENTO' && $numDocPost !== '') {
+            $tipoDocPost = (string) ($_POST['tipo_doc'] ?? '');
+            $valoresFijos['tipo_doc'] = $tipoDocPost;
+            $valoresFijos['num_doc'] = $numDocPost;
+            if (!in_array($tipoDocPost, ['DNI', 'CE', 'PTP', 'PAS', 'OTRO'], true)) {
+                $erroresFijos['num_doc'] = 'Tipo de documento no válido.';
+                $valoresFijos['tipo_doc'] = 'DNI';
+            } elseif ($tipoDocPost === 'DNI' && !preg_match('/^\d{8}$/', $numDocPost)) {
+                // Lo mismo que la máscara de nueva/index.php (ficha.js).
+                $erroresFijos['num_doc'] = 'El DNI tiene 8 dígitos.';
+            } elseif ($tipoDocPost === 'CE' && !preg_match('/^\d{1,9}$/', $numDocPost)) {
+                $erroresFijos['num_doc'] = 'El carné de extranjería tiene hasta 9 dígitos.';
+            } elseif (mb_strlen($numDocPost) > 20) {
+                $erroresFijos['num_doc'] = 'El número de documento no puede pasar de 20 caracteres.';
+            } elseif ($otraPersona = Persona::buscarPorDocumento($tipoDocPost, $numDocPost)) {
+                $erroresFijos['num_doc'] = 'Este documento ya está registrado para otra persona ('
+                    . Persona::nombreCompleto($otraPersona) . '). Revisa el número.';
+            } else {
+                $documentoNuevo = ['tipo_doc' => $tipoDocPost, 'num_doc' => $numDocPost];
+            }
+        }
+
         if ($valoresFijos['apellido_paterno'] === '') {
             $erroresFijos['apellido_paterno'] = 'Ingresa el apellido paterno.';
         }
@@ -1157,7 +1186,11 @@ class CasosController extends Controller
             // La persona del caso, por su id: el documento no es editable, así
             // que es la misma que antes se buscaba por documento, y además
             // funciona con una persona SIN_DOCUMENTO (número NULL, P96).
+            // Una SIN_DOCUMENTO puede recibir el suyo ($documentoNuevo).
             $personaId = (int) $caso['persona_id'];
+            if ($documentoNuevo !== null) {
+                $datosPaciente = array_merge($datosPaciente, $documentoNuevo);
+            }
 
             // Validación de conflicto de interés
             if ($usuario['persona_id'] !== null && $usuario['persona_id'] === $personaId) {
