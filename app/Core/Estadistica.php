@@ -37,27 +37,4 @@ class Estadistica
         return $ordenados[$indiceBajo] + $fraccion * ($ordenados[$indiceAlto] - $ordenados[$indiceBajo]);
     }
 
-    /**
-     * @return array{promedio: float, desviacion: float}
-     */
-    public static function promedioDesviacion(array $valores): array
-    {
-        $n = count($valores);
-        if ($n === 0) {
-            return ['promedio' => 0.0, 'desviacion' => 0.0];
-        }
-
-        $promedio = array_sum($valores) / $n;
-
-        if ($n === 1) {
-            return ['promedio' => $promedio, 'desviacion' => 0.0];
-        }
-
-        $sumaCuadrados = 0.0;
-        foreach ($valores as $valor) {
-            $sumaCuadrados += ($valor - $promedio) ** 2;
-        }
-
-        return ['promedio' => $promedio, 'desviacion' => sqrt($sumaCuadrados / $n)];
-    }
 }

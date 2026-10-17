@@ -1,5 +1,12 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Regenerado el 2026-10-17 (undecima vez). Cambio de ESQUEMA:
+--   - Tabla nueva notificacion_semanal: notificacion negativa semanal del
+--     establecimiento ("sin casos esta SE"), para el mapa de cumplimiento
+--     del Panel. Migracion: sql/migraciones/add_notificacion_semanal.php.
+-- ============================================================================
+--
+-- Sesion anterior (2026-10-16, decima vez):
 -- Regenerado el 2026-10-16 (decima vez), sin cambios de ESQUEMA. Cambio de
 -- CONTENIDO: Z21 "Observaciones" pasa a una seccion final propia, visible en
 --   las dos ramas (antes solo en la del nino). Para bases con casos:
@@ -1048,7 +1055,7 @@ CREATE TABLE `login_intento` (
   PRIMARY KEY (`id`),
   KEY `ix_login_email_fecha` (`email`,`fecha`),
   KEY `ix_login_ip_fecha` (`ip`,`fecha`)
-) ENGINE=InnoDB AUTO_INCREMENT=910 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=981 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1105,6 +1112,33 @@ CREATE TABLE `notificacion_negativa` (
   CONSTRAINT `fk_notif_negativa_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
   CONSTRAINT `fk_notif_negativa_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `notificacion_semanal`
+--
+
+DROP TABLE IF EXISTS `notificacion_semanal`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `notificacion_semanal` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `establecimiento_id` int NOT NULL,
+  `anio_epi` smallint NOT NULL,
+  `semana_epi` smallint NOT NULL,
+  `usuario_id` int NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `anulada_por` int DEFAULT NULL,
+  `anulada_en` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_notif_semanal` (`establecimiento_id`,`anio_epi`,`semana_epi`),
+  KEY `ix_notif_semanal_se` (`anio_epi`,`semana_epi`),
+  KEY `fk_notif_semanal_usuario` (`usuario_id`),
+  KEY `fk_notif_semanal_anulada_por` (`anulada_por`),
+  CONSTRAINT `fk_notif_semanal_anulada_por` FOREIGN KEY (`anulada_por`) REFERENCES `usuario` (`id`),
+  CONSTRAINT `fk_notif_semanal_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_notif_semanal_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1466,4 +1500,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-16 22:33:52
+-- Dump completed on 2026-10-17  1:41:27

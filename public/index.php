@@ -105,6 +105,10 @@ $router->get('/', function () {
     (new PanelController())->index();
 });
 
+$router->post('/panel/notificacion-semanal', function () {
+    (new PanelController())->notificacionSemanal();
+});
+
 $router->get('/casos', function () {
     (new CasosController())->index();
 });

@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Flash;
 use App\Models\Caso;
+use App\Models\Consolidado;
 use App\Models\Enfermedad;
 use App\Models\Establecimiento;
 use App\Models\ListadoMuerteFetalNeonatal;
@@ -14,79 +15,94 @@ use App\Models\RegistroBusquedaActivaVih;
 
 class ReportesController extends Controller
 {
-    private const AGRUPACIONES_VALIDAS = ['establecimiento', 'red', 'semana', 'clasificacion', 'categoria_pnp', 'nivel'];
-
-    private const ETIQUETAS_AGRUPACION = [
-        'establecimiento' => 'Establecimiento',
-        'red'             => 'Red de salud',
-        'semana'          => 'Semana epidemiológica',
-        'clasificacion'   => 'Clasificación',
-        'categoria_pnp'   => 'Categoría PNP',
-        'nivel'           => 'Nivel de grado PNP',
-    ];
-
+    /**
+     * Consolidado (rediseño 2026-10-17): tabla cruzada filas × columnas con
+     * totales, vista Tabla | Gráfico y título armado con los filtros. Los
+     * formatos del PDF (Z21, P96) van en su propia pestaña.
+     */
     public function index(): void
     {
-        [$enfermedadId, $agrupacion, $rangoSe] = $this->leerFiltros();
-
-        $filtros = ['enfermedad_id' => $enfermedadId, 'rango_se' => $rangoSe];
-        $filas = Caso::reportePorAgrupacion($agrupacion, $filtros);
-        $totalEstablecimientos = count(Caso::reportePorAgrupacion('establecimiento', $filtros));
+        $usuario = Auth::usuario();
+        $f = $this->leerFiltros();
+        $enfermedad = $f['enfermedad_id'] ? Enfermedad::buscar($f['enfermedad_id']) : null;
+        $cruce = Consolidado::cruzar($usuario, $f['enfermedad_id'], $f['desde'], $f['hasta'], $f['filas'], $f['columnas']);
 
         $this->vista('reportes/index', [
-            'tituloVista' => 'Reportes',
-            'rutaActual'  => 'reportes',
+            'tituloVista'  => 'Reportes',
+            'rutaActual'   => 'reportes',
+            'vistaAncha'   => true,
+            'pestana'      => ($_GET['vista'] ?? '') === 'formatos' ? 'formatos' : 'consolidado',
             'enfermedades' => Enfermedad::todos('nombre'),
-            'enfermedadId' => $enfermedadId,
-            'agrupacion'  => $agrupacion,
-            'etiquetaColumna' => self::ETIQUETAS_AGRUPACION[$agrupacion],
-            'rangoSe'     => $rangoSe,
-            'filas'       => $filas,
-            'columnasClasificacion' => Caso::columnasClasificacionReporte($enfermedadId, $filas),
-            'distribucionClasificacion' => Caso::distribucionPorClasificacion($filtros),
-            'totalPeriodo' => array_sum(array_column($filas, 'total')),
-            'totalEstablecimientos' => $totalEstablecimientos,
+            'enfermedad'   => $enfermedad,
+            'filtros'      => $f,
+            'dimensiones'  => Consolidado::dimensiones(),
+            'cruce'        => $cruce,
+            'piramide'     => $f['filas'] === 'etapa' && in_array($f['columnas'], [null, 'sexo'], true)
+                ? Consolidado::piramide($usuario, $f['enfermedad_id'], $f['desde'], $f['hasta']) : null,
+            'titulo'       => $this->tituloReporte($f, $enfermedad),
+            'esRegistrador' => $usuario['rol'] === 'REGISTRADOR',
         ]);
     }
 
     /**
-     * Repite la misma consulta agregada que ve el usuario en pantalla y la
-     * exporta como CSV (delimitador ; y BOM UTF-8, para que Excel en
-     * configuración regional es-PE lo abra directamente con acentos y
-     * columnas correctas).
+     * La misma tabla cruzada de la pantalla, en CSV (delimitador ; y BOM
+     * UTF-8, para que Excel en configuración regional es-PE lo abra directo).
      */
     public function exportarExcel(): void
     {
-        [$enfermedadId, $agrupacion, $rangoSe] = $this->leerFiltros();
-        $filas = Caso::reportePorAgrupacion($agrupacion, ['enfermedad_id' => $enfermedadId, 'rango_se' => $rangoSe]);
-
-        $nombreArchivo = 'reporte_' . date('Y-m-d') . '.csv';
+        $usuario = Auth::usuario();
+        $f = $this->leerFiltros();
+        $enfermedad = $f['enfermedad_id'] ? Enfermedad::buscar($f['enfermedad_id']) : null;
+        $cruce = Consolidado::cruzar($usuario, $f['enfermedad_id'], $f['desde'], $f['hasta'], $f['filas'], $f['columnas']);
+        $dims = Consolidado::dimensiones();
+        $variosAnios = $f['desde'][0] !== $f['hasta'][0];
 
         header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '"');
-
+        header('Content-Disposition: attachment; filename="reporte_' . $f['filas'] . ($f['columnas'] ? '_' . $f['columnas'] : '') . '_' . date('Y-m-d') . '.csv"');
         $salida = fopen('php://output', 'w');
-        fwrite($salida, "\xEF\xBB\xBF"); // BOM UTF-8
+        fwrite($salida, "\xEF\xBB\xBF");
+        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
 
-        // Las mismas columnas de clasificación que en pantalla (2026-10-16).
-        $columnas = Caso::columnasClasificacionReporte($enfermedadId, $filas);
-        $etiquetaFila = fn(array $fila): string => $agrupacion === 'clasificacion'
-            ? datosClasificacion((string) $fila['etiqueta'])['etiqueta'] : (string) $fila['etiqueta'];
-        fputcsv($salida, array_merge(
-            [self::ETIQUETAS_AGRUPACION[$agrupacion]],
-            array_map(fn(string $codigo) => datosClasificacion($codigo)['etiqueta'], $columnas),
-            ['Total']
-        ), ';', '"', '');
-        foreach ($filas as $fila) {
-            fputcsv($salida, array_merge(
-                [$etiquetaFila($fila)],
-                array_map(fn(string $codigo) => $fila['por_clasificacion'][$codigo] ?? 0, $columnas),
-                [$fila['total']]
-            ), ';', '"', '');
+        $linea([$this->tituloReporte($f, $enfermedad)]);
+        $linea([]);
+        $encabezado = [$dims[$f['filas']]['etiqueta']];
+        if ($f['columnas']) {
+            foreach ($cruce['columnas'] as $k) {
+                $encabezado[] = Consolidado::etiqueta($f['columnas'], $k);
+            }
         }
-
+        $linea(array_merge($encabezado, ['Total', '%']));
+        foreach ($cruce['filas'] as $fila) {
+            $celdas = [Consolidado::etiqueta($f['filas'], $fila, $variosAnios)];
+            if ($f['columnas']) {
+                foreach ($cruce['columnas'] as $k) {
+                    $celdas[] = $cruce['celdas'][$fila][$k] ?? 0;
+                }
+            }
+            $totalFila = $cruce['totalFila'][$fila] ?? 0;
+            $linea(array_merge($celdas, [$totalFila, $cruce['total'] ? number_format($totalFila / $cruce['total'] * 100, 1, ',', '') : '0,0']));
+        }
+        $pie = ['Total'];
+        if ($f['columnas']) {
+            foreach ($cruce['columnas'] as $k) {
+                $pie[] = $cruce['totalColumna'][$k] ?? 0;
+            }
+        }
+        $linea(array_merge($pie, [$cruce['total'], '100,0']));
         fclose($salida);
         exit;
+    }
+
+    /** "Difteria · casos por red y clasificación · SE 15–41 · 2026". */
+    private function tituloReporte(array $f, ?array $enfermedad): string
+    {
+        $dims = Consolidado::dimensiones();
+        // Solo la inicial en minúscula: "Categoría PNP" -> "categoría PNP".
+        $minuscula = fn(string $t): string => mb_strtolower(mb_substr($t, 0, 1)) . mb_substr($t, 1);
+        return ($enfermedad ? $enfermedad['nombre'] : 'Todas las enfermedades')
+            . ' · casos por ' . $minuscula($dims[$f['filas']]['etiqueta'])
+            . ($f['columnas'] ? ' y ' . $minuscula($dims[$f['columnas']]['etiqueta']) : '')
+            . ' · ' . $f['etiquetaPeriodo'];
     }
 
     /**
@@ -361,27 +377,50 @@ class ReportesController extends Controller
     }
 
     /**
-     * @return array{0: ?int, 1: string, 2: array}
+     * Filtros del consolidado: enfermedad, filas, columnas y periodo por SE
+     * (4 SE, 12 SE, año o un rango, que puede cruzar de año). Acepta los
+     * parámetros viejos (agrupar_por) de enlaces guardados.
      */
     private function leerFiltros(): array
     {
-        $enfermedadId = !empty($_GET['enfermedad_id']) ? (int) $_GET['enfermedad_id'] : null;
+        $dims = Consolidado::dimensiones();
+        $texto = fn(string $clave): string => is_string($_GET[$clave] ?? null) ? trim($_GET[$clave]) : '';
+        $compat = ['semana' => 'se', 'establecimiento' => 'establecimiento', 'red' => 'red', 'clasificacion' => 'clasificacion', 'categoria_pnp' => 'categoria_pnp', 'nivel' => 'nivel'];
 
-        $agrupacion = $_GET['agrupar_por'] ?? 'establecimiento';
-        if (!in_array($agrupacion, self::AGRUPACIONES_VALIDAS, true)) {
-            $agrupacion = 'establecimiento';
-        }
+        $filas = $texto('filas') ?: ($compat[$texto('agrupar_por')] ?? 'establecimiento');
+        $filas = isset($dims[$filas]) ? $filas : 'establecimiento';
+        $columnas = $texto('columnas') === '' && $texto('agrupar_por') === '' ? 'clasificacion' : $texto('columnas');
+        $columnas = isset($dims[$columnas]) && $dims[$columnas]['columna'] && $columnas !== $filas ? $columnas : null;
 
         $actual = semanaEpidemiologica(date('Y-m-d'));
-        $inicioPorDefecto = semanaEpidemiologica((new \DateTime())->modify('-3 weeks')->format('Y-m-d'));
+        $periodo = in_array($texto('periodo'), ['4', '12', 'anio', 'rango'], true) ? $texto('periodo') : ($texto('se_desde') !== '' ? 'rango' : 'anio');
+        if ($periodo === 'rango') {
+            $desde = [(int) $texto('anio_desde') ?: $actual['anio'], max(1, min(53, (int) $texto('se_desde') ?: 1))];
+            $hasta = [(int) $texto('anio_hasta') ?: $actual['anio'], max(1, min(53, (int) $texto('se_hasta') ?: $actual['semana']))];
+            $desde[1] = min($desde[1], semanasEpidemiologicasDelAnio($desde[0]));
+            $hasta[1] = min($hasta[1], semanasEpidemiologicasDelAnio($hasta[0]));
+            if ($desde > $hasta) {
+                [$desde, $hasta] = [$hasta, $desde];
+            }
+        } elseif ($periodo === 'anio') {
+            $desde = [$actual['anio'], 1];
+            $hasta = [$actual['anio'], $actual['semana']];
+        } else {
+            $inicio = semanaEpidemiologica(date('Y-m-d', strtotime('-' . (7 * ((int) $periodo - 1)) . ' days')));
+            $desde = [$inicio['anio'], $inicio['semana']];
+            $hasta = [$actual['anio'], $actual['semana']];
+        }
+        $etiquetaPeriodo = 'SE ' . $desde[1] . ($desde[0] !== $hasta[0] ? ' · ' . $desde[0] : '') . '–' . $hasta[1] . ' · ' . $hasta[0];
 
-        $rangoSe = [
-            'anio_desde' => (int) ($_GET['anio_desde'] ?? $inicioPorDefecto['anio']),
-            'se_desde'   => (int) ($_GET['se_desde'] ?? $inicioPorDefecto['semana']),
-            'anio_hasta' => (int) ($_GET['anio_hasta'] ?? $actual['anio']),
-            'se_hasta'   => (int) ($_GET['se_hasta'] ?? $actual['semana']),
+        return [
+            'enfermedad_id'   => ctype_digit($texto('enfermedad_id')) ? (int) $texto('enfermedad_id') : null,
+            'filas'           => $filas,
+            'columnas'        => $columnas,
+            'periodo'         => $periodo,
+            'desde'           => $desde,
+            'hasta'           => $hasta,
+            'etiquetaPeriodo' => $etiquetaPeriodo,
+            'modo'            => $texto('modo') === 'grafico' ? 'grafico' : 'tabla',
         ];
-
-        return [$enfermedadId, $agrupacion, $rangoSe];
     }
 }

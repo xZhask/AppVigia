@@ -75,6 +75,7 @@ php sql/migraciones/add_tablas_hijas_enfermedad.php
 php sql/migraciones/add_tipo_asentamiento_persona.php
 php sql/migraciones/add_cie10.php
 php sql/migraciones/add_tipo_notif_mensual.php
+php sql/migraciones/add_notificacion_semanal.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -96,6 +97,9 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   `persona.tipo_asentamiento` y `persona.anterior_tipo_asentamiento` (sección
   3, ítem 3) y copia `detalle_domicilio` y `nucleo_ajustes` de A00, A95 y B57.
   Se puede correr más de una vez.
+- `add_notificacion_semanal.php` (17/10): crea `notificacion_semanal`, la
+  notificación negativa semanal por establecimiento que usa el mapa de
+  cumplimiento del Panel. Se puede correr más de una vez.
 - `add_tipo_notif_mensual.php` (16/10): agrega MENSUAL a
   `enfermedad.tipo_notif` y pasa B24 a mensual si seguía en semanal. Se puede
   correr más de una vez.

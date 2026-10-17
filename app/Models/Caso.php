@@ -101,11 +101,30 @@ class Caso extends Model
         return [$condiciones, $parametros];
     }
 
-    private const FROM_LISTADO = 'FROM caso c
+    public const FROM_LISTADO = 'FROM caso c
                   JOIN persona p         ON p.id = c.persona_id
                   JOIN enfermedad e      ON e.id = c.enfermedad_id
                   JOIN establecimiento est ON est.id = c.establecimiento_id
              LEFT JOIN red_salud r       ON r.id = est.red_id';
+
+    /**
+     * Alcance de un usuario para panel y reportes (2026-10-17), con las
+     * mismas reglas que el listado: el REGISTRADOR ve su establecimiento y no
+     * ve las fichas privadas de otros. Condiciones sobre los alias de
+     * FROM_LISTADO (c, p, e, est, r); no excluye anuladas.
+     *
+     * @return array{0: string[], 1: array}
+     */
+    public static function alcance(array $usuario, array $filtros = []): array
+    {
+        $filtros['privacidad_rol'] = $usuario['rol'];
+        $filtros['privacidad_usuario_id'] = $usuario['id'];
+        if ($usuario['rol'] === 'REGISTRADOR') {
+            $filtros['red_id'] = '';
+            $filtros['establecimiento_id'] = $usuario['establecimiento_id'];
+        }
+        return self::condicionesListado($filtros);
+    }
 
     private static function condicionPestana(string $pestana): string
     {
@@ -355,45 +374,6 @@ class Caso extends Model
     }
 
     /**
-     * Métricas de las 4 tarjetas del panel. $actual y $anterior son
-     * ['anio' => int, 'semana' => int] (la SE de hoy y la de hace 7 días,
-     * ya calculadas por el llamador con semanaEpidemiologica()).
-     */
-    public static function metricasPanel(array $actual, array $anterior): array
-    {
-        $sql = 'SELECT
-                  SUM(CASE WHEN anio_epi = :aa AND semana_epi = :sa THEN 1 ELSE 0 END) AS fichas_se_actual,
-                  SUM(CASE WHEN anio_epi = :ap AND semana_epi = :sp THEN 1 ELSE 0 END) AS fichas_se_anterior,
-                  SUM(CASE WHEN estado = "ABIERTA" THEN 1 ELSE 0 END) AS abiertas,
-                  SUM(CASE WHEN clasificacion = "CONFIRMADO" AND anio_epi = :aa2 AND semana_epi = :sa2 THEN 1 ELSE 0 END) AS confirmados_se_actual,
-                  SUM(CASE WHEN clasificacion = "CONFIRMADO" AND anio_epi = :ap2 AND semana_epi = :sp2 THEN 1 ELSE 0 END) AS confirmados_se_anterior,
-                  SUM(CASE WHEN estado = "VALIDACION" THEN 1 ELSE 0 END) AS en_validacion,
-                  COUNT(DISTINCT CASE WHEN estado = "VALIDACION" THEN establecimiento_id END) AS en_validacion_establecimientos
-                FROM caso
-                WHERE anulado = 0';
-
-        $consulta = Database::conexion()->prepare($sql);
-        $consulta->execute([
-            'aa' => $actual['anio'], 'sa' => $actual['semana'],
-            'ap' => $anterior['anio'], 'sp' => $anterior['semana'],
-            'aa2' => $actual['anio'], 'sa2' => $actual['semana'],
-            'ap2' => $anterior['anio'], 'sp2' => $anterior['semana'],
-        ]);
-
-        $fila = $consulta->fetch();
-
-        return [
-            'fichas_se_actual'               => (int) $fila['fichas_se_actual'],
-            'fichas_se_anterior'              => (int) $fila['fichas_se_anterior'],
-            'abiertas'                        => (int) $fila['abiertas'],
-            'confirmados_se_actual'           => (int) $fila['confirmados_se_actual'],
-            'confirmados_se_anterior'         => (int) $fila['confirmados_se_anterior'],
-            'en_validacion'                   => (int) $fila['en_validacion'],
-            'en_validacion_establecimientos'  => (int) $fila['en_validacion_establecimientos'],
-        ];
-    }
-
-    /**
      * Condición SQL para un rango de semana epidemiológica que puede cruzar
      * de año, comparando la tupla (anio_epi, semana_epi) de forma que el
      * optimizador pueda usar el índice ix_caso_se (anio_epi, semana_epi).
@@ -419,269 +399,4 @@ class Caso extends Model
             AND (anio_epi < :rango_ah1 OR (anio_epi = :rango_ah2 AND semana_epi <= :rango_sh))';
     }
 
-    /**
-     * Casos por semana epidemiológica dentro de un rango, agregando todas
-     * las enfermedades si $enfermedadId es null. Solo trae semanas con al
-     * menos un caso: el llamador rellena de cero las semanas ausentes con
-     * semanasEnRango() para no perder continuidad en la curva.
-     */
-    public static function serieSemanal(
-        ?int $enfermedadId,
-        int $anioDesde,
-        int $seDesde,
-        int $anioHasta,
-        int $seHasta
-    ): array {
-        $parametros = [];
-        $condicionSE = self::condicionRangoSE($anioDesde, $seDesde, $anioHasta, $seHasta, $parametros);
-
-        $condicionEnf = '';
-        if ($enfermedadId !== null) {
-            $condicionEnf = ' AND enfermedad_id = :enfermedad_id';
-            $parametros['enfermedad_id'] = $enfermedadId;
-        }
-
-        $sql = "SELECT anio_epi, semana_epi, COUNT(*) AS total
-                  FROM caso
-                 WHERE anulado = 0 AND $condicionSE $condicionEnf
-              GROUP BY anio_epi, semana_epi
-              ORDER BY anio_epi, semana_epi";
-
-        $consulta = Database::conexion()->prepare($sql);
-        $consulta->execute($parametros);
-
-        return $consulta->fetchAll();
-    }
-
-    /**
-     * Conteos históricos (años anteriores a $anioActual) agrupados solo por
-     * semana_epi, para construir el canal endémico por percentiles: para
-     * cada SE del rango mostrado, da la lista de conteos de esa misma SE en
-     * cada año previo con datos.
-     *
-     * @return array<int, array<int, int>> semana_epi => lista de conteos anuales
-     */
-    public static function serieHistoricaPorSemana(?int $enfermedadId, int $anioActual): array
-    {
-        $parametros = ['anio_actual' => $anioActual];
-        $condicionEnf = '';
-        if ($enfermedadId !== null) {
-            $condicionEnf = ' AND enfermedad_id = :enfermedad_id';
-            $parametros['enfermedad_id'] = $enfermedadId;
-        }
-
-        $sql = "SELECT anio_epi, semana_epi, COUNT(*) AS total
-                  FROM caso
-                 WHERE anulado = 0 AND anio_epi < :anio_actual $condicionEnf
-              GROUP BY anio_epi, semana_epi";
-
-        $consulta = Database::conexion()->prepare($sql);
-        $consulta->execute($parametros);
-
-        $porSemana = [];
-        foreach ($consulta->fetchAll() as $fila) {
-            $porSemana[(int) $fila['semana_epi']][] = (int) $fila['total'];
-        }
-
-        return $porSemana;
-    }
-
-    /**
-     * Cuántos años anteriores a $anioActual tienen al menos un caso
-     * registrado, para decidir si ya hay historia suficiente para el canal
-     * endémico por percentiles.
-     */
-    public static function aniosConDatos(?int $enfermedadId, int $anioActual): int
-    {
-        $parametros = ['anio_actual' => $anioActual];
-        $condicionEnf = '';
-        if ($enfermedadId !== null) {
-            $condicionEnf = ' AND enfermedad_id = :enfermedad_id';
-            $parametros['enfermedad_id'] = $enfermedadId;
-        }
-
-        $sql = "SELECT COUNT(DISTINCT anio_epi) FROM caso WHERE anulado = 0 AND anio_epi < :anio_actual $condicionEnf";
-
-        $consulta = Database::conexion()->prepare($sql);
-        $consulta->execute($parametros);
-
-        return (int) $consulta->fetchColumn();
-    }
-
-    /**
-     * Distribución por enfermedad dentro de un rango de SE, para la tarjeta
-     * "Por enfermedad" del panel.
-     */
-    public static function distribucionPorEnfermedad(int $anioDesde, int $seDesde, int $anioHasta, int $seHasta): array
-    {
-        $parametros = [];
-        $condicionSE = self::condicionRangoSE($anioDesde, $seDesde, $anioHasta, $seHasta, $parametros);
-
-        $sql = "SELECT e.nombre, COUNT(*) AS total
-                  FROM caso c
-                  JOIN enfermedad e ON e.id = c.enfermedad_id
-                 WHERE c.anulado = 0 AND $condicionSE
-              GROUP BY e.id, e.nombre
-              ORDER BY total DESC";
-
-        $consulta = Database::conexion()->prepare($sql);
-        $consulta->execute($parametros);
-
-        return $consulta->fetchAll();
-    }
-
-    /**
-     * Distribución por clasificación, con los mismos filtros opcionales que
-     * reportePorAgrupacion (enfermedad_id y rango de SE). Sin filtros,
-     * agrega todo el histórico.
-     */
-    public static function distribucionPorClasificacion(array $filtros = []): array
-    {
-        $condiciones = ['anulado = 0'];
-        $parametros = [];
-
-        if (!empty($filtros['enfermedad_id'])) {
-            $condiciones[] = 'enfermedad_id = :enfermedad_id';
-            $parametros['enfermedad_id'] = (int) $filtros['enfermedad_id'];
-        }
-        if (!empty($filtros['rango_se'])) {
-            $r = $filtros['rango_se'];
-            $condiciones[] = self::condicionRangoSE($r['anio_desde'], $r['se_desde'], $r['anio_hasta'], $r['se_hasta'], $parametros);
-        }
-
-        $where = implode(' AND ', $condiciones);
-        $sql = "SELECT clasificacion, COUNT(*) AS total
-                  FROM caso
-                 WHERE $where
-              GROUP BY clasificacion";
-
-        $consulta = Database::conexion()->prepare($sql);
-        $consulta->execute($parametros);
-
-        $totales = array_column($consulta->fetchAll(), 'total', 'clasificacion');
-        // Las de la enfermedad filtrada (o las 4 genéricas) aunque estén en
-        // 0, más las que traigan los datos, en el orden del catálogo.
-        $enfermedad = !empty($filtros['enfermedad_id']) ? Enfermedad::buscar((int) $filtros['enfermedad_id']) : null;
-        $porClasificacion = [];
-        foreach (clasificacionesParaMostrar($enfermedad ?: null, array_keys($totales)) as $codigo) {
-            $porClasificacion[$codigo] = (int) ($totales[$codigo] ?? 0);
-        }
-
-        return $porClasificacion;
-    }
-
-    /**
-     * Tabla del reporte, agrupada por establecimiento, red, semana
-     * epidemiológica o clasificación, con el desglose de clasificación
-     * (o de estado, para el agrupado por clasificación) resuelto en SQL.
-     * Alimenta tanto la tabla en pantalla como la exportación a Excel.
-     */
-    public static function reportePorAgrupacion(string $agrupacion, array $filtros): array
-    {
-        $condiciones = ['c.anulado = 0'];
-        $parametros = [];
-
-        if (!empty($filtros['enfermedad_id'])) {
-            $condiciones[] = 'c.enfermedad_id = :enfermedad_id';
-            $parametros['enfermedad_id'] = (int) $filtros['enfermedad_id'];
-        }
-        $r = $filtros['rango_se'];
-        $condiciones[] = self::condicionRangoSE($r['anio_desde'], $r['se_desde'], $r['anio_hasta'], $r['se_hasta'], $parametros);
-
-        // Una suma por cada clasificación del catálogo (2026-10-16; antes solo
-        // las 4 genéricas): columnas cl_<CÓDIGO>, que abajo pasan a
-        // 'por_clasificacion'. Los códigos son de CATALOGO_CLASIFICACION, no
-        // de la petición.
-        $codigosCatalogo = array_keys(CATALOGO_CLASIFICACION);
-        $sumaClasificacion = implode(',', array_map(
-            fn(string $codigo) => "SUM(CASE WHEN c.clasificacion = '{$codigo}' THEN 1 ELSE 0 END) AS cl_{$codigo}",
-            $codigosCatalogo
-        )) . ', COUNT(*) AS total';
-        $ordenCatalogo = "'" . implode("','", $codigosCatalogo) . "'";
-
-        switch ($agrupacion) {
-            case 'red':
-                $sql = "SELECT COALESCE(r.nombre, 'Sin red') AS etiqueta, $sumaClasificacion
-                          FROM caso c
-                          JOIN establecimiento est ON est.id = c.establecimiento_id
-                     LEFT JOIN red_salud r         ON r.id = est.red_id
-                         WHERE " . implode(' AND ', $condiciones) . '
-                      GROUP BY r.id, etiqueta
-                      ORDER BY total DESC';
-                break;
-            case 'semana':
-                $sql = "SELECT CONCAT('SE ', c.semana_epi, ' · ', c.anio_epi) AS etiqueta, c.anio_epi, c.semana_epi, $sumaClasificacion
-                          FROM caso c
-                         WHERE " . implode(' AND ', $condiciones) . '
-                      GROUP BY c.anio_epi, c.semana_epi, etiqueta
-                      ORDER BY c.anio_epi, c.semana_epi';
-                break;
-            case 'clasificacion':
-                $sql = "SELECT c.clasificacion AS etiqueta, $sumaClasificacion
-                          FROM caso c
-                         WHERE " . implode(' AND ', $condiciones) . "
-                      GROUP BY c.clasificacion
-                      ORDER BY FIELD(c.clasificacion, $ordenCatalogo) = 0, FIELD(c.clasificacion, $ordenCatalogo), c.clasificacion";
-                break;
-            case 'categoria_pnp':
-                $sql = "SELECT COALESCE(p.categoria_pnp, 'Sin categoría PNP') AS etiqueta, $sumaClasificacion
-                          FROM caso c
-                          JOIN persona p ON p.id = c.persona_id
-                         WHERE " . implode(' AND ', $condiciones) . "
-                      GROUP BY p.categoria_pnp
-                      ORDER BY total DESC";
-                break;
-            case 'nivel':
-                $sql = "SELECT COALESCE(g.nivel, 'Sin grado PNP') AS etiqueta, $sumaClasificacion
-                          FROM caso c
-                          JOIN persona p ON p.id = c.persona_id
-                     LEFT JOIN grado_pnp g ON g.id = p.grado_id
-                         WHERE " . implode(' AND ', $condiciones) . "
-                      GROUP BY g.nivel
-                      ORDER BY total DESC";
-                break;
-            case 'establecimiento':
-            default:
-                $sql = "SELECT est.nombre AS etiqueta, $sumaClasificacion
-                          FROM caso c
-                          JOIN establecimiento est ON est.id = c.establecimiento_id
-                         WHERE " . implode(' AND ', $condiciones) . '
-                      GROUP BY est.id, etiqueta
-                      ORDER BY total DESC';
-                break;
-        }
-
-        $consulta = Database::conexion()->prepare($sql);
-        $consulta->execute($parametros);
-
-        return array_map(function (array $fila) use ($codigosCatalogo): array {
-            $fila['por_clasificacion'] = [];
-            foreach ($codigosCatalogo as $codigo) {
-                $fila['por_clasificacion'][$codigo] = (int) $fila["cl_{$codigo}"];
-                unset($fila["cl_{$codigo}"]);
-            }
-            return $fila;
-        }, $consulta->fetchAll());
-    }
-
-    /**
-     * Columnas de clasificación de la tabla del reporte (2026-10-16): las de
-     * la enfermedad filtrada o las 4 genéricas, más las que traigan las filas.
-     *
-     * @return string[]
-     */
-    public static function columnasClasificacionReporte(?int $enfermedadId, array $filas): array
-    {
-        $presentes = [];
-        foreach ($filas as $fila) {
-            foreach ($fila['por_clasificacion'] as $codigo => $total) {
-                if ($total > 0) {
-                    $presentes[] = $codigo;
-                }
-            }
-        }
-        $enfermedad = $enfermedadId ? Enfermedad::buscar($enfermedadId) : null;
-
-        return clasificacionesParaMostrar($enfermedad ?: null, $presentes);
-    }
 }

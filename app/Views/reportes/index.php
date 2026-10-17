@@ -1,145 +1,199 @@
 <?php
+use App\Models\Consolidado;
 use App\Models\ListadoMuerteFetalNeonatal;
 use App\Models\RegistroBusquedaActivaVih;
 
-$agrupaciones = [
-    'establecimiento' => 'Establecimiento',
-    'red'             => 'Red',
-    'semana'          => 'Semana epidemiológica',
-    'clasificacion'   => 'Clasificación',
-    'categoria_pnp'   => 'Categoría PNP',
-    'nivel'           => 'Nivel de grado PNP',
+// Reportes (rediseño 2026-10-17): pestañas Consolidado | Formatos MINSA;
+// tabla cruzada filas × columnas con totales y vista Tabla | Gráfico.
+$f = $filtros;
+$consulta = [
+    'enfermedad_id' => $f['enfermedad_id'] ?? '',
+    'filas'         => $f['filas'],
+    'columnas'      => $f['columnas'] ?? 'ninguna',
+    'periodo'       => $f['periodo'] === 'anio' ? '' : $f['periodo'],
+    'anio_desde'    => $f['periodo'] === 'rango' ? $f['desde'][0] : '',
+    'se_desde'      => $f['periodo'] === 'rango' ? $f['desde'][1] : '',
+    'anio_hasta'    => $f['periodo'] === 'rango' ? $f['hasta'][0] : '',
+    'se_hasta'      => $f['periodo'] === 'rango' ? $f['hasta'][1] : '',
+    'modo'          => $f['modo'] === 'grafico' ? 'grafico' : '',
 ];
-$queryFiltros = http_build_query([
-    'enfermedad_id' => $enfermedadId ?? '',
-    'agrupar_por'   => $agrupacion,
-    'anio_desde'    => $rangoSe['anio_desde'],
-    'se_desde'      => $rangoSe['se_desde'],
-    'anio_hasta'    => $rangoSe['anio_hasta'],
-    'se_hasta'      => $rangoSe['se_hasta'],
-]);
-// Etiqueta, punto y color salen de datosClasificacion() (CATALOGO_CLASIFICACION):
-// la distribución y la agrupación también traen los valores de O95/A00/Z21.
-$maxClasificacion = !empty($distribucionClasificacion) ? max($distribucionClasificacion) : 0;
+$url = fn(string $ruta, array $cambios = []) => $ruta . (($q = queryConPagina($consulta, $cambios)) !== '' ? '?' . $q : '');
+$variosAnios = $f['desde'][0] !== $f['hasta'][0];
+$c = $cruce;
+$conColumnas = $f['columnas'] !== null;
+$maxCelda = 1;
+foreach ($c['filas'] as $fila) {
+    $maxCelda = max($maxCelda, $conColumnas ? max(array_map(fn($k) => $c['celdas'][$fila][$k] ?? 0, $c['columnas'])) : ($c['totalFila'][$fila] ?? 0));
+}
+$sombra = fn(int $v) => $v ? 'background-color:color-mix(in srgb,var(--accent) ' . round(6 + 30 * $v / $maxCelda) . '%,transparent)' : '';
+$colorColumna = function (string $k, int $i) use ($f): string {
+    if ($f['columnas'] === 'clasificacion') {
+        return datosClasificacion($k)['color'];
+    }
+    return $k === 'SIN_DATO' ? 'var(--faint)' : 'var(--cat' . ($i % 8 + 1) . ')';
+};
+$intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
 ?>
 <div class="page-head">
   <div>
     <div class="page-title">Reportes</div>
-    <div class="page-desc">Consolidados dinámicos para el área — sin re-digitar Excel</div>
+    <div class="page-desc">Consolidados dinámicos para el área, sin redigitar Excel<?= $esRegistrador ? ' · tu establecimiento' : '' ?></div>
   </div>
 </div>
 
-<div class="card" style="margin-bottom:16px;padding:14px 18px">
-  <div class="eyebrow" style="margin-bottom:8px">Formularios del PDF</div>
-  <a href="/reportes/busqueda-activa-vih" style="font-size:13.5px;font-weight:500;color:var(--accent)"><?= e(RegistroBusquedaActivaVih::NOMBRE) ?></a>
-  <div style="font-size:12px;color:var(--muted);margin-top:3px">Ficha «Gestante con VIH y niño expuesto» (Z21)</div>
-  <a href="/reportes/muerte-fetal-neonatal" style="display:inline-block;margin-top:12px;font-size:13.5px;font-weight:500;color:var(--accent)"><?= e(ListadoMuerteFetalNeonatal::NOMBRE) ?></a>
-  <div style="font-size:12px;color:var(--muted);margin-top:3px">Listado semanal de la ficha «Muerte fetal y neonatal» (P96), con notificación de semana sin casos</div>
-</div>
+<nav class="pestanas reporte-pestanas" aria-label="Tipo de reporte">
+  <a class="pestana<?= $pestana === 'consolidado' ? ' on' : '' ?>" href="<?= e($url('/reportes')) ?>">Consolidado</a>
+  <a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos MINSA<span class="cnt mono">2</span></a>
+</nav>
 
-<div class="card" style="margin-bottom:16px">
-  <form method="get" action="/reportes">
-    <div class="report-controls">
-      <div class="rc">
-        <label>Enfermedad</label>
-        <div class="control">
-          <select name="enfermedad_id">
-            <option value="">Todas</option>
-            <?php foreach ($enfermedades as $enf): ?>
-              <option value="<?= (int) $enf['id'] ?>" <?= seleccionado($enfermedadId ?? '', $enf['id']) ?>><?= e($enf['nombre']) ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
+<?php if ($pestana === 'formatos'): ?>
+  <div class="formatos">
+    <div class="card formato">
+      <span class="codigo-formato mono">Z21 · Planilla</span>
+      <h3><?= e(RegistroBusquedaActivaVih::NOMBRE) ?></h3>
+      <p>Se arma con las fichas «Gestante con VIH y niño expuesto» del periodo.</p>
+      <a class="btn btn-primary" href="/reportes/busqueda-activa-vih">Abrir planilla</a>
+    </div>
+    <div class="card formato">
+      <span class="codigo-formato mono">P96 · Listado semanal</span>
+      <h3><?= e(ListadoMuerteFetalNeonatal::NOMBRE) ?></h3>
+      <p>Listado semanal de la ficha «Muerte fetal y neonatal», con la notificación de semana sin casos.</p>
+      <a class="btn btn-primary" href="/reportes/muerte-fetal-neonatal">Abrir listado</a>
+    </div>
+  </div>
+<?php else: ?>
+  <form method="get" action="/reportes" class="card reporte-filtros" id="filtrosReporte">
+    <?php if ($f['modo'] === 'grafico'): ?><input type="hidden" name="modo" value="grafico"><?php endif; ?>
+    <button type="submit" class="sr-only" tabindex="-1" aria-hidden="true">Aplicar</button>
+    <div class="rf">
+      <label for="rfEnf">Enfermedad</label>
+      <div class="filtro-caja"><select id="rfEnf" name="enfermedad_id" data-auto>
+        <option value="">Todas las enfermedades</option>
+        <?php foreach ($enfermedades as $enf): ?>
+          <option value="<?= (int) $enf['id'] ?>" <?= seleccionado((string) ($f['enfermedad_id'] ?? ''), $enf['id']) ?>><?= e($enf['nombre']) ?> · <?= e($enf['cie10']) ?></option>
+        <?php endforeach; ?>
+      </select></div>
+    </div>
+    <div class="rf rf-cruce">
+      <div>
+        <label for="rfFilas">Filas</label>
+        <div class="filtro-caja"><select id="rfFilas" name="filas" data-auto>
+          <?php foreach ($dimensiones as $clave => $dim): if ($clave === $f['columnas']) continue; ?>
+            <option value="<?= $clave ?>" <?= seleccionado($f['filas'], $clave) ?>><?= e($dim['etiqueta']) ?></option>
+          <?php endforeach; ?>
+        </select></div>
       </div>
-      <div class="rc">
-        <label>Agrupar por</label>
-        <div class="control">
-          <select name="agrupar_por">
-            <?php foreach ($agrupaciones as $valor => $etiqueta): ?>
-              <option value="<?= $valor ?>" <?= seleccionado($agrupacion, $valor) ?>><?= $etiqueta ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-      </div>
-      <div class="rc">
-        <label>Desde</label>
-        <div class="control mono" style="gap:6px">
-          <input type="number" name="se_desde" min="1" max="53" value="<?= (int) $rangoSe['se_desde'] ?>" style="width:44px" title="Semana epidemiológica">
-          ·
-          <input type="number" name="anio_desde" min="2000" max="2100" value="<?= (int) $rangoSe['anio_desde'] ?>" style="width:64px" title="Año">
-        </div>
-      </div>
-      <div class="rc">
-        <label>Hasta</label>
-        <div class="control mono" style="gap:6px">
-          <input type="number" name="se_hasta" min="1" max="53" value="<?= (int) $rangoSe['se_hasta'] ?>" style="width:44px" title="Semana epidemiológica">
-          ·
-          <input type="number" name="anio_hasta" min="2000" max="2100" value="<?= (int) $rangoSe['anio_hasta'] ?>" style="width:64px" title="Año">
-        </div>
+      <a class="intercambiar<?= $intercambiable ? '' : ' deshabilitado' ?>" <?= $intercambiable ? 'href="' . e($url('/reportes', ['filas' => $f['columnas'], 'columnas' => $f['filas']])) . '"' : 'aria-disabled="true"' ?>
+         title="<?= $intercambiable ? 'Intercambiar filas y columnas' : e('«' . $dimensiones[$f['filas']]['etiqueta'] . '» tiene demasiados valores para usarse como columnas') ?>">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>
+        <span class="sr-only">Intercambiar filas y columnas</span>
+      </a>
+      <div>
+        <label for="rfCols">Columnas</label>
+        <div class="filtro-caja"><select id="rfCols" name="columnas" data-auto>
+          <option value="ninguna" <?= $conColumnas ? '' : 'selected' ?>>Ninguna (solo total)</option>
+          <?php foreach ($dimensiones as $clave => $dim): if (!$dim['columna'] || $clave === $f['filas']) continue; ?>
+            <option value="<?= $clave ?>" <?= seleccionado((string) $f['columnas'], $clave) ?>><?= e($dim['etiqueta']) ?></option>
+          <?php endforeach; ?>
+        </select></div>
       </div>
     </div>
-    <div style="padding:0 18px 18px">
-      <button type="submit" class="btn btn-primary">Aplicar filtros</button>
+    <div class="rf">
+      <span class="rf-label">Periodo</span>
+      <div class="rf-periodo">
+        <?php if ($f['periodo'] !== 'anio'): ?><input type="hidden" name="periodo" value="<?= e($f['periodo']) ?>"><?php endif; ?>
+        <div class="seg-periodo" role="group" aria-label="Periodo">
+          <?php foreach (['4' => '4 SE', '12' => '12 SE', 'anio' => 'Año', 'rango' => 'Rango'] as $valor => $etiqueta): ?>
+            <button type="submit" name="periodo" value="<?= $valor ?>"<?= $f['periodo'] === (string) $valor ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"' ?>><?= $etiqueta ?></button>
+          <?php endforeach; ?>
+        </div>
+        <?php if ($f['periodo'] === 'rango'): ?>
+          <span class="rango-se">
+            SE <input type="number" name="se_desde" min="1" max="53" value="<?= $f['desde'][1] ?>" aria-label="Desde la SE" data-auto>
+            · <input type="number" name="anio_desde" min="2000" max="2100" value="<?= $f['desde'][0] ?>" class="rango-anio" aria-label="Año desde" data-auto>
+            a SE <input type="number" name="se_hasta" min="1" max="53" value="<?= $f['hasta'][1] ?>" aria-label="Hasta la SE" data-auto>
+            · <input type="number" name="anio_hasta" min="2000" max="2100" value="<?= $f['hasta'][0] ?>" class="rango-anio" aria-label="Año hasta" data-auto>
+          </span>
+        <?php else: ?>
+          <span class="periodo-txt mono"><?= e($f['etiquetaPeriodo']) ?></span>
+        <?php endif; ?>
+      </div>
     </div>
   </form>
-</div>
 
-<?php if (empty($filas)): ?>
-  <?php
-  $icono = '<svg width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M3 15V7M7 15V4M11 15v-5M15 15V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-  $mensaje = 'No hay fichas para los filtros seleccionados. Ajusta la enfermedad o el rango de semanas epidemiológicas e intenta de nuevo.';
-  $accionTexto = '';
-  $accionHref = '';
-  require __DIR__ . '/../partials/estado-vacio.php';
-  ?>
-<?php else: ?>
-  <div class="card table-card">
-    <div class="card-head">
-      <div><h3><?= $etiquetaColumna ?></h3><div class="sub">SE <?= (int) $rangoSe['se_desde'] ?> · <?= (int) $rangoSe['anio_desde'] ?> – SE <?= (int) $rangoSe['se_hasta'] ?> · <?= (int) $rangoSe['anio_hasta'] ?></div></div>
+  <div class="card reporte-resultado">
+    <div class="reporte-cab">
+      <div>
+        <h2><?= e($titulo) ?></h2>
+        <p><?= number_format($c['total'], 0, ',', ' ') ?> ficha<?= $c['total'] === 1 ? '' : 's' ?> · excluye fichas anuladas<?= $esRegistrador ? ' · solo tu establecimiento' : '' ?></p>
+      </div>
       <div class="spacer"></div>
-      <a class="btn-quiet" href="/reportes/exportar?<?= $queryFiltros ?>">
-        <svg width="15" height="15" viewBox="0 0 15 15"><rect x="2" y="2.5" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5.5 5.5l4 4M9.5 5.5l-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-        Excel
-      </a>
-      <button type="button" class="btn-quiet" onclick="window.print()">
-        <svg width="15" height="15" viewBox="0 0 15 15"><path d="M4 1.5h5l3 3v9H4z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/></svg>
-        PDF
-      </button>
-    </div>
-    <div class="report-out">
-      <div style="overflow-x:auto">
-      <table>
-        <?php // Columnas de clasificación (2026-10-16): las de la enfermedad
-        // filtrada o las 4 genéricas, más las que traigan los datos
-        // (Caso::columnasClasificacionReporte()); así cada fila suma su total. ?>
-        <thead><tr><th><?= $etiquetaColumna ?></th><?php foreach ($columnasClasificacion as $codigoColumna): ?><th style="text-align:right"><?= e(datosClasificacion($codigoColumna)['etiqueta']) ?></th><?php endforeach; ?><th style="text-align:right">Total</th></tr></thead>
-        <tbody>
-          <?php foreach ($filas as $fila): ?>
-            <tr>
-              <td class="pt-name"><?= e($agrupacion === 'clasificacion' ? datosClasificacion((string) $fila['etiqueta'])['etiqueta'] : $fila['etiqueta']) ?></td>
-              <?php foreach ($columnasClasificacion as $codigoColumna): ?>
-              <td class="mono" style="text-align:right"><?= (int) ($fila['por_clasificacion'][$codigoColumna] ?? 0) ?></td>
-              <?php endforeach; ?>
-              <td class="mono" style="text-align:right"><b><?= (int) $fila['total'] ?></b></td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-      </div>
-      <div class="report-side">
-        <div class="eyebrow">Distribución por clasificación</div>
-        <div class="mini-bars">
-          <?php foreach ($distribucionClasificacion as $clasificacion => $total): ?>
-            <div class="mb-row">
-              <div class="mb-top"><span><?= e(datosClasificacion($clasificacion)['etiqueta']) ?></span><span class="mono"><?= (int) $total ?></span></div>
-              <span class="cd-track"><span class="cd-fill" style="width:<?= $maxClasificacion > 0 ? round($total / $maxClasificacion * 100) : 0 ?>%;background:<?= datosClasificacion($clasificacion)['color'] ?>"></span></span>
-            </div>
-          <?php endforeach; ?>
-        </div>
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line-2);font-size:12.5px;color:var(--muted)">
-          Total del periodo: <b class="mono" style="color:var(--ink)"><?= (int) $totalPeriodo ?></b> fichas · <?= $totalEstablecimientos ?> establecimiento<?= $totalEstablecimientos === 1 ? '' : 's' ?>
-        </div>
+      <div class="reporte-acciones">
+        <nav class="seg-periodo vista-modo" aria-label="Vista">
+          <a href="<?= e($url('/reportes', ['modo' => ''])) ?>" class="<?= $f['modo'] === 'tabla' ? 'on' : '' ?>">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>Tabla</a>
+          <a href="<?= e($url('/reportes', ['modo' => 'grafico'])) ?>" class="<?= $f['modo'] === 'grafico' ? 'on' : '' ?>">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 20V10M11 20V4M17 20v-7"/></svg>Gráfico</a>
+        </nav>
+        <a class="btn btn-ghost btn-sm" href="<?= e($url('/reportes/exportar', ['modo' => ''])) ?>">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5v7M4 6.5l3 3 3-3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel</a>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="window.print()">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5v7M4 6.5l3 3 3-3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF</button>
       </div>
     </div>
+
+    <?php if ($c['total'] === 0): ?>
+      <div class="reporte-vacio"><b>No hay fichas para estos filtros</b>Prueba con otra enfermedad o amplía el rango de semanas.</div>
+    <?php elseif ($f['modo'] === 'grafico'): ?>
+      <?php
+      $datosGrafico = [
+          'tipo'     => $piramide ? 'piramide' : ($f['filas'] === 'se' ? 'semanas' : 'barras'),
+          'filas'    => array_map(fn($fila) => [
+              'etiqueta' => Consolidado::etiqueta($f['filas'], $fila, $variosAnios),
+              'total'    => $c['totalFila'][$fila] ?? 0,
+              'partes'   => $conColumnas ? array_map(fn($k) => $c['celdas'][$fila][$k] ?? 0, $c['columnas']) : [$c['totalFila'][$fila] ?? 0],
+          ], $c['filas']),
+          'series'   => $conColumnas
+              ? array_map(fn($k, $i) => ['etiqueta' => Consolidado::etiqueta($f['columnas'], $k), 'color' => $colorColumna($k, $i)], $c['columnas'], array_keys($c['columnas']))
+              : [['etiqueta' => 'Casos', 'color' => 'var(--accent)']],
+          'piramide' => $piramide,
+          'nombreFila' => $dimensiones[$f['filas']]['etiqueta'],
+      ];
+      ?>
+      <div class="grafico-reporte" id="graficoReporte" role="img" aria-label="<?= e($titulo) ?>"></div>
+      <script type="application/json" id="datosGrafico"><?= json_encode($datosGrafico, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+      <?php if ($piramide && !$conColumnas): ?><p class="nota-grafico">Por etapa de vida, el gráfico se muestra como pirámide por sexo.</p><?php endif; ?>
+      <script src="<?= e(asset('/js/grafico-reporte.js')) ?>"></script>
+    <?php else: ?>
+      <div class="tabla-cruzada-wrap">
+        <table class="tabla-cruzada">
+          <thead><tr>
+            <th><?= e($dimensiones[$f['filas']]['etiqueta']) ?></th>
+            <?php if ($conColumnas): foreach ($c['columnas'] as $i => $k): ?>
+              <th class="n"><span class="col-cab"><i style="background:<?= $colorColumna($k, $i) ?>"></i><?= e(Consolidado::etiqueta($f['columnas'], $k)) ?></span></th>
+            <?php endforeach; endif; ?>
+            <th class="n">Total</th><th class="n">%</th>
+          </tr></thead>
+          <tbody>
+            <?php foreach ($c['filas'] as $fila): $totalFila = $c['totalFila'][$fila] ?? 0; $etiquetaFila = Consolidado::etiqueta($f['filas'], $fila, $variosAnios); ?>
+              <tr>
+                <th title="<?= e($etiquetaFila) ?>"><?= e($etiquetaFila) ?></th>
+                <?php if ($conColumnas): foreach ($c['columnas'] as $k): $v = $c['celdas'][$fila][$k] ?? 0; ?>
+                  <td class="<?= $v ? '' : 'cero' ?>" style="<?= $sombra($v) ?>"><?= $v ?></td>
+                <?php endforeach; endif; ?>
+                <td class="total<?= $totalFila ? '' : ' cero' ?>" style="<?= $conColumnas ? '' : $sombra($totalFila) ?>"><?= $totalFila ?></td>
+                <td class="<?= $totalFila ? '' : 'cero' ?>"><?= $c['total'] ? number_format($totalFila / $c['total'] * 100, 1, ',', '') : '0,0' ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+          <tfoot><tr>
+            <th>Total</th>
+            <?php if ($conColumnas): foreach ($c['columnas'] as $k): ?><td><?= $c['totalColumna'][$k] ?? 0 ?></td><?php endforeach; endif; ?>
+            <td><?= $c['total'] ?></td><td>100,0</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    <?php endif; ?>
   </div>
+  <script src="<?= e(asset('/js/reportes.js')) ?>"></script>
 <?php endif; ?>
