@@ -9,6 +9,7 @@ use App\Controllers\EnfermedadesController;
 use App\Controllers\EstablecimientosController;
 use App\Controllers\GradosController;
 use App\Controllers\ImportacionController;
+use App\Controllers\NotificacionSemanalController;
 use App\Controllers\PanelController;
 use App\Controllers\RedesController;
 use App\Controllers\ReniecController;
@@ -105,8 +106,21 @@ $router->get('/', function () {
     (new PanelController())->index();
 });
 
-$router->post('/panel/notificacion-semanal', function () {
-    (new PanelController())->notificacionSemanal();
+// Notificación semanal (2026-10-17): cierre de cada SE por establecimiento.
+$router->get('/notificacion-semanal', function () {
+    (new NotificacionSemanalController())->index();
+});
+$router->post('/notificacion-semanal/cerrar', function () {
+    (new NotificacionSemanalController())->cerrar();
+});
+$router->post('/notificacion-semanal/solicitar-reapertura', function () {
+    (new NotificacionSemanalController())->solicitarReapertura();
+});
+$router->post('/notificacion-semanal/reabrir', function () {
+    (new NotificacionSemanalController())->reabrir();
+});
+$router->post('/notificacion-semanal/recordar', function () {
+    (new NotificacionSemanalController())->recordar();
 });
 
 $router->get('/casos', function () {

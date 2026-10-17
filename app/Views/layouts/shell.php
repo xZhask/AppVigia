@@ -2,6 +2,7 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Flash;
+use App\Models\NotificacionSemanal;
 
 $mensajeFlash = Flash::obtener();
 $rutaActual = $rutaActual ?? '';
@@ -11,6 +12,23 @@ $usuarioActual = Auth::usuario();
 // Badge de Fichas (2026-10-17): las abiertas sin clasificación final, no el
 // total, para que el número indique algo pendiente.
 $fichasPendientes = $usuarioActual ? \App\Models\Caso::contarPendientes($usuarioActual) : 0;
+
+// Notificación semanal (2026-10-17): estado de la SE que toca cerrar. El
+// REGISTRADOR ve si la suya está pendiente o cerrada; el ADMIN, cuántos
+// establecimientos faltan.
+$notifSemanal = null;
+if ($usuarioActual && !$usuarioActual['perfil_incompleto']) {
+    $objetivoSe = NotificacionSemanal::semanaObjetivo();
+    if ($usuarioActual['rol'] === 'REGISTRADOR') {
+        $cierreSe = NotificacionSemanal::deSemana((int) $usuarioActual['establecimiento_id'], $objetivoSe['anio'], $objetivoSe['semana']);
+        $estadoSe = NotificacionSemanal::estado($cierreSe, $objetivoSe['anio'], $objetivoSe['semana']);
+        $notifSemanal = ['cerrada' => in_array($estadoSe, ['T', 'L'], true), 'semana' => $objetivoSe['semana']];
+    } else {
+        $cierresSe = NotificacionSemanal::delRango(null, [$objetivoSe['anio'], $objetivoSe['semana']], [$objetivoSe['anio'], $objetivoSe['semana']]);
+        $cerradasSe = count(array_filter($cierresSe, fn($c) => $c['anulada_en'] === null));
+        $notifSemanal = ['pendientes' => max(0, count(NotificacionSemanal::establecimientos()) - $cerradasSe), 'semana' => $objetivoSe['semana']];
+    }
+}
 
 // Semana del calendario del MINSA (domingo a sábado), la misma que se guarda en
 // cada caso: date('W') es la semana ISO y en 2026 marcaba una de más.
@@ -25,6 +43,7 @@ $navItems = [
     ['ruta' => '',            'etiqueta' => 'Panel',       'crumb' => 'Panel'],
     ['ruta' => 'casos',       'etiqueta' => 'Fichas',      'crumb' => 'Fichas', 'contador' => $fichasPendientes],
     ['ruta' => 'casos/nuevo', 'etiqueta' => 'Nueva ficha', 'crumb' => 'Nueva ficha'],
+    ['ruta' => 'notificacion-semanal', 'etiqueta' => 'Notificación semanal', 'crumb' => 'Notificación semanal'],
     ['ruta' => 'reportes',    'etiqueta' => 'Reportes',    'crumb' => 'Reportes'],
     ['ruta' => 'catalogos/establecimientos', 'etiqueta' => 'Establecimientos', 'crumb' => 'Establecimientos'],
     ['ruta' => 'catalogos/enfermedades',     'etiqueta' => 'Enfermedades',     'crumb' => 'Enfermedades'],
@@ -101,6 +120,15 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
       <a class="nav-item<?= $rutaActual === 'casos/nuevo' ? ' active' : '' ?>" href="/casos/nuevo">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 3.5v10M3.5 8.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         Nueva ficha
+      </a>
+      <a class="nav-item<?= $rutaActual === 'notificacion-semanal' ? ' active' : '' ?>" href="/notificacion-semanal">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="3.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 7h12M6 2v3M11 2v3M6.5 10.5l1.5 1.5 2.7-2.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Notificación semanal
+        <?php if (isset($notifSemanal['cerrada'])): ?>
+          <span class="estado-se<?= $notifSemanal['cerrada'] ? ' ok' : '' ?>" title="SE <?= $notifSemanal['semana'] ?>"><?= $notifSemanal['cerrada'] ? 'Cerrada' : 'Pendiente' ?></span>
+        <?php elseif (!empty($notifSemanal['pendientes'])): ?>
+          <span class="count pendientes mono" title="Establecimientos sin cerrar la SE <?= $notifSemanal['semana'] ?>"><?= $notifSemanal['pendientes'] ?></span>
+        <?php endif; ?>
       </a>
       <a class="nav-item<?= $rutaActual === 'reportes' ? ' active' : '' ?>" href="/reportes">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M3 14V7M6.5 14V4M10 14v-5M13.5 14V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>

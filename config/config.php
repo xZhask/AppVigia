@@ -25,6 +25,14 @@ return [
         // usa el respaldo de media móvil, etiquetado como provisional.
         'anios_minimos_corredor' => 2,
     ],
+    'notificacion_semanal' => [
+        // Plazo para cerrar una semana epidemiológica (domingo a sábado):
+        // días después del sábado en que termina y hora de ese día. 2 y
+        // '12:00' = el lunes siguiente a las 12:00. Cerrar después cuenta
+        // como cierre tardío; no cerrar, como "no notificó".
+        'plazo_dias' => 2,
+        'plazo_hora' => '12:00',
+    ],
     'mail' => [
         // Remitente del correo de restablecimiento de contraseña. Vacío =
         // envío apagado: el token se genera igual y el flujo se comporta

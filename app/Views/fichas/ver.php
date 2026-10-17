@@ -106,6 +106,13 @@ $accionEtiquetas = [
     <div class="body"><b>Semana notificada sin casos.</b> <?= e($avisoSinCasos['texto']) ?> <a href="<?= e($avisoSinCasos['url']) ?>">Ir al listado semanal</a></div>
   </div>
 <?php endif; ?>
+<?php if (!empty($cierreAnterior)): // notificación tardía: SE ya cerrada al registrarla (2026-10-17) ?>
+  <div class="dupe" style="margin-bottom:18px">
+    <span class="di"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+    <div class="body"><b>Notificación tardía.</b> Se registró después de que el establecimiento cerró la SE <?= (int) $caso['semana_epi'] ?> (<?= e(date('d/m/Y H:i', strtotime($cierreAnterior['creado_en']))) ?>). Cuenta en esa semana, marcada como tardía.
+      <a href="/notificacion-semanal?<?= e(http_build_query(['anio' => $caso['anio_epi'], 'semana' => $caso['semana_epi']])) ?>">Ver la semana</a></div>
+  </div>
+<?php endif; ?>
 
 <div class="grid form-grid">
   <div>

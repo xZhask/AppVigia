@@ -1,5 +1,4 @@
 <?php
-use App\Core\Csrf;
 use App\Models\Tablero;
 
 // Panel de vigilancia (rediseño 2026-10-17). Ver PanelController.
@@ -245,7 +244,7 @@ use App\Models\Tablero;
       $semanasMapa = $cumplimiento['semanas'];
       $filas = $cumplimiento['filas'];
       $totalFilas = count($filas);
-      $etiquetas = ['C' => 'Notificó con casos', 'N' => 'Notificó sin casos (negativa)', 'X' => 'No notificó', 'P' => 'Semana en curso, aún sin notificar'];
+      $etiquetas = ['T' => 'Cerrada a tiempo', 'L' => 'Cerrada fuera de plazo', 'X' => 'No notificó (sin cerrar, plazo vencido)', 'P' => 'Sin cerrar, plazo vigente'];
       $primeraSe = $semanasMapa[0];
       ?>
       <div class="tarjeta-cab">
@@ -265,8 +264,8 @@ use App\Models\Tablero;
         <?php endif; ?>
       </div>
       <p class="resumen-cumpl">
-        <b class="mono"><?= $notificaronActual ?></b> de <?= $totalFilas ?> establecimiento<?= $totalFilas === 1 ? '' : 's' ?> ya notificaron la SE <?= $actual['semana'] ?> (en curso).
-        <?= $esRegistrador ? 'Si tu establecimiento no tuvo casos en una semana, márcala en el mapa como «sin casos».' : 'Clic en una celda sin notificar para registrar la notificación negativa, o en una negativa para anularla.' ?>
+        <b class="mono"><?= $notificaronActual ?></b> de <?= $totalFilas ?> establecimiento<?= $totalFilas === 1 ? '' : 's' ?> ya cerraron la SE <?= $semanaObjetivo['semana'] ?>.
+        Cada establecimiento cierra cada semana, tenga casos o no. Clic en una celda para ver esa semana en <a href="/notificacion-semanal">Notificación semanal</a>.
       </p>
       <?php if (!$filas): ?>
         <p class="vacio-tarjeta">No hay establecimientos activos en esta red.</p>
@@ -286,11 +285,11 @@ use App\Models\Tablero;
                   <td class="nm" title="<?= e($fila['nombre']) ?>"><?= e(nombreEnOracion($fila['nombre'])) ?><small><?= e($fila['red_nombre'] ?? '—') ?></small></td>
                   <?php foreach ($fila['celdas'] as $celda):
                     $s = $celda['semana'];
-                    $texto = nombreEnOracion($fila['nombre']) . ' · SE ' . $s['semana'] . ' · ' . $s['anio'] . ': ' . $etiquetas[$celda['estado']];
-                    $accion = $celda['estado'] === 'N' ? 'anular' : (in_array($celda['estado'], ['X', 'P'], true) ? 'registrar' : null);
+                    $texto = nombreEnOracion($fila['nombre']) . ' · SE ' . $s['semana'] . ' · ' . $s['anio'] . ': ' . $etiquetas[$celda['estado']]
+                        . ' · ' . ($celda['fichas'] ? $celda['fichas'] . ' ficha' . ($celda['fichas'] === 1 ? '' : 's') : 'sin fichas');
+                    $enlace = '/notificacion-semanal?' . http_build_query(['anio' => $s['anio'], 'semana' => $s['semana']] + ($esRegistrador ? [] : ['q' => $fila['nombre']]));
                     ?>
-                    <td><?php if ($accion): ?><button type="button" class="celda <?= $celda['estado'] ?>" title="<?= e($texto) ?>" aria-label="<?= e($texto) ?>"
-                        data-celda="<?= $accion ?>" data-est="<?= (int) $fila['id'] ?>" data-anio="<?= $s['anio'] ?>" data-semana="<?= $s['semana'] ?>" data-texto="<?= e($texto) ?>"></button><?php else: ?><span class="celda <?= $celda['estado'] ?>" title="<?= e($texto) ?>" role="img" aria-label="<?= e($texto) ?>"></span><?php endif; ?></td>
+                    <td><a class="celda <?= $celda['estado'] ?>" href="<?= e($enlace) ?>" title="<?= e($texto) ?>" aria-label="<?= e($texto) ?>"></a></td>
                   <?php endforeach; ?>
                   <td class="pc mono<?= $fila['porcentaje'] !== null && $fila['porcentaje'] < 80 ? ' bajo' : '' ?>"><?= $fila['porcentaje'] === null ? '—' : $fila['porcentaje'] . ' %' ?></td>
                 </tr>
@@ -304,16 +303,11 @@ use App\Models\Tablero;
       <?php endif; ?>
       <?php endif; ?>
       <div class="leyenda">
-        <span><i class="celda C"></i>Notificó con casos</span>
-        <span><i class="celda N"></i>Notificó sin casos (negativa)</span>
+        <span><i class="celda T"></i>Cerrada a tiempo</span>
+        <span><i class="celda L"></i>Cerrada fuera de plazo</span>
         <span><i class="celda X"></i>No notificó</span>
-        <span><i class="celda P"></i>Semana en curso</span>
+        <span><i class="celda P"></i>Pendiente (plazo vigente)</span>
       </div>
-      <form method="post" action="/panel/notificacion-semanal" id="formNotifSemanal" hidden>
-        <?= Csrf::campoOculto() ?>
-        <input type="hidden" name="volver" value="<?= e(substr($url(), 1)) ?>">
-        <input type="hidden" name="accion"><input type="hidden" name="establecimiento_id"><input type="hidden" name="anio"><input type="hidden" name="semana">
-      </form>
     </div>
 
     <div class="tb-c4 pila">

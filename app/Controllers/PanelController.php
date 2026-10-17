@@ -3,11 +3,8 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Controller;
-use App\Core\Csrf;
-use App\Core\Database;
-use App\Core\Flash;
 use App\Models\Caso;
-use App\Models\Establecimiento;
+use App\Models\NotificacionSemanal;
 use App\Models\RedSalud;
 use App\Models\Tablero;
 
@@ -92,9 +89,15 @@ class PanelController extends Controller
         $semanasMapa = array_slice($semanasSeries, -max(8, min(self::SEMANAS_MAX_MAPA, $periodo['n'])));
         $redId = $usuario['rol'] !== 'REGISTRADOR' && ctype_digit((string) ($_GET['red'] ?? '')) ? (int) $_GET['red'] : null;
         $cumplimiento = Tablero::cumplimiento($usuario, $semanasMapa, $redId);
+        // Cuántos ya cerraron la SE que toca cerrar (la anterior hasta su plazo).
+        $objetivo = NotificacionSemanal::semanaObjetivo();
         $notificaronActual = 0;
         foreach ($cumplimiento['filas'] as $fila) {
-            $notificaronActual += in_array(end($fila['celdas'])['estado'], ['C', 'N'], true) ? 1 : 0;
+            foreach ($fila['celdas'] as $celda) {
+                if ($celda['semana'] == $objetivo && in_array($celda['estado'], ['T', 'L'], true)) {
+                    $notificaronActual++;
+                }
+            }
         }
 
         $this->vista('panel/index', [
@@ -109,6 +112,7 @@ class PanelController extends Controller
             'curva'         => $curva,
             'cumplimiento'  => $cumplimiento,
             'notificaronActual' => $notificaronActual,
+            'semanaObjetivo' => $objetivo,
             'filasMapa'     => self::FILAS_MAPA,
             'redes'         => $usuario['rol'] === 'REGISTRADOR' ? [] : RedSalud::todos('nombre'),
             'redId'         => $redId,
@@ -148,63 +152,5 @@ class PanelController extends Controller
             'aniosHistoria' => count($serie['historia']),
             'minimoAnios' => $minimoAnios,
         ];
-    }
-
-    /**
-     * Notificación semanal negativa (2026-10-17): "esta SE el establecimiento
-     * no tuvo casos". Registrar o anular, desde el mapa de cumplimiento.
-     */
-    public function notificacionSemanal(): void
-    {
-        $usuario = Auth::usuario();
-        $volver = '/' . (is_string($_POST['volver'] ?? null) && str_starts_with($_POST['volver'], '?') ? $_POST['volver'] : '');
-        if (!Csrf::valido($_POST['csrf_token'] ?? null)) {
-            Flash::set('La sesión del formulario expiró. Vuelve a intentarlo.');
-            header('Location: ' . $volver);
-            exit;
-        }
-        $establecimientoId = (int) ($_POST['establecimiento_id'] ?? 0);
-        $anio = (int) ($_POST['anio'] ?? 0);
-        $semana = (int) ($_POST['semana'] ?? 0);
-        $accion = $_POST['accion'] ?? '';
-        $actual = semanaEpidemiologica(date('Y-m-d'));
-        $establecimiento = Establecimiento::buscar($establecimientoId);
-
-        $error = null;
-        if (!$establecimiento || $semana < 1 || $semana > semanasEpidemiologicasDelAnio(max(2000, $anio)) || $anio < 2000) {
-            $error = 'Datos de la notificación no válidos.';
-        } elseif ($usuario['rol'] === 'REGISTRADOR' && $establecimientoId !== (int) $usuario['establecimiento_id']) {
-            $error = 'Solo puedes notificar por tu establecimiento.';
-        } elseif ([$anio, $semana] > [$actual['anio'], $actual['semana']]) {
-            $error = 'No se puede notificar una semana que todavía no empieza.';
-        }
-
-        $db = Database::conexion();
-        $etiqueta = 'SE ' . $semana . ' · ' . $anio . ' de ' . nombreEnOracion($establecimiento['nombre'] ?? '');
-        if ($error === null && $accion === 'registrar') {
-            $consulta = $db->prepare('SELECT COUNT(*) FROM caso WHERE anulado = 0 AND establecimiento_id = :e AND anio_epi = :a AND semana_epi = :s');
-            $consulta->execute(['e' => $establecimientoId, 'a' => $anio, 's' => $semana]);
-            if ((int) $consulta->fetchColumn() > 0) {
-                $error = 'La ' . $etiqueta . ' ya tiene fichas: no se puede notificar como semana sin casos.';
-            } else {
-                $db->prepare('INSERT INTO notificacion_semanal (establecimiento_id, anio_epi, semana_epi, usuario_id)
-                              VALUES (:e, :a, :s, :u)
-                              ON DUPLICATE KEY UPDATE usuario_id = VALUES(usuario_id), creado_en = CURRENT_TIMESTAMP, anulada_por = NULL, anulada_en = NULL')
-                   ->execute(['e' => $establecimientoId, 'a' => $anio, 's' => $semana, 'u' => $usuario['id']]);
-                Flash::set('Notificada la ' . $etiqueta . ' sin casos.');
-            }
-        } elseif ($error === null && $accion === 'anular') {
-            $db->prepare('UPDATE notificacion_semanal SET anulada_por = :u, anulada_en = CURRENT_TIMESTAMP
-                           WHERE establecimiento_id = :e AND anio_epi = :a AND semana_epi = :s AND anulada_en IS NULL')
-               ->execute(['u' => $usuario['id'], 'e' => $establecimientoId, 'a' => $anio, 's' => $semana]);
-            Flash::set('Anulada la notificación sin casos de la ' . $etiqueta . '.');
-        } elseif ($error === null) {
-            $error = 'Acción no válida.';
-        }
-        if ($error !== null) {
-            Flash::set($error);
-        }
-        header('Location: ' . $volver . '#cumplimiento');
-        exit;
     }
 }

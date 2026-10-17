@@ -1,5 +1,14 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Regenerado el 2026-10-17 (duodecima vez). Cambio de ESQUEMA:
+--   - notificacion_semanal pasa a ser el CIERRE semanal de cada SE por
+--     establecimiento (con o sin casos): columnas tardia, motivo_tardio,
+--     motivo_reapertura, reapertura_solicitada_por/_en, motivo_solicitud y
+--     FK fk_notif_semanal_solicitada_por. anulada_* = reapertura por el ADMIN.
+--     Migracion: sql/migraciones/cierre_notificacion_semanal.php.
+-- ============================================================================
+--
+-- Sesion anterior (2026-10-17, undecima vez):
 -- Regenerado el 2026-10-17 (undecima vez). Cambio de ESQUEMA:
 --   - Tabla nueva notificacion_semanal: notificacion negativa semanal del
 --     establecimiento ("sin casos esta SE"), para el mapa de cumplimiento
@@ -1128,15 +1137,23 @@ CREATE TABLE `notificacion_semanal` (
   `semana_epi` smallint NOT NULL,
   `usuario_id` int NOT NULL,
   `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `tardia` tinyint(1) NOT NULL DEFAULT '0',
+  `motivo_tardio` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `anulada_por` int DEFAULT NULL,
   `anulada_en` timestamp NULL DEFAULT NULL,
+  `motivo_reapertura` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `reapertura_solicitada_por` int DEFAULT NULL,
+  `reapertura_solicitada_en` timestamp NULL DEFAULT NULL,
+  `motivo_solicitud` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_notif_semanal` (`establecimiento_id`,`anio_epi`,`semana_epi`),
   KEY `ix_notif_semanal_se` (`anio_epi`,`semana_epi`),
   KEY `fk_notif_semanal_usuario` (`usuario_id`),
   KEY `fk_notif_semanal_anulada_por` (`anulada_por`),
+  KEY `fk_notif_semanal_solicitada_por` (`reapertura_solicitada_por`),
   CONSTRAINT `fk_notif_semanal_anulada_por` FOREIGN KEY (`anulada_por`) REFERENCES `usuario` (`id`),
   CONSTRAINT `fk_notif_semanal_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_notif_semanal_solicitada_por` FOREIGN KEY (`reapertura_solicitada_por`) REFERENCES `usuario` (`id`),
   CONSTRAINT `fk_notif_semanal_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1500,4 +1517,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-17  1:41:27
+-- Dump completed on 2026-10-17 16:52:59

@@ -1067,3 +1067,133 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
     cursor: pointer;
 }
 
+
+/* ============================================================
+   Notificación semanal (2026-10-17): cierre de cada SE
+   ============================================================ */
+:root{--ns-warn:#A6460B;--ns-warn-bg:#FDF0E3;--ns-warn-line:#F3CAA3;--ns-crit-bg:#FBEDED;--ns-crit-line:#EFC9C9}
+html[data-theme="dark"]{--ns-warn:#F2A766;--ns-warn-bg:#3A2617;--ns-warn-line:#6B4325;--ns-crit-bg:#3A1C1A;--ns-crit-line:#6A2B27}
+.celda.T{background:var(--accent)}
+.celda.L{background:#C2622D}
+a.celda:hover,a.celda:focus-visible{outline:2px solid var(--ink-2);outline-offset:1px}
+.nav-item .estado-se{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#F2A766;border:1px solid #6B4325;border-radius:10px;padding:0 6px;line-height:16px}
+.nav-item .estado-se.ok{color:#3FB39A;border-color:#25534A}
+
+.ns-semana{display:flex;align-items:center;gap:6px}
+.ns-flecha{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink-2);font-size:18px;line-height:1;text-decoration:none}
+.ns-flecha:hover{border-color:var(--accent)}
+.ns-flecha.off{opacity:.35}
+.ns-semana-lbl{min-width:180px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:5px 12px;line-height:1.25}
+.ns-semana-lbl b{display:block;font-size:13.5px;color:var(--ink)}
+.ns-semana-lbl small{font-size:11.5px;color:var(--muted)}
+
+.ns-estado{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;padding:18px 22px;border-radius:var(--radius);border:1px solid;margin-bottom:16px}
+.ns-estado h2{margin:0;font-family:"IBM Plex Serif",serif;font-size:18px;font-weight:500;color:var(--ink)}
+.ns-estado p{margin:3px 0 0;font-size:13px;color:var(--ink-2)}
+.ns-ico{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;color:#fff}
+.ns-estado.abierta{background:var(--ns-warn-bg);border-color:var(--ns-warn-line)} .ns-estado.abierta .ns-ico{background:var(--ns-warn)}
+.ns-estado.cerrada{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)} .ns-estado.cerrada .ns-ico{background:var(--accent)}
+.ns-estado.vencida{background:var(--ns-crit-bg);border-color:var(--ns-crit-line)} .ns-estado.vencida .ns-ico{background:var(--s-confirmado)}
+html[data-theme="dark"] .ns-estado .ns-ico{color:#0b1115}
+.ns-cuenta{text-align:right}
+.ns-cuenta b{display:block;font-size:26px;font-weight:600;line-height:1;color:var(--ink)}
+.ns-cuenta small{font-size:12px;color:var(--muted)}
+
+.ns-cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+.ns-tabla-card{overflow:hidden}
+.ns-pad{padding:16px 20px 4px;margin:0}
+.ns-toggle{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);cursor:pointer;user-select:none;white-space:nowrap}
+.ns-toggle input{accent-color:var(--accent);width:15px;height:15px}
+.ns-enf,.ns-est{margin-top:8px}
+.ns-enf th.n,.ns-enf td.n,.ns-est th.n,.ns-est td.n{text-align:right}
+.ns-enf tbody td{padding:9px 16px}
+.ns-enf-nom{font-weight:600;color:var(--ink)}
+.ns-enf tr.cero td{color:var(--muted)}
+.ns-enf tr.cero .ns-enf-nom{font-weight:500;color:var(--muted)}
+.ns-cie{font-size:11px;color:var(--faint);margin-left:6px}
+.ns-inm{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ns-warn);margin-left:6px}
+.ns-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:20px;padding:2px 10px 2px 8px;white-space:nowrap}
+.ns-chip i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.ns-chip.con{color:var(--accent-deep);background:var(--accent-soft)}
+.ns-chip.sin{color:var(--muted);background:var(--line-2)}
+.ns-enf td.ver{text-align:right}
+.ns-enf td.ver a{color:var(--accent-deep);font-weight:600;text-decoration:none}
+.ns-pie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 20px;border-top:1px solid var(--line-2);font-size:12.5px;color:var(--muted)}
+.ns-btn-sm{padding:6px 11px;font-size:12.5px;border-radius:8px;text-decoration:none}
+.ns-btn-sm:disabled{opacity:.45;cursor:not-allowed}
+.ns-nota{font-size:12px;color:var(--muted)}
+
+.ns-lado{display:flex;flex-direction:column;gap:12px;position:sticky;top:76px}
+.ns-cierre h3{margin:0 0 4px;font-size:15px;color:var(--ink)}
+.ns-cierre > p{margin:0 0 12px;font-size:12.5px;color:var(--ink-2)}
+.ns-suma{list-style:none;margin:0 0 14px;padding:0;font-size:13px}
+.ns-suma li{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line-2)}
+.ns-suma li:last-child{border-bottom:0}
+.ns-aviso{display:flex;gap:10px;background:var(--ns-warn-bg);border:1px solid var(--ns-warn-line);border-radius:9px;padding:10px 12px;font-size:12.5px;color:var(--ink);margin-bottom:12px}
+.ns-aviso svg{flex:none;color:var(--ns-warn);margin-top:1px}
+.ns-lado > .ns-aviso{margin-bottom:0}
+.ns-info{display:flex;gap:10px;background:var(--line-2);border-radius:9px;padding:10px 12px;font-size:12.5px;color:var(--ink-2)}
+.ns-info svg{flex:none;color:var(--muted);margin-top:1px}
+.ns-campo{margin-bottom:12px}
+.ns-campo label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ns-campo em{color:var(--s-confirmado);font-style:normal}
+.ns-campo textarea{width:100%;min-height:72px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:8px 10px;font:inherit;font-size:13px;resize:vertical;outline:none}
+.ns-campo textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ns-confirma{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink);margin:4px 0 14px;cursor:pointer}
+.ns-confirma input{accent-color:var(--accent);width:16px;height:16px;margin-top:2px;flex:none}
+.ns-cerrar{width:100%;justify-content:center;padding:11px}
+.ns-cerrar:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.ns-meta{font-size:12.5px;color:var(--ink-2);margin-bottom:12px}
+.ns-meta div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--line-2)}
+.ns-meta div:last-child{border-bottom:0}
+.ns-meta span{color:var(--muted)}
+
+.ns-historial-card{margin-top:16px}
+.ns-historial{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px}
+.ns-hw{display:block;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:7px 4px 6px;text-align:center;text-decoration:none;color:var(--ink)}
+.ns-hw:hover{border-color:var(--accent)}
+.ns-hw.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.ns-hw b{display:block;font-size:12px}
+.ns-hw i{display:block;height:6px;border-radius:3px;margin:6px 6px 0}
+.ns-hw small{display:block;font-size:10.5px;color:var(--muted);margin-top:4px}
+.ns-hw.T i,.ns-spark i.T,.ns-barra .T{background:var(--accent)}
+.ns-hw.L i,.ns-spark i.L,.ns-barra .L{background:#C2622D}
+.ns-hw.X i,.ns-spark i.X,.ns-barra .X{background:repeating-linear-gradient(135deg,transparent 0 3px,color-mix(in srgb,var(--s-confirmado) 45%,transparent) 3px 4.5px);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--s-confirmado) 55%,transparent)}
+.ns-hw.P i,.ns-spark i.P{background:var(--line)}
+
+.ns-modal-acciones{display:flex;gap:8px;justify-content:flex-end;padding:8px 20px 18px}
+.ns-pad-modal{padding:4px 20px 0}
+
+.ns-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.ns-kpi{display:block;padding:16px 18px;text-decoration:none;color:inherit}
+.ns-kpi:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.ns-kpi.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.ns-kpi .eyebrow{display:flex;align-items:center;gap:6px}
+.ns-kpi .eyebrow i{width:9px;height:9px;border-radius:50%}
+.ns-kpi-v{font-size:28px;font-weight:500;margin-top:8px;line-height:1.1;color:var(--ink)}
+.ns-kpi-v small{font-size:14px;color:var(--muted)}
+.ns-barra{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin:12px 20px 4px}
+.ns-filtros{display:flex;gap:10px;align-items:center;padding:12px 20px 0;flex-wrap:wrap}
+.ns-filtros .spacer{flex:1}
+.ns-buscar{min-width:260px}
+.ns-buscar input{width:100%;border:0;background:none;color:var(--ink);font:inherit;font-size:13px;outline:none}
+.ns-desplazable{overflow-x:auto}
+.ns-est tbody td{padding:10px 16px}
+.ns-vacio{text-align:center;color:var(--muted);padding:30px 16px!important}
+.ns-st{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.ns-st.T{color:var(--accent-deep)} .ns-st.L{color:var(--ns-warn)} .ns-st.P{color:var(--ns-warn)} .ns-st.X{color:var(--s-confirmado)}
+.ns-solicitud{margin-top:4px;font-size:11.5px;font-weight:600;color:var(--ns-warn)}
+.ns-tardias{font-size:11px;color:var(--ns-warn);font-family:"IBM Plex Sans",sans-serif;font-weight:600;white-space:nowrap}
+.ns-sin{color:var(--faint);font-size:12px}
+.ns-spark{display:flex;gap:2px}
+.ns-spark i{width:9px;height:14px;border-radius:2px;display:block}
+.ns-acciones{text-align:right;white-space:nowrap}
+.ns-acciones form{display:inline}
+
+@media (max-width:1100px){.ns-cols{grid-template-columns:1fr}.ns-lado{position:static}.ns-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.ns-historial{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:760px){.ns-estado{grid-template-columns:auto 1fr}.ns-cuenta{grid-column:1/-1;text-align:left}.ns-buscar{min-width:0;flex:1}.ns-ocultar-s{display:none}.ns-semana{width:100%}.ns-semana-lbl{flex:1}.ns-enf .ns-cie{display:none}}
+.ns-est td.ns-cierre-col{white-space:nowrap}
+.ns-est td.ns-cierre-col .cell-sub{font-family:"IBM Plex Sans",sans-serif}
+/* Ruta de la barra superior: en pantallas angostas se recorta con "…" en vez de montarse sobre los íconos. */
+.topbar-ranura > .crumb{display:block;line-height:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:760px){.ns-enf .ns-col-fichas{display:none}.ns-enf tbody td,.ns-enf thead th{padding-left:12px;padding-right:12px}.ns-enf .ns-chip{white-space:normal}}

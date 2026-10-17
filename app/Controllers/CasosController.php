@@ -867,6 +867,8 @@ class CasosController extends Controller
             'enfermedadVer' => $enfermedadVer,
             'vinculoVer'    => $this->datosVinculoVer($enfermedadVer, $caso, $valoresCampos),
             'avisoSinCasos' => $caso['anulado'] ? null : $this->avisoSemanaSinCasos((int) $caso['enfermedad_id'], (int) $caso['establecimiento_id'], (int) $caso['anio_epi'], (int) $caso['semana_epi']),
+            // Registrada después de que el establecimiento cerró esa SE (2026-10-17).
+            'cierreAnterior' => $caso['anulado'] ? null : \App\Models\NotificacionSemanal::fichaEsTardia($caso),
             'contactos'   => CasoContacto::porCaso((int) $caso['id']),
             'viajes'      => CasoViaje::porCaso((int) $caso['id']),
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),

@@ -223,9 +223,10 @@ class Tablero
     }
 
     /**
-     * Cumplimiento de notificación por establecimiento y SE: 'C' notificó
-     * con casos, 'N' notificó sin casos (notificación semanal negativa), 'X'
-     * no notificó, 'P' semana en curso todavía sin notificar.
+     * Cumplimiento de notificación por establecimiento y SE, según el cierre
+     * semanal (NotificacionSemanal): 'T' cerrada a tiempo, 'L' fuera de
+     * plazo, 'X' sin cerrar con el plazo vencido (no notificó), 'P' sin
+     * cerrar con el plazo vigente. Cada celda trae sus fichas.
      *
      * @return array{semanas: array, filas: array}
      */
@@ -247,22 +248,15 @@ class Tablero
         $primera = $semanas[0];
         $ultima = end($semanas);
 
-        // Fichas por establecimiento y semana (no anuladas; aquí no aplica la
-        // privacidad: solo se cuenta que el establecimiento notificó).
         $parametros = [];
         $rango = self::rango([$primera['anio'], $primera['semana']], [$ultima['anio'], $ultima['semana']], $parametros, 'h');
-        $conCasos = [];
-        foreach (self::consultar("SELECT c.establecimiento_id, c.anio_epi, c.semana_epi FROM caso c WHERE c.anulado = 0 AND $rango GROUP BY 1, 2, 3", $parametros) as $fila) {
-            $conCasos[$fila['establecimiento_id'] . '|' . $fila['anio_epi'] . '-' . $fila['semana_epi']] = true;
+        $fichas = [];
+        foreach (self::consultar("SELECT c.establecimiento_id, c.anio_epi, c.semana_epi, COUNT(*) AS n FROM caso c WHERE c.anulado = 0 AND $rango GROUP BY 1, 2, 3", $parametros) as $fila) {
+            $fichas[$fila['establecimiento_id'] . '|' . $fila['anio_epi'] . '-' . $fila['semana_epi']] = (int) $fila['n'];
         }
-        $parametros = [];
-        $rangoN = str_replace('c.', 'ns.', self::rango([$primera['anio'], $primera['semana']], [$ultima['anio'], $ultima['semana']], $parametros, 'n'));
-        $negativas = [];
-        foreach (self::consultar("SELECT ns.id, ns.establecimiento_id, ns.anio_epi, ns.semana_epi FROM notificacion_semanal ns WHERE ns.anulada_en IS NULL AND $rangoN", $parametros) as $fila) {
-            $negativas[$fila['establecimiento_id'] . '|' . $fila['anio_epi'] . '-' . $fila['semana_epi']] = (int) $fila['id'];
-        }
+        $cierres = NotificacionSemanal::delRango($usuario['rol'] === 'REGISTRADOR' ? (int) $usuario['establecimiento_id'] : null, [$primera['anio'], $primera['semana']], [$ultima['anio'], $ultima['semana']]);
 
-        $actual = semanaEpidemiologica(date('Y-m-d'));
+        $ahora = new \DateTimeImmutable();
         $filas = [];
         foreach ($establecimientos as $establecimiento) {
             $celdas = [];
@@ -270,19 +264,12 @@ class Tablero
             $evaluadas = 0;
             foreach ($semanas as $semana) {
                 $clave = $establecimiento['id'] . '|' . $semana['anio'] . '-' . $semana['semana'];
-                $enCurso = $semana['anio'] === $actual['anio'] && $semana['semana'] === $actual['semana'];
-                if (isset($conCasos[$clave])) {
-                    $estado = 'C';
-                } elseif (isset($negativas[$clave])) {
-                    $estado = 'N';
-                } else {
-                    $estado = $enCurso ? 'P' : 'X';
-                }
+                $estado = NotificacionSemanal::estado($cierres[$clave] ?? null, $semana['anio'], $semana['semana'], $ahora);
                 if ($estado !== 'P') {
                     $evaluadas++;
                     $cumplidas += $estado === 'X' ? 0 : 1;
                 }
-                $celdas[] = ['semana' => $semana, 'estado' => $estado, 'negativa_id' => $negativas[$clave] ?? null];
+                $celdas[] = ['semana' => $semana, 'estado' => $estado, 'fichas' => $fichas[$clave] ?? 0];
             }
             $filas[] = $establecimiento + [
                 'celdas'     => $celdas,
