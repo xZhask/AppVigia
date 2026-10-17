@@ -976,6 +976,36 @@ function condicionPacientePorDefecto(array $enfermedad, ?array $valoresCampos = 
 }
 
 /**
+ * Nombre en MAYÚSCULAS del padrón (RENIPRESS) pasado a nombre propio para
+ * listados (2026-10-17): "POLICLINICO POLICIAL SAN DIEGO" -> "Policlinico
+ * Policial San Diego". Conectores en minúscula y siglas (PNP, números
+ * romanos) intactas. Un nombre que ya trae minúsculas se respeta tal cual.
+ */
+function nombreEnOracion(?string $nombre): string
+{
+    $nombre = (string) $nombre;
+    if ($nombre === '' || mb_strtoupper($nombre, 'UTF-8') !== $nombre) {
+        return $nombre;
+    }
+    $conectores = ['de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'en', 'a', 'al'];
+    $siglas = ['PNP', 'EESS', 'DIRSAPOL', 'DIRESA', 'MINSA', 'ESSALUD', 'UE', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    $primera = true;
+    return preg_replace_callback('/\p{L}+/u', function (array $m) use (&$primera, $conectores, $siglas): string {
+        $palabra = $m[0];
+        $minuscula = mb_strtolower($palabra, 'UTF-8');
+        $esPrimera = $primera;
+        $primera = false;
+        if (in_array($palabra, $siglas, true)) {
+            return $palabra;
+        }
+        if (!$esPrimera && in_array($minuscula, $conectores, true)) {
+            return $minuscula;
+        }
+        return mb_strtoupper(mb_substr($minuscula, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($minuscula, 1, null, 'UTF-8');
+    }, $nombre);
+}
+
+/**
  * Documento de una persona para mostrar ("DNI 76540319"). Con
  * nucleo_ajustes.sin_documento una persona puede no tener documento (tipo
  * SIN_DOCUMENTO, número NULL): antes todas lo tenían y enmascararDocumento()

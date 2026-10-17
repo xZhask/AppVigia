@@ -47,13 +47,22 @@ class Caso extends Model
         return $id;
     }
 
+    /** Clasificaciones que todavía no son finales (badge "pendientes" del menú). */
+    public const CLASIFICACIONES_NO_FINALES = ['SOSPECHOSO', 'PROBABLE', 'POR_DETERMINAR'];
+
+    /** Pestañas del listado de fichas: estado del caso, con la anulación aparte. */
+    public const PESTANAS_LISTADO = ['ABIERTA', 'VALIDACION', 'CERRADA', 'ANULADA', 'TODAS'];
+
     /**
-     * Listado paginado con filtros para la vista de fichas. $filtros admite:
-     * q, enfermedad_id, clasificacion, estado, desde, hasta, establecimiento_id.
+     * Condiciones comunes del listado de fichas (2026-10-17): todo menos la
+     * pestaña y la clasificación, que se cuentan aparte sobre esta base.
+     * $filtros admite q, enfermedad_id, red_id, establecimiento_id, el
+     * periodo ya resuelto (se_desde/se_hasta como [anio, semana]) y la
+     * privacidad (privacidad_rol, privacidad_usuario_id).
      *
-     * @return array{filas: array, total: int}
+     * @return array{0: string[], 1: array}
      */
-    public static function listarPaginado(array $filtros, int $pagina, int $porPagina): array
+    private static function condicionesListado(array $filtros): array
     {
         $condiciones = ['1=1'];
         $parametros = [];
@@ -69,44 +78,116 @@ class Caso extends Model
             $condiciones[] = 'c.enfermedad_id = :enfermedad_id';
             $parametros['enfermedad_id'] = (int) $filtros['enfermedad_id'];
         }
-        if (!empty($filtros['clasificacion'])) {
-            $condiciones[] = 'c.clasificacion = :clasificacion';
-            $parametros['clasificacion'] = $filtros['clasificacion'];
-        }
-        if (!empty($filtros['estado'])) {
-            $condiciones[] = 'c.estado = :estado';
-            $parametros['estado'] = $filtros['estado'];
-        }
-        if (!empty($filtros['desde'])) {
-            $condiciones[] = 'c.fecha_notif >= :desde';
-            $parametros['desde'] = $filtros['desde'];
-        }
-        if (!empty($filtros['hasta'])) {
-            $condiciones[] = 'c.fecha_notif <= :hasta';
-            $parametros['hasta'] = $filtros['hasta'];
+        if (!empty($filtros['red_id'])) {
+            $condiciones[] = 'est.red_id = :red_id';
+            $parametros['red_id'] = (int) $filtros['red_id'];
         }
         if (!empty($filtros['establecimiento_id'])) {
             $condiciones[] = 'c.establecimiento_id = :establecimiento_id';
             $parametros['establecimiento_id'] = (int) $filtros['establecimiento_id'];
         }
-        
+        if (!empty($filtros['se_desde']) && !empty($filtros['se_hasta'])) {
+            $condiciones[] = '(' . self::condicionRangoSE(
+                $filtros['se_desde'][0], $filtros['se_desde'][1],
+                $filtros['se_hasta'][0], $filtros['se_hasta'][1],
+                $parametros
+            ) . ')';
+        }
         if (($filtros['privacidad_rol'] ?? '') === 'REGISTRADOR') {
             $condiciones[] = '(e.cie10 NOT IN (' . implode(', ', array_map(fn(string $cie10): string => '"' . $cie10 . '"', self::CIE10_PRIVADOS)) . ') AND e.nombre NOT LIKE "%Violencia%" OR c.usuario_id = :priv_uid)';
             $parametros['priv_uid'] = (int) $filtros['privacidad_usuario_id'];
         }
 
-        $where = implode(' AND ', $condiciones);
+        return [$condiciones, $parametros];
+    }
+
+    private const FROM_LISTADO = 'FROM caso c
+                  JOIN persona p         ON p.id = c.persona_id
+                  JOIN enfermedad e      ON e.id = c.enfermedad_id
+                  JOIN establecimiento est ON est.id = c.establecimiento_id
+             LEFT JOIN red_salud r       ON r.id = est.red_id';
+
+    private static function condicionPestana(string $pestana): string
+    {
+        return match ($pestana) {
+            'ANULADA' => 'c.anulado = 1',
+            'TODAS'   => '1=1',
+            default   => "c.anulado = 0 AND c.estado = '" . $pestana . "'", // ya validada contra PESTANAS_LISTADO
+        };
+    }
+
+    /**
+     * Listado de fichas (2026-10-17): una pestaña por estado (Abiertas, En
+     * validación, Cerradas, Anuladas, Todas) con su conteo, conteos por
+     * clasificación dentro de la pestaña (filtran, combinables) y orden por
+     * columna. $filtros: los de condicionesListado() + pestana, clasificaciones
+     * (string[]), orden y dir. Sin $porPagina devuelve todas las filas (CSV).
+     *
+     * @return array{filas: array, total: int, pagina: int, totalPaginas: int, porPestana: array<string,int>, porClasificacion: array<string,int>}
+     */
+    public static function listarPaginado(array $filtros, int $pagina, ?int $porPagina): array
+    {
+        [$condiciones, $parametros] = self::condicionesListado($filtros);
         $pdo = Database::conexion();
+        $from = self::FROM_LISTADO;
+        $whereBase = implode(' AND ', $condiciones);
 
-        $sqlTotal = "SELECT COUNT(*) FROM caso c JOIN persona p ON p.id = c.persona_id JOIN enfermedad e ON e.id = c.enfermedad_id WHERE $where";
-        $consultaTotal = $pdo->prepare($sqlTotal);
-        $consultaTotal->execute($parametros);
-        $total = (int) $consultaTotal->fetchColumn();
+        $consulta = $pdo->prepare("SELECT SUM(c.anulado = 0 AND c.estado = 'ABIERTA') AS ABIERTA,
+                                          SUM(c.anulado = 0 AND c.estado = 'VALIDACION') AS VALIDACION,
+                                          SUM(c.anulado = 0 AND c.estado = 'CERRADA') AS CERRADA,
+                                          SUM(c.anulado = 1) AS ANULADA, COUNT(*) AS TODAS
+                                     $from WHERE $whereBase");
+        $consulta->execute($parametros);
+        $porPestana = array_map('intval', $consulta->fetch() ?: []);
 
-        $porPagina = max(1, $porPagina);
-        $totalPaginas = max(1, (int) ceil($total / $porPagina));
-        $pagina = max(1, min($pagina, $totalPaginas));
-        $offset = ($pagina - 1) * $porPagina;
+        $pestana = in_array($filtros['pestana'] ?? '', self::PESTANAS_LISTADO, true) ? $filtros['pestana'] : 'ABIERTA';
+        $condiciones[] = self::condicionPestana($pestana);
+        $whereTab = implode(' AND ', $condiciones);
+
+        $consulta = $pdo->prepare("SELECT c.clasificacion, COUNT(*) AS n $from WHERE $whereTab GROUP BY c.clasificacion");
+        $consulta->execute($parametros);
+        $porClasificacion = [];
+        foreach ($consulta->fetchAll() as $fila) {
+            if ((string) $fila['clasificacion'] !== '') {
+                $porClasificacion[$fila['clasificacion']] = (int) $fila['n'];
+            }
+        }
+
+        $clasificaciones = array_values(array_filter((array) ($filtros['clasificaciones'] ?? []), 'is_string'));
+        if ($clasificaciones) {
+            $marcadores = [];
+            foreach ($clasificaciones as $i => $codigo) {
+                $marcadores[] = ':clas' . $i;
+                $parametros['clas' . $i] = $codigo;
+            }
+            $condiciones[] = 'c.clasificacion IN (' . implode(', ', $marcadores) . ')';
+        }
+        $where = implode(' AND ', $condiciones);
+
+        $consulta = $pdo->prepare("SELECT COUNT(*) $from WHERE $where");
+        $consulta->execute($parametros);
+        $total = (int) $consulta->fetchColumn();
+
+        $direccion = ($filtros['dir'] ?? '') === 'asc' ? 'ASC' : 'DESC';
+        $ordenClasificacion = 'FIELD(c.clasificacion, ' . implode(', ', array_map(fn(string $c): string => "'" . $c . "'", array_keys(CATALOGO_CLASIFICACION))) . ')';
+        $orden = match ($filtros['orden'] ?? '') {
+            'codigo'        => "c.id $direccion",
+            'paciente'      => "p.apellido_paterno $direccion, p.apellido_materno $direccion, p.nombres $direccion, c.id DESC",
+            'enfermedad'    => "e.nombre $direccion, c.fecha_notif DESC, c.id DESC",
+            'clasificacion' => "$ordenClasificacion $direccion, c.fecha_notif DESC, c.id DESC",
+            default         => "c.fecha_notif $direccion, c.id $direccion",
+        };
+
+        if ($porPagina === null) {
+            $pagina = 1;
+            $totalPaginas = 1;
+            $limite = '';
+        } else {
+            $porPagina = max(1, $porPagina);
+            $totalPaginas = max(1, (int) ceil($total / $porPagina));
+            $pagina = max(1, min($pagina, $totalPaginas));
+            $limite = 'LIMIT ' . $porPagina . ' OFFSET ' . (($pagina - 1) * $porPagina);
+        }
 
         $sql = "SELECT c.*, p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                        e.nombre AS enfermedad_nombre, e.cie10, e.unidades_edad AS enfermedad_unidades_edad,
@@ -114,24 +195,44 @@ class Caso extends Model
                        (SELECT cv_edad.valor FROM caso_valor cv_edad JOIN campo_def cd_edad ON cd_edad.id = cv_edad.campo_def_id
                          WHERE cv_edad.caso_id = c.id AND cd_edad.clave = JSON_UNQUOTE(JSON_EXTRACT(e.nucleo_ajustes, '$.edad_a_la_fecha'))) AS edad_fecha_referencia,
                        est.nombre AS establecimiento_nombre, r.nombre AS red_nombre
-                  FROM caso c
-                  JOIN persona p         ON p.id = c.persona_id
-                  JOIN enfermedad e      ON e.id = c.enfermedad_id
-                  JOIN establecimiento est ON est.id = c.establecimiento_id
-             LEFT JOIN red_salud r       ON r.id = est.red_id
+                  $from
                  WHERE $where
-              ORDER BY c.fecha_notif DESC, c.id DESC
-                 LIMIT $porPagina OFFSET $offset";
+              ORDER BY $orden
+                 $limite";
 
         $consulta = $pdo->prepare($sql);
         $consulta->execute($parametros);
 
         return [
-            'filas'        => $consulta->fetchAll(),
-            'total'        => $total,
-            'pagina'       => $pagina,
-            'totalPaginas' => $totalPaginas,
+            'filas'            => $consulta->fetchAll(),
+            'total'            => $total,
+            'pagina'           => $pagina,
+            'totalPaginas'     => $totalPaginas,
+            'pestana'          => $pestana,
+            'porPestana'       => $porPestana + array_fill_keys(self::PESTANAS_LISTADO, 0),
+            'porClasificacion' => $porClasificacion,
         ];
+    }
+
+    /**
+     * Badge del menú lateral (2026-10-17): fichas abiertas, no anuladas, que
+     * todavía no tienen clasificación final, con el mismo alcance que el
+     * listado (el REGISTRADOR, su establecimiento y sin las privadas ajenas).
+     */
+    public static function contarPendientes(array $usuario): int
+    {
+        $filtros = ['privacidad_rol' => $usuario['rol'], 'privacidad_usuario_id' => $usuario['id']];
+        if ($usuario['rol'] === 'REGISTRADOR') {
+            $filtros['establecimiento_id'] = $usuario['establecimiento_id'];
+        }
+        [$condiciones, $parametros] = self::condicionesListado($filtros);
+        $condiciones[] = self::condicionPestana('ABIERTA');
+        $condiciones[] = "(c.clasificacion IS NULL OR c.clasificacion IN ('', '" . implode("', '", self::CLASIFICACIONES_NO_FINALES) . "'))";
+
+        $consulta = Database::conexion()->prepare('SELECT COUNT(*) ' . self::FROM_LISTADO . ' WHERE ' . implode(' AND ', $condiciones));
+        $consulta->execute($parametros);
+
+        return (int) $consulta->fetchColumn();
     }
 
     /**

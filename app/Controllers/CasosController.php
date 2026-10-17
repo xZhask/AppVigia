@@ -29,6 +29,7 @@ use App\Models\Distrito;
 use App\Models\Persona;
 use App\Services\PersonaService;
 use App\Models\ReniecConsulta;
+use App\Models\RedSalud;
 use App\Models\SeccionDef;
 use DateTime;
 use Throwable;
@@ -42,35 +43,167 @@ class CasosController extends Controller
     public function index(): void
     {
         $usuario = Auth::usuario();
-
-        $filtros = [
-            'q'             => trim($_GET['q'] ?? ''),
-            'enfermedad_id' => $_GET['enfermedad_id'] ?? '',
-            'clasificacion' => $_GET['clasificacion'] ?? '',
-            'estado'        => $_GET['estado'] ?? '',
-            'desde'         => fechaIsoValida(trim($_GET['desde'] ?? '')) ?? '',
-            'hasta'         => fechaIsoValida(trim($_GET['hasta'] ?? '')) ?? '',
-            'privacidad_rol' => $usuario['rol'],
-            'privacidad_usuario_id' => $usuario['id'],
-        ];
-
-        if ($usuario['rol'] === 'REGISTRADOR') {
-            $filtros['establecimiento_id'] = $usuario['establecimiento_id'];
-        }
+        [$filtros, $consulta] = $this->filtrosListado($usuario);
 
         $pagina = max(1, (int) ($_GET['page'] ?? 1));
         $resultado = Caso::listarPaginado($filtros, $pagina, self::POR_PAGINA);
+        foreach ($resultado['filas'] as &$fila) {
+            $fila['puede_editar'] = $this->puedeEditarCaso($fila);
+        }
+        unset($fila);
+
+        $establecimientos = [];
+        $redes = [];
+        if ($usuario['rol'] !== 'REGISTRADOR') {
+            $redes = RedSalud::todos('nombre');
+            foreach (Establecimiento::conRedYUbicacion() as $establecimiento) {
+                if ($filtros['red_id'] === '' || (string) $establecimiento['red_id'] === $filtros['red_id']) {
+                    $establecimientos[] = $establecimiento;
+                }
+            }
+        }
 
         $this->vista('fichas/index', [
-            'tituloVista'  => 'Fichas registradas',
-            'rutaActual'   => 'casos',
-            'fichas'       => $resultado['filas'],
-            'total'        => $resultado['total'],
-            'pagina'       => $resultado['pagina'],
-            'totalPaginas' => $resultado['totalPaginas'],
-            'filtros'      => $_GET,
-            'enfermedades' => Enfermedad::todos('nombre'),
+            'tituloVista'      => 'Fichas registradas',
+            'rutaActual'       => 'casos',
+            'vistaAncha'       => true,
+            'fichas'           => $resultado['filas'],
+            'total'            => $resultado['total'],
+            'pagina'           => $resultado['pagina'],
+            'totalPaginas'     => $resultado['totalPaginas'],
+            'porPagina'        => self::POR_PAGINA,
+            'pestana'          => $resultado['pestana'],
+            'porPestana'       => $resultado['porPestana'],
+            'porClasificacion' => $resultado['porClasificacion'],
+            'filtros'          => $filtros,
+            'consulta'         => $consulta,
+            'hayFichas'        => Caso::contarTodos() > 0,
+            'enfermedades'     => Enfermedad::todos('nombre'),
+            'redes'            => $redes,
+            'establecimientos' => $establecimientos,
+            'esRegistrador'    => $usuario['rol'] === 'REGISTRADOR',
+            'puedeAnular'      => in_array($usuario['rol'], self::ROLES_CIERRE, true),
         ]);
+    }
+
+    /**
+     * CSV del listado con los mismos filtros, pestaña y orden que en pantalla
+     * (2026-10-17), sin paginar. Separador ";" y BOM, como los de Reportes.
+     */
+    public function exportar(): void
+    {
+        $usuario = Auth::usuario();
+        [$filtros] = $this->filtrosListado($usuario);
+        $resultado = Caso::listarPaginado($filtros, 1, null);
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="fichas_' . date('Y-m-d') . '.csv"');
+        $salida = fopen('php://output', 'w');
+        fwrite($salida, "\xEF\xBB\xBF");
+        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
+
+        $linea(['N.° ficha', 'Apellidos y nombres', 'Tipo de documento', 'N.° de documento', 'Sexo', 'Edad', 'Enfermedad', 'CIE-10',
+            'Establecimiento', 'Red', 'Fecha de notificación', 'Año epidemiológico', 'SE', 'Clasificación', 'Estado']);
+        $estados = ['ABIERTA' => 'Abierta', 'VALIDACION' => 'En validación', 'CERRADA' => 'Cerrada'];
+        foreach ($resultado['filas'] as $fila) {
+            $linea([
+                $fila['codigo'],
+                Persona::nombreCompletoPnp($fila),
+                $fila['tipo_doc'],
+                $fila['num_doc'],
+                $fila['sexo'],
+                edadLegible($fila['fecha_nac'], $fila['edad_fecha_referencia'] ?? null, true) ?? '',
+                $fila['enfermedad_nombre'],
+                $fila['cie10'],
+                $fila['establecimiento_nombre'],
+                $fila['red_nombre'],
+                fechaIsoADmy($fila['fecha_notif']),
+                $fila['anio_epi'],
+                $fila['semana_epi'],
+                (string) $fila['clasificacion'] !== '' ? datosClasificacion((string) $fila['clasificacion'])['etiqueta'] : '',
+                $fila['anulado'] ? 'Anulada' : ($estados[$fila['estado']] ?? $fila['estado']),
+            ]);
+        }
+        fclose($salida);
+        exit;
+    }
+
+    /**
+     * Filtros del listado de fichas desde la URL. Devuelve [filtros para
+     * Caso::listarPaginado(), parámetros normalizados para armar los enlaces
+     * (pestañas, orden, chips, paginación)]. El periodo es por semana
+     * epidemiológica: SE actual, últimas 4 SE, este año (por defecto) o un
+     * rango de SE de un año.
+     */
+    private function filtrosListado(array $usuario): array
+    {
+        ['anio' => $anioActual, 'semana' => $semanaActual] = semanaEpidemiologica(date('Y-m-d'));
+        $texto = fn(string $clave): string => is_string($_GET[$clave] ?? null) ? trim($_GET[$clave]) : '';
+
+        $periodo = in_array($texto('periodo'), ['actual', 'ultimas4', 'anio', 'rango', 'todo'], true) ? $texto('periodo') : 'anio';
+        $anioRango = (int) $texto('anio') ?: $anioActual;
+        $seA = max(1, min(53, (int) $texto('se_desde') ?: 1));
+        $seB = max(1, min(53, (int) $texto('se_hasta') ?: ($anioRango === $anioActual ? $semanaActual : 53)));
+        [$seA, $seB] = [min($seA, $seB), max($seA, $seB)];
+        $hace3 = semanaEpidemiologica(date('Y-m-d', strtotime('-21 days')));
+        [$desde, $hasta] = match ($periodo) {
+            'actual'   => [[$anioActual, $semanaActual], [$anioActual, $semanaActual]],
+            'ultimas4' => [[$hace3['anio'], $hace3['semana']], [$anioActual, $semanaActual]],
+            'rango'    => [[$anioRango, $seA], [$anioRango, $seB]],
+            'todo'     => [null, null],
+            default    => [[$anioActual, 1], [$anioActual, 53]],
+        };
+
+        // Compatibilidad: ?clasificacion=X (enlaces viejos) equivale a clas[]=X.
+        $clasificaciones = array_values(array_unique(array_filter(
+            array_merge((array) ($_GET['clas'] ?? []), [$texto('clasificacion')]),
+            fn($c) => is_string($c) && isset(CATALOGO_CLASIFICACION[$c])
+        )));
+        $orden = in_array($texto('orden'), ['codigo', 'paciente', 'enfermedad', 'fecha', 'clasificacion'], true) ? $texto('orden') : 'fecha';
+        $dir = $texto('dir') === 'asc' ? 'asc' : ($texto('dir') === 'desc' ? 'desc' : ($orden === 'fecha' || $orden === 'codigo' ? 'desc' : 'asc'));
+        $pestana = in_array($texto('pestana'), Caso::PESTANAS_LISTADO, true) ? $texto('pestana') : 'ABIERTA';
+
+        $filtros = [
+            'q'                     => $texto('q'),
+            'enfermedad_id'         => ctype_digit($texto('enfermedad_id')) ? $texto('enfermedad_id') : '',
+            'red_id'                => ctype_digit($texto('red_id')) ? $texto('red_id') : '',
+            'establecimiento_id'    => ctype_digit($texto('establecimiento_id')) ? $texto('establecimiento_id') : '',
+            'periodo'               => $periodo,
+            'anio'                  => $anioRango,
+            'se_desde_n'            => $seA,
+            'se_hasta_n'            => $seB,
+            'se_desde'              => $desde,
+            'se_hasta'              => $hasta,
+            'anio_actual'           => $anioActual,
+            'semana_actual'         => $semanaActual,
+            'clasificaciones'       => $clasificaciones,
+            'pestana'               => $pestana,
+            'orden'                 => $orden,
+            'dir'                   => $dir,
+            'privacidad_rol'        => $usuario['rol'],
+            'privacidad_usuario_id' => $usuario['id'],
+        ];
+        if ($usuario['rol'] === 'REGISTRADOR') {
+            $filtros['red_id'] = '';
+            $filtros['establecimiento_id'] = $usuario['establecimiento_id'];
+        }
+
+        $consulta = [
+            'pestana'            => $pestana === 'ABIERTA' ? '' : $pestana,
+            'q'                  => $filtros['q'],
+            'enfermedad_id'      => $filtros['enfermedad_id'],
+            'red_id'             => $filtros['red_id'],
+            'establecimiento_id' => $usuario['rol'] === 'REGISTRADOR' ? '' : $filtros['establecimiento_id'],
+            'periodo'            => $periodo === 'anio' ? '' : $periodo,
+            'anio'               => $periodo === 'rango' ? $anioRango : '',
+            'se_desde'           => $periodo === 'rango' ? $seA : '',
+            'se_hasta'           => $periodo === 'rango' ? $seB : '',
+            'clas'               => $clasificaciones,
+            'orden'              => $orden === 'fecha' ? '' : $orden,
+            'dir'                => $texto('dir') !== '' ? $dir : '',
+        ];
+
+        return [$filtros, $consulta];
     }
 
     public function nuevo(): void

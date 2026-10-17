@@ -1,7 +1,6 @@
 <?php
 use App\Core\Auth;
 use App\Core\Csrf;
-use App\Core\Database;
 use App\Core\Flash;
 
 $mensajeFlash = Flash::obtener();
@@ -9,7 +8,9 @@ $rutaActual = $rutaActual ?? '';
 $tituloVista = $tituloVista ?? 'Panel';
 $usuarioActual = Auth::usuario();
 
-$totalFichas = (int) Database::conexion()->query('SELECT COUNT(*) FROM caso')->fetchColumn();
+// Badge de Fichas (2026-10-17): las abiertas sin clasificación final, no el
+// total, para que el número indique algo pendiente.
+$fichasPendientes = $usuarioActual ? \App\Models\Caso::contarPendientes($usuarioActual) : 0;
 
 // Semana del calendario del MINSA (domingo a sábado), la misma que se guarda en
 // cada caso: date('W') es la semana ISO y en 2026 marcaba una de más.
@@ -22,7 +23,7 @@ $rolesEtiqueta = [
 
 $navItems = [
     ['ruta' => '',            'etiqueta' => 'Panel',       'crumb' => 'Panel'],
-    ['ruta' => 'casos',       'etiqueta' => 'Fichas',      'crumb' => 'Fichas', 'contador' => $totalFichas],
+    ['ruta' => 'casos',       'etiqueta' => 'Fichas',      'crumb' => 'Fichas', 'contador' => $fichasPendientes],
     ['ruta' => 'casos/nuevo', 'etiqueta' => 'Nueva ficha', 'crumb' => 'Nueva ficha'],
     ['ruta' => 'reportes',    'etiqueta' => 'Reportes',    'crumb' => 'Reportes'],
     ['ruta' => 'catalogos/establecimientos', 'etiqueta' => 'Establecimientos', 'crumb' => 'Establecimientos'],
@@ -95,7 +96,7 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
       <a class="nav-item<?= $rutaActual === 'casos' ? ' active' : '' ?>" href="/casos">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="2" width="12" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 6h6M5.5 9h6M5.5 12h3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         Fichas
-        <span class="count mono"><?= number_format($totalFichas, 0, ',', ' ') ?></span>
+        <?php if ($fichasPendientes > 0): ?><span class="count pendientes mono" title="Fichas abiertas sin clasificación final"><?= number_format($fichasPendientes, 0, ',', ' ') ?></span><?php endif; ?>
       </a>
       <a class="nav-item<?= $rutaActual === 'casos/nuevo' ? ' active' : '' ?>" href="/casos/nuevo">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 3.5v10M3.5 8.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -168,7 +169,7 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
       </div>
     </header>
 
-    <main class="view">
+    <main class="view<?= !empty($vistaAncha) ? ' view-ancha' : '' ?>">
       <?= $contenido ?>
     </main>
 

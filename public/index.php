@@ -109,6 +109,10 @@ $router->get('/casos', function () {
     (new CasosController())->index();
 });
 
+$router->get('/casos/exportar', function () {
+    (new CasosController())->exportar();
+});
+
 $router->get('/casos/nuevo', function () {
     (new CasosController())->nuevo();
 });
