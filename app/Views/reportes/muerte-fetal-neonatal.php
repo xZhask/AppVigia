@@ -134,14 +134,12 @@ $totalColumnas = 22;
   <div class="card-head no-imprimir">
     <div><h3>Formato de notificación</h3><div class="sub"><?= count($casos) ?> caso(s) · SE <?= (int) $filtros['semana'] ?> · <?= (int) $filtros['anio'] ?> (del <?= e(fechaIsoADmy($rangoSemana[0])) ?> al <?= e(fechaIsoADmy($rangoSemana[1])) ?>)</div></div>
     <div class="spacer"></div>
-    <a class="btn-quiet" href="/reportes/muerte-fetal-neonatal/exportar?<?= e($queryFiltros) ?>">
-      <svg width="15" height="15" viewBox="0 0 15 15"><rect x="2" y="2.5" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5.5 5.5l4 4M9.5 5.5l-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-      Excel
-    </a>
-    <button type="button" class="btn-quiet" onclick="window.print()">
-      <svg width="15" height="15" viewBox="0 0 15 15"><path d="M4 1.5h5l3 3v9H4z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/></svg>
-      Imprimir / PDF
-    </button>
+    <div class="reporte-acciones">
+      <a class="btn btn-ghost btn-sm" href="/reportes/muerte-fetal-neonatal/exportar?<?= e($queryFiltros) ?>">
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5v7M4 6.5l3 3 3-3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel</a>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Imprimir / PDF</button>
+    </div>
   </div>
 
   <div class="mfn-hoja">
