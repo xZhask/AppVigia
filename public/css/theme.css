@@ -250,7 +250,12 @@
   .input-main:has(> input[readonly]:not(.sel-input)){background:var(--paper);border-style:dashed}
   .control:has(> input[readonly]:not(.sel-input)):focus-within{border-color:var(--line);box-shadow:none}
   .control > input[readonly]:not(.sel-input),
-  .input-main > input[readonly]:not(.sel-input){color:var(--muted);cursor:default}
+  .input-main > input[readonly]:not(.sel-input){color:var(--muted);cursor:default;background:transparent}
+  /* Tema oscuro: --paper es casi negro y dark.css pinta los input con
+     --surface; sin esto se veía un marco negro alrededor de otro tono.
+     --line-2 queda apenas más claro que la tarjeta. */
+  html[data-theme="dark"] .control:has(> input[readonly]:not(.sel-input)),
+  html[data-theme="dark"] .input-main:has(> input[readonly]:not(.sel-input)){background:var(--line-2)}
   .control.ok{border-color:#B8DED4}
   .control.err{border-color:var(--s-confirmado)}
   .control .lead{color:var(--faint);flex-shrink:0}
