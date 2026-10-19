@@ -19,6 +19,26 @@ class Establecimiento extends Model
         return Database::conexion()->query($sql)->fetchAll();
     }
 
+    /** Padrón completo con red y ubicación (distrito, provincia, departamento) para el catálogo. */
+    public static function paraCatalogo(): array
+    {
+        return Database::conexion()->query(
+            'SELECT es.*, r.nombre AS red_nombre, d.nombre AS distrito_nombre, p.nombre AS provincia_nombre, dp.nombre AS departamento_nombre
+               FROM establecimiento es
+          LEFT JOIN red_salud r ON r.id = es.red_id
+          LEFT JOIN distrito d ON d.id = es.distrito_id
+          LEFT JOIN provincia p ON p.id = d.provincia_id
+          LEFT JOIN departamento dp ON dp.id = d.departamento_id
+           ORDER BY es.nombre'
+        )->fetchAll();
+    }
+
+    /** Nombre para mostrar: el corto si lo tiene; si no, el del padrón en tipo oración. */
+    public static function nombreVisible(array $establecimiento): string
+    {
+        return trim((string) ($establecimiento['nombre_corto'] ?? '')) ?: nombreEnOracion($establecimiento['nombre']);
+    }
+
     /**
      * Encabezado de un formulario del PDF para un establecimiento: DISA/DIRESA,
      * red, institución y ubicación (departamento, provincia, distrito). Todo

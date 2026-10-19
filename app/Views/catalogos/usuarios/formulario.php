@@ -94,10 +94,6 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
         </div>
       </div>
 
-      <div style="margin-top:16px">
-        <label class="sym"><input type="checkbox" name="activo" <?= marcado($usuario['activo']) ?>> Usuario activo</label>
-      </div>
-
       <div style="display:flex;gap:10px;margin-top:20px">
         <button class="btn btn-primary" type="submit">
           <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2.5 7.5 6 11l5.5-6.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>

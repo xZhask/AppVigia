@@ -309,6 +309,9 @@ $router->post('/catalogos/usuarios/{id}', function ($id) {
 $router->post('/catalogos/usuarios/{id}/alternar', function ($id) {
     (new UsuariosController())->alternarActivo($id);
 });
+$router->post('/catalogos/usuarios/{id}/transferir', function ($id) {
+    (new UsuariosController())->transferir($id);
+});
 
 // ---------- Catálogo: grados PNP ----------
 $router->get('/catalogos/grados', function () {

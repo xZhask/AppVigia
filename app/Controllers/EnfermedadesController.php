@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Flash;
 use App\Models\Enfermedad;
+use App\Models\ResumenCatalogo;
 
 class EnfermedadesController extends Controller
 {
@@ -16,10 +17,20 @@ class EnfermedadesController extends Controller
     {
         Auth::exigirRol('ADMIN');
 
+        // Rediseño 2026-10-19: casos del año y de la SE, años para el corredor
+        // endémico y secciones de la ficha (que define el manifiesto).
+        $actual = semanaEpidemiologica(date('Y-m-d'));
+        $config = require __DIR__ . '/../../config/config.php';
         $this->vista('catalogos/enfermedades/index', [
-            'tituloVista' => 'Enfermedades',
-            'rutaActual'  => self::RUTA,
+            'tituloVista'  => 'Enfermedades',
+            'rutaActual'   => self::RUTA,
+            'vistaAncha'   => true,
             'enfermedades' => Enfermedad::todos('nombre'),
+            'actual'       => $actual,
+            'casos'        => ResumenCatalogo::casosPorEnfermedad($actual),
+            'secciones'    => ResumenCatalogo::seccionesPorEnfermedad(),
+            'semanas'      => ResumenCatalogo::semanas(),
+            'minimoAnios'  => (int) ($config['reportes']['anios_minimos_corredor'] ?? 2),
         ]);
     }
 

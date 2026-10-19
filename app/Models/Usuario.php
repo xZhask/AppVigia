@@ -70,7 +70,8 @@ class Usuario extends Model
 
     public static function conEstablecimiento(): array
     {
-        $sql = 'SELECT u.*, e.nombre AS establecimiento_nombre,
+        $sql = 'SELECT u.*, e.nombre AS establecimiento_nombre, e.nombre_corto AS establecimiento_corto, e.activo AS establecimiento_activo,
+                       e.red_id, r.nombre AS red_nombre,
                        p.tipo_doc AS persona_tipo_doc, p.num_doc AS persona_num_doc,
                        p.apellido_paterno, p.apellido_materno,
                        p.nombres AS persona_nombres, p.condicion,
@@ -79,6 +80,7 @@ class Usuario extends Model
                        g.abreviatura AS grado_abreviatura, g.nombre AS grado_nombre
                   FROM usuario u
              LEFT JOIN establecimiento e ON e.id = u.establecimiento_id
+             LEFT JOIN red_salud r ON r.id = e.red_id
              LEFT JOIN persona p ON p.id = u.persona_id
              LEFT JOIN grado_pnp g ON g.id = p.grado_id
               ORDER BY p.apellido_paterno, p.apellido_materno, p.nombres';

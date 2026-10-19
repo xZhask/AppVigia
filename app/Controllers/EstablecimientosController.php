@@ -7,6 +7,7 @@ use App\Core\Csrf;
 use App\Core\Flash;
 use App\Models\Establecimiento;
 use App\Models\RedSalud;
+use App\Models\ResumenCatalogo;
 
 class EstablecimientosController extends Controller
 {
@@ -17,10 +18,20 @@ class EstablecimientosController extends Controller
     {
         Auth::exigirRol('ADMIN');
 
+        // Rediseño 2026-10-19: registradores, cumplimiento del cierre semanal
+        // y última notificación por establecimiento (ResumenCatalogo).
+        $establecimientos = Establecimiento::paraCatalogo();
+        $semanas = ResumenCatalogo::semanas();
         $this->vista('catalogos/establecimientos/index', [
-            'tituloVista'     => 'Establecimientos',
-            'rutaActual'      => self::RUTA,
-            'establecimientos' => Establecimiento::conRedYUbicacion(),
+            'tituloVista'      => 'Establecimientos',
+            'rutaActual'       => self::RUTA,
+            'vistaAncha'       => true,
+            'establecimientos' => $establecimientos,
+            'semanas'          => $semanas,
+            'cumplimiento'     => ResumenCatalogo::cumplimiento(array_map(fn($e) => (int) $e['id'], $establecimientos), $semanas),
+            'usuarios'         => ResumenCatalogo::usuariosPorEstablecimiento(),
+            'ultimaNotif'      => ResumenCatalogo::ultimaNotificacion(),
+            'redes'            => RedSalud::todos('nombre'),
         ]);
     }
 
@@ -114,9 +125,13 @@ class EstablecimientosController extends Controller
         $this->exigirCsrf();
 
         $establecimiento = Establecimiento::buscar((int) $id);
-        if ($establecimiento) {
-            Establecimiento::actualizar((int) $id, ['activo' => $establecimiento['activo'] ? 0 : 1]);
-            Flash::set($establecimiento['activo'] ? 'Establecimiento desactivado.' : 'Establecimiento activado.');
+        $motivo = mb_substr(trim((string) ($_POST['motivo'] ?? '')), 0, 255);
+        if ($establecimiento && $establecimiento['activo'] && $motivo === '') {
+            Flash::set('Indica el motivo para desactivar el establecimiento.');
+        } elseif ($establecimiento) {
+            // Desactivar pide motivo (2026-10-19); reactivar lo borra.
+            Establecimiento::actualizar((int) $id, $establecimiento['activo'] ? ['activo' => 0, 'motivo_inactivo' => $motivo] : ['activo' => 1, 'motivo_inactivo' => null]);
+            Flash::set(nombreEnOracion($establecimiento['nombre']) . ($establecimiento['activo'] ? ' desactivado.' : ' reactivado.'));
         }
 
         header('Location: /catalogos/establecimientos');
@@ -128,11 +143,11 @@ class EstablecimientosController extends Controller
         $datos = [
             'cod_renipress' => trim($entrada['cod_renipress'] ?? '') ?: null,
             'nombre'        => trim($entrada['nombre'] ?? ''),
+            'nombre_corto'  => mb_substr(trim($entrada['nombre_corto'] ?? ''), 0, 80) ?: null,
             'red_id'        => $entrada['red_id'] !== '' ? (int) $entrada['red_id'] : null,
             'institucion'   => $entrada['institucion'] ?? '',
             'categoria'     => ($entrada['categoria'] ?? '') !== '' ? $entrada['categoria'] : null,
             'distrito_id'   => $entrada['distrito_id'] !== '' ? $entrada['distrito_id'] : null,
-            'activo'        => isset($entrada['activo']) ? 1 : 0,
         ];
 
         $errores = [];

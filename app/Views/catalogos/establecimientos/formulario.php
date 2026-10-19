@@ -25,6 +25,13 @@ $prefijoUbigeo = 'est-ubigeo';
           <?php if (isset($errores['nombre'])): ?><span class="hint err"><?= e($errores['nombre']) ?></span><?php endif; ?>
         </div>
         <div class="field">
+          <label class="fl">Nombre corto</label>
+          <div class="control">
+            <input type="text" name="nombre_corto" maxlength="80" value="<?= e($establecimiento['nombre_corto'] ?? '') ?>" placeholder="Ej.: Policlínico PNP Chiclayo">
+          </div>
+          <span class="hint">Así aparece en los listados del catálogo. Opcional.</span>
+        </div>
+        <div class="field">
           <label class="fl">Código RENIPRESS</label>
           <div class="control mono">
             <input type="text" name="cod_renipress" value="<?= e($establecimiento['cod_renipress']) ?>">
@@ -68,10 +75,6 @@ $prefijoUbigeo = 'est-ubigeo';
 
       <div class="eyebrow" style="margin:20px 0 12px">Ubicación</div>
       <?php $prefijo = $prefijoUbigeo; require __DIR__ . '/../../partials/selector-ubigeo.php'; ?>
-
-      <div style="margin-top:16px">
-        <label class="sym"><input type="checkbox" name="activo" <?= marcado($establecimiento['activo']) ?>> Establecimiento activo</label>
-      </div>
 
       <div style="display:flex;gap:10px;margin-top:20px">
         <button class="btn btn-primary" type="submit">

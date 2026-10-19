@@ -77,6 +77,7 @@ php sql/migraciones/add_cie10.php
 php sql/migraciones/add_tipo_notif_mensual.php
 php sql/migraciones/add_notificacion_semanal.php
 php sql/migraciones/cierre_notificacion_semanal.php
+php sql/migraciones/add_catalogos_rediseno.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -106,6 +107,10 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   cierre tardío con motivo, reapertura por el ADMIN y solicitud de reapertura.
   El plazo se configura en `config.php` (`notificacion_semanal`, por defecto
   lunes 12:00). Se puede correr más de una vez.
+- `add_catalogos_rediseno.php` (19/10): `usuario.ultimo_acceso` (se rellena
+  con el último login exitoso de `login_intento`), `usuario.motivo_inactivo`,
+  `establecimiento.nombre_corto` y `establecimiento.motivo_inactivo`, para los
+  catálogos rediseñados. Se puede correr más de una vez.
 - `add_tipo_notif_mensual.php` (16/10): agrega MENSUAL a
   `enfermedad.tipo_notif` y pasa B24 a mensual si seguía en semanal. Se puede
   correr más de una vez.

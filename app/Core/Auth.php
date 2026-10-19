@@ -25,6 +25,9 @@ class Auth
 
         session_regenerate_id(true);
 
+        // Último acceso (2026-10-19): para "nunca ingresó" / "sin acceso" en Usuarios y Establecimientos.
+        Database::conexion()->prepare('UPDATE usuario SET ultimo_acceso = CURRENT_TIMESTAMP WHERE id = :id')->execute(['id' => (int) $fila['id']]);
+
         $_SESSION['usuario'] = [
             'id'                     => (int) $fila['id'],
             'nombre'                 => $fila['nombre'],

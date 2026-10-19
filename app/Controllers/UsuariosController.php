@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Flash;
 use App\Models\Establecimiento;
+use App\Models\ResumenCatalogo;
 use App\Models\Usuario;
 
 class UsuariosController extends Controller
@@ -17,10 +18,26 @@ class UsuariosController extends Controller
     {
         Auth::exigirRol('ADMIN');
 
+        // Rediseño 2026-10-19: último acceso, fichas del año y actividad reciente.
+        $anio = semanaEpidemiologica(date('Y-m-d'))['anio'];
+        $usuarios = Usuario::conEstablecimiento();
+        $registradoresPorEst = [];
+        foreach ($usuarios as $u) {
+            if ($u['rol'] === 'REGISTRADOR' && $u['activo'] && $u['establecimiento_id']) {
+                $registradoresPorEst[(int) $u['establecimiento_id']] = ($registradoresPorEst[(int) $u['establecimiento_id']] ?? 0) + 1;
+            }
+        }
         $this->vista('catalogos/usuarios/index', [
-            'tituloVista' => 'Usuarios',
-            'rutaActual'  => self::RUTA,
-            'usuarios'    => Usuario::conEstablecimiento(),
+            'tituloVista'      => 'Usuarios',
+            'rutaActual'       => self::RUTA,
+            'vistaAncha'       => true,
+            'usuarios'         => $usuarios,
+            'anio'             => $anio,
+            'fichas'           => ResumenCatalogo::fichasPorUsuario($anio),
+            'actividad'        => ResumenCatalogo::actividad(),
+            'registradoresPorEst' => $registradoresPorEst,
+            'establecimientos' => array_values(array_filter(Establecimiento::paraCatalogo(), fn($e) => (bool) $e['activo'])),
+            'redes'            => \App\Models\RedSalud::todos('nombre'),
         ]);
     }
 
@@ -31,7 +48,8 @@ class UsuariosController extends Controller
         $this->vista('catalogos/usuarios/formulario', [
             'tituloVista' => 'Nuevo usuario',
             'rutaActual'  => self::RUTA,
-            'usuario'     => ['id' => null, 'nombre' => '', 'email' => '', 'rol' => 'REGISTRADOR', 'establecimiento_id' => '', 'activo' => 1],
+            // ?establecimiento_id= llega de "Asignar registrador" en Establecimientos.
+            'usuario'     => ['id' => null, 'nombre' => '', 'email' => '', 'rol' => 'REGISTRADOR', 'establecimiento_id' => ctype_digit((string) ($_GET['establecimiento_id'] ?? '')) ? (int) $_GET['establecimiento_id'] : '', 'activo' => 1],
             'establecimientos' => Establecimiento::todos('nombre'),
             'errores'     => [],
         ]);
@@ -129,9 +147,40 @@ class UsuariosController extends Controller
         }
 
         $usuario = Usuario::buscar((int) $id);
-        if ($usuario) {
-            Usuario::actualizar((int) $id, ['activo' => $usuario['activo'] ? 0 : 1]);
-            Flash::set($usuario['activo'] ? 'Usuario desactivado.' : 'Usuario activado.');
+        $motivo = mb_substr(trim((string) ($_POST['motivo'] ?? '')), 0, 255);
+        if ($usuario && $usuario['activo'] && $motivo === '') {
+            Flash::set('Indica el motivo para desactivar al usuario.');
+        } elseif ($usuario) {
+            // Desactivar pide motivo (2026-10-19); reactivar lo borra.
+            Usuario::actualizar((int) $id, $usuario['activo'] ? ['activo' => 0, 'motivo_inactivo' => $motivo] : ['activo' => 1, 'motivo_inactivo' => null]);
+            Flash::set($usuario['activo'] ? 'Usuario desactivado.' : 'Usuario reactivado.');
+        }
+
+        header('Location: /catalogos/usuarios');
+        exit;
+    }
+
+    /**
+     * Transferir a un registrador a otro establecimiento (cambio de
+     * colocación, 2026-10-19). Conserva su cuenta; las fichas que ya
+     * registró siguen en el establecimiento donde se notificaron.
+     */
+    public function transferir(string $id): void
+    {
+        Auth::exigirRol('ADMIN');
+        $this->exigirCsrf();
+
+        $usuario = Usuario::buscar((int) $id);
+        $destino = Establecimiento::buscar((int) ($_POST['establecimiento_id'] ?? 0));
+        if (!$usuario || $usuario['rol'] !== 'REGISTRADOR' || !$usuario['activo']) {
+            Flash::set('Solo se puede transferir a un registrador activo.');
+        } elseif (!$destino || !$destino['activo']) {
+            Flash::set('Elige un establecimiento activo.');
+        } elseif ((int) $destino['id'] === (int) $usuario['establecimiento_id']) {
+            Flash::set('El registrador ya está en ese establecimiento.');
+        } else {
+            Usuario::actualizar((int) $id, ['establecimiento_id' => (int) $destino['id']]);
+            Flash::set('Registrador transferido a ' . nombreEnOracion($destino['nombre']) . '.');
         }
 
         header('Location: /catalogos/usuarios');
@@ -146,7 +195,6 @@ class UsuariosController extends Controller
             'email'              => trim($entrada['email'] ?? ''),
             'rol'                => $entrada['rol'] ?? '',
             'establecimiento_id' => $entrada['establecimiento_id'] !== '' ? (int) $entrada['establecimiento_id'] : null,
-            'activo'             => isset($entrada['activo']) ? 1 : 0,
             'clave'              => (string) ($entrada['clave'] ?? ''),
         ];
 
