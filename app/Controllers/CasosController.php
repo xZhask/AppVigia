@@ -834,6 +834,15 @@ class CasosController extends Controller
                 exit;
             }
             Flash::set($textoRegistrada . ': ' . sprintf('F-%05d', $casoId) . $sufijoSinCasos);
+            // Registro de febriles (2026-10-21): "Registrar" vuelve a la hoja
+            // de ese día, donde se ve el que se acaba de guardar.
+            if (($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_FEBRILES) {
+                header('Location: /febriles?' . http_build_query(array_merge(
+                    ['anio' => $semana['anio'], 'semana' => $semana['semana'], 'dia' => $fechaNotifIso],
+                    $puedeElegirEstablecimiento ? ['establecimiento_id' => (int) $establecimiento['id']] : []
+                )));
+                exit;
+            }
             header('Location: /casos/' . $casoId);
             exit;
         }

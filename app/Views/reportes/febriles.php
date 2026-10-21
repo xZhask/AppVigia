@@ -13,6 +13,8 @@ $queryFiltros = http_build_query([
     'establecimiento_id' => $filtros['establecimiento_id'] ?? '',
     'dia'                => $dia ?? '',
 ]);
+$base = $base ?? '/reportes/febriles';
+$delDia = $base === '/febriles';
 $marca = fn(bool $marcado): string => $marcado ? 'X' : '';
 $dato = fn(?string $valor): string => ($valor ?? '') !== '' ? e($valor) : '';
 $sinEstablecimiento = !$filtros['establecimiento_id'];
@@ -55,16 +57,21 @@ $nombresDia = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 <div class="page-head no-imprimir">
   <div>
-    <div class="page-title"><?= e(FormatoPnp::FEBRILES) ?></div>
-    <div class="page-desc">Formato del Área de Epidemiología PNP, armado con el registro de febriles de la semana</div>
+    <?php if ($delDia): ?>
+      <div class="page-title">Registro de febriles</div>
+      <div class="page-desc"><?= $dia ? 'Febriles registrados el ' . e(fechaIsoADmy($dia)) . ($dia === date('Y-m-d') ? ' (hoy)' : '') : 'Febriles registrados en la SE ' . (int) $filtros['semana'] ?> · formato del Área de Epidemiología PNP</div>
+    <?php else: ?>
+      <div class="page-title"><?= e(FormatoPnp::FEBRILES) ?></div>
+      <div class="page-desc">Formato del Área de Epidemiología PNP, armado con el registro de febriles de la semana</div>
+    <?php endif; ?>
   </div>
   <div class="spacer"></div>
   <?php if ($febrilesId): ?><a class="btn btn-primary" href="/casos/nuevo?enfermedad_id=<?= (int) $febrilesId ?>">Registrar febril</a><?php endif; ?>
-  <a class="btn btn-ghost" href="/reportes?vista=formatos">Volver a Reportes</a>
+  <?php if (!$delDia): ?><a class="btn btn-ghost" href="/reportes?vista=formatos">Volver a Reportes</a><?php endif; ?>
 </div>
 
 <div class="card no-imprimir" style="margin-bottom:16px">
-  <form method="get" action="/reportes/febriles">
+  <form method="get" action="<?= e($base) ?>">
     <div class="report-controls">
       <div class="rc" style="grid-column:span 2">
         <label>Establecimiento</label>
@@ -91,7 +98,7 @@ $nombresDia = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     </div>
   </form>
   <nav class="feb-dias" aria-label="Día">
-    <?php $enlace = fn(?string $d): string => '/reportes/febriles?' . http_build_query(['anio' => $filtros['anio'], 'semana' => $filtros['semana'], 'establecimiento_id' => $filtros['establecimiento_id'] ?? '', 'dia' => $d ?? '']); ?>
+    <?php $enlace = fn(?string $d): string => $base . '?' . http_build_query(['anio' => $filtros['anio'], 'semana' => $filtros['semana'], 'establecimiento_id' => $filtros['establecimiento_id'] ?? '', 'dia' => $d ?? '']); ?>
     <a class="<?= $dia === null ? 'on' : '' ?>" href="<?= e($enlace(null)) ?>">Toda la semana</a>
     <?php foreach ($dias as $d): ?>
       <a class="<?= $dia === $d ? 'on' : '' ?>" href="<?= e($enlace($d)) ?>"><?= $nombresDia[(int) date('w', strtotime($d))] ?> <?= e(date('d/m', strtotime($d))) ?></a>

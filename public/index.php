@@ -234,6 +234,11 @@ $router->get('/reportes/registro-individual-vih/exportar', function () {
     (new ReportesController())->exportarRegistroIndividual(true);
 });
 
+// Menú "Registro de febriles": la hoja del día con el botón para registrar.
+$router->get('/febriles', function () {
+    (new ReportesController())->febriles(true);
+});
+
 $router->get('/reportes/febriles', function () {
     (new ReportesController())->febriles();
 });

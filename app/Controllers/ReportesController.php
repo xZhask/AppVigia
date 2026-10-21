@@ -354,16 +354,24 @@ class ReportesController extends Controller
     }
 
     /** Formato de registro diario para la vigilancia de febriles (2026-10-21). */
-    public function febriles(): void
+    /**
+     * $delDia (menú "Registro de febriles", 2026-10-21): la misma hoja en
+     * /febriles, abierta en el día de hoy si no se pide otra semana o día.
+     */
+    public function febriles(bool $delDia = false): void
     {
+        if ($delDia && !isset($_GET['anio']) && !isset($_GET['semana']) && !isset($_GET['dia'])) {
+            $_GET['dia'] = date('Y-m-d');
+        }
         $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
         $rango = ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']);
         $dia = $this->diaDeLaSemana($rango);
         $febriles = Enfermedad::buscarPorCie10(\App\Models\Cie10Vigilancia::REGISTRO_FEBRILES);
 
         $this->vista('reportes/febriles', [
-            'tituloVista'      => 'Registro diario de febriles',
-            'rutaActual'       => 'reportes',
+            'tituloVista'      => $delDia ? 'Registro de febriles' : 'Registro diario de febriles',
+            'rutaActual'       => $delDia ? 'febriles' : 'reportes',
+            'base'             => $delDia ? '/febriles' : '/reportes/febriles',
             'vistaAncha'       => true,
             'filtros'          => $filtros,
             'dia'              => $dia,

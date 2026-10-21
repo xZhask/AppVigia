@@ -43,12 +43,15 @@ $rolesEtiqueta = [
 // llena varias veces al día. Activo en "Nueva ficha" cuando es esa enfermedad.
 $registroFebriles = \App\Models\Enfermedad::buscarPorCie10(\App\Models\Cie10Vigilancia::REGISTRO_FEBRILES);
 $registroFebriles = $registroFebriles && $registroFebriles['activo'] ? $registroFebriles : null;
-$enFebriles = $registroFebriles && $rutaActual === 'casos/nuevo' && (int) ($enfermedad['id'] ?? 0) === (int) $registroFebriles['id'];
+// Lleva a la hoja del día (/febriles), con el botón para registrar.
+$enFebriles = $registroFebriles && ($rutaActual === 'febriles'
+    || ($rutaActual === 'casos/nuevo' && (int) ($enfermedad['id'] ?? 0) === (int) $registroFebriles['id']));
 
 $navItems = [
     ['ruta' => '',            'etiqueta' => 'Panel',       'crumb' => 'Panel'],
     ['ruta' => 'casos',       'etiqueta' => 'Fichas',      'crumb' => 'Fichas', 'contador' => $fichasPendientes],
     ['ruta' => 'casos/nuevo', 'etiqueta' => 'Nueva ficha', 'crumb' => 'Nueva ficha'],
+    ['ruta' => 'febriles',    'etiqueta' => 'Registro de febriles', 'crumb' => 'Registro de febriles'],
     ['ruta' => 'notificacion-semanal', 'etiqueta' => 'Notificación semanal', 'crumb' => 'Notificación semanal'],
     ['ruta' => 'reportes',    'etiqueta' => 'Reportes',    'crumb' => 'Reportes'],
     ['ruta' => 'catalogos/establecimientos', 'etiqueta' => 'Establecimientos', 'crumb' => 'Establecimientos'],
@@ -128,7 +131,7 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
         Nueva ficha
       </a>
       <?php if ($registroFebriles): ?>
-      <a class="nav-item<?= $enFebriles ? ' active' : '' ?>" href="/casos/nuevo?enfermedad_id=<?= (int) $registroFebriles['id'] ?>">
+      <a class="nav-item<?= $enFebriles ? ' active' : '' ?>" href="/febriles">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M7 10.2V3.5a1.5 1.5 0 0 1 3 0v6.7a3 3 0 1 1-3 0Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 7v4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         Registro de febriles
       </a>
