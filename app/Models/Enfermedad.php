@@ -20,7 +20,8 @@ class Enfermedad extends Model
      * `tiene_definicion` (si ya tiene al menos una seccion_def propia), para
      * el selector de "Nueva ficha": agrupar por optgroup y avisar cuáles
      * todavía no tienen ficha definida, sin que el usuario abra un
-     * formulario vacío.
+     * formulario vacío. Los registros PNP (2026-10-21) van al final: la
+     * primera de la lista es la que abre "Nueva ficha" sin enfermedad elegida.
      */
     public static function activasConDefinicion(): array
     {
@@ -30,7 +31,8 @@ class Enfermedad extends Model
                     ) AS tiene_definicion
                FROM enfermedad e
               WHERE e.activo = 1
-           ORDER BY FIELD(e.familia, 'Inmunoprevenibles', 'Metaxénicas y zoonóticas', 'Transmisión hídrica y alimentaria', 'Materno-perinatal y transmisión vertical', 'Otros eventos bajo vigilancia'),
+           ORDER BY e.modalidad = 'REGISTRO',
+                    FIELD(e.familia, 'Inmunoprevenibles', 'Metaxénicas y zoonóticas', 'Transmisión hídrica y alimentaria', 'Materno-perinatal y transmisión vertical', 'Otros eventos bajo vigilancia'),
                     tiene_definicion DESC, 
                     e.nombre_corto"
         )->fetchAll();
@@ -44,5 +46,11 @@ class Enfermedad extends Model
         $consulta->execute(['cie10' => $cie10]);
         $r = $consulta->fetch();
         return $r ?: null;
+    }
+
+    /** ¿Es un registro PNP (enfermedad.modalidad, 2026-10-21) y no una ficha MINSA? */
+    public static function esRegistro(array $enfermedad): bool
+    {
+        return ($enfermedad['modalidad'] ?? 'FICHA') === 'REGISTRO';
     }
 }

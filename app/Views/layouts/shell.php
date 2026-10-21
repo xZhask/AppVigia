@@ -39,6 +39,12 @@ $rolesEtiqueta = [
     'REGISTRADOR' => 'Registrador/a',
 ];
 
+// Registro diario de febriles (registro PNP, 2026-10-21): acceso directo, se
+// llena varias veces al día. Activo en "Nueva ficha" cuando es esa enfermedad.
+$registroFebriles = \App\Models\Enfermedad::buscarPorCie10(\App\Models\Cie10Vigilancia::REGISTRO_FEBRILES);
+$registroFebriles = $registroFebriles && $registroFebriles['activo'] ? $registroFebriles : null;
+$enFebriles = $registroFebriles && $rutaActual === 'casos/nuevo' && (int) ($enfermedad['id'] ?? 0) === (int) $registroFebriles['id'];
+
 $navItems = [
     ['ruta' => '',            'etiqueta' => 'Panel',       'crumb' => 'Panel'],
     ['ruta' => 'casos',       'etiqueta' => 'Fichas',      'crumb' => 'Fichas', 'contador' => $fichasPendientes],
@@ -117,10 +123,16 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
         Fichas
         <?php if ($fichasPendientes > 0): ?><span class="count pendientes mono" title="Fichas abiertas sin clasificación final"><?= number_format($fichasPendientes, 0, ',', ' ') ?></span><?php endif; ?>
       </a>
-      <a class="nav-item<?= $rutaActual === 'casos/nuevo' ? ' active' : '' ?>" href="/casos/nuevo">
+      <a class="nav-item<?= $rutaActual === 'casos/nuevo' && !$enFebriles ? ' active' : '' ?>" href="/casos/nuevo">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 3.5v10M3.5 8.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         Nueva ficha
       </a>
+      <?php if ($registroFebriles): ?>
+      <a class="nav-item<?= $enFebriles ? ' active' : '' ?>" href="/casos/nuevo?enfermedad_id=<?= (int) $registroFebriles['id'] ?>">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M7 10.2V3.5a1.5 1.5 0 0 1 3 0v6.7a3 3 0 1 1-3 0Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 7v4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Registro de febriles
+      </a>
+      <?php endif; ?>
       <a class="nav-item<?= $rutaActual === 'notificacion-semanal' ? ' active' : '' ?>" href="/notificacion-semanal">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="3.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 7h12M6 2v3M11 2v3M6.5 10.5l1.5 1.5 2.7-2.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Notificación semanal

@@ -77,6 +77,11 @@ class Caso extends Model
         if (!empty($filtros['enfermedad_id'])) {
             $condiciones[] = 'c.enfermedad_id = :enfermedad_id';
             $parametros['enfermedad_id'] = (int) $filtros['enfermedad_id'];
+        } else {
+            // Registros PNP (2026-10-21): no son casos de una enfermedad con
+            // ficha y no suman en el listado, el panel ni el consolidado salvo
+            // que se elija ese registro como enfermedad.
+            $condiciones[] = "e.modalidad = 'FICHA'";
         }
         if (!empty($filtros['red_id'])) {
             $condiciones[] = 'est.red_id = :red_id';
@@ -267,7 +272,7 @@ class Caso extends Model
                        p.celular, p.nacionalidad, p.direccion, p.referencia_localizar, p.tipo_zona, p.tipo_asentamiento, p.nombre_zona, p.tipo_via, p.nombre_via, p.numero, p.mz_lote, p.tiempo_residencia, p.n_historia_clinica, p.localidad, p.etnia, p.etnia_otra, p.pueblo_etnico, p.ocupacion, p.estado_civil, p.nombre_tutor, p.celular_tutor, p.gestante, p.fur, p.semanas_gestacion, p.trimestre_gestacion,
                        p.tiempo_reside_anios, p.tiempo_reside_meses, p.anterior_distrito_id, p.anterior_tipo_zona, p.anterior_tipo_asentamiento, p.anterior_nombre_zona, p.anterior_tipo_via, p.anterior_nombre_via, p.anterior_numero, p.anterior_mz_lote,
                        p.nacimiento_distrito_id,
-                       e.nombre AS enfermedad_nombre, e.cie10, e.tipo_notif,
+                       e.nombre AS enfermedad_nombre, e.cie10, e.tipo_notif, e.modalidad AS enfermedad_modalidad,
                        e.multi_sujeto AS enfermedad_multi_sujeto, e.roles_sujeto AS enfermedad_roles_sujeto,
                        e.columnas_sujeto AS enfermedad_columnas_sujeto, e.titulo_sujeto AS enfermedad_titulo_sujeto,
                        e.unidades_edad AS enfermedad_unidades_edad,
@@ -304,6 +309,23 @@ class Caso extends Model
 
         $consulta = Database::conexion()->prepare($sql);
         $consulta->execute(['id' => $id]);
+        $fila = $consulta->fetch();
+
+        return $fila ?: null;
+    }
+
+    /**
+     * Ficha MINSA abierta desde un registro PNP ("Pasar a ficha MINSA",
+     * 2026-10-21; caso.caso_origen_id), sin las anuladas: código, id y
+     * enfermedad, o null.
+     */
+    public static function fichaDesdeRegistro(int $registroId): ?array
+    {
+        $consulta = Database::conexion()->prepare(
+            'SELECT c.id, c.codigo, e.nombre_corto, e.nombre FROM caso c JOIN enfermedad e ON e.id = c.enfermedad_id
+              WHERE c.caso_origen_id = :id AND c.anulado = 0 ORDER BY c.id LIMIT 1'
+        );
+        $consulta->execute(['id' => $registroId]);
         $fila = $consulta->fetch();
 
         return $fila ?: null;

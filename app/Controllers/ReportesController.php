@@ -9,6 +9,7 @@ use App\Models\Caso;
 use App\Models\Consolidado;
 use App\Models\Enfermedad;
 use App\Models\Establecimiento;
+use App\Models\FormatoPnp;
 use App\Models\ListadoMuerteFetalNeonatal;
 use App\Models\NotificacionNegativa;
 use App\Models\RegistroBusquedaActivaVih;
@@ -292,6 +293,144 @@ class ReportesController extends Controller
 
         fclose($salida);
         exit;
+    }
+
+    /**
+     * Registro semanal de notificación epidemiológica individual del Área de
+     * Epidemiología PNP (2026-10-21), o el de VIH/SIDA con $vih: fichas y
+     * registros de la semana de un establecimiento (ver FormatoPnp).
+     */
+    public function registroIndividual(bool $vih): void
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
+
+        $this->vista('reportes/registro-individual', [
+            'tituloVista'      => $vih ? 'Registro individual VIH/SIDA' : 'Registro individual',
+            'rutaActual'       => 'reportes',
+            'vistaAncha'       => true,
+            'vih'              => $vih,
+            'filtros'          => $filtros,
+            'establecimientos' => Establecimiento::todos('nombre'),
+            'puedeElegirEstablecimiento' => !Auth::tieneRol('REGISTRADOR'),
+            'encabezado'       => FormatoPnp::encabezado($filtros['establecimiento_id']),
+            'rangoSemana'      => ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']),
+            'casos'            => FormatoPnp::individual($filtros, $vih),
+        ]);
+    }
+
+    /** El mismo registro en CSV (; y BOM UTF-8, como exportarMuerteFetalNeonatal()). */
+    public function exportarRegistroIndividual(bool $vih): void
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
+        $casos = FormatoPnp::individual($filtros, $vih);
+        $encabezado = FormatoPnp::encabezado($filtros['establecimiento_id']);
+        $marca = fn(bool $marcado): string => $marcado ? 'X' : '';
+
+        $salida = $this->abrirCsv(($vih ? 'registro_individual_vih_' : 'registro_individual_') . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
+        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
+        $this->cabeceraCsvPnp($linea, $vih ? FormatoPnp::VIH : FormatoPnp::INDIVIDUAL, $encabezado, $filtros);
+
+        $linea(['N.°', 'Grado', 'ACT/RET', 'F', $vih ? 'Iniciales del paciente' : 'Apellidos y nombres', 'Edad M', 'Edad F', 'N.° CIP', 'N.° DNI',
+            'Lugar probable de infección: provincia', 'Distrito', 'Localidad', 'Dirección de residencia', 'Diagnóstico CIE-10',
+            'Tipo de Dx P', 'C', 'D', 'Protegido SI', 'NO', 'IG', 'Fecha de inicio de síntomas', 'Fecha de defunción', 'Fecha de notificación',
+            'Ficha de investigación SI', 'NO', 'Vigilancia pasiva', 'Búsqueda activa', 'Unidad de origen', 'Situación del paciente', 'Observaciones', 'Ficha VIGÍA']);
+        foreach ($casos as $i => $c) {
+            $linea([
+                $i + 1, $c['grado'], $c['act_ret'], $marca($c['familiar']), $c['nombre'],
+                $c['sexo'] === 'M' ? $c['edad'] : '', $c['sexo'] === 'F' ? $c['edad'] : '', $c['cip'], $c['dni'],
+                $c['lugar_provincia'], $c['lugar_distrito'], $c['lugar_localidad'], $c['direccion'], $c['cie10'],
+                $marca($c['tipo_dx'] === 'P'), $marca($c['tipo_dx'] === 'C'), $marca($c['tipo_dx'] === 'D'),
+                $marca($c['protegido'] === 'SI'), $marca($c['protegido'] === 'NO'), $marca($c['protegido'] === 'IG'),
+                fechaIsoADmy($c['inicio_sintomas']), fechaIsoADmy($c['defuncion']), fechaIsoADmy($c['notificacion']),
+                $marca($c['investigacion'] === 'SI'), $marca($c['investigacion'] === 'NO'),
+                $marca($c['vigilancia'] === 'PAS'), $marca($c['vigilancia'] === 'ACT'),
+                $c['unidad'], $c['situacion'], $c['observaciones'], $c['codigo'],
+            ]);
+        }
+        $linea([]);
+        $linea(['Tipo de diagnóstico: P: probable · C: confirmado · D: descartado']);
+        fclose($salida);
+        exit;
+    }
+
+    /** Formato de registro diario para la vigilancia de febriles (2026-10-21). */
+    public function febriles(): void
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
+        $rango = ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']);
+        $dia = $this->diaDeLaSemana($rango);
+        $febriles = Enfermedad::buscarPorCie10(\App\Models\Cie10Vigilancia::REGISTRO_FEBRILES);
+
+        $this->vista('reportes/febriles', [
+            'tituloVista'      => 'Registro diario de febriles',
+            'rutaActual'       => 'reportes',
+            'vistaAncha'       => true,
+            'filtros'          => $filtros,
+            'dia'              => $dia,
+            'establecimientos' => Establecimiento::todos('nombre'),
+            'puedeElegirEstablecimiento' => !Auth::tieneRol('REGISTRADOR'),
+            'encabezado'       => FormatoPnp::encabezado($filtros['establecimiento_id']),
+            'rangoSemana'      => $rango,
+            'casos'            => FormatoPnp::febriles($filtros, $dia),
+            'febrilesId'       => $febriles ? (int) $febriles['id'] : null,
+        ]);
+    }
+
+    public function exportarFebriles(): void
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
+        $dia = $this->diaDeLaSemana(ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']));
+        $casos = FormatoPnp::febriles($filtros, $dia);
+        $encabezado = FormatoPnp::encabezado($filtros['establecimiento_id']);
+        $marca = fn(bool $marcado): string => $marcado ? 'X' : '';
+
+        $salida = $this->abrirCsv('registro_febriles_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT) . ($dia ? '_' . $dia : ''));
+        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
+        $linea([mb_strtoupper(FormatoPnp::FEBRILES)]);
+        $linea(['Dirección de salud', 'DIRSAPOL', 'Red de salud', $encabezado['red'], 'Establecimiento', $encabezado['establecimiento'] ?: 'Todos']);
+        $linea(['Semana N.°', $filtros['semana'] . ' - ' . $filtros['anio'], 'Día', $dia ? fechaIsoADmy($dia) : 'Toda la semana']);
+        $linea([]);
+        $linea(['N.°', 'Grado', 'ACT/RET', 'F', 'H.CL', 'Fecha', 'Apellidos y nombres', 'DNI', 'Edad M', 'Edad F', 'Dirección', 'Distrito de residencia', 'Temperatura', 'Dx CIE-10', 'Diagnóstico', 'Servicio', 'Registro VIGÍA']);
+        foreach ($casos as $i => $c) {
+            $linea([
+                $i + 1, $c['grado'], $c['act_ret'], $marca($c['familiar']), $c['historia'], fechaIsoADmy($c['fecha']), $c['nombre'], $c['dni'],
+                $c['sexo'] === 'M' ? $c['edad'] : '', $c['sexo'] === 'F' ? $c['edad'] : '', $c['direccion'], $c['distrito'],
+                $c['temperatura'], $c['cie10'], $c['diagnostico'], $c['servicio'], $c['codigo'],
+            ]);
+        }
+        fclose($salida);
+        exit;
+    }
+
+    /** ?dia= dentro de la semana elegida, o null (toda la semana). */
+    private function diaDeLaSemana(array $rango): ?string
+    {
+        $dia = fechaIsoValida((string) ($_GET['dia'] ?? ''));
+
+        return $dia !== null && $dia >= $rango[0] && $dia <= $rango[1] ? $dia : null;
+    }
+
+    /** Respuesta CSV para Excel (BOM UTF-8). */
+    private function abrirCsv(string $nombre)
+    {
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $nombre . '.csv"');
+        $salida = fopen('php://output', 'w');
+        fwrite($salida, "\xEF\xBB\xBF");
+
+        return $salida;
+    }
+
+    private function cabeceraCsvPnp(callable $linea, string $titulo, array $encabezado, array $filtros): void
+    {
+        $linea(['POLICÍA NACIONAL DEL PERÚ', '', 'ÁREA DE EPIDEMIOLOGÍA']);
+        $linea(['DIRECCIÓN DE SALUD POLICIAL']);
+        $linea([mb_strtoupper($titulo)]);
+        $linea(['Código de establecimiento', $encabezado['codigo'], 'Semana de notificación', $filtros['semana'] . ' - ' . $filtros['anio']]);
+        $linea(['Cabecera de red', $encabezado['red']]);
+        $linea(['Establecimiento', $encabezado['establecimiento'] ?: 'Todos']);
+        $linea(['Tipo de establecimiento', $encabezado['categoria']]);
+        $linea([]);
     }
 
     /**

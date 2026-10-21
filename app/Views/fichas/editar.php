@@ -71,7 +71,7 @@ $es = $estados[$caso['estado']];
               <!-- A44 (pág. 42, cotejo 2026-08-18): el PDF pide "FECHA ENCUESTA", no
                    "Fecha de notificación" -- mismo campo núcleo (fecha_notif), solo
                    cambia la etiqueta para esta ficha. -->
-              <label class="fl"><?= (($enfermedad['cie10'] ?? null) === 'A44') ? 'Fecha de encuesta' : 'Fecha de notificación' ?> <span class="req">*</span></label>
+              <label class="fl"><?= e(etiquetaNucleo($enfermedad, 'fecha_notif', (($enfermedad['cie10'] ?? null) === 'A44') ? 'Fecha de encuesta' : 'Fecha de notificación')) ?> <span class="req">*</span></label>
               <div class="control mono <?= isset($erroresFijos['fecha_notif']) ? 'err' : '' ?>">
                 <input type="date" name="fecha_notif" value="<?= e($valoresFijos['fecha_notif']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
               </div>

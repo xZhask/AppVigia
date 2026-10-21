@@ -124,7 +124,8 @@ class Tablero
         $rango = self::rango($desde, $hasta, $parametros, 's');
         $series = [];
         foreach (Enfermedad::todos('nombre') as $enfermedad) {
-            if ($enfermedad['activo']) {
+            // Los registros PNP (2026-10-21) no tienen curva: no son casos.
+            if ($enfermedad['activo'] && ($enfermedad['modalidad'] ?? 'FICHA') === 'FICHA') {
                 $series[(int) $enfermedad['id']] = ['enfermedad' => $enfermedad, 'serie' => [], 'historia' => []];
             }
         }
@@ -251,7 +252,7 @@ class Tablero
         $parametros = [];
         $rango = self::rango([$primera['anio'], $primera['semana']], [$ultima['anio'], $ultima['semana']], $parametros, 'h');
         $fichas = [];
-        foreach (self::consultar("SELECT c.establecimiento_id, c.anio_epi, c.semana_epi, COUNT(*) AS n FROM caso c WHERE c.anulado = 0 AND $rango GROUP BY 1, 2, 3", $parametros) as $fila) {
+        foreach (self::consultar("SELECT c.establecimiento_id, c.anio_epi, c.semana_epi, COUNT(*) AS n FROM caso c JOIN enfermedad e ON e.id = c.enfermedad_id WHERE c.anulado = 0 AND e.modalidad = 'FICHA' AND $rango GROUP BY 1, 2, 3", $parametros) as $fila) {
             $fichas[$fila['establecimiento_id'] . '|' . $fila['anio_epi'] . '-' . $fila['semana_epi']] = (int) $fila['n'];
         }
         $cierres = NotificacionSemanal::delRango($usuario['rol'] === 'REGISTRADOR' ? (int) $usuario['establecimiento_id'] : null, [$primera['anio'], $primera['semana']], [$ultima['anio'], $ultima['semana']]);

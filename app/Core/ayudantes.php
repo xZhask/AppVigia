@@ -320,12 +320,14 @@ function fechaInicioSintomasDerivada(array $enfermedad, callable $valorPorClave)
  * se cumple alguna de estas reglas (estado vital "Nació vivo, luego falleció",
  * "Mortinato" o "Aborto"). 1 o 0; null si la ficha no declara ninguna, así
  * las demás siguen guardando caso.fallecido como antes.
+ * $efecto 'hospitalizado' (registros PNP, 2026-10-21): lo mismo para
+ * caso.hospitalizado ("Situación del paciente: Hospitalizado").
  */
-function fallecidoDerivado(array $enfermedad, callable $valorPorClave): ?int
+function fallecidoDerivado(array $enfermedad, callable $valorPorClave, string $efecto = 'fallecido'): ?int
 {
     $declara = false;
     foreach (jsonDeEnfermedad($enfermedad, 'reglas_campos') as $regla) {
-        if (empty($regla['fallecido'])) {
+        if (empty($regla[$efecto])) {
             continue;
         }
         $declara = true;

@@ -8,13 +8,15 @@
  * este partial -- acá solo se elige la clase correcta.
  * {"minimo": 0} (Z21, 2026-09-13): piso del valor, pintado como min= y
  * exigido también en CasosController::validarCamposDinamicos().
+ * {"maximo": 43} (febriles, 2026-10-21): techo, como max=.
  * {"desconocido": true} (A50, 2026-09-14): casilla "Desconocido", igual que
  * en campos/fecha.php.
  */
 $nombreCampo = 'campo_' . $campo['id'];
 $configNumero = json_decode($campo['config'] ?? '{}', true) ?: [];
 $permiteDecimales = !empty($configNumero['decimales']);
-$atributoMinimo = isset($configNumero['minimo']) ? ' min="' . e((string) $configNumero['minimo']) . '"' : '';
+$atributoMinimo = (isset($configNumero['minimo']) ? ' min="' . e((string) $configNumero['minimo']) . '"' : '')
+    . (isset($configNumero['maximo']) ? ' max="' . e((string) $configNumero['maximo']) . '"' : '');
 $admiteDesconocido = !empty($configNumero['desconocido']);
 $esDesconocido = $admiteDesconocido && $valor === VALOR_DESCONOCIDO;
 $valorNumero = $esDesconocido ? '' : $valor;

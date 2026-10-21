@@ -244,12 +244,17 @@ const NUCLEO_AJUSTES_VALIDOS = [
     // la edad que muestran el formulario, "ver" y el listado (la fecha de
     // muerte: la edad al fallecer). Sin ella, hasta hoy.
     'edad_a_la_fecha' => 'clave_fecha',
+    // Registros PNP, 2026-10-21: clave del TEXTO "formato": "cie10" que da
+    // caso.cie10_dx, el diagnóstico propio de un registro (las fichas MINSA
+    // lo toman de su enfermedad).
+    'cie10_dx_desde' => 'clave_cie10',
 ];
 
 // Campos del núcleo cuya etiqueta una ficha puede cambiar con
 // nucleo_ajustes.etiquetas (B24, 2026-09-14). Solo cambia el texto: el dato y
 // sus opciones son los mismos.
-const ETIQUETAS_NUCLEO = ['sexo', 'localidad', 'tipo_zona'];
+// 'fecha_notif' (2026-10-21): "Fecha de atención" del registro de febriles.
+const ETIQUETAS_NUCLEO = ['sexo', 'localidad', 'tipo_zona', 'fecha_notif'];
 
 // Ajustes por rama (A50, 2026-09-14): los que una regla de nucleo_condicional
 // puede declarar en "ajustes" para que valgan solo con su valor (el producto de
@@ -549,13 +554,20 @@ function validarManifiesto(array $manifiesto): void
                 // pueden ser negativos). "grupo": rótulo de un bloque de campos
                 // CONSECUTIVOS dentro de su sección ("Culminación del
                 // embarazo"); el bloque termina en el primer campo sin ese grupo.
-                if (array_key_exists('minimo', $campo)) {
-                    if ($tipo !== 'NUMERO') {
-                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"minimo\" pero no es NUMERO (es {$tipo}).");
+                // "maximo" (febriles, 2026-10-21): techo del valor (una
+                // temperatura de 385 es un error de tipeo).
+                foreach (['minimo', 'maximo'] as $limite) {
+                    if (array_key_exists($limite, $campo)) {
+                        if ($tipo !== 'NUMERO') {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" trae \"{$limite}\" pero no es NUMERO (es {$tipo}).");
+                        }
+                        if (!is_int($campo[$limite]) && !is_float($campo[$limite])) {
+                            throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"{$limite}\" no numérico.");
+                        }
                     }
-                    if (!is_int($campo['minimo']) && !is_float($campo['minimo'])) {
-                        throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"minimo\" no numérico.");
-                    }
+                }
+                if (isset($campo['minimo'], $campo['maximo']) && $campo['minimo'] > $campo['maximo']) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / \"{$etiqueta}\" tiene \"minimo\" mayor que \"maximo\".");
                 }
                 // "desconocido" (A50, 2026-09-14): casilla "Desconocido" junto a
                 // una fecha o un número (ítems del PDF con "Desconocido").
@@ -922,6 +934,19 @@ function validarManifiesto(array $manifiesto): void
                         }
                     }
                 }
+                if ($tipoAjuste === 'clave_cie10') {
+                    $esCie10 = false;
+                    foreach ($ficha['secciones'] as $seccionCie10) {
+                        foreach ($seccionCie10['campos'] as $campoCie10) {
+                            if (($campoCie10['clave'] ?? null) === $valorAjuste && ($campoCie10['tipo'] ?? null) === 'TEXTO' && ($campoCie10['formato'] ?? null) === 'cie10') {
+                                $esCie10 = empty($campoCie10['depende_de']) && empty($seccionCie10['depende_de']);
+                            }
+                        }
+                    }
+                    if (!is_string($valorAjuste) || !$esCie10) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser la clave de un TEXTO \"formato\": \"cie10\" de esta ficha, siempre visible (sin depende_de).");
+                    }
+                }
                 if ($tipoAjuste === 'texto' && (!is_string($valorAjuste) || trim($valorAjuste) === '')) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / nucleo_ajustes.{$ajuste} debe ser un texto no vacío.");
                 }
@@ -1272,9 +1297,9 @@ function validarManifiesto(array $manifiesto): void
                 if (!is_array($reglaCampos) || array_is_list($reglaCampos)) {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} debe ser un objeto.");
                 }
-                $clavesDesconocidas = array_diff(array_keys($reglaCampos), ['si', 'mostrar', 'fijar', 'suma_maxima', 'clasificar', 'opciones', 'comparar_fechas', 'maximo_dias_entre', 'alguno_minimo', 'alguno_menor_que', 'fallecido', 'mensaje', '_nota']);
+                $clavesDesconocidas = array_diff(array_keys($reglaCampos), ['si', 'mostrar', 'fijar', 'suma_maxima', 'clasificar', 'opciones', 'comparar_fechas', 'maximo_dias_entre', 'alguno_minimo', 'alguno_menor_que', 'fallecido', 'hospitalizado', 'mensaje', '_nota']);
                 if ($clavesDesconocidas) {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} trae \"" . implode('", "', $clavesDesconocidas) . "\". Válidas: si, mostrar, fijar, suma_maxima, clasificar, opciones, comparar_fechas, maximo_dias_entre, alguno_minimo, alguno_menor_que, fallecido, mensaje.");
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} trae \"" . implode('", "', $clavesDesconocidas) . "\". Válidas: si, mostrar, fijar, suma_maxima, clasificar, opciones, comparar_fechas, maximo_dias_entre, alguno_minimo, alguno_menor_que, fallecido, hospitalizado, mensaje.");
                 }
                 $si = $reglaCampos['si'] ?? null;
                 if (!is_array($si)) {
@@ -1296,7 +1321,7 @@ function validarManifiesto(array $manifiesto): void
                     // La clasificación y la defunción calculadas se derivan solo
                     // de los campos de la ficha (clasificacionDerivada() y
                     // fallecidoDerivado() no reciben el núcleo).
-                    if ($condicionNucleo && (array_key_exists('clasificar', $reglaCampos) || array_key_exists('fallecido', $reglaCampos))) {
+                    if ($condicionNucleo && (array_key_exists('clasificar', $reglaCampos) || array_key_exists('fallecido', $reglaCampos) || array_key_exists('hospitalizado', $reglaCampos))) {
                         throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}: \"clasificar\" y \"fallecido\" no admiten una condición sobre el núcleo.");
                     }
                     $clavesCondicion = $condicionNucleo ? [] : [$si['clave']];
@@ -1310,14 +1335,18 @@ function validarManifiesto(array $manifiesto): void
                 } else {
                     throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.si debe traer \"clave\"+\"valores\" o \"claves\"+\"alguno_mayor_que\".");
                 }
-                if (!array_intersect(array_keys($reglaCampos), ['mostrar', 'fijar', 'suma_maxima', 'clasificar', 'opciones', 'comparar_fechas', 'maximo_dias_entre', 'alguno_minimo', 'alguno_menor_que', 'fallecido'])) {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} no declara ningún efecto (mostrar, fijar, suma_maxima, clasificar, opciones, comparar_fechas, maximo_dias_entre, alguno_minimo, alguno_menor_que o fallecido).");
+                if (!array_intersect(array_keys($reglaCampos), ['mostrar', 'fijar', 'suma_maxima', 'clasificar', 'opciones', 'comparar_fechas', 'maximo_dias_entre', 'alguno_minimo', 'alguno_menor_que', 'fallecido', 'hospitalizado'])) {
+                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde} no declara ningún efecto (mostrar, fijar, suma_maxima, clasificar, opciones, comparar_fechas, maximo_dias_entre, alguno_minimo, alguno_menor_que, fallecido u hospitalizado).");
                 }
                 // "fallecido" (A50, 2026-09-14): con la condición cumplida, el
                 // caso es una defunción (caso.fallecido = 1; si no se cumple
                 // ninguna, 0).
-                if (array_key_exists('fallecido', $reglaCampos) && $reglaCampos['fallecido'] !== true) {
-                    throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.fallecido solo admite true.");
+                // "hospitalizado" (registros PNP, 2026-10-21): lo mismo para
+                // caso.hospitalizado.
+                foreach (['fallecido', 'hospitalizado'] as $efectoCaso) {
+                    if (array_key_exists($efectoCaso, $reglaCampos) && $reglaCampos[$efectoCaso] !== true) {
+                        throw new RuntimeException("Manifiesto inválido: {$cie10} / {$donde}.{$efectoCaso} solo admite true.");
+                    }
                 }
                 if (array_key_exists('clasificar', $reglaCampos)
                     && (!is_string($reglaCampos['clasificar']) || !array_key_exists($reglaCampos['clasificar'], CATALOGO_CLASIFICACION))) {
@@ -1722,9 +1751,9 @@ function insertarCampo(PDO $pdo, int $seccionId, string $cie10, array $campo, in
     // trata "sin config" igual que "config sin decimales".
     // "minimo" (Z21, 2026-09-13) va en el mismo config: numero.php lo pinta
     // como min= y validarCamposDinamicos() lo exige.
-    if ($tipo === 'NUMERO' && (array_key_exists('decimales', $campo) || array_key_exists('minimo', $campo))) {
+    if ($tipo === 'NUMERO' && (array_key_exists('decimales', $campo) || array_key_exists('minimo', $campo) || array_key_exists('maximo', $campo))) {
         $config = json_encode(
-            array_intersect_key($campo, ['decimales' => true, 'minimo' => true]),
+            array_intersect_key($campo, ['decimales' => true, 'minimo' => true, 'maximo' => true]),
             JSON_UNESCAPED_UNICODE
         );
     }

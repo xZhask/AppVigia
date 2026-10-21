@@ -217,6 +217,31 @@ $router->get('/reportes/busqueda-activa-vih/exportar', function () {
 });
 
 // Ficha de notificación de muerte fetal y neonatal (pág. 28 del PDF, P96): listado semanal y semana sin casos
+// Formatos del Área de Epidemiología PNP (2026-10-21).
+$router->get('/reportes/registro-individual', function () {
+    (new ReportesController())->registroIndividual(false);
+});
+
+$router->get('/reportes/registro-individual/exportar', function () {
+    (new ReportesController())->exportarRegistroIndividual(false);
+});
+
+$router->get('/reportes/registro-individual-vih', function () {
+    (new ReportesController())->registroIndividual(true);
+});
+
+$router->get('/reportes/registro-individual-vih/exportar', function () {
+    (new ReportesController())->exportarRegistroIndividual(true);
+});
+
+$router->get('/reportes/febriles', function () {
+    (new ReportesController())->febriles();
+});
+
+$router->get('/reportes/febriles/exportar', function () {
+    (new ReportesController())->exportarFebriles();
+});
+
 $router->get('/reportes/muerte-fetal-neonatal', function () {
     (new ReportesController())->muerteFetalNeonatal();
 });

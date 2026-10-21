@@ -22,6 +22,7 @@ use App\Models\CasoValor;
 use App\Models\CasoVacuna;
 use App\Models\CasoViaje;
 use App\Models\CatalogoItem;
+use App\Models\Cie10Vigilancia;
 use App\Models\Enfermedad;
 use App\Models\Establecimiento;
 use App\Models\GradoPnp;
@@ -264,6 +265,51 @@ class CasosController extends Controller
             }
         }
 
+        // Registros PNP (2026-10-21): la ventana "Cambiar enfermedad" abre el
+        // registro de otras enfermedades con ?cie10= ya puesto en su
+        // diagnóstico. Un código del listado PNP que no es del catálogo (A15,
+        // una categoría) queda escrito para elegir el subcódigo de la lista.
+        $campoCie10DxNuevo = $this->campoCie10Dx($enfermedad);
+        $cie10Pedido = is_string($_GET['cie10'] ?? null) ? strtoupper(trim($_GET['cie10'])) : '';
+        if ($campoCie10DxNuevo && preg_match('/^[A-Z][0-9A-Z.]{1,9}$/', $cie10Pedido)) {
+            $valoresCamposIniciales[(int) $campoCie10DxNuevo['id']] = codigoCie10DelCatalogo($cie10Pedido) ?? $cie10Pedido;
+        }
+
+        // "Pasar a ficha MINSA" (2026-10-21): ?origen=<registro> abre la
+        // ficha con la persona, el establecimiento y la fecha del registro.
+        $casoOrigen = ($enfermedad['modalidad'] ?? 'FICHA') === 'FICHA' ? $this->casoOrigenValido($_GET['origen'] ?? '') : null;
+        $distritoInicial = null;
+        $datosPnpVista = $this->datosPnp($enfermedad);
+        if ($casoOrigen) {
+            foreach (self::DATOS_PERSONA_DESDE_ORIGEN as $columna) {
+                if (($casoOrigen[$columna] ?? null) !== null) {
+                    $valoresFijosIniciales[$columna] = (string) $casoOrigen[$columna];
+                }
+            }
+            $valoresFijosIniciales['establecimiento_id'] = (string) $casoOrigen['establecimiento_id'];
+            $valoresFijosIniciales['fecha_notif'] = (string) $casoOrigen['fecha_notif'];
+            $semana = semanaEpidemiologica((string) $casoOrigen['fecha_notif']);
+            $distritoInicial = $casoOrigen['distrito_id'] ?: null;
+            if (in_array($casoOrigen['condicion'] ?? 'PARTICULAR', condicionesPacientePermitidas($enfermedad), true)) {
+                $datosPnpVista = $this->datosPnpEdicion($casoOrigen);
+            }
+            // La opción de la ficha que nombra el mismo código ("Dengue sin
+            // signos de alarma (CIE-10: A97.0)" en A97, "Sarampión (CIE-10:
+            // B05)" en B05) queda elegida.
+            if (!empty($casoOrigen['cie10_dx'])) {
+                foreach (CampoDef::porEnfermedad((int) $enfermedad['id']) as $campoId => $campoFicha) {
+                    if ($campoFicha['tipo'] !== 'SELECT' || empty($campoFicha['catalogo_id']) || isset($valoresCamposIniciales[(int) $campoId])) {
+                        continue;
+                    }
+                    foreach (CatalogoItem::porCatalogo((int) $campoFicha['catalogo_id']) as $opcion) {
+                        if (str_contains((string) $opcion['etiqueta'], '(CIE-10: ' . $casoOrigen['cie10_dx'] . ')')) {
+                            $valoresCamposIniciales[(int) $campoId] = (string) $opcion['valor'];
+                        }
+                    }
+                }
+            }
+        }
+
         $this->vista('nueva/index', array_merge([
             'tituloVista'   => 'Nueva ficha de notificación',
             'rutaActual'    => 'casos/nuevo',
@@ -294,8 +340,21 @@ class CasosController extends Controller
             'erroresEvolucion' => [],
             'erroresExamen'  => [],
             'valoresSujetoPorRol' => [],
-        ], $this->datosVinculoCasoVista($enfermedad, $vinculoSeleccionado, null), $this->datosEstablecimiento(), $this->datosPnp($enfermedad), $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo(null)));
+            'casoOrigen'    => $casoOrigen,
+            'abrirSugerenciasCie10' => $campoCie10DxNuevo && $cie10Pedido !== '' && codigoCie10DelCatalogo($cie10Pedido) === null,
+        ], $this->datosVinculoCasoVista($enfermedad, $vinculoSeleccionado, null), $this->datosEstablecimiento(), $datosPnpVista, $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoInicial)));
     }
+
+    /**
+     * Columnas de la persona que la ficha MINSA copia del registro PNP desde
+     * el que se abre (las mismas claves que valoresFijosPorDefecto()). El
+     * distrito y los datos PNP van aparte.
+     */
+    private const DATOS_PERSONA_DESDE_ORIGEN = [
+        'tipo_doc', 'num_doc', 'apellido_paterno', 'apellido_materno', 'nombres', 'sexo', 'fecha_nac',
+        'celular', 'nacionalidad', 'direccion', 'localidad', 'n_historia_clinica', 'ocupacion',
+        'lugar_contagio_distrito_id', 'lugar_contagio_localidad',
+    ];
 
     public function crear(): void
     {
@@ -532,6 +591,7 @@ class CasosController extends Controller
         // La fecha de nacimiento del núcleo va para las reglas
         // "comparar_fechas"/"maximo_dias_entre" (P96).
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
+        $erroresCampos = $this->errorCie10ConFicha($enfermedad, $valoresCampos, $erroresCampos);
         if ($fechaInicioSintomasEsDerivada) {
             $fechaInicioSintomasIso = $this->fechaInicioSintomasCalculada($enfermedad, $valoresCampos);
         }
@@ -542,6 +602,10 @@ class CasosController extends Controller
         $clasificacionCalculada = $this->clasificacionCalculada($enfermedad, $valoresCampos);
         // reglas_campos "fallecido" (A50, 2026-09-14): sale del estado vital.
         $fallecidoCalculado = $this->fallecidoCalculado($enfermedad, $valoresCampos);
+        $hospitalizadoCalculado = $this->fallecidoCalculado($enfermedad, $valoresCampos, 'hospitalizado');
+        // "Pasar a ficha MINSA" (2026-10-21): solo una ficha MINSA apunta a su registro.
+        $casoOrigen = ($enfermedad['modalidad'] ?? 'FICHA') === 'FICHA' ? $this->casoOrigenValido($_POST['caso_origen_id'] ?? '') : null;
+        $casoOrigenId = $casoOrigen ? (int) $casoOrigen['id'] : null;
         if ($clasificacionCalculada !== null) {
             $clasificacion = $clasificacionCalculada;
             unset($erroresFijos['clasificacion']);
@@ -599,6 +663,7 @@ class CasosController extends Controller
                 'erroresEvolucion' => $erroresEvolucion,
                 'erroresExamen'  => $erroresExamen,
                 'valoresSujetoPorRol' => $this->valoresSujetoPorRolDesdePost($enfermedad),
+                'casoOrigen'    => $casoOrigen,
             ], $this->datosVinculoCasoVista(
                 $enfermedad,
                 ((int) ($_POST['caso_vinculado_id'] ?? 0)) ?: null,
@@ -662,7 +727,10 @@ class CasosController extends Controller
                 'semana_epi'            => $semana['semana'],
                 'fecha_inicio_sintomas' => $fechaInicioSintomasIso,
                 'clasificacion'         => $clasificacion,
-            ], $nucleo['caso'], $fallecidoCalculado !== null ? ['fallecido' => $fallecidoCalculado] : []));
+            ], $nucleo['caso'], $fallecidoCalculado !== null ? ['fallecido' => $fallecidoCalculado] : [],
+               $hospitalizadoCalculado !== null ? ['hospitalizado' => $hospitalizadoCalculado] : [],
+               $this->cie10DxDesdeCampos($enfermedad, $valoresCampos),
+               $casoOrigenId !== null ? ['caso_origen_id' => $casoOrigenId] : []));
 
             CasoValor::guardarTodos($casoId, $paraGuardar);
             CasoContacto::reemplazarTodos($casoId, $filasContactos);
@@ -727,6 +795,28 @@ class CasosController extends Controller
             exit;
         }
 
+        $textoRegistrada = Enfermedad::esRegistro($enfermedad) ? 'Registro guardado' : 'Ficha registrada';
+
+        // Registros PNP (2026-10-21): un registro cuyo diagnóstico tiene ficha
+        // MINSA (un febril con dengue) se abre al guardar, aunque se haya
+        // pedido "agregar otra": ahí está el botón "Pasar a ficha MINSA".
+        $cie10DxGuardado = $this->cie10DxDesdeCampos($enfermedad, $valoresCampos)['cie10_dx'] ?? null;
+        $fichaDelDx = $cie10DxGuardado ? Cie10Vigilancia::fichaQueCubre($cie10DxGuardado) : null;
+        if ($fichaDelDx) {
+            Flash::set(sprintf('Registro guardado: F-%05d. ', $casoId) . 'El diagnóstico ' . $cie10DxGuardado . ' tiene ficha MINSA («'
+                . ($fichaDelDx['nombre_corto'] ?: $fichaDelDx['nombre']) . '»): llénala con «Pasar a ficha MINSA».' . $sufijoSinCasos);
+            header('Location: /casos/' . $casoId);
+            exit;
+        }
+
+        // "Pasar a ficha MINSA" (2026-10-21): de vuelta al registro de origen
+        // no; la ficha recién registrada.
+        if ($casoOrigenId !== null) {
+            Flash::set('Ficha registrada: ' . sprintf('F-%05d', $casoId) . sprintf(' (desde el registro F-%05d).', $casoOrigenId) . $sufijoSinCasos);
+            header('Location: /casos/' . $casoId);
+            exit;
+        }
+
         // nucleo_ajustes.registrar_y_agregar_otra (P96, 2026-09-14): la hoja
         // es un listado semanal y las defunciones se cargan una tras otra.
         // "Registrar y agregar otra" abre la siguiente ficha con el mismo
@@ -735,7 +825,7 @@ class CasosController extends Controller
         // registrada. Sin el ajuste, todo sigue igual.
         if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra') === true) {
             if (($_POST['despues_de_registrar'] ?? '') === 'agregar_otra') {
-                Flash::set(sprintf('Ficha registrada: F-%05d (SE %d · %d). Registra la siguiente: se mantienen el establecimiento y la fecha de notificación.', $casoId, $semana['semana'], $semana['anio']) . $sufijoSinCasos);
+                Flash::set(sprintf('%s: F-%05d (SE %d · %d). Registra la siguiente: se mantienen el establecimiento y la fecha de notificación.', $textoRegistrada, $casoId, $semana['semana'], $semana['anio']) . $sufijoSinCasos);
                 header('Location: /casos/nuevo?' . http_build_query(array_merge(
                     ['enfermedad_id' => $enfermedadId],
                     $puedeElegirEstablecimiento ? ['establecimiento_id' => (int) $establecimiento['id']] : [],
@@ -743,12 +833,12 @@ class CasosController extends Controller
                 )));
                 exit;
             }
-            Flash::set('Ficha registrada: ' . sprintf('F-%05d', $casoId) . $sufijoSinCasos);
+            Flash::set($textoRegistrada . ': ' . sprintf('F-%05d', $casoId) . $sufijoSinCasos);
             header('Location: /casos/' . $casoId);
             exit;
         }
 
-        Flash::set('Ficha registrada: ' . sprintf('F-%05d', $casoId) . $sufijoSinCasos);
+        Flash::set($textoRegistrada . ': ' . sprintf('F-%05d', $casoId) . $sufijoSinCasos);
         header('Location: /casos/nuevo?enfermedad_id=' . $enfermedadId);
         exit;
     }
@@ -869,6 +959,7 @@ class CasosController extends Controller
             'avisoSinCasos' => $caso['anulado'] ? null : $this->avisoSemanaSinCasos((int) $caso['enfermedad_id'], (int) $caso['establecimiento_id'], (int) $caso['anio_epi'], (int) $caso['semana_epi']),
             // Registrada después de que el establecimiento cerró esa SE (2026-10-17).
             'cierreAnterior' => $caso['anulado'] ? null : \App\Models\NotificacionSemanal::fichaEsTardia($caso),
+            'registroPnp'   => $this->datosRegistroPnpVer($caso),
             'contactos'   => CasoContacto::porCaso((int) $caso['id']),
             'viajes'      => CasoViaje::porCaso((int) $caso['id']),
             'vacunas'     => CasoVacuna::porCaso((int) $caso['id']),
@@ -1213,6 +1304,7 @@ class CasosController extends Controller
             $erroresFijos['condicion'] = $datosPnp['error'];
         }
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
+        $erroresCampos = $this->errorCie10ConFicha($enfermedad, $valoresCampos, $erroresCampos);
         if ($fechaInicioSintomasEsDerivada) {
             $fechaInicioSintomasIso = $this->fechaInicioSintomasCalculada($enfermedad, $valoresCampos);
         }
@@ -1250,7 +1342,7 @@ class CasosController extends Controller
         // que duplicaban los campos propios de cada ficha (Hospitalizado,
         // Fallecido). Se conservan los guardados; fallecido lo recalculan las
         // fichas que declaran la regla.
-        $hospitalizado = (int) $caso['hospitalizado'];
+        $hospitalizado = $this->fallecidoCalculado($enfermedad, $valoresCampos, 'hospitalizado') ?? (int) $caso['hospitalizado'];
         $fallecido = (int) $caso['fallecido'];
         // reglas_campos "fallecido" (A50): se recalcula en cada edición.
         $fallecido = $this->fallecidoCalculado($enfermedad, $valoresCampos) ?? $fallecido;
@@ -1356,7 +1448,7 @@ class CasosController extends Controller
                 // vinculo_caso (cotejo Z21): revalidado arriba; se vuelve a
                 // escribir en cada guardado, así desvincular también persiste.
                 'caso_vinculado_id'     => $casoVinculadoId,
-            ], $nucleo['caso']));
+            ], $nucleo['caso'], $this->cie10DxDesdeCampos($enfermedad, $valoresCampos)));
 
             CasoValor::eliminarPorCaso((int) $caso['id']);
             CasoValor::guardarTodos((int) $caso['id'], $paraGuardar);
@@ -1792,11 +1884,16 @@ class CasosController extends Controller
                 case 'NUMERO':
                     // "minimo" (Z21, 2026-09-13): piso declarado en el
                     // manifiesto (conteos que no pueden ser negativos).
-                    $minimoNumero = (json_decode((string) ($campo['config'] ?? ''), true) ?: [])['minimo'] ?? null;
+                    // "maximo" (febriles, 2026-10-21): techo.
+                    $configNumero = json_decode((string) ($campo['config'] ?? ''), true) ?: [];
+                    $minimoNumero = $configNumero['minimo'] ?? null;
+                    $maximoNumero = $configNumero['maximo'] ?? null;
                     if (!is_numeric($valor)) {
                         $erroresCampos[$campoId] = 'Ingresa un número válido.';
                     } elseif ($minimoNumero !== null && (float) $valor < (float) $minimoNumero) {
                         $erroresCampos[$campoId] = 'No puede ser menor que ' . $minimoNumero . '.';
+                    } elseif ($maximoNumero !== null && (float) $valor > (float) $maximoNumero) {
+                        $erroresCampos[$campoId] = 'No puede ser mayor que ' . $maximoNumero . '.';
                     } else {
                         $paraGuardar[$campoId] = $valor;
                     }
@@ -1976,9 +2073,10 @@ class CasosController extends Controller
     /**
      * reglas_campos "fallecido" (A50, 2026-09-14): caso.fallecido según los
      * valores ya validados (fallecidoDerivado() en ayudantes.php). null si la
-     * ficha no lo calcula.
+     * ficha no lo calcula. $efecto 'hospitalizado' (registros PNP,
+     * 2026-10-21): caso.hospitalizado.
      */
-    private function fallecidoCalculado(array $enfermedad, array $valoresCampos): ?int
+    private function fallecidoCalculado(array $enfermedad, array $valoresCampos, string $efecto = 'fallecido'): ?int
     {
         if (!jsonDeEnfermedad($enfermedad, 'reglas_campos')) {
             return null;
@@ -1988,7 +2086,91 @@ class CasosController extends Controller
             $idPorClave[$campo['clave']] = (int) $campoId;
         }
 
-        return fallecidoDerivado($enfermedad, fn(string $clave) => $valoresCampos[$idPorClave[$clave] ?? 0] ?? '');
+        return fallecidoDerivado($enfermedad, fn(string $clave) => $valoresCampos[$idPorClave[$clave] ?? 0] ?? '', $efecto);
+    }
+
+    /**
+     * Enlaces entre un registro PNP y su ficha MINSA para "ver" (2026-10-21):
+     * la ficha abierta desde el registro, o la ficha MINSA a la que se puede
+     * pasar (su diagnóstico la tiene y todavía no se llenó); en una ficha
+     * MINSA, el registro del que viene. null si no hay nada que mostrar.
+     *
+     * @return array{ficha_hecha: ?array, ficha_pendiente: ?array, origen: ?array}|null
+     */
+    private function datosRegistroPnpVer(array $caso): ?array
+    {
+        $origen = !empty($caso['caso_origen_id']) ? Caso::conDetalle((int) $caso['caso_origen_id']) : null;
+        $esRegistro = ($caso['enfermedad_modalidad'] ?? 'FICHA') === 'REGISTRO';
+        $fichaHecha = $esRegistro ? Caso::fichaDesdeRegistro((int) $caso['id']) : null;
+        $fichaPendiente = ($esRegistro && !$fichaHecha && !$caso['anulado'] && !empty($caso['cie10_dx']))
+            ? Cie10Vigilancia::fichaQueCubre((string) $caso['cie10_dx']) : null;
+        if (!$origen && !$fichaHecha && !$fichaPendiente) {
+            return null;
+        }
+
+        return [
+            'ficha_hecha'     => $fichaHecha,
+            'ficha_pendiente' => $fichaPendiente && Auth::tieneRol(...self::ROLES_REGISTRO) ? $fichaPendiente : null,
+            'origen'          => $origen && $this->puedeVerCaso($origen) ? $origen : null,
+        ];
+    }
+
+    /**
+     * caso.cie10_dx (registros PNP, 2026-10-21): el diagnóstico propio de un
+     * registro, del campo que declara nucleo_ajustes.cie10_dx_desde. [] en las
+     * fichas que no lo declaran (no escriben la columna).
+     */
+    private function cie10DxDesdeCampos(array $enfermedad, array $valoresCampos): array
+    {
+        $campo = $this->campoCie10Dx($enfermedad);
+        if (!$campo) {
+            return [];
+        }
+        $valor = (string) ($valoresCampos[(int) $campo['id']] ?? '');
+
+        return ['cie10_dx' => $valor !== '' ? $valor : null];
+    }
+
+    private function campoCie10Dx(array $enfermedad): ?array
+    {
+        $clave = nucleoAjuste($enfermedad, 'cie10_dx_desde');
+
+        return is_string($clave) ? CampoDef::porClave((int) $enfermedad['id'], $clave) : null;
+    }
+
+    /**
+     * El registro de otras enfermedades (REG-PNP) no admite un diagnóstico
+     * que tiene ficha MINSA: ese caso se notifica en su ficha. El registro de
+     * febriles sí lo guarda (el registro diario va completo) y avisa al
+     * guardar.
+     */
+    private function errorCie10ConFicha(array $enfermedad, array $valoresCampos, array $erroresCampos): array
+    {
+        $campo = $this->campoCie10Dx($enfermedad);
+        if (!$campo || ($enfermedad['cie10'] ?? '') !== Cie10Vigilancia::REGISTRO_OTRAS || isset($erroresCampos[(int) $campo['id']])) {
+            return $erroresCampos;
+        }
+        $ficha = Cie10Vigilancia::fichaQueCubre((string) ($valoresCampos[(int) $campo['id']] ?? ''));
+        if ($ficha) {
+            $erroresCampos[(int) $campo['id']] = 'Este diagnóstico tiene ficha MINSA («' . ($ficha['nombre_corto'] ?: $ficha['nombre']) . '»): notifícalo en esa ficha.';
+        }
+
+        return $erroresCampos;
+    }
+
+    /**
+     * Registro desde el que se abre una ficha MINSA ("Pasar a ficha MINSA",
+     * 2026-10-21), revalidado: existe, no está anulado, es un registro PNP
+     * que el usuario puede ver y todavía no pasó a otra ficha.
+     */
+    private function casoOrigenValido(mixed $id): ?array
+    {
+        $origen = ctype_digit((string) $id) ? Caso::conDetalle((int) $id) : null;
+        if (!$origen || $origen['anulado'] || ($origen['enfermedad_modalidad'] ?? 'FICHA') !== 'REGISTRO' || !$this->puedeVerCaso($origen)) {
+            return null;
+        }
+
+        return Caso::fichaDesdeRegistro((int) $origen['id']) ? null : $origen;
     }
 
     /**
@@ -4088,10 +4270,13 @@ class CasosController extends Controller
             $escrito = trim((string) $_GET['codigo']);
             $codigo = codigoCie10DelCatalogo($escrito);
             $fila = $codigo !== null ? \App\Models\Cie10::buscarPorCodigo($codigo) : null;
+            // Registros PNP (2026-10-21): la ficha MINSA que cubre el código.
+            $ficha = $codigo !== null ? Cie10Vigilancia::fichaQueCubre($codigo) : null;
             echo json_encode([
                 'codigo'      => $codigo,
                 'descripcion' => $fila['descripcion'] ?? '',
                 'error'       => $codigo === null ? errorCodigoCie10($escrito) : errorSexoCie10($codigo, $sexo),
+                'ficha'       => $ficha ? ['id' => (int) $ficha['id'], 'nombre' => $ficha['nombre_corto'] ?: $ficha['nombre']] : null,
             ], JSON_UNESCAPED_UNICODE);
             return;
         }

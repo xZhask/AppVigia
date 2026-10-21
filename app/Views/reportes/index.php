@@ -2,6 +2,7 @@
 use App\Models\Consolidado;
 use App\Models\ListadoMuerteFetalNeonatal;
 use App\Models\RegistroBusquedaActivaVih;
+use App\Models\FormatoPnp;
 
 // Reportes (rediseño 2026-10-17): pestañas Consolidado | Formatos MINSA;
 // tabla cruzada filas × columnas con totales y vista Tabla | Gráfico.
@@ -43,7 +44,7 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
 
 <nav class="pestanas reporte-pestanas" aria-label="Tipo de reporte">
   <a class="pestana<?= $pestana === 'consolidado' ? ' on' : '' ?>" href="<?= e($url('/reportes')) ?>">Consolidado</a>
-  <a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos MINSA<span class="cnt mono">2</span></a>
+  <a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono">5</span></a>
 </nav>
 
 <?php if ($pestana === 'formatos'): ?>
@@ -60,6 +61,25 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
       <p>Listado semanal de la ficha «Muerte fetal y neonatal», con la notificación de semana sin casos.</p>
       <a class="btn btn-primary" href="/reportes/muerte-fetal-neonatal">Abrir listado</a>
     </div>
+    <?php // Formatos del Área de Epidemiología PNP (2026-10-21). ?>
+    <div class="card formato">
+      <span class="codigo-formato mono">PNP · Registro semanal</span>
+      <h3><?= e(FormatoPnp::INDIVIDUAL) ?></h3>
+      <p>Fichas MINSA y registros de otras enfermedades de la semana, con el formato del Área de Epidemiología PNP.</p>
+      <a class="btn btn-primary" href="/reportes/registro-individual">Abrir registro</a>
+    </div>
+    <div class="card formato">
+      <span class="codigo-formato mono">PNP · VIH/SIDA</span>
+      <h3><?= e(FormatoPnp::VIH) ?></h3>
+      <p>El mismo registro para VIH/SIDA y gestante con VIH / niño expuesto, con las iniciales del paciente.</p>
+      <a class="btn btn-primary" href="/reportes/registro-individual-vih">Abrir registro</a>
+    </div>
+    <div class="card formato">
+      <span class="codigo-formato mono">PNP · Registro diario</span>
+      <h3><?= e(FormatoPnp::FEBRILES) ?></h3>
+      <p>Pacientes febriles atendidos, por día o por semana.</p>
+      <a class="btn btn-primary" href="/reportes/febriles">Abrir registro</a>
+    </div>
   </div>
 <?php else: ?>
   <form method="get" action="/reportes" class="card reporte-filtros" id="filtrosReporte">
@@ -70,7 +90,7 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
       <div class="filtro-caja"><select id="rfEnf" name="enfermedad_id" data-auto>
         <option value="">Todas las enfermedades</option>
         <?php foreach ($enfermedades as $enf): ?>
-          <option value="<?= (int) $enf['id'] ?>" <?= seleccionado((string) ($f['enfermedad_id'] ?? ''), $enf['id']) ?>><?= e($enf['nombre']) ?> · <?= e($enf['cie10']) ?></option>
+          <option value="<?= (int) $enf['id'] ?>" <?= seleccionado((string) ($f['enfermedad_id'] ?? ''), $enf['id']) ?>><?= e($enf['nombre']) ?><?= ($enf['modalidad'] ?? 'FICHA') === 'FICHA' ? ' · ' . e($enf['cie10']) : '' ?></option>
         <?php endforeach; ?>
       </select></div>
     </div>

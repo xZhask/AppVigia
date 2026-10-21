@@ -114,6 +114,27 @@ $accionEtiquetas = [
   </div>
 <?php endif; ?>
 
+<?php if (!empty($registroPnp)): // registro PNP <-> ficha MINSA (2026-10-21) ?>
+  <?php if ($registroPnp['ficha_hecha']): ?>
+    <div class="dupe" style="margin-bottom:18px">
+      <span class="di"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
+      <div class="body"><b>Notificado en ficha MINSA.</b> Este registro se pasó a la ficha <a href="/casos/<?= (int) $registroPnp['ficha_hecha']['id'] ?>"><?= e($registroPnp['ficha_hecha']['codigo']) ?></a> (<?= e($registroPnp['ficha_hecha']['nombre_corto'] ?: $registroPnp['ficha_hecha']['nombre']) ?>).</div>
+    </div>
+  <?php elseif ($registroPnp['ficha_pendiente']): ?>
+    <div class="dupe" style="margin-bottom:18px">
+      <span class="di"><svg width="17" height="17" viewBox="0 0 17 17"><path d="M8.5 1.5 16 15H1L8.5 1.5Z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M8.5 6.5v3.5M8.5 12.3v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+      <div class="body"><b>El diagnóstico <?= e($caso['cie10_dx']) ?> tiene ficha MINSA</b> (<?= e($registroPnp['ficha_pendiente']['nombre_corto'] ?: $registroPnp['ficha_pendiente']['nombre']) ?>) y todavía no se llenó.
+        <a class="btn btn-primary btn-sm" style="margin-left:8px;text-decoration:none;color:#fff" href="/casos/nuevo?<?= e(http_build_query(['enfermedad_id' => (int) $registroPnp['ficha_pendiente']['id'], 'origen' => (int) $caso['id']])) ?>">Pasar a ficha MINSA</a></div>
+    </div>
+  <?php endif; ?>
+  <?php if ($registroPnp['origen']): ?>
+    <div class="dupe" style="margin-bottom:18px">
+      <span class="di"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
+      <div class="body"><b>Desde el registro <a href="/casos/<?= (int) $registroPnp['origen']['id'] ?>"><?= e($registroPnp['origen']['codigo']) ?></a></b> (<?= e($registroPnp['origen']['enfermedad_nombre']) ?><?= !empty($registroPnp['origen']['cie10_dx']) ? ' · ' . e($registroPnp['origen']['cie10_dx']) : '' ?>).</div>
+    </div>
+  <?php endif; ?>
+<?php endif; ?>
+
 <div class="grid form-grid">
   <div>
     <!-- Notificación -->
@@ -125,7 +146,7 @@ $accionEtiquetas = [
           <div class="field"><label class="fl">Red de salud</label><div class="control" style="background:var(--paper)"><?= e($caso['red_nombre'] ?? '—') ?></div></div>
           <?php // nucleo_ajustes.fecha_notif_en (2026-10-16): la fecha se lee en su sitio de la cadena del PDF. ?>
           <?php if (!claveFechaNotifEn($enfermedadVer ?? [])): ?>
-          <div class="field"><label class="fl">Fecha de notificación</label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_notif'])) ?></div></div>
+          <div class="field"><label class="fl"><?= e(etiquetaNucleo($enfermedadVer ?? [], 'fecha_notif', 'Fecha de notificación')) ?></label><div class="control mono" style="background:var(--paper)"><?= e(fechaIsoADmy($caso['fecha_notif'])) ?></div></div>
           <?php endif; ?>
           <div class="field"><label class="fl">Semana epidemiológica</label><div class="control mono" style="background:var(--paper)">SE <?= (int) $caso['semana_epi'] ?> · <?= (int) $caso['anio_epi'] ?></div></div>
           <div class="field"><label class="fl">Registrado por</label><div class="control" style="background:var(--paper)"><?= e($caso['usuario_nombre']) ?></div></div>

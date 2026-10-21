@@ -15953,6 +15953,264 @@
           ]
         }
       ]
+    },
+    "REG-PNP": {
+      "enfermedad": "Otras enfermedades sujetas a vigilancia (registro PNP)",
+      "_nota_general": "Registro ligero (2026-10-21) del \"REGISTRO SEMANAL DE NOTIFICACION EPIDEMIOLOGICA INDIVIDUAL\" del Área de Epidemiología PNP (FICHAS NOTIFICACION EPIDEMIOLOGIA 2026.xlsx, hoja INDIV_TITULAR y FAMILIAR), para las enfermedades del listado de vigilancia que no tienen ficha MINSA (TBC, malaria, leptospirosis, ofidismo...). Un diagnóstico con ficha MINSA no se acepta: se notifica en su ficha. Las columnas del formato que ya son del núcleo (situación PNP, CIP, DNI, edad, dirección, unidad de origen, fechas de inicio y notificación) no se repiten.",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_contacto_directo": false,
+        "caso_viaje": false,
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
+      },
+      "nucleo_omitidos": [
+        "celular",
+        "nacionalidad",
+        "referencia_localizar",
+        "etnia",
+        "pueblo_etnico",
+        "ocupacion",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "captacion",
+        "clasificacion",
+        "investigador"
+      ],
+      "nucleo_ajustes": {
+        "_nota": "El diagnóstico (CIE-10) es del caso, no de la enfermedad: va a caso.cie10_dx.",
+        "cie10_dx_desde": "reg_cie10"
+      },
+      "reglas_campos": [
+        {
+          "_nota": "Tipo de Dx del formato: (leyenda de la hoja) P: probable, C: confirmado, D: descartado.",
+          "si": {
+            "clave": "reg_tipo_dx",
+            "valores": [
+              "PROBABLE"
+            ]
+          },
+          "clasificar": "PROBABLE"
+        },
+        {
+          "si": {
+            "clave": "reg_tipo_dx",
+            "valores": [
+              "CONFIRMADO"
+            ]
+          },
+          "clasificar": "CONFIRMADO"
+        },
+        {
+          "si": {
+            "clave": "reg_tipo_dx",
+            "valores": [
+              "DESCARTADO"
+            ]
+          },
+          "clasificar": "DESCARTADO"
+        },
+        {
+          "_nota": "Situación del paciente: caso.hospitalizado / caso.fallecido.",
+          "si": {
+            "clave": "reg_situacion",
+            "valores": [
+              "HOSPITALIZADO"
+            ]
+          },
+          "hospitalizado": true
+        },
+        {
+          "si": {
+            "clave": "reg_situacion",
+            "valores": [
+              "FALLECIDO"
+            ]
+          },
+          "fallecido": true
+        }
+      ],
+      "secciones": [
+        {
+          "nombre": "Diagnóstico",
+          "orden": 1,
+          "campos": [
+            {
+              "clave": "reg_cie10",
+              "etiqueta": "Diagnóstico CIE-10",
+              "tipo": "TEXTO",
+              "formato": "cie10",
+              "orden": 1,
+              "obligatorio": true
+            },
+            {
+              "clave": "reg_tipo_dx",
+              "etiqueta": "Tipo de diagnóstico",
+              "tipo": "SELECT",
+              "orden": 2,
+              "obligatorio": true,
+              "opciones": [
+                "Probable",
+                "Confirmado",
+                "Descartado"
+              ]
+            },
+            {
+              "clave": "reg_protegido",
+              "etiqueta": "Protegido (vacunado)",
+              "tipo": "SELECT",
+              "orden": 3,
+              "opciones": [
+                "Sí",
+                "No",
+                "Ignorado"
+              ],
+              "_nota": "Columna \"Protegido SI / NO / IG\" del formato."
+            },
+            {
+              "clave": "reg_ficha_investigacion",
+              "etiqueta": "Ficha de investigación",
+              "tipo": "SELECT",
+              "orden": 4,
+              "opciones": [
+                "Sí",
+                "No"
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Vigilancia y lugar probable de infección",
+          "orden": 2,
+          "campos": [
+            {
+              "clave": "reg_tipo_vigilancia",
+              "etiqueta": "Tipo de vigilancia",
+              "tipo": "SELECT",
+              "orden": 1,
+              "opciones": [
+                "Vigilancia pasiva",
+                "Búsqueda activa"
+              ],
+              "_nota": "El lugar probable de infección (núcleo: caso.lugar_contagio_*) se pinta antes de este campo (secciones-clinicas.php)."
+            }
+          ]
+        },
+        {
+          "nombre": "Situación del paciente",
+          "orden": 3,
+          "campos": [
+            {
+              "clave": "reg_situacion",
+              "etiqueta": "Situación del paciente",
+              "tipo": "SELECT",
+              "orden": 1,
+              "obligatorio": true,
+              "opciones": [
+                "Ambulatorio",
+                "Hospitalizado",
+                "Fallecido"
+              ]
+            },
+            {
+              "clave": "reg_fecha_defuncion",
+              "etiqueta": "Fecha de defunción",
+              "tipo": "FECHA",
+              "orden": 2,
+              "depende_de": "reg_situacion",
+              "valor_activador": "FALLECIDO"
+            },
+            {
+              "clave": "reg_observaciones",
+              "etiqueta": "Observaciones",
+              "tipo": "TEXTAREA",
+              "orden": 3
+            }
+          ]
+        }
+      ]
+    },
+    "REG-FEB": {
+      "enfermedad": "Registro diario de febriles",
+      "_nota_general": "Registro ligero (2026-10-21) del \"FORMATO DE REGISTRO DIARIO PARA LA VIGILANCIA DE FEBRILES\" del Área de Epidemiología PNP (hoja FEBRILES). Una fila por paciente febril atendido. La fecha de la hoja es la fecha de atención (caso.fecha_notif, de la que sale la SE). Si el diagnóstico tiene ficha MINSA, se guarda igual y al guardar se ofrece pasarlo a esa ficha.",
+      "tablas_hijas": {
+        "caso_contacto": false,
+        "caso_contacto_directo": false,
+        "caso_viaje": false,
+        "caso_vacuna": false,
+        "caso_muestra": false,
+        "caso_lugar_infeccion": false,
+        "caso_evolucion": false,
+        "caso_examen_auxiliar": false
+      },
+      "nucleo_omitidos": [
+        "celular",
+        "nacionalidad",
+        "referencia_localizar",
+        "etnia",
+        "pueblo_etnico",
+        "ocupacion",
+        "nombre_tutor",
+        "celular_tutor",
+        "gestante",
+        "captacion",
+        "clasificacion",
+        "investigador",
+        "localidad",
+        "fecha_inicio_sintomas"
+      ],
+      "nucleo_incluidos": [
+        "n_historia_clinica"
+      ],
+      "nucleo_ajustes": {
+        "cie10_dx_desde": "feb_cie10",
+        "registrar_y_agregar_otra": true,
+        "etiquetas": {
+          "fecha_notif": "Fecha de atención"
+        }
+      },
+      "secciones": [
+        {
+          "nombre": "Atención",
+          "orden": 1,
+          "campos": [
+            {
+              "clave": "feb_servicio",
+              "etiqueta": "Servicio",
+              "tipo": "SELECT",
+              "orden": 1,
+              "obligatorio": true,
+              "opciones": [
+                "Consulta externa",
+                "Emergencia",
+                "Hospitalización"
+              ]
+            },
+            {
+              "clave": "feb_temperatura",
+              "etiqueta": "Temperatura (°C)",
+              "tipo": "NUMERO",
+              "decimales": true,
+              "minimo": 30,
+              "maximo": 45,
+              "orden": 2,
+              "obligatorio": true
+            },
+            {
+              "clave": "feb_cie10",
+              "etiqueta": "Diagnóstico CIE-10",
+              "tipo": "TEXTO",
+              "formato": "cie10",
+              "orden": 3,
+              "obligatorio": true
+            }
+          ]
+        }
+      ]
     }
   }
 }

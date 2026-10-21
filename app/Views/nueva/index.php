@@ -1,5 +1,7 @@
 <?php
 use App\Core\Csrf;
+use App\Models\Cie10Vigilancia;
+use App\Models\Enfermedad;
 
 require __DIR__ . '/../partials/campos-por-clave.php';
 
@@ -38,13 +40,25 @@ if ($puedeElegirEstablecimiento) {
 // barra superior al bajar.
 $nombreEnfermedad = $enfermedad['nombre_corto'] ?: $enfermedad['nombre'];
 $esInmediata = ($enfermedad['tipo_notif'] ?? '') === 'INMEDIATA';
+// Registros PNP (2026-10-21): formato del Área de Epidemiología PNP, no
+// ficha MINSA; su "CIE-10" (REG-PNP, REG-FEB) es solo la clave del manifiesto.
+$esRegistroPnp = Enfermedad::esRegistro($enfermedad);
+$etiquetaCie = $esRegistroPnp ? 'Registro PNP' : 'CIE-10 · ' . ($enfermedad['cie10'] ?? '—');
+$casoOrigen = $casoOrigen ?? null;
+$abrirSugerenciasCie10 = $abrirSugerenciasCie10 ?? false;
+$registroOtras = null;
+foreach ($enfermedades as $enf) {
+    if (($enf['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS && (int) $enf['tiene_definicion'] === 1) {
+        $registroOtras = $enf;
+    }
+}
 $tituloVista = 'Nueva ficha · ' . $nombreEnfermedad;
 $crumbDetalle = $nombreEnfermedad;
 ob_start(); ?>
 <div class="ctxbar" id="ctxBar" aria-hidden="true">
   <span class="ctxbar-franja"></span>
   <span class="ctxbar-nombre"><?= e($nombreEnfermedad) ?></span>
-  <span class="tag"><?= e($enfermedad['cie10'] ?? '—') ?></span>
+  <span class="tag"><?= e($esRegistroPnp ? 'Registro PNP' : ($enfermedad['cie10'] ?? '—')) ?></span>
   <span class="badge-notif <?= $esInmediata ? 'inmediata' : '' ?>"><i></i><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'])) ?></span>
   <span class="ctxbar-avance"><span class="barra-avance"><span data-avance-barra></span></span><span data-avance-texto></span></span>
   <button type="button" class="btn-enlace" data-abrir-enfermedad>Cambiar</button>
@@ -52,19 +66,21 @@ ob_start(); ?>
 <?php $topbarContexto = ob_get_clean();
 ?>
 
-<form method="post" action="/casos/nuevo">
+<form method="post" action="/casos/nuevo"<?= $esRegistroPnp ? ' data-registro-pnp="' . (($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS ? 'otras' : 'febriles') . '"' : '' ?><?= $abrirSugerenciasCie10 ? ' data-abrir-cie10' : '' ?>>
   <?= Csrf::campoOculto() ?>
   <script type="application/json" id="mapaCampos"><?= json_encode($mapaClaveNombreCampos, JSON_UNESCAPED_UNICODE) ?></script>
 
   <section class="ctx-head" id="ctxHead">
     <div class="ctx-main">
-      <div class="eyebrow ctx-eyebrow">Nueva ficha de notificación</div>
+      <div class="eyebrow ctx-eyebrow"><?= $esRegistroPnp ? 'Nuevo registro' : 'Nueva ficha de notificación' ?></div>
       <h1 class="ctx-title"><?= e($nombreEnfermedad) ?></h1>
       <div class="ctx-meta">
-        <span class="tag" id="cieTag">CIE-10 · <?= e($enfermedad['cie10'] ?? '—') ?></span>
+        <span class="tag" id="cieTag"><?= e($etiquetaCie) ?></span>
         <span class="badge-notif <?= $esInmediata ? 'inmediata' : '' ?>" id="tipoNotifTag"><i></i><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'], true)) ?></span>
       </div>
-      <p class="ctx-desc">El formulario sigue la ficha modelo MINSA de esta enfermedad.</p>
+      <p class="ctx-desc"><?= $esRegistroPnp
+        ? 'Formato del Área de Epidemiología de la Dirección de Salud Policial. Si el diagnóstico tiene ficha MINSA, se notifica en esa ficha.'
+        : 'El formulario sigue la ficha modelo MINSA de esta enfermedad.' ?></p>
     </div>
     <button type="button" class="btn btn-ghost ctx-cambiar" data-abrir-enfermedad>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg>
@@ -85,9 +101,19 @@ ob_start(); ?>
       </select>
   </section>
 
+  <?php if ($casoOrigen): ?>
+    <input type="hidden" name="caso_origen_id" value="<?= (int) $casoOrigen['id'] ?>">
+  <?php endif; ?>
   <div class="grid form-grid">
     <div>
       <div id="dupeSlot"></div>
+      <?php if ($casoOrigen): ?>
+        <div class="dupe" style="margin-bottom:16px">
+          <span class="di"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
+          <div class="body"><b>Desde el registro <a href="/casos/<?= (int) $casoOrigen['id'] ?>"><?= e($casoOrigen['codigo']) ?></a></b>
+            (<?= e($casoOrigen['enfermedad_nombre']) ?><?= !empty($casoOrigen['cie10_dx']) ? ' · ' . e($casoOrigen['cie10_dx']) : '' ?>). La persona, el establecimiento y la fecha vienen de ese registro; al guardar, la ficha queda enlazada a él.</div>
+        </div>
+      <?php endif; ?>
 
       <!-- 1. Notificación -->
       <div class="card section">
@@ -124,7 +150,7 @@ ob_start(); ?>
               <!-- A44 (pág. 42, cotejo 2026-08-18): el PDF pide "FECHA ENCUESTA", no
                    "Fecha de notificación" -- mismo campo núcleo (fecha_notif), solo
                    cambia la etiqueta para esta ficha. -->
-              <label class="fl"><?= (($enfermedad['cie10'] ?? null) === 'A44') ? 'Fecha de encuesta' : 'Fecha de notificación' ?> <span class="req">*</span></label>
+              <label class="fl"><?= e(etiquetaNucleo($enfermedad, 'fecha_notif', (($enfermedad['cie10'] ?? null) === 'A44') ? 'Fecha de encuesta' : 'Fecha de notificación')) ?> <span class="req">*</span></label>
               <div class="control mono <?= isset($erroresFijos['fecha_notif']) ? 'err' : '' ?>">
                 <input type="date" id="fechaNotif" name="fecha_notif" value="<?= e($valoresFijos['fecha_notif']) ?>" min="1900-01-01" max="<?= date('Y-m-d') ?>">
               </div>
@@ -685,12 +711,27 @@ if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra')): ?>
                     data-id="<?= (int) $enf['id'] ?>" data-nombre="<?= e($enf['nombre_corto'] ?: $enf['nombre']) ?>"
                     data-busqueda="<?= e(mb_strtolower(($enf['nombre_corto'] ?: $enf['nombre']) . ' ' . $enf['nombre'] . ' ' . ($enf['cie10'] ?? '') . ' ' . ($enf['palabras_clave'] ?? ''))) ?>"
                     <?= (int) $enf['tiene_definicion'] === 0 ? 'disabled' : '' ?>>
-              <span class="mono modal-cie"><?= e($enf['cie10'] ?? '') ?></span>
+              <span class="mono modal-cie"><?= e(Enfermedad::esRegistro($enf) ? 'PNP' : ($enf['cie10'] ?? '')) ?></span>
               <span><?= e($enf['nombre_corto'] ?: $enf['nombre']) ?></span>
               <?php if ($enf['tipo_notif'] === 'INMEDIATA'): ?><span class="modal-inm">Inmediata</span><?php endif; ?>
             </button>
           <?php endforeach; ?>
         <?php endforeach; ?>
+        <?php // Registros PNP (2026-10-21): los códigos del listado de
+        // vigilancia PNP sin ficha MINSA abren el registro de otras
+        // enfermedades con el diagnóstico ya puesto. ?>
+        <?php if ($registroOtras): ?>
+          <div class="modal-grupo">Otras enfermedades · Registro PNP</div>
+          <?php foreach (Cie10Vigilancia::sinFicha() as $vig): ?>
+            <button type="button" class="modal-item" data-id="<?= (int) $registroOtras['id'] ?>" data-nombre="<?= e($vig['descripcion']) ?>"
+                    data-url="/casos/nuevo?<?= e(http_build_query(['enfermedad_id' => (int) $registroOtras['id'], 'cie10' => $vig['codigo']])) ?>"
+                    data-busqueda="<?= e(mb_strtolower($vig['descripcion'] . ' ' . $vig['codigo'] . ' ' . str_replace(',', ' ', $vig['prefijos']))) ?>">
+              <span class="mono modal-cie"><?= e($vig['codigo']) ?></span>
+              <span><?= e($vig['descripcion']) ?></span>
+              <?php if ($vig['notificacion'] === 'INMEDIATA'): ?><span class="modal-inm">Inmediata</span><?php endif; ?>
+            </button>
+          <?php endforeach; ?>
+        <?php endif; ?>
         <div class="modal-vacio" hidden>Ninguna enfermedad coincide.</div>
       </div>
     </div>

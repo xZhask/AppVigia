@@ -4612,15 +4612,53 @@ document.addEventListener('DOMContentLoaded', function () {
     desc.classList.toggle('err', !!esError);
   }
 
+  // Registros PNP (2026-10-21): en el registro de otras enfermedades un
+  // diagnóstico con ficha MINSA no se guarda; el aviso lleva a esa ficha (por
+  // la ventana "Cambiar enfermedad", que pide confirmar si ya hay datos). En
+  // el de febriles solo avisa: al guardar se ofrece pasarlo a la ficha.
+  function avisoFicha(input, ficha) {
+    var formulario = input.closest('form[data-registro-pnp]');
+    var campo = input.closest('.field');
+    if (!formulario || !campo) return;
+    var aviso = campo.querySelector('[data-cie10-ficha]');
+    if (!ficha) { if (aviso) aviso.remove(); return; }
+    if (!aviso) {
+      aviso = document.createElement('div');
+      aviso.className = 'hint cie10-ficha';
+      aviso.setAttribute('data-cie10-ficha', '');
+      campo.appendChild(aviso);
+    }
+    aviso.textContent = '';
+    var texto = document.createElement('span');
+    var otras = formulario.getAttribute('data-registro-pnp') === 'otras';
+    texto.textContent = 'Este diagnóstico tiene ficha MINSA: ' + ficha.nombre + '. '
+      + (otras ? 'Se notifica en esa ficha.' : 'Al guardar podrás pasarlo a esa ficha.');
+    aviso.appendChild(texto);
+    var item = document.querySelector('#modalEnfermedad .modal-item[data-id="' + ficha.id + '"]:not([data-url])');
+    if (otras && item) {
+      var boton = document.createElement('button');
+      boton.type = 'button';
+      boton.className = 'btn-enlace';
+      boton.textContent = 'Ir a la ficha ' + ficha.nombre;
+      boton.addEventListener('click', function () {
+        var abrir = document.querySelector('[data-abrir-enfermedad]');
+        if (abrir) abrir.click();
+        item.click();
+      });
+      aviso.appendChild(boton);
+    }
+  }
+
   function cotejar(input) {
     var escrito = input.value.trim();
-    if (!escrito) { mostrarDescripcion(input, '', false); return; }
+    if (!escrito) { mostrarDescripcion(input, '', false); avisoFicha(input, null); return; }
     fetch('/cie10/buscar?codigo=' + encodeURIComponent(escrito) + '&sexo=' + sexoDelPaciente(), { headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (datos) {
         if (!datos || input.value.trim() !== escrito) return;
         if (datos.codigo && datos.codigo !== escrito) input.value = datos.codigo;
         mostrarDescripcion(input, datos.error || datos.descripcion || '', !!datos.error);
+        avisoFicha(input, datos.ficha || null);
       })
       .catch(function () {});
   }
@@ -4725,6 +4763,23 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   window.addEventListener('scroll', function () { if (lista && !lista.hidden && campoActivo) posicionar(); }, true);
   window.addEventListener('resize', function () { if (lista && !lista.hidden && campoActivo) posicionar(); });
+
+  // Registros PNP (2026-10-21): un código ya escrito al abrir (desde la
+  // ventana "Cambiar enfermedad") se coteja; si es una categoría del listado
+  // PNP (A15) se abren las sugerencias para elegir el subcódigo.
+  var formularioRegistro = document.querySelector('form[data-registro-pnp]');
+  if (formularioRegistro) {
+    formularioRegistro.querySelectorAll('input[data-cie10]').forEach(function (input) {
+      if (!input.value.trim()) return;
+      if (formularioRegistro.hasAttribute('data-abrir-cie10')) {
+        campoActivo = input;
+        input.focus();
+        consultar(input);
+      } else {
+        cotejar(input);
+      }
+    });
+  }
 });
 
 // ---------- Nueva ficha: encabezado de contexto (2026-10-16, revisión de UI) ----------
@@ -4833,14 +4888,20 @@ document.addEventListener('DOMContentLoaded', function () {
     if (abridor) abridor.focus();
   }
 
+  // Registros PNP (2026-10-21): un código del listado de vigilancia sin
+  // ficha MINSA trae su propia dirección (el registro con ?cie10=).
   function cambiar() {
+    if (destino.getAttribute('data-url')) {
+      window.location.href = destino.getAttribute('data-url');
+      return;
+    }
     selectEnfermedad.value = destino.getAttribute('data-id');
     selectEnfermedad.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   function elegir(item) {
     if (!item || item.disabled) return;
-    if (item.classList.contains('actual')) { cerrar(); return; }
+    if (item.classList.contains('actual') && !item.getAttribute('data-url')) { cerrar(); return; }
     destino = item;
     if (!hayDatos) { cambiar(); return; }
     modal.querySelector('[data-destino-enfermedad]').textContent = item.getAttribute('data-nombre');

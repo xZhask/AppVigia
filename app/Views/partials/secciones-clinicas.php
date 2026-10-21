@@ -732,6 +732,29 @@ $renderizarCampos = function (int $seccionId) use (&$opcionesPorCatalogo, $valor
                 </div>
                 </div><div class="fields" style="margin-bottom:16px"><?php
             }
+            // Registro PNP de otras enfermedades (2026-10-21): "Lugar probable
+            // de infección" del formato (Provincia/Distrito/Localidad), en las
+            // mismas columnas de `caso` que B57 y B55.
+            if (($campo['clave'] ?? '') === 'reg_tipo_vigilancia') {
+                ?></div><div style="margin-bottom:14px">
+                <div class="eyebrow" style="margin-bottom:10px">Lugar probable de infección</div>
+                <?php
+                extract(contextoUbigeo(($valoresFijos['lugar_contagio_distrito_id'] ?? '') ?: null));
+                $prefijo = 'regcontagio-ubigeo';
+                $nombreCampoDepartamento = 'lugar_contagio_departamento_id';
+                $nombreCampoProvincia = 'lugar_contagio_provincia_id';
+                $nombreCampoDistrito = 'lugar_contagio_distrito_id';
+                $distritoSeleccionado = $valoresFijos['lugar_contagio_distrito_id'] ?? '';
+                $distritoRequerido = false;
+                $errorDistrito = null;
+                require __DIR__ . '/selector-ubigeo.php';
+                ?>
+                <div class="field" style="margin-top:10px">
+                  <label class="fl">Localidad</label>
+                  <div class="control"><input type="text" name="lugar_contagio_localidad" value="<?= e($valoresFijos['lugar_contagio_localidad'] ?? '') ?>"></div>
+                </div>
+                </div><div class="fields" style="margin-bottom:16px"><?php
+            }
             // B55 (Leishmaniasis, PDF pág. 45): "Lugar de contagio"
             if (($campo['clave'] ?? '') === 'b55_tiempo_permanencia') {
                 ?></div><div style="margin-bottom:14px">

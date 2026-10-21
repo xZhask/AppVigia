@@ -51,7 +51,7 @@ Para que no vuelva a pasar:
 
   ```
   mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --routines --triggers --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-data --result-file=estructura.sql vigia
-  mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-create-info --skip-triggers --result-file=datos.sql vigia campo_def catalogo catalogo_item cie10 departamento distrito enfermedad establecimiento grado_pnp provincia red_salud seccion_def
+  mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-create-info --skip-triggers --result-file=datos.sql vigia campo_def catalogo catalogo_item cie10 cie10_vigilancia departamento distrito enfermedad establecimiento grado_pnp provincia red_salud seccion_def
   ```
 
   Armar el archivo en este orden: la cabecera de comentarios (agregar arriba
@@ -61,8 +61,8 @@ Para que no vuelva a pasar:
   `estructura.sql`.
 - **Probar que se instala antes de commitear:** crear `vigia_limpia`, importar
   el archivo tal cual y comparar contra `vigia` las columnas, índices y claves
-  foráneas (`information_schema`) y el contenido de las 12 tablas de
-  configuración. Luego borrar `vigia_limpia`. El 15/10 dio 403 columnas,
+  foráneas (`information_schema`) y el contenido de las 13 tablas de
+  configuración (desde el 21/10 también `cie10_vigilancia`). Luego borrar `vigia_limpia`. El 15/10 dio 403 columnas,
   115 índices y 53 claves foráneas idénticas, 24 enfermedades, 195 secciones,
   1216 campos, 338 catálogos y 1861 ítems.
 
@@ -78,6 +78,7 @@ php sql/migraciones/add_tipo_notif_mensual.php
 php sql/migraciones/add_notificacion_semanal.php
 php sql/migraciones/cierre_notificacion_semanal.php
 php sql/migraciones/add_catalogos_rediseno.php
+php sql/migraciones/add_registro_pnp.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -111,6 +112,12 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   con el último login exitoso de `login_intento`), `usuario.motivo_inactivo`,
   `establecimiento.nombre_corto` y `establecimiento.motivo_inactivo`, para los
   catálogos rediseñados. Se puede correr más de una vez.
+- `add_registro_pnp.php` (21/10, antes del cargador): registros PNP.
+  `enfermedad.modalidad` (FICHA/REGISTRO), `caso.cie10_dx`,
+  `caso.caso_origen_id`, la tabla `cie10_vigilancia` (listado de vigilancia
+  del Área de Epidemiología PNP, con la ficha MINSA que cubre cada código) y
+  las enfermedades REG-PNP (otras enfermedades) y REG-FEB (febriles), cuyas
+  secciones carga después `cargar_fichas.php`. Se puede correr más de una vez.
 - `add_tipo_notif_mensual.php` (16/10): agrega MENSUAL a
   `enfermedad.tipo_notif` y pasa B24 a mensual si seguía en semanal. Se puede
   correr más de una vez.
