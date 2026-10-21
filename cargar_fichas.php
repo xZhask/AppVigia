@@ -170,7 +170,11 @@ const COLUMNAS_TABLA_HIJA_VALIDAS = [
 // campo genérico obligatorio de secciones-clinicas.php). Declararlos acá es
 // la versión declarativa de esas listas; las fichas que ya estaban en ellas
 // siguen igual, sin tocar nada.
-const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'ocupacion', 'nombre_tutor', 'celular_tutor', 'gestante', 'captacion', 'clasificacion', 'investigador', 'fecha_inicio_sintomas'];
+// 'observaciones_pnp' (2026-10-21): la tarjeta "Observaciones adicionales
+// (PNP)" (descanso médico y fecha de alta del registro individual PNP). La
+// omiten las fichas cuyo paciente no puede tenerlos (muerte materna, fetal y
+// neonatal, tétanos neonatal, rubéola congénita, Z21, A50) y febriles.
+const NUCLEO_OMITIBLES = ['celular', 'nacionalidad', 'localidad', 'direccion', 'referencia_localizar', 'etnia', 'pueblo_etnico', 'ocupacion', 'nombre_tutor', 'celular_tutor', 'gestante', 'captacion', 'clasificacion', 'investigador', 'fecha_inicio_sintomas', 'observaciones_pnp'];
 
 // nucleo_condicional (cotejo Z21, 2026-09-11): bloques del núcleo que una
 // ficha pide solo cuando un campo_def suyo toma cierto valor -- Z21 pide

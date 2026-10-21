@@ -4,7 +4,7 @@
  * Epidemiología PNP (hojas INDIV_TITULAR y FAMILIAR e INDIVIDUAL VIH_SIDA,
  * 2026-10-21). Mismas columnas que el Excel del área; las filas salen de las
  * fichas y registros de la semana (App\Models\FormatoPnp). Descanso médico y
- * fecha de alta no se capturan todavía: van en blanco.
+ * fecha de alta salen de "Observaciones adicionales (PNP)" de la ficha.
  */
 use App\Models\FormatoPnp;
 
@@ -18,7 +18,8 @@ $titulo = $vih ? FormatoPnp::VIH : FormatoPnp::INDIVIDUAL;
 $marca = fn(bool $marcado): string => $marcado ? 'X' : '';
 $dato = fn(?string $valor): string => ($valor ?? '') !== '' ? e($valor) : '';
 $sinEstablecimiento = !$filtros['establecimiento_id'];
-$totalColumnas = $vih ? 25 : 30;
+$totalColumnas = $vih ? 25 : 32;
+
 ?>
 <style>
   .pnp-hoja{padding:22px 24px 26px;color:var(--ink)}
@@ -141,8 +142,8 @@ $totalColumnas = $vih ? 25 : 30;
             <?php if (!$vih): ?>
               <th rowspan="2" style="min-width:90px">Unidad de origen</th>
               <th rowspan="2" style="min-width:80px">Situación del paciente</th>
-              <th rowspan="2" class="pnp-vertical">Descanso médico 1</th>
-              <th rowspan="2" class="pnp-vertical">Descanso médico 2</th>
+              <th colspan="2">Descanso médico 1</th>
+              <th colspan="2">Descanso médico 2</th>
               <th rowspan="2" class="pnp-vertical">Fecha de alta</th>
             <?php endif; ?>
           </tr>
@@ -152,9 +153,10 @@ $totalColumnas = $vih ? 25 : 30;
             <th>Provincia</th><th>Distrito</th><th>Localidad</th>
             <th>P</th><th>C</th><th>D</th>
             <th>SI</th><th>NO</th><th>IG</th>
-            <th class="pnp-vertical">Inicio de síntomas</th><th class="pnp-vertical">Defunción</th><th class="pnp-vertical">Notificación</th>
+            <th class="pnp-vertical">Inicio de síntomas</th><th class="pnp-vertical">Difusión</th><th class="pnp-vertical">Notificación</th>
             <th>SI</th><th>NO</th>
             <th class="pnp-vertical">Vig. pasiva</th><th class="pnp-vertical">Bús. activa</th>
+            <?php if (!$vih): ?><th class="pnp-vertical">Inicio</th><th class="pnp-vertical">Término</th><th class="pnp-vertical">Inicio</th><th class="pnp-vertical">Término</th><?php endif; ?>
           </tr>
         </thead>
         <tbody>
@@ -184,7 +186,7 @@ $totalColumnas = $vih ? 25 : 30;
               <td class="pnp-marca"><?= $marca($caso['protegido'] === 'NO') ?></td>
               <td class="pnp-marca"><?= $marca($caso['protegido'] === 'IG') ?></td>
               <td class="mono"><?= $dato(fechaIsoADmy($caso['inicio_sintomas'])) ?></td>
-              <td class="mono"><?= $dato(fechaIsoADmy($caso['defuncion'])) ?></td>
+              <td class="mono"><?= $dato(fechaIsoADmy($caso['difusion'])) ?></td>
               <td class="mono"><?= $dato(fechaIsoADmy($caso['notificacion'])) ?></td>
               <td class="pnp-marca"><?= $marca($caso['investigacion'] === 'SI') ?></td>
               <td class="pnp-marca"><?= $marca($caso['investigacion'] === 'NO') ?></td>
@@ -193,7 +195,11 @@ $totalColumnas = $vih ? 25 : 30;
               <?php if (!$vih): ?>
                 <td><?= $dato($caso['unidad']) ?></td>
                 <td><?= $dato($caso['situacion']) ?></td>
-                <td></td><td></td><td></td>
+                <td class="mono"><?= $dato(fechaIsoADmy($caso['descanso1_inicio'])) ?></td>
+                <td class="mono"><?= $dato(fechaIsoADmy($caso['descanso1_fin'])) ?></td>
+                <td class="mono"><?= $dato(fechaIsoADmy($caso['descanso2_inicio'])) ?></td>
+                <td class="mono"><?= $dato(fechaIsoADmy($caso['descanso2_fin'])) ?></td>
+                <td class="mono"><?= $dato(fechaIsoADmy($caso['fecha_alta'])) ?></td>
               <?php endif; ?>
             </tr>
           <?php endforeach; ?>
@@ -202,7 +208,7 @@ $totalColumnas = $vih ? 25 : 30;
     </div>
     <p class="pnp-notas">
       Tipo de diagnóstico: <b>P</b>: probable · <b>C</b>: confirmado · <b>D</b>: descartado. F: familiar (derechohabiente).
-      <?php if (!$vih): ?><br>Descanso médico y fecha de alta: aún no se registran en VIGÍA.<?php endif; ?>
+      Difusión: fecha en que se hace saber al área de epidemiología del establecimiento (la de notificación).
     </p>
     <div class="pnp-firmas"><span>Firma y sello de la persona que notifica</span><span>Director o jefe del establecimiento</span></div>
   </div>

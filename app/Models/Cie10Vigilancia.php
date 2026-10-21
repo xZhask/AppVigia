@@ -25,7 +25,7 @@ class Cie10Vigilancia extends Model
     public static function sinFicha(): array
     {
         return Database::conexion()->query(
-            'SELECT codigo, prefijos, descripcion, notificacion FROM cie10_vigilancia WHERE enfermedad_cie10 IS NULL ORDER BY orden'
+            'SELECT codigo, prefijos, descripcion, notificacion, par_cie10, indicacion FROM cie10_vigilancia WHERE enfermedad_cie10 IS NULL ORDER BY orden'
         )->fetchAll();
     }
 
@@ -70,6 +70,29 @@ class Cie10Vigilancia extends Model
     }
 
     /**
+     * Ficha MINSA con la que se puede confundir un código del registro
+     * (cie10_vigilancia.par_cie10, 2026-10-21: diarrea aguda y "EDA grave /
+     * cólera", varicela sin y con complicaciones...), con su criterio de uso
+     * (enfermedad.criterio). null si el código no tiene par.
+     */
+    public static function parDe(string $codigo): ?array
+    {
+        $clave = Cie10::clave($codigo);
+        $mejor = null;
+        foreach (Database::conexion()->query('SELECT prefijos, par_cie10 FROM cie10_vigilancia WHERE enfermedad_cie10 IS NULL')->fetchAll() as $fila) {
+            foreach (explode(',', $fila['prefijos']) as $prefijo) {
+                $prefijo = trim($prefijo);
+                if ($prefijo !== '' && str_starts_with($clave, $prefijo) && ($mejor === null || strlen($prefijo) > strlen($mejor[0]))) {
+                    $mejor = [$prefijo, $fila['par_cie10']];
+                }
+            }
+        }
+        $ficha = !empty($mejor[1]) ? Enfermedad::buscarPorCie10($mejor[1]) : null;
+
+        return $ficha && $ficha['activo'] && !empty($ficha['criterio']) ? $ficha : null;
+    }
+
+    /**
      * Nombre de un diagnóstico para mostrarlo como título de su registro
      * (2026-10-21): el del listado PNP que lo contiene (A27.0 ->
      * "Leptospirosis"), o la descripción del catálogo CIE-10, o null.
@@ -97,7 +120,30 @@ class Cie10Vigilancia extends Model
         return $cache[$codigo];
     }
 
-    /** Tipo de notificación del listado PNP para un código (INMEDIATA/SEMANAL), o null. */
+    /**
+     * Grupo del consolidado semanal en que cuenta un código (EDA, COLERA,
+     * DISENTERIA, IRA, NEUMONIA, SOBA, ASMA; cie10_vigilancia.consolidado), o
+     * null.
+     */
+    public static function grupoConsolidado(string $codigo): ?string
+    {
+        static $filas = null;
+        $filas ??= Database::conexion()->query('SELECT prefijos, consolidado FROM cie10_vigilancia WHERE consolidado IS NOT NULL')->fetchAll();
+        $clave = Cie10::clave($codigo);
+        $mejor = null;
+        foreach ($filas as $fila) {
+            foreach (explode(',', $fila['prefijos']) as $prefijo) {
+                $prefijo = trim($prefijo);
+                if ($prefijo !== '' && str_starts_with($clave, $prefijo) && ($mejor === null || strlen($prefijo) > strlen($mejor[0]))) {
+                    $mejor = [$prefijo, $fila['consolidado']];
+                }
+            }
+        }
+
+        return $mejor[1] ?? null;
+    }
+
+    /** Tipo de notificación del listado PNP para un código (INMEDIATA/SEMANAL/COLECTIVA), o null. */
     public static function notificacionDe(string $codigo): ?string
     {
         $clave = Cie10::clave($codigo);

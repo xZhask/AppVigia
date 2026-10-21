@@ -117,7 +117,14 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   `caso.caso_origen_id`, la tabla `cie10_vigilancia` (listado de vigilancia
   del Área de Epidemiología PNP, con la ficha MINSA que cubre cada código) y
   las enfermedades REG-PNP (otras enfermedades) y REG-FEB (febriles), cuyas
-  secciones carga después `cargar_fichas.php`. Se puede correr más de una vez.
+  secciones carga después `cargar_fichas.php`. También `caso.descanso1_*`,
+  `descanso2_*` y `fecha_alta` ("Observaciones adicionales (PNP)", omitida en
+  O95, P96, A33, P35.0, Z21, A50 y febriles) y los grupos del consolidado
+  semanal de EDA/IRA (`cie10_vigilancia.consolidado`), y los criterios de uso
+  de las fichas y registros que se parecen (`enfermedad.criterio`,
+  `cie10_vigilancia.par_cie10`/`indicacion`; los de cólera y EDA grave son
+  borrador a validar con las definiciones de caso del MINSA). Se puede correr
+  más de una vez.
 - `add_tipo_notif_mensual.php` (16/10): agrega MENSUAL a
   `enfermedad.tipo_notif` y pasa B24 a mensual si seguía en semanal. Se puede
   correr más de una vez.

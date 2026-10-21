@@ -29,10 +29,20 @@ document.addEventListener('DOMContentLoaded', function () {
     var siguiente = document.getElementById('numeroSiguienteSeccion');
     var numero = siguiente ? parseInt(siguiente.value, 10) : NaN;
     if (isNaN(numero)) return;
+    // Sigue después del último número visible anterior: B26 pinta secciones
+    // propias antes del bloque clínico que el servidor no cuenta.
+    Array.prototype.forEach.call(document.querySelectorAll('.section-num'), function (anterior) {
+      var posicion = contenedorClinico.compareDocumentPosition(anterior);
+      var antes = (posicion & Node.DOCUMENT_POSITION_PRECEDING) || (posicion & Node.DOCUMENT_POSITION_CONTAINED_BY);
+      var valor = parseInt(anterior.textContent, 10);
+      if (antes && anterior.offsetParent && !isNaN(valor) && valor >= numero) numero = valor + 1;
+    });
 
+    // Las tarjetas ocultas (Antecedentes o Laboratorio de una ficha que no
+    // los usa) no cuentan: dejaban saltos en la numeración (2026-10-21).
     var el = contenedorClinico.nextElementSibling;
     while (el) {
-      if (el.classList && el.classList.contains('section')) {
+      if (el.classList && el.classList.contains('section') && !el.hidden && getComputedStyle(el).display !== 'none') {
         var num = el.querySelector('.section-num');
         if (num) num.textContent = numero++;
       }
@@ -4616,12 +4626,16 @@ document.addEventListener('DOMContentLoaded', function () {
   // diagnóstico con ficha MINSA no se guarda; el aviso lleva a esa ficha (por
   // la ventana "Cambiar enfermedad", que pide confirmar si ya hay datos). En
   // el de febriles solo avisa: al guardar se ofrece pasarlo a la ficha.
-  function avisoFicha(input, ficha) {
+  // Un código que se parece a una ficha (diarrea aguda y "EDA grave /
+  // cólera") muestra el criterio de esa ficha y el mismo botón (2026-10-21).
+  function avisoFicha(input, ficha, par) {
     var formulario = input.closest('form[data-registro-pnp]');
     var campo = input.closest('.field');
     if (!formulario || !campo) return;
     var aviso = campo.querySelector('[data-cie10-ficha]');
-    if (!ficha) { if (aviso) aviso.remove(); return; }
+    var esPar = !ficha && !!par && formulario.getAttribute('data-registro-pnp') === 'otras';
+    if (!ficha && !esPar) { if (aviso) aviso.remove(); return; }
+    if (esPar) ficha = par;
     if (!aviso) {
       aviso = document.createElement('div');
       aviso.className = 'hint cie10-ficha';
@@ -4631,8 +4645,11 @@ document.addEventListener('DOMContentLoaded', function () {
     aviso.textContent = '';
     var texto = document.createElement('span');
     var otras = formulario.getAttribute('data-registro-pnp') === 'otras';
-    texto.textContent = 'Este diagnóstico tiene ficha MINSA: ' + ficha.nombre + '. '
-      + (otras ? 'Se notifica en esa ficha.' : 'Al guardar podrás pasarlo a esa ficha.');
+    texto.textContent = esPar
+      ? '¿' + ficha.criterio + '? Entonces se notifica en la ficha MINSA ' + ficha.nombre + '. '
+      : 'Este diagnóstico tiene ficha MINSA: ' + ficha.nombre + '. '
+        + (otras ? 'Se notifica en esa ficha.' : 'Al guardar podrás pasarlo a esa ficha.');
+    aviso.classList.toggle('cie10-par', esPar);
     aviso.appendChild(texto);
     var item = document.querySelector('#modalEnfermedad .modal-item[data-id="' + ficha.id + '"]:not([data-url])');
     if (otras && item) {
@@ -4651,9 +4668,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // El registro de otras enfermedades se titula con su diagnóstico
   // (2026-10-21): encabezado, barra compacta y título de la pestaña.
+  // "Neumonía grave o enfermedad muy grave" solo con un diagnóstico de
+  // neumonía (J12-J18): es una columna del consolidado de IRA.
+  function campoNeumoniaGrave(codigo) {
+    var mapa = document.getElementById('mapaCampos');
+    var nombre = mapa ? (JSON.parse(mapa.textContent || '{}').reg_neumonia_grave || '') : '';
+    var control = nombre ? document.querySelector('[name="' + nombre + '"]') : null;
+    var campo = control ? control.closest('.field') : null;
+    if (campo) campo.hidden = !/^J1[2-8]/.test(codigo || '');
+  }
+
   function tituloDiagnostico(input, codigo, nombre, notificacion) {
     var formulario = input.closest('form[data-registro-pnp="otras"]');
     if (!formulario) return;
+    campoNeumoniaGrave(codigo);
     var valido = !!(codigo && nombre);
     document.querySelectorAll('[data-titulo-dx]').forEach(function (el) {
       var base = document.querySelector('[data-titulo-base]');
@@ -4682,7 +4710,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!datos || input.value.trim() !== escrito) return;
         if (datos.codigo && datos.codigo !== escrito) input.value = datos.codigo;
         mostrarDescripcion(input, datos.error || datos.descripcion || '', !!datos.error);
-        avisoFicha(input, datos.ficha || null);
+        avisoFicha(input, datos.ficha || null, datos.par || null);
         tituloDiagnostico(input, datos.error || datos.ficha ? '' : (datos.codigo || ''), datos.nombre_pnp || '', datos.notificacion || '');
       })
       .catch(function () {});
@@ -4793,6 +4821,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // ventana "Cambiar enfermedad") se coteja; si es una categoría del listado
   // PNP (A15) se abren las sugerencias para elegir el subcódigo.
   var formularioRegistro = document.querySelector('form[data-registro-pnp]');
+  if (formularioRegistro && formularioRegistro.getAttribute('data-registro-pnp') === 'otras') {
+    var dxInicial = formularioRegistro.querySelector('input[data-cie10]');
+    campoNeumoniaGrave(dxInicial ? dxInicial.value.trim().toUpperCase() : '');
+  }
   if (formularioRegistro) {
     formularioRegistro.querySelectorAll('input[data-cie10]').forEach(function (input) {
       if (!input.value.trim()) return;
@@ -4805,6 +4837,26 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+});
+
+// ---------- Observaciones adicionales (PNP), 2026-10-21 ----------
+// El descanso médico es del efectivo PNP: se muestra solo con esa condición
+// del paciente (partials/observaciones-pnp.php). El servidor tampoco lo
+// guarda con otra condición.
+document.addEventListener('DOMContentLoaded', function () {
+  var bloque = document.querySelector('[data-solo-efectivo]');
+  if (!bloque) return;
+  var nota = document.querySelector('[data-solo-no-efectivo]');
+  function actualizar() {
+    var elegida = document.querySelector('input[name="condicion"]:checked');
+    var efectivo = !!elegida && elegida.value === 'EFECTIVO';
+    bloque.hidden = !efectivo;
+    if (nota) nota.hidden = efectivo;
+  }
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'condicion') actualizar();
+  });
+  actualizar();
 });
 
 // ---------- Nueva ficha: encabezado de contexto (2026-10-16, revisión de UI) ----------

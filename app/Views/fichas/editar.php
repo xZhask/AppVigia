@@ -452,6 +452,11 @@ foreach (($bloquesCondicionalesMuestra ?? []) as $bloqueMuestra):
 endforeach;
 ?>
 
+      <?php // "Observaciones adicionales (PNP)" (2026-10-21): descanso médico y alta. ?>
+      <?php if (!nucleoOmitido($enfermedad, 'observaciones_pnp')): ?>
+      <?php require __DIR__ . '/../partials/observaciones-pnp.php'; $numeroSeccion++; ?>
+      <?php endif; ?>
+
       <!-- Investigador -->
       <?php // nucleo_omitidos: 'investigador' -- ver nueva/index.php. ?>
       <?php if (!nucleoOmitido($enfermedad, 'investigador')):

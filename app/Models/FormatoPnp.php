@@ -49,7 +49,12 @@ class FormatoPnp
         if (!$vih) {
             $parametros['otras'] = Cie10Vigilancia::REGISTRO_OTRAS;
         }
-        $filas = self::casos($filtros, $condicion, $parametros);
+        // Los registros de notificación colectiva (EDA, IRA, neumonía, SOB,
+        // asma) no van uno por uno: se cuentan en el consolidado.
+        $filas = array_values(array_filter(
+            self::casos($filtros, $condicion, $parametros),
+            fn(array $fila) => $fila['modalidad'] !== 'REGISTRO' || Cie10Vigilancia::notificacionDe((string) $fila['cie10_dx']) !== 'COLECTIVA'
+        ));
         $valores = self::valores(array_column($filas, 'id'));
 
         return array_map(fn(array $fila) => self::filaIndividual($fila, $valores[(int) $fila['id']] ?? [], $vih), $filas);
@@ -109,7 +114,12 @@ class FormatoPnp
         return array_map(fn($v) => (string) $v, ($consulta->fetch() ?: []) + $vacio);
     }
 
-    private static function casos(array $filtros, string $condicion, array $parametros): array
+    /**
+     * Casos no anulados de la semana con lo que piden los formatos PNP,
+     * filtrados por $condicion (SQL sobre los alias c, e, p) y con el alcance
+     * del usuario. También los usa ConsolidadoPnp.
+     */
+    public static function casos(array $filtros, string $condicion, array $parametros): array
     {
         $condiciones = ['c.anulado = 0', 'c.anio_epi = :anio', 'c.semana_epi = :semana', $condicion];
         $parametros += ['anio' => $filtros['anio'], 'semana' => $filtros['semana']];
@@ -131,10 +141,11 @@ class FormatoPnp
         $consulta = Database::conexion()->prepare(
             'SELECT c.id, c.codigo, c.cie10_dx, c.clasificacion, c.fecha_notif, c.fecha_inicio_sintomas, c.hospitalizado, c.fallecido,
                     c.tipo_captacion, c.edad_valor, c.edad_unidad, c.lugar_contagio_localidad,
+                    c.descanso1_inicio, c.descanso1_fin, c.descanso2_inicio, c.descanso2_fin, c.fecha_alta,
                     e.cie10 AS enfermedad_cie10, e.modalidad, e.nombre AS enfermedad,
                     p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                     p.condicion, p.cip, p.situacion_pnp, p.direccion, p.n_historia_clinica,
-                    g.abreviatura AS grado, un.nombre AS unidad, d.nombre AS distrito_residencia,
+                    g.abreviatura AS grado, un.nombre AS unidad, d.nombre AS distrito_residencia, prr.nombre AS provincia_residencia,
                     lcd.nombre AS lugar_distrito, lcp.nombre AS lugar_provincia, es.nombre AS establecimiento
                FROM caso c
                JOIN enfermedad e       ON e.id = c.enfermedad_id
@@ -143,6 +154,7 @@ class FormatoPnp
           LEFT JOIN grado_pnp g        ON g.id = p.grado_id
           LEFT JOIN unidad_pnp un      ON un.id = p.unidad_id
           LEFT JOIN distrito d         ON d.id = p.distrito_id
+          LEFT JOIN provincia prr      ON prr.id = d.provincia_id
           LEFT JOIN distrito lcd       ON lcd.id = c.lugar_contagio_distrito_id
           LEFT JOIN provincia lcp      ON lcp.id = lcd.provincia_id
               WHERE ' . implode(' AND ', $condiciones) . '
@@ -160,7 +172,7 @@ class FormatoPnp
      *
      * @return array<int, array<string, array{valor: string, etiqueta: ?string}>>
      */
-    private static function valores(array $ids): array
+    public static function valores(array $ids): array
     {
         if (!$ids) {
             return [];
@@ -231,8 +243,16 @@ class FormatoPnp
             'tipo_dx'       => self::TIPO_DX[$fila['clasificacion']] ?? '',
             'protegido'     => $protegido,
             'inicio_sintomas' => (string) $fila['fecha_inicio_sintomas'],
-            'defuncion'     => $valor('reg_fecha_defuncion'),
+            // "Difusión" (respuesta del área, 2026-10-21): la fecha en que se
+            // hace saber al área de epidemiología del establecimiento;
+            // comúnmente la misma de notificación, que es la que se registra.
+            'difusion'      => (string) $fila['fecha_notif'],
             'notificacion'  => (string) $fila['fecha_notif'],
+            'descanso1_inicio' => (string) $fila['descanso1_inicio'],
+            'descanso1_fin'    => (string) $fila['descanso1_fin'],
+            'descanso2_inicio' => (string) $fila['descanso2_inicio'],
+            'descanso2_fin'    => (string) $fila['descanso2_fin'],
+            'fecha_alta'       => (string) $fila['fecha_alta'],
             'investigacion' => $investigacion,
             'vigilancia'    => $vigilancia,
             'unidad'        => (string) $fila['unidad'],

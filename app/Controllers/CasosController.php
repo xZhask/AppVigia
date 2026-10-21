@@ -416,6 +416,11 @@ class CasosController extends Controller
             'anterior_mz_lote'     => trim($_POST['anterior_mz_lote'] ?? ''),
             'lugar_contagio_distrito_id' => $_POST['lugar_contagio_distrito_id'] ?? '',
             'lugar_contagio_localidad'   => trim($_POST['lugar_contagio_localidad'] ?? ''),
+            'descanso1_inicio'   => trim($_POST['descanso1_inicio'] ?? ''),
+            'descanso1_fin'      => trim($_POST['descanso1_fin'] ?? ''),
+            'descanso2_inicio'   => trim($_POST['descanso2_inicio'] ?? ''),
+            'descanso2_fin'      => trim($_POST['descanso2_fin'] ?? ''),
+            'fecha_alta'         => trim($_POST['fecha_alta'] ?? ''),
             'n_historia_clinica' => trim($_POST['n_historia_clinica'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
@@ -554,6 +559,8 @@ class CasosController extends Controller
         if ($datosPnp['error'] !== null) {
             $erroresFijos['condicion'] = $datosPnp['error'];
         }
+        [$observacionesPnp, $erroresObservacionesPnp] = $this->leerObservacionesPnp($enfermedad, $valoresFijos, (string) ($datosPnp['datos']['condicion'] ?? ''));
+        $erroresFijos += $erroresObservacionesPnp;
         // nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): si el documento
         // ya es de una persona registrada con una condición que la ficha no
         // admite (un efectivo PNP en la ficha de un fallecido fetal o
@@ -730,7 +737,8 @@ class CasosController extends Controller
             ], $nucleo['caso'], $fallecidoCalculado !== null ? ['fallecido' => $fallecidoCalculado] : [],
                $hospitalizadoCalculado !== null ? ['hospitalizado' => $hospitalizadoCalculado] : [],
                $this->cie10DxDesdeCampos($enfermedad, $valoresCampos),
-               $casoOrigenId !== null ? ['caso_origen_id' => $casoOrigenId] : []));
+               $casoOrigenId !== null ? ['caso_origen_id' => $casoOrigenId] : [],
+               $observacionesPnp));
 
             CasoValor::guardarTodos($casoId, $paraGuardar);
             CasoContacto::reemplazarTodos($casoId, $filasContactos);
@@ -1062,6 +1070,11 @@ class CasosController extends Controller
             'anterior_mz_lote'     => (string) ($caso['anterior_mz_lote'] ?? ''),
             'lugar_contagio_distrito_id' => (string) ($caso['lugar_contagio_distrito_id'] ?? ''),
             'lugar_contagio_localidad'   => (string) ($caso['lugar_contagio_localidad'] ?? ''),
+            'descanso1_inicio'   => (string) ($caso['descanso1_inicio'] ?? ''),
+            'descanso1_fin'      => (string) ($caso['descanso1_fin'] ?? ''),
+            'descanso2_inicio'   => (string) ($caso['descanso2_inicio'] ?? ''),
+            'descanso2_fin'      => (string) ($caso['descanso2_fin'] ?? ''),
+            'fecha_alta'         => (string) ($caso['fecha_alta'] ?? ''),
             'n_historia_clinica' => (string) ($caso['n_historia_clinica'] ?? ''),
             'localidad'          => (string) ($caso['localidad'] ?? ''),
             'etnia'              => (string) ($caso['etnia'] ?? ''),
@@ -1182,6 +1195,11 @@ class CasosController extends Controller
             'anterior_mz_lote'     => trim($_POST['anterior_mz_lote'] ?? ''),
             'lugar_contagio_distrito_id' => $_POST['lugar_contagio_distrito_id'] ?? '',
             'lugar_contagio_localidad'   => trim($_POST['lugar_contagio_localidad'] ?? ''),
+            'descanso1_inicio'   => trim($_POST['descanso1_inicio'] ?? ''),
+            'descanso1_fin'      => trim($_POST['descanso1_fin'] ?? ''),
+            'descanso2_inicio'   => trim($_POST['descanso2_inicio'] ?? ''),
+            'descanso2_fin'      => trim($_POST['descanso2_fin'] ?? ''),
+            'fecha_alta'         => trim($_POST['fecha_alta'] ?? ''),
             'n_historia_clinica' => trim($_POST['n_historia_clinica'] ?? ''),
             'localidad'          => trim($_POST['localidad'] ?? ''),
             'etnia'              => $_POST['etnia'] ?? '',
@@ -1312,6 +1330,8 @@ class CasosController extends Controller
         if ($datosPnp['error'] !== null) {
             $erroresFijos['condicion'] = $datosPnp['error'];
         }
+        [$observacionesPnp, $erroresObservacionesPnp] = $this->leerObservacionesPnp($enfermedad, $valoresFijos, (string) ($datosPnp['datos']['condicion'] ?? ''));
+        $erroresFijos += $erroresObservacionesPnp;
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
         $erroresCampos = $this->errorCie10ConFicha($enfermedad, $valoresCampos, $erroresCampos);
         if ($fechaInicioSintomasEsDerivada) {
@@ -1457,7 +1477,7 @@ class CasosController extends Controller
                 // vinculo_caso (cotejo Z21): revalidado arriba; se vuelve a
                 // escribir en cada guardado, así desvincular también persiste.
                 'caso_vinculado_id'     => $casoVinculadoId,
-            ], $nucleo['caso'], $this->cie10DxDesdeCampos($enfermedad, $valoresCampos)));
+            ], $nucleo['caso'], $this->cie10DxDesdeCampos($enfermedad, $valoresCampos), $observacionesPnp));
 
             CasoValor::eliminarPorCaso((int) $caso['id']);
             CasoValor::guardarTodos((int) $caso['id'], $paraGuardar);
@@ -2125,6 +2145,59 @@ class CasosController extends Controller
     }
 
     /**
+     * "Observaciones adicionales (PNP)" (2026-10-21): descanso médico 1 y 2
+     * (solo de un efectivo PNP) y fecha de alta, columnas del registro
+     * individual del Área de Epidemiología. [] si la ficha omite la tarjeta
+     * (no escribe las columnas); si no, las cinco, en NULL las que no aplican.
+     *
+     * @return array{0: array, 1: array<string, string>}
+     */
+    private function leerObservacionesPnp(array $enfermedad, array $valoresFijos, string $condicion): array
+    {
+        if (nucleoOmitido($enfermedad, 'observaciones_pnp')) {
+            return [[], []];
+        }
+        $datos = [];
+        $errores = [];
+        $hoy = date('Y-m-d');
+        $fecha = function (string $campo, bool $admiteFutura) use ($valoresFijos, $hoy, &$errores): ?string {
+            $texto = (string) ($valoresFijos[$campo] ?? '');
+            if ($texto === '') {
+                return null;
+            }
+            $iso = fechaIsoValida($texto);
+            if (!$iso) {
+                $errores[$campo] = 'Ingresa una fecha válida.';
+            } elseif (!$admiteFutura && $iso > $hoy) {
+                $errores[$campo] = 'No puede ser una fecha futura.';
+            }
+
+            return $iso ?: null;
+        };
+        $efectivo = $condicion === 'EFECTIVO';
+        foreach ([1, 2] as $n) {
+            // El fin de un descanso puede ser futuro (va hasta la próxima semana).
+            $inicio = $efectivo ? $fecha("descanso{$n}_inicio", false) : null;
+            $fin = $efectivo ? $fecha("descanso{$n}_fin", true) : null;
+            if ($fin !== null && $inicio === null && !isset($errores["descanso{$n}_inicio"])) {
+                $errores["descanso{$n}_inicio"] = 'Indica desde cuándo.';
+            } elseif ($inicio !== null && $fin !== null && $fin < $inicio) {
+                $errores["descanso{$n}_fin"] = 'El fin no puede ser anterior al inicio.';
+            }
+            $datos["descanso{$n}_inicio"] = $inicio;
+            $datos["descanso{$n}_fin"] = $fin;
+        }
+        if ($datos['descanso2_inicio'] !== null && $datos['descanso1_inicio'] === null) {
+            $errores['descanso2_inicio'] = 'Registra primero el descanso médico 1.';
+        } elseif ($datos['descanso2_inicio'] !== null && $datos['descanso1_fin'] !== null && $datos['descanso2_inicio'] < $datos['descanso1_fin']) {
+            $errores['descanso2_inicio'] = 'El descanso médico 2 empieza después del 1.';
+        }
+        $datos['fecha_alta'] = $fecha('fecha_alta', false);
+
+        return [$datos, $errores];
+    }
+
+    /**
      * caso.cie10_dx (registros PNP, 2026-10-21): el diagnóstico propio de un
      * registro, del campo que declara nucleo_ajustes.cie10_dx_desde. [] en las
      * fichas que no lo declaran (no escriben la columna).
@@ -2557,6 +2630,11 @@ class CasosController extends Controller
             'anterior_mz_lote'     => '',
             'lugar_contagio_distrito_id' => '',
             'lugar_contagio_localidad'   => '',
+            'descanso1_inicio'   => '',
+            'descanso1_fin'      => '',
+            'descanso2_inicio'   => '',
+            'descanso2_fin'      => '',
+            'fecha_alta'         => '',
             'n_historia_clinica' => '',
             'localidad'          => '',
             'etnia'              => '',
@@ -4289,6 +4367,9 @@ class CasosController extends Controller
                 // Título del registro de otras enfermedades (2026-10-21).
                 'nombre_pnp'  => $codigo !== null ? Cie10Vigilancia::nombreDiagnostico($codigo) : null,
                 'notificacion' => $codigo !== null ? Cie10Vigilancia::notificacionDe($codigo) : null,
+                // La ficha con la que se puede confundir y cuándo se usa (2026-10-21).
+                'par'         => ($par = $codigo !== null && !$ficha ? Cie10Vigilancia::parDe($codigo) : null)
+                    ? ['id' => (int) $par['id'], 'nombre' => $par['nombre_corto'] ?: $par['nombre'], 'criterio' => $par['criterio']] : null,
             ], JSON_UNESCAPED_UNICODE);
             return;
         }

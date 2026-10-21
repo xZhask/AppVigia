@@ -18,6 +18,11 @@ $pdo = Database::conexion();
 //   - cie10_vigilancia: hoja "LISTADO DE ENF SUJ A VIG" del Excel, con la
 //     ficha MINSA que cubre cada código (enfermedad_cie10) o NULL si se
 //     registra en el registro ligero.
+//   - caso.descanso1_inicio/_fin, descanso2_inicio/_fin y fecha_alta:
+//     "Observaciones adicionales (PNP)" del registro individual (descanso
+//     médico del efectivo y alta). Las fichas que no las piden (muerte
+//     materna, fetal y neonatal...) declaran nucleo_omitidos
+//     "observaciones_pnp".
 //   - Dos enfermedades nuevas: REG-PNP (otras enfermedades sujetas a
 //     vigilancia) y REG-FEB (vigilancia de febriles). Sus secciones las carga
 //     cargar_fichas.php.
@@ -28,6 +33,11 @@ $agregar = [
     'caso' => [
         'cie10_dx'       => 'ADD COLUMN cie10_dx varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER enfermedad_id',
         'caso_origen_id' => 'ADD COLUMN caso_origen_id int DEFAULT NULL AFTER caso_vinculado_id',
+        'descanso1_inicio' => 'ADD COLUMN descanso1_inicio date DEFAULT NULL AFTER fallecido',
+        'descanso1_fin'    => 'ADD COLUMN descanso1_fin date DEFAULT NULL AFTER descanso1_inicio',
+        'descanso2_inicio' => 'ADD COLUMN descanso2_inicio date DEFAULT NULL AFTER descanso1_fin',
+        'descanso2_fin'    => 'ADD COLUMN descanso2_fin date DEFAULT NULL AFTER descanso2_inicio',
+        'fecha_alta'       => 'ADD COLUMN fecha_alta date DEFAULT NULL AFTER descanso2_fin',
     ],
 ];
 foreach ($agregar as $tabla => $columnas) {
@@ -116,7 +126,7 @@ $filas = [
     ['A44.0', 'A440', 'Enfermedad de Carrión aguda', 'SEMANAL', 'A44'],
     ['A44.1', 'A441', 'Enfermedad de Carrión eruptiva', 'SEMANAL', 'A44'],
     ['A50', 'A50', 'Sífilis congénita', 'SEMANAL', 'A50'],
-    ['A51', 'A51', 'Sífilis', 'SEMANAL', null],
+    ['A51', 'A51', 'Sífilis (no materna ni congénita)', 'SEMANAL', null],
     ['A54', 'A54', 'Gonorrea', 'SEMANAL', null],
     ['A92.0', 'A920', 'Fiebre de chikungunya', 'SEMANAL', 'A97'],
     ['A97.0', 'A970', 'Dengue sin señales de alarma', 'SEMANAL', 'A97'],
@@ -209,3 +219,101 @@ foreach ($enfermedades as [$cie10, $nombre, $corto, $claves, $notif]) {
     )->execute([$nombre, $corto, $claves, $cie10, $notif]);
     echo "enfermedad {$cie10}: creada.\n";
 }
+
+// "Observaciones adicionales (PNP)": las fichas que no la piden la declaran en
+// nucleo_omitidos (manifiesto_fichas.json). Se agrega acá a la columna para no
+// recargar esas fichas con cargar_fichas.php (O95, P96, P35.0 y Z21 tienen
+// migraciones propias que corren después del cargador).
+$omitir = $pdo->prepare(
+    "UPDATE enfermedad SET nucleo_omitidos = JSON_ARRAY_APPEND(COALESCE(nucleo_omitidos, JSON_ARRAY()), '$', 'observaciones_pnp')
+      WHERE cie10 = ? AND (nucleo_omitidos IS NULL OR NOT JSON_CONTAINS(nucleo_omitidos, '\"observaciones_pnp\"'))"
+);
+foreach (['O95', 'P96', 'A33', 'P35.0', 'Z21', 'A50', 'REG-FEB'] as $cie10) {
+    $omitir->execute([$cie10]);
+    echo "nucleo_omitidos {$cie10}: " . ($omitir->rowCount() ? 'observaciones_pnp agregada' : 'ya la tenía') . ".\n";
+}
+
+// Notificación colectiva (consolidado semanal de EDA, cólera, IRA, neumonía,
+// SOB y asma), 2026-10-21: el área registra cada caso (registro de otras
+// enfermedades; el cólera, en la ficha A00) y el consolidado los cuenta.
+// cie10_vigilancia.consolidado dice en qué grupo cuenta cada código. Los
+// grupos (qué códigos son "diarrea aguda", "IRA no neumonía"...) se pueden
+// ajustar acá sin tocar el código del reporte.
+$columnas = array_column($pdo->query('SHOW COLUMNS FROM cie10_vigilancia')->fetchAll(), 'Type', 'Field');
+if (!str_contains($columnas['notificacion'], 'COLECTIVA')) {
+    $pdo->exec("ALTER TABLE cie10_vigilancia MODIFY notificacion enum('INMEDIATA','SEMANAL','COLECTIVA') COLLATE utf8mb4_unicode_ci NOT NULL");
+}
+if (!isset($columnas['consolidado'])) {
+    $pdo->exec('ALTER TABLE cie10_vigilancia ADD COLUMN consolidado varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER enfermedad_cie10');
+    echo "cie10_vigilancia: columna consolidado agregada.\n";
+}
+$pdo->exec("UPDATE cie10_vigilancia SET consolidado = 'COLERA' WHERE codigo = 'A00'");
+$colectivas = [
+    ['A09', 'A01,A02,A04,A05,A07,A08,A09', 'Diarrea aguda (enfermedad diarreica aguda)', 'EDA'],
+    ['A03', 'A03,A060', 'Disentería', 'DISENTERIA'],
+    ['J00-J06', 'J00,J01,J02,J03,J04,J05,J06,H65,H66', 'Infección respiratoria aguda (no neumonía)', 'IRA'],
+    ['J12-J18', 'J12,J13,J14,J15,J16,J17,J18', 'Neumonía', 'NEUMONIA'],
+    ['J21', 'J21', 'Síndrome obstructivo bronquial (SOB)', 'SOBA'],
+    ['J45-J46', 'J45,J46', 'Asma', 'ASMA'],
+];
+$orden = (int) $pdo->query('SELECT MAX(orden) FROM cie10_vigilancia')->fetchColumn();
+$insertarColectiva = $pdo->prepare(
+    "INSERT INTO cie10_vigilancia (codigo, prefijos, descripcion, notificacion, enfermedad_cie10, consolidado, orden) VALUES (?, ?, ?, 'COLECTIVA', NULL, ?, ?)
+     ON DUPLICATE KEY UPDATE prefijos = VALUES(prefijos), descripcion = VALUES(descripcion), notificacion = 'COLECTIVA', consolidado = VALUES(consolidado)"
+);
+foreach ($colectivas as $i => [$codigo, $prefijos, $descripcion, $grupo]) {
+    $insertarColectiva->execute([$codigo, $prefijos, $descripcion, $grupo, $orden + $i + 1]);
+}
+echo 'cie10_vigilancia: ' . count($colectivas) . " grupos de notificación colectiva.\n";
+
+// Fichas y registros que se parecen (2026-10-21, pedido del usuario: "¿cuál
+// elijo para reportar el caso?"). La ventana "Cambiar enfermedad" los muestra
+// juntos, cada uno con su criterio de uso, y el registro avisa con el
+// criterio de la ficha:
+//   - enfermedad.criterio: cuándo se usa la ficha MINSA.
+//   - cie10_vigilancia.par_cie10 / indicacion: la ficha con la que se puede
+//     confundir el código y cuándo se usa el registro.
+// Borrador: los criterios de cólera y EDA grave los valida el usuario con
+// las definiciones de caso del MINSA.
+if (!array_key_exists('criterio', array_column($pdo->query('SHOW COLUMNS FROM enfermedad')->fetchAll(), 'Type', 'Field'))) {
+    $pdo->exec('ALTER TABLE enfermedad ADD COLUMN criterio varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER palabras_clave');
+    echo "enfermedad: columna criterio agregada.\n";
+}
+$columnasVig = array_column($pdo->query('SHOW COLUMNS FROM cie10_vigilancia')->fetchAll(), 'Type', 'Field');
+if (!isset($columnasVig['par_cie10'])) {
+    $pdo->exec('ALTER TABLE cie10_vigilancia ADD COLUMN par_cie10 varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER consolidado,
+                ADD COLUMN indicacion varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER par_cie10');
+    echo "cie10_vigilancia: columnas par_cie10 e indicacion agregadas.\n";
+}
+$criterios = [
+    'A00'   => 'Sospecha de cólera o diarrea con deshidratación grave',
+    'B01'   => 'Varicela con complicaciones (neumonía, encefalitis, meningitis u otras)',
+    'B26'   => 'Parotiditis con complicaciones (orquitis, meningitis, encefalitis, pancreatitis u otras)',
+    'A50'   => 'Sífilis en gestante o sífilis congénita',
+    'Y59.0' => 'Evento supuestamente atribuido a la vacunación o inmunización',
+];
+$ponerCriterio = $pdo->prepare('UPDATE enfermedad SET criterio = ? WHERE cie10 = ?');
+foreach ($criterios as $cie10 => $criterio) {
+    $ponerCriterio->execute([$criterio, $cie10]);
+}
+// El nombre corto de A50 era "Sífilis", igual que el registro de la sífilis del adulto (A51).
+$pdo->exec("UPDATE enfermedad SET nombre_corto = 'Sífilis materna y congénita' WHERE cie10 = 'A50' AND nombre_corto = 'Sífilis'");
+
+$indicaciones = [
+    'A09'     => ['A00', 'Diarrea sin sospecha de cólera ni deshidratación grave; se cuenta en el consolidado semanal'],
+    'A03'     => ['A00', 'Diarrea con sangre; se cuenta en el consolidado semanal'],
+    'B01.9'   => ['B01', 'Varicela sin complicaciones'],
+    'B26.9'   => ['B26', 'Parotiditis sin complicaciones'],
+    'A51'     => ['A50', 'Sífilis en adulto o adolescente que no es gestante'],
+    'GVI'     => ['Y59.0', 'Gestante vacunada sin saber que estaba embarazada, tenga o no algún evento'],
+    'J00-J06' => [null, 'Resfrío, faringitis, amigdalitis, otitis, sinusitis o laringitis; se cuenta en el consolidado semanal'],
+    'J12-J18' => [null, 'Se cuenta en el consolidado semanal (menores de 5 años: indicar si es grave)'],
+    'J21'     => [null, 'Bronquiolitis o síndrome obstructivo bronquial; se cuenta en el consolidado semanal'],
+    'J45-J46' => [null, 'Se cuenta en el consolidado semanal'],
+];
+$ponerIndicacion = $pdo->prepare('UPDATE cie10_vigilancia SET par_cie10 = ?, indicacion = ? WHERE codigo = ?');
+foreach ($indicaciones as $codigo => [$par, $indicacion]) {
+    $ponerIndicacion->execute([$par, $indicacion, $codigo]);
+}
+$pdo->exec("UPDATE cie10_vigilancia SET descripcion = 'Sífilis (no materna ni congénita)' WHERE codigo = 'A51'");
+echo 'Criterios de uso: ' . count($criterios) . ' fichas y ' . count($indicaciones) . " códigos del registro.\n";

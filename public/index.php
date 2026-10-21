@@ -239,6 +239,14 @@ $router->get('/febriles', function () {
     (new ReportesController())->febriles(true);
 });
 
+$router->get('/reportes/consolidado-pnp', function () {
+    (new ReportesController())->consolidadoPnp();
+});
+
+$router->get('/reportes/consolidado-pnp/exportar', function () {
+    (new ReportesController())->exportarConsolidadoPnp();
+});
+
 $router->get('/reportes/febriles', function () {
     (new ReportesController())->febriles();
 });

@@ -6971,6 +6971,7 @@
         "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
+        "observaciones_pnp",
         "pueblo_etnico",
         "etnia",
         "nombre_tutor",
@@ -9523,6 +9524,7 @@
       },
       "_nota_nucleo": "Los ítems 1-3 y 6-8 del PDF (Datos del EESS y sus dos fechas) son los mismos datos para las dos ramas: DISA/DIRESA, nombre, institución y tipo del EE.SS. salen del establecimiento elegido (red_salud.diresa/establecimiento.institucion, mismo criterio que A37.0/A97/B57/A95/A00) y la fecha de notificación es el núcleo fecha_notif; solo la fecha de reporte y el código se capturan como campo_def. 'Tipo de EESS' fue campo_def hasta el 2026-09-12: el usuario pidió que no se capture sino que se tome del establecimiento, y como el padrón no guardaba la categoría se creó establecimiento.categoria (sql/migraciones/add_categoria_establecimiento.php, llenada desde el listado RENIPRESS); el tipo sale de ahí con tipoEstablecimientoPorCategoria() (I-1/I-2 Puesto de Salud, I-3/I-4 Centro de Salud, II-x/III-1/III-E Hospital). Los ítems 4 y 9 (Datos de la gestante / del niño: DNI, apellidos y nombres, fecha de nacimiento, sexo) son el núcleo de persona de cada caso. El PDF no trae captación, clasificación del caso, investigador ni fecha de inicio de síntomas: los cuatro se omiten del formulario. La clasificación igual se guarda (2026-09-13): la calculan las reglas 'clasificar' de reglas_campos para el registro por búsqueda activa de la pág. 15 (Gestante con VIH / Aborto / Mortinato / Niño nacido expuesto).",
       "nucleo_omitidos": [
+        "observaciones_pnp",
         "celular",
         "nacionalidad",
         "direccion",
@@ -11015,6 +11017,7 @@
         "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
+        "observaciones_pnp",
         "celular",
         "nacionalidad",
         "direccion",
@@ -11838,6 +11841,7 @@
         }
       ],
       "nucleo_omitidos": [
+        "observaciones_pnp",
         "gestante",
         "celular",
         "nombre_tutor",
@@ -13829,6 +13833,7 @@
         "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
+        "observaciones_pnp",
         "celular",
         "nacionalidad",
         "localidad",
@@ -15710,6 +15715,7 @@
       },
       "_nota_residencia_madre": "La residencia habitual de un feto o de un neonato es la de su madre, así que es UNA sola: la residencia del núcleo, con el título del PDF (nucleo_ajustes.titulo_residencia). Antes había dos (la del núcleo y un bloque MADRE en caso_sujeto que además pedía una dirección que el PDF no trae). P96 deja de ser multi_sujeto: sql/migraciones/set_p96_muerte_fetal_neonatal.php.",
       "nucleo_omitidos": [
+        "observaciones_pnp",
         "celular",
         "nacionalidad",
         "localidad",
@@ -16125,10 +16131,35 @@
               "valor_activador": "FALLECIDO"
             },
             {
+              "clave": "reg_lugar_defuncion",
+              "etiqueta": "Lugar de la defunción",
+              "tipo": "SELECT",
+              "orden": 3,
+              "obligatorio": true,
+              "opciones": [
+                "Intrahospitalaria",
+                "Extrahospitalaria"
+              ],
+              "depende_de": "reg_situacion",
+              "valor_activador": "FALLECIDO",
+              "_nota": "Consolidado de IRA y neumonía: defunción intrahospitalaria o extrahospitalaria."
+            },
+            {
+              "clave": "reg_neumonia_grave",
+              "etiqueta": "Neumonía grave o enfermedad muy grave (menor de 5 años)",
+              "tipo": "SELECT",
+              "orden": 4,
+              "opciones": [
+                "Sí",
+                "No"
+              ],
+              "_nota": "Consolidado de IRA: casos de neumonía grave / enfermedad muy grave (NG + EMG). ficha.js lo muestra solo con un diagnóstico de neumonía (J12-J18); en un menor de 2 meses toda neumonía cuenta como grave."
+            },
+            {
               "clave": "reg_observaciones",
               "etiqueta": "Observaciones",
               "tipo": "TEXTAREA",
-              "orden": 3
+              "orden": 5
             }
           ]
         }
@@ -16148,6 +16179,7 @@
         "caso_examen_auxiliar": false
       },
       "nucleo_omitidos": [
+        "observaciones_pnp",
         "celular",
         "nacionalidad",
         "referencia_localizar",

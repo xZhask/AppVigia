@@ -663,6 +663,24 @@ $accionEtiquetas = [
     <?php $numeroSeccion++; ?>
     <?php endif; ?>
 
+    <?php // "Observaciones adicionales (PNP)" (2026-10-21): solo si hay algo. ?>
+    <?php $observacionesPnpVer = array_filter([
+        'Descanso médico 1' => $caso['descanso1_inicio'] ? fechaIsoADmy($caso['descanso1_inicio']) . ' al ' . (fechaIsoADmy($caso['descanso1_fin']) ?: '—') : '',
+        'Descanso médico 2' => $caso['descanso2_inicio'] ? fechaIsoADmy($caso['descanso2_inicio']) . ' al ' . (fechaIsoADmy($caso['descanso2_fin']) ?: '—') : '',
+        'Fecha de alta'     => fechaIsoADmy($caso['fecha_alta']),
+    ]); ?>
+    <?php if ($observacionesPnpVer && !nucleoOmitido($enfermedadVer ?? [], 'observaciones_pnp')): ?>
+    <div class="card section">
+      <div class="section-head"><span class="section-num"><?= $numeroSeccion ?></span><h3>Observaciones adicionales (PNP)</h3></div>
+      <div class="section-body">
+        <div class="fields thirds">
+          <?php foreach ($observacionesPnpVer as $etiquetaPnp => $valorPnp): ?><div class="field"><label class="fl"><?= e($etiquetaPnp) ?></label><div class="control mono" style="background:var(--paper)"><?= e($valorPnp) ?></div></div><?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+    <?php $numeroSeccion++; ?>
+    <?php endif; ?>
+
     <!-- Investigador -->
 <?php // nucleo_ajustes.investigador (A50, 2026-09-14): la tarjeta con su título y solo los campos que la ficha declara. ?>
 <?php if (is_array(nucleoAjuste($enfermedadVer ?? [], 'investigador'))):

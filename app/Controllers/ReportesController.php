@@ -7,6 +7,7 @@ use App\Core\Csrf;
 use App\Core\Flash;
 use App\Models\Caso;
 use App\Models\Consolidado;
+use App\Models\ConsolidadoPnp;
 use App\Models\Enfermedad;
 use App\Models\Establecimiento;
 use App\Models\FormatoPnp;
@@ -332,8 +333,9 @@ class ReportesController extends Controller
 
         $linea(['N.°', 'Grado', 'ACT/RET', 'F', $vih ? 'Iniciales del paciente' : 'Apellidos y nombres', 'Edad M', 'Edad F', 'N.° CIP', 'N.° DNI',
             'Lugar probable de infección: provincia', 'Distrito', 'Localidad', 'Dirección de residencia', 'Diagnóstico CIE-10',
-            'Tipo de Dx P', 'C', 'D', 'Protegido SI', 'NO', 'IG', 'Fecha de inicio de síntomas', 'Fecha de defunción', 'Fecha de notificación',
-            'Ficha de investigación SI', 'NO', 'Vigilancia pasiva', 'Búsqueda activa', 'Unidad de origen', 'Situación del paciente', 'Observaciones', 'Ficha VIGÍA']);
+            'Tipo de Dx P', 'C', 'D', 'Protegido SI', 'NO', 'IG', 'Fecha de inicio de síntomas', 'Fecha de difusión', 'Fecha de notificación',
+            'Ficha de investigación SI', 'NO', 'Vigilancia pasiva', 'Búsqueda activa', 'Unidad de origen', 'Situación del paciente',
+            'Descanso médico 1: inicio', 'Término', 'Descanso médico 2: inicio', 'Término', 'Fecha de alta', 'Observaciones', 'Ficha VIGÍA']);
         foreach ($casos as $i => $c) {
             $linea([
                 $i + 1, $c['grado'], $c['act_ret'], $marca($c['familiar']), $c['nombre'],
@@ -341,14 +343,78 @@ class ReportesController extends Controller
                 $c['lugar_provincia'], $c['lugar_distrito'], $c['lugar_localidad'], $c['direccion'], $c['cie10'],
                 $marca($c['tipo_dx'] === 'P'), $marca($c['tipo_dx'] === 'C'), $marca($c['tipo_dx'] === 'D'),
                 $marca($c['protegido'] === 'SI'), $marca($c['protegido'] === 'NO'), $marca($c['protegido'] === 'IG'),
-                fechaIsoADmy($c['inicio_sintomas']), fechaIsoADmy($c['defuncion']), fechaIsoADmy($c['notificacion']),
+                fechaIsoADmy($c['inicio_sintomas']), fechaIsoADmy($c['difusion']), fechaIsoADmy($c['notificacion']),
                 $marca($c['investigacion'] === 'SI'), $marca($c['investigacion'] === 'NO'),
                 $marca($c['vigilancia'] === 'PAS'), $marca($c['vigilancia'] === 'ACT'),
-                $c['unidad'], $c['situacion'], $c['observaciones'], $c['codigo'],
+                $c['unidad'], $c['situacion'],
+                fechaIsoADmy($c['descanso1_inicio']), fechaIsoADmy($c['descanso1_fin']), fechaIsoADmy($c['descanso2_inicio']), fechaIsoADmy($c['descanso2_fin']), fechaIsoADmy($c['fecha_alta']),
+                $c['observaciones'], $c['codigo'],
             ]);
         }
         $linea([]);
         $linea(['Tipo de diagnóstico: P: probable · C: confirmado · D: descartado']);
+        fclose($salida);
+        exit;
+    }
+
+    /**
+     * Registro semanal consolidado del Área de Epidemiología PNP (2026-10-21):
+     * EDA, cólera, IRA, neumonía, SOB y asma contados de los casos de la
+     * semana (ver ConsolidadoPnp).
+     */
+    public function consolidadoPnp(): void
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
+
+        $this->vista('reportes/consolidado-pnp', [
+            'tituloVista'      => 'Registro consolidado',
+            'rutaActual'       => 'reportes',
+            'vistaAncha'       => true,
+            'filtros'          => $filtros,
+            'establecimientos' => Establecimiento::todos('nombre'),
+            'puedeElegirEstablecimiento' => !Auth::tieneRol('REGISTRADOR'),
+            'encabezado'       => FormatoPnp::encabezado($filtros['establecimiento_id']),
+            'rangoSemana'      => ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']),
+            'datos'            => ConsolidadoPnp::semana($filtros),
+        ]);
+    }
+
+    /** El consolidado en CSV: las tres tablas, una debajo de otra. */
+    public function exportarConsolidadoPnp(): void
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
+        $datos = ConsolidadoPnp::semana($filtros);
+        $encabezado = FormatoPnp::encabezado($filtros['establecimiento_id']);
+
+        $salida = $this->abrirCsv('registro_consolidado_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
+        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
+        $this->cabeceraCsvPnp($linea, ConsolidadoPnp::NOMBRE, $encabezado, $filtros);
+        $titulos = ['eda' => 'Consolidado semanal de casos de EDA y cólera', 'ira' => 'Consolidado semanal de IRA, asma y SOB', 'neumonia' => 'Neumonía (5 años a más)'];
+        foreach (ConsolidadoPnp::columnas() as $nombre => $grupos) {
+            $linea([mb_strtoupper($titulos[$nombre])]);
+            // Una columna por clave: "Grupo · subgrupo · edad".
+            $cabecera = ['T', 'F', 'Provincia', 'Distrito'];
+            foreach ($grupos as $grupo => $contenido) {
+                foreach ($contenido as $etiqueta => $valor) {
+                    if (is_array($valor)) {
+                        foreach (array_keys($valor) as $edad) {
+                            $cabecera[] = "$grupo · $etiqueta · $edad";
+                        }
+                    } else {
+                        $cabecera[] = "$grupo · $etiqueta";
+                    }
+                }
+            }
+            $linea($cabecera);
+            $claves = ConsolidadoPnp::clavesDe($grupos);
+            foreach ($datos[$nombre] as $fila) {
+                $linea(array_merge(
+                    [$fila['situacion'] === 'T' ? 'X' : '', $fila['situacion'] === 'F' ? 'X' : '', $fila['provincia'], $fila['distrito']],
+                    array_map(fn($clave) => $fila['n'][$clave] ?? '', $claves)
+                ));
+            }
+            $linea([]);
+        }
         fclose($salida);
         exit;
     }

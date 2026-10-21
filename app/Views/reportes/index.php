@@ -44,7 +44,7 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
 
 <nav class="pestanas reporte-pestanas" aria-label="Tipo de reporte">
   <a class="pestana<?= $pestana === 'consolidado' ? ' on' : '' ?>" href="<?= e($url('/reportes')) ?>">Consolidado</a>
-  <a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono">5</span></a>
+  <a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono">6</span></a>
 </nav>
 
 <?php if ($pestana === 'formatos'): ?>
@@ -73,6 +73,12 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
       <h3><?= e(FormatoPnp::VIH) ?></h3>
       <p>El mismo registro para VIH/SIDA y gestante con VIH / niño expuesto, con las iniciales del paciente.</p>
       <a class="btn btn-primary" href="/reportes/registro-individual-vih">Abrir registro</a>
+    </div>
+    <div class="card formato">
+      <span class="codigo-formato mono">PNP · Consolidado semanal</span>
+      <h3><?= e(App\Models\ConsolidadoPnp::NOMBRE) ?></h3>
+      <p>EDA, cólera, IRA, neumonía, SOB y asma, contados de los casos registrados en la semana.</p>
+      <a class="btn btn-primary" href="/reportes/consolidado-pnp">Abrir consolidado</a>
     </div>
     <div class="card formato">
       <span class="codigo-formato mono">PNP · Registro diario</span>

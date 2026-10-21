@@ -1319,3 +1319,11 @@ html[data-theme="dark"] .cat-rol.ADMIN{color:#A99FF0;background:#231F40;border-c
 @media (max-width:1250px){.cat-tabla .cat-ocultar-m{display:none}}
 @media (max-width:760px){.cat-filtros .filtro-caja,.cat-filtros .cat-buscar{flex:1 1 100%;max-width:none}.cat-filtros .seg{margin-left:0}.cat-tabla .cat-ocultar-s{display:none}.cat-kv{grid-template-columns:1fr}.cat-tabla .pt-name,.cat-tabla .cell-sub{max-width:200px}}
 .cat-sec p a{color:var(--accent-deep);font-weight:600}
+
+/* Ventana "Cambiar enfermedad": criterio de uso bajo el nombre, para fichas y registros que se parecen (2026-10-21) */
+.modal-nombre{display:flex;flex-direction:column;min-width:0}
+.modal-criterio{font-size:11.5px;font-weight:400;color:var(--muted);line-height:1.35;margin-top:2px}
+.modal-item.modal-par{padding-left:22px}
+.modal-item.modal-par .modal-cie{width:46px}
+/* La búsqueda de la ventana "Cambiar enfermedad" oculta ítems con [hidden]; display:flex lo anulaba (2026-10-21) */
+.modal-item[hidden]{display:none}
