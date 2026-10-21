@@ -274,7 +274,9 @@ $encabezadoOrden = function (string $clave, string $etiqueta) use ($filtros, $ur
               <div class="pt-name trunc" title="<?= e($nombrePaciente) ?>"><?= e($nombrePaciente) ?></div>
               <div class="pt-doc"><?= e(documentoParaMostrar($ficha['tipo_doc'], $ficha['num_doc'], true)) ?> · <?= e($ficha['sexo'] ?? '—') ?><?= $edadCompacta !== null ? ' · ' . $edadCompacta : '' ?></div>
             </td>
-            <td><div class="trunc" title="<?= e($ficha['enfermedad_nombre']) ?>"><?= e($ficha['enfermedad_nombre']) ?></div><div class="cell-sub mono"><?= e($ficha['cie10'] ?? '—') ?></div></td>
+            <?php // Registros PNP (2026-10-21): el diagnóstico en vez de la clave REG-PNP/REG-FEB. ?>
+            <?php $dxPnp = diagnosticoRegistroPnp($ficha); $esRegistroPnp = str_starts_with((string) ($ficha['cie10'] ?? ''), 'REG-'); ?>
+            <td><div class="trunc" title="<?= e($ficha['enfermedad_nombre']) ?>"><?= e($ficha['enfermedad_nombre']) ?></div><div class="cell-sub<?= $dxPnp === null ? ' mono' : '' ?> trunc" title="<?= e($dxPnp ?? '') ?>"><?= e($dxPnp ?? ($esRegistroPnp ? 'Registro PNP' : ($ficha['cie10'] ?? '—'))) ?></div></td>
             <td><div class="trunc trunc-eess" title="<?= e($ficha['establecimiento_nombre']) ?>"><?= e(nombreEnOracion($ficha['establecimiento_nombre'])) ?></div><div class="cell-sub"><?= e($ficha['red_nombre'] ?? '—') ?></div></td>
             <td class="nowrap"><div class="mono se">SE <?= (int) $ficha['semana_epi'] ?></div><div class="cell-sub mono"><?= e(fechaIsoADmy($ficha['fecha_notif'])) ?></div></td>
             <td><?php if ($c): ?><span class="badge-clas" style="--c:<?= $c['color'] ?>"><span class="dot"></span><?= e($c['etiqueta']) ?></span><?php else: ?><span class="state">—</span><?php endif; ?></td>

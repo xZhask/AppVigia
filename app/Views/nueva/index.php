@@ -46,6 +46,27 @@ $esRegistroPnp = Enfermedad::esRegistro($enfermedad);
 $etiquetaCie = $esRegistroPnp ? 'Registro PNP' : 'CIE-10 · ' . ($enfermedad['cie10'] ?? '—');
 $casoOrigen = $casoOrigen ?? null;
 $abrirSugerenciasCie10 = $abrirSugerenciasCie10 ?? false;
+// El registro de otras enfermedades se titula con su diagnóstico
+// ("Leptospirosis", etiqueta "A27.0"), que el JS actualiza al cambiar el
+// código. La etiqueta #cieTag sigue diciendo "Registro PNP": varias reglas de
+// ficha.js leen su texto para reconocer la ficha (un B26.9 activaría B26).
+$esRegistroOtras = ($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS;
+$dxRegistro = '';
+if ($esRegistroOtras && is_string($claveDx = nucleoAjuste($enfermedad, 'cie10_dx_desde'))) {
+    $campoDx = \App\Models\CampoDef::porClave((int) $enfermedad['id'], $claveDx);
+    $dxRegistro = $campoDx && empty($erroresCampos[(int) $campoDx['id']]) ? (string) ($valoresCampos[(int) $campoDx['id']] ?? '') : '';
+}
+$nombreDx = $dxRegistro !== '' ? Cie10Vigilancia::nombreDiagnostico($dxRegistro) : null;
+$tituloEncabezado = $nombreDx ?? $nombreEnfermedad;
+// El tipo de notificación también sigue al diagnóstico (listado PNP: la peste
+// es inmediata aunque el registro sea semanal).
+$tipoNotifBase = (string) $enfermedad['tipo_notif'];
+$tipoNotif = $nombreDx !== null ? (Cie10Vigilancia::notificacionDe($dxRegistro) ?? $tipoNotifBase) : $tipoNotifBase;
+$esInmediata = $tipoNotif === 'INMEDIATA';
+if ($nombreDx !== null) {
+    $tituloVista = 'Nuevo registro · ' . $nombreDx;
+    $crumbDetalle = $nombreDx;
+}
 $registroOtras = null;
 foreach ($enfermedades as $enf) {
     if (($enf['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS && (int) $enf['tiene_definicion'] === 1) {
@@ -57,9 +78,10 @@ $crumbDetalle = $nombreEnfermedad;
 ob_start(); ?>
 <div class="ctxbar" id="ctxBar" aria-hidden="true">
   <span class="ctxbar-franja"></span>
-  <span class="ctxbar-nombre"><?= e($nombreEnfermedad) ?></span>
+  <span class="ctxbar-nombre" data-titulo-dx><?= e($tituloEncabezado) ?></span>
   <span class="tag"><?= e($esRegistroPnp ? 'Registro PNP' : ($enfermedad['cie10'] ?? '—')) ?></span>
-  <span class="badge-notif <?= $esInmediata ? 'inmediata' : '' ?>"><i></i><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'])) ?></span>
+  <?php if ($esRegistroOtras): ?><span class="tag mono" data-tag-dx<?= $dxRegistro === '' ? ' hidden' : '' ?>><?= e($dxRegistro) ?></span><?php endif; ?>
+  <span class="badge-notif <?= $esInmediata ? 'inmediata' : '' ?>"<?= $esRegistroOtras ? ' data-notif-dx="corto" data-notif-base="' . e($tipoNotifBase) . '"' : '' ?>><i></i><?= e(etiquetaTipoNotif($tipoNotif)) ?></span>
   <span class="ctxbar-avance"><span class="barra-avance"><span data-avance-barra></span></span><span data-avance-texto></span></span>
   <button type="button" class="btn-enlace" data-abrir-enfermedad>Cambiar</button>
 </div>
@@ -73,10 +95,11 @@ ob_start(); ?>
   <section class="ctx-head" id="ctxHead">
     <div class="ctx-main">
       <div class="eyebrow ctx-eyebrow"><?= $esRegistroPnp ? 'Nuevo registro' : 'Nueva ficha de notificación' ?></div>
-      <h1 class="ctx-title"><?= e($nombreEnfermedad) ?></h1>
+      <h1 class="ctx-title" data-titulo-dx data-titulo-base="<?= e($nombreEnfermedad) ?>"><?= e($tituloEncabezado) ?></h1>
       <div class="ctx-meta">
+        <?php if ($esRegistroOtras): ?><span class="tag mono" data-tag-dx<?= $dxRegistro === '' ? ' hidden' : '' ?>><?= e($dxRegistro) ?></span><?php endif; ?>
         <span class="tag" id="cieTag"><?= e($etiquetaCie) ?></span>
-        <span class="badge-notif <?= $esInmediata ? 'inmediata' : '' ?>" id="tipoNotifTag"><i></i><?= e(etiquetaTipoNotif($enfermedad['tipo_notif'], true)) ?></span>
+        <span class="badge-notif <?= $esInmediata ? 'inmediata' : '' ?>" id="tipoNotifTag"<?= $esRegistroOtras ? ' data-notif-dx="largo" data-notif-base="' . e($tipoNotifBase) . '"' : '' ?>><i></i><?= e(etiquetaTipoNotif($tipoNotif, true)) ?></span>
       </div>
       <p class="ctx-desc"><?= $esRegistroPnp
         ? 'Formato del Área de Epidemiología de la Dirección de Salud Policial. Si el diagnóstico tiene ficha MINSA, se notifica en esa ficha.'

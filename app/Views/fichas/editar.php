@@ -21,7 +21,7 @@ $es = $estados[$caso['estado']];
 <div class="page-head">
   <div>
     <div class="page-title">Editar ficha <span class="mono"><?= e($caso['codigo']) ?></span></div>
-    <div class="page-desc"><?= e($caso['enfermedad_nombre']) ?> · <?= e($caso['establecimiento_nombre']) ?></div>
+    <div class="page-desc"><?= e($caso['enfermedad_nombre']) ?><?= ($dxPnp = diagnosticoRegistroPnp($caso)) !== null ? ' · ' . e($dxPnp) : '' ?> · <?= e($caso['establecimiento_nombre']) ?></div>
   </div>
   <div class="spacer"></div>
   <a class="btn btn-ghost" href="/casos/<?= (int) $caso['id'] ?>">Cancelar</a>

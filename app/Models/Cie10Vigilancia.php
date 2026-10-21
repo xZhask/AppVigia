@@ -69,6 +69,34 @@ class Cie10Vigilancia extends Model
         return $mejor && $mejor[1] !== null ? ($fichas[$mejor[1]] ?? null) : null;
     }
 
+    /**
+     * Nombre de un diagnóstico para mostrarlo como título de su registro
+     * (2026-10-21): el del listado PNP que lo contiene (A27.0 ->
+     * "Leptospirosis"), o la descripción del catálogo CIE-10, o null.
+     */
+    public static function nombreDiagnostico(string $codigo): ?string
+    {
+        static $cache = [];
+        if ($codigo === '') {
+            return null;
+        }
+        if (!array_key_exists($codigo, $cache)) {
+            $clave = Cie10::clave($codigo);
+            $mejor = null;
+            foreach (Database::conexion()->query('SELECT prefijos, descripcion FROM cie10_vigilancia')->fetchAll() as $fila) {
+                foreach (explode(',', $fila['prefijos']) as $prefijo) {
+                    $prefijo = trim($prefijo);
+                    if ($prefijo !== '' && str_starts_with($clave, $prefijo) && ($mejor === null || strlen($prefijo) > strlen($mejor[0]))) {
+                        $mejor = [$prefijo, $fila['descripcion']];
+                    }
+                }
+            }
+            $cache[$codigo] = $mejor[1] ?? descripcionCie10($codigo);
+        }
+
+        return $cache[$codigo];
+    }
+
     /** Tipo de notificación del listado PNP para un código (INMEDIATA/SEMANAL), o null. */
     public static function notificacionDe(string $codigo): ?string
     {

@@ -1136,6 +1136,22 @@ function errorSexoCie10(string $codigo, string $sexoPaciente): ?string
     return "El código {$fila['codigo']} ({$fila['descripcion']}) es solo para {$soloPara} en el catálogo CIE-10 del MINSA y el paciente es de sexo {$paciente}. Revisa el código o el sexo del paciente.";
 }
 
+/**
+ * Diagnóstico de un registro PNP para listados y encabezados (2026-10-21):
+ * "A27.0 · Leptospirosis". null si el caso no es un registro con diagnóstico
+ * (las fichas MINSA se nombran por su enfermedad).
+ */
+function diagnosticoRegistroPnp(array $caso): ?string
+{
+    $codigo = (string) ($caso['cie10_dx'] ?? '');
+    if ($codigo === '' || !str_starts_with((string) ($caso['cie10'] ?? ''), 'REG-')) {
+        return null;
+    }
+    $nombre = \App\Models\Cie10Vigilancia::nombreDiagnostico($codigo);
+
+    return $nombre !== null ? $codigo . ' · ' . $nombre : $codigo;
+}
+
 /** "P21.9 — Asfixia del nacimiento, no especificada", o el código solo si no está en el catálogo. */
 function cie10Legible(string $codigo): string
 {

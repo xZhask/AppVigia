@@ -4277,6 +4277,9 @@ class CasosController extends Controller
                 'descripcion' => $fila['descripcion'] ?? '',
                 'error'       => $codigo === null ? errorCodigoCie10($escrito) : errorSexoCie10($codigo, $sexo),
                 'ficha'       => $ficha ? ['id' => (int) $ficha['id'], 'nombre' => $ficha['nombre_corto'] ?: $ficha['nombre']] : null,
+                // Título del registro de otras enfermedades (2026-10-21).
+                'nombre_pnp'  => $codigo !== null ? Cie10Vigilancia::nombreDiagnostico($codigo) : null,
+                'notificacion' => $codigo !== null ? Cie10Vigilancia::notificacionDe($codigo) : null,
             ], JSON_UNESCAPED_UNICODE);
             return;
         }

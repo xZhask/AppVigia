@@ -83,7 +83,7 @@ $accionEtiquetas = [
 <div class="page-head">
   <div>
     <div class="page-title">Ficha <span class="mono"><?= e($caso['codigo']) ?></span></div>
-    <div class="page-desc"><?= e($caso['enfermedad_nombre']) ?> · <?= e($caso['establecimiento_nombre']) ?></div>
+    <div class="page-desc"><?= e($caso['enfermedad_nombre']) ?><?= ($dxPnp = diagnosticoRegistroPnp($caso)) !== null ? ' · ' . e($dxPnp) : '' ?> · <?= e($caso['establecimiento_nombre']) ?></div>
   </div>
   <div class="spacer"></div>
   <?php if ($mostrarClasificacionVer): ?><span class="chip"><span class="dot <?= $c['dot'] ?>"></span> <?= $c['etiqueta'] ?></span><?php endif; ?>

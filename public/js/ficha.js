@@ -4649,9 +4649,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // El registro de otras enfermedades se titula con su diagnóstico
+  // (2026-10-21): encabezado, barra compacta y título de la pestaña.
+  function tituloDiagnostico(input, codigo, nombre, notificacion) {
+    var formulario = input.closest('form[data-registro-pnp="otras"]');
+    if (!formulario) return;
+    var valido = !!(codigo && nombre);
+    document.querySelectorAll('[data-titulo-dx]').forEach(function (el) {
+      var base = document.querySelector('[data-titulo-base]');
+      el.textContent = valido ? nombre : (base ? base.getAttribute('data-titulo-base') : el.textContent);
+    });
+    document.querySelectorAll('[data-tag-dx]').forEach(function (el) {
+      el.textContent = valido ? codigo : '';
+      el.hidden = !valido;
+    });
+    document.querySelectorAll('[data-notif-dx]').forEach(function (el) {
+      var tipo = (valido && notificacion) ? notificacion : el.getAttribute('data-notif-base');
+      var etiqueta = { INMEDIATA: 'Inmediata', SEMANAL: 'Semanal', MENSUAL: 'Mensual' }[tipo] || tipo;
+      el.classList.toggle('inmediata', tipo === 'INMEDIATA');
+      el.lastChild.textContent = el.getAttribute('data-notif-dx') === 'largo' ? 'Notificación ' + etiqueta.toLowerCase() : etiqueta;
+    });
+    var base = document.querySelector('[data-titulo-base]');
+    if (base) document.title = 'VIGÍA · ' + (valido ? 'Nuevo registro · ' + nombre : 'Nueva ficha · ' + base.getAttribute('data-titulo-base'));
+  }
+
   function cotejar(input) {
     var escrito = input.value.trim();
-    if (!escrito) { mostrarDescripcion(input, '', false); avisoFicha(input, null); return; }
+    if (!escrito) { mostrarDescripcion(input, '', false); avisoFicha(input, null); tituloDiagnostico(input, '', ''); return; }
     fetch('/cie10/buscar?codigo=' + encodeURIComponent(escrito) + '&sexo=' + sexoDelPaciente(), { headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (datos) {
@@ -4659,6 +4683,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (datos.codigo && datos.codigo !== escrito) input.value = datos.codigo;
         mostrarDescripcion(input, datos.error || datos.descripcion || '', !!datos.error);
         avisoFicha(input, datos.ficha || null);
+        tituloDiagnostico(input, datos.error || datos.ficha ? '' : (datos.codigo || ''), datos.nombre_pnp || '', datos.notificacion || '');
       })
       .catch(function () {});
   }
