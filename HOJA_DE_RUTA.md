@@ -1,4 +1,4 @@
-# Hoja de ruta — estado al 2026-10-15
+# Hoja de ruta — estado al 2026-10-21
 
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
@@ -362,6 +362,24 @@ No tocar sin una respuesta explícita.
    es obligatorio, así que todo caso queda clasificado. El cuadro está en
    Reportes ("Registro de Búsqueda Activa"). Comprobado de nuevo el 16/10.
 
+5. **Abiertas al 21/10** (registros PNP, catálogos y cierre semanal):
+   - **Definiciones de caso por enfermedad:** el usuario busca los textos en
+     las fuentes del MINSA. Con ellas, validar los criterios de uso que hoy
+     son borrador (`enfermedad.criterio` de A00 "sospecha de cólera o diarrea
+     con deshidratación grave" y las indicaciones de diarrea aguda y
+     disentería en `cie10_vigilancia`), en `add_registro_pnp.php`.
+   - **Roles nuevos** ("Responsable de red", "Consulta"): el usuario lo
+     consulta con el área. Hoy solo ADMIN y REGISTRADOR.
+   - **Fecha de inicio del cierre semanal:** "Cumplimiento < 60 %" marca a
+     las 82 IPRESS porque cuenta las semanas anteriores al cierre. Propuesto:
+     una fecha en `config.php` desde la que se evalúa. Sin respuesta.
+   - **Opcional:** conservar los datos de la persona al cambiar de ficha en
+     Nueva ficha.
+   - Resueltas el 21/10 con el área: descanso médico y fecha de alta
+     (tarjeta "Observaciones adicionales (PNP)"), consolidado de EDA/IRA
+     contado caso por caso, código RENIPRESS, "Difusión" = fecha de
+     notificación y tipo de Dx P = probable.
+
 ## 4. Pendiente — técnico, sin decisión de por medio
 
 - ~~**Reportes:** el orden y las columnas por clasificación solo conocen las 4
@@ -433,6 +451,11 @@ No tocar sin una respuesta explícita.
     cada fila; en la ficha, pág. 16, es la última línea de la hoja). Pasa a
     una sección final "Observaciones" visible en las dos ramas
     (`set_z21_observaciones_ambas_ramas.php` para bases con casos).
+
+- **Numeración de secciones con saltos (21/10):** `renumerarSeccionesSiguientes()`
+  de `ficha.js` ya no cuenta tarjetas ocultas (19 de 26 fichas quedan
+  seguidas). Siguen con saltos B01 (repite el 3), O95, Y59.0, Z21, A50 y B24,
+  por secciones que aparecen según la rama o etapa elegida. Solo cosmético.
 
 ## 5. Cómo se ha trabajado (para mantener el criterio)
 
