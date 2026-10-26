@@ -6,7 +6,7 @@ use App\Core\Database;
 $pdo = Database::conexion();
 
 // Registros PNP (2026-10-21): formatos del Área de Epidemiología de la
-// Dirección de Salud Policial ("FICHAS NOTIFICACION EPIDEMIOLOGIA 2026.xlsx").
+// Dirección de Salud Policial (docs/fuentes/FICHAS NOTIFICACION EPIDEMIOLOGIA 2026.xlsx).
 //   - enfermedad.modalidad: FICHA (las 24 fichas MINSA) o REGISTRO (registro
 //     ligero del formato PNP). Los registros no suman en los indicadores de
 //     casos (Panel, Consolidado, badge de fichas abiertas).

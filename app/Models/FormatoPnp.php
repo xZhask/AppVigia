@@ -5,7 +5,7 @@ use App\Core\Database;
 
 /**
  * Formatos del Área de Epidemiología de la Dirección de Salud Policial
- * ("FICHAS NOTIFICACION EPIDEMIOLOGIA 2026.xlsx", 2026-10-21). No capturan
+ * (docs/fuentes/FICHAS NOTIFICACION EPIDEMIOLOGIA 2026.xlsx, 2026-10-21). No capturan
  * nada: leen las fichas y los registros PNP de una semana epidemiológica de
  * un establecimiento.
  *   - individual: "Registro semanal de notificación epidemiológica
