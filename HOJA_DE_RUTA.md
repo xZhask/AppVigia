@@ -484,6 +484,15 @@ No tocar sin una respuesta explícita.
        es Trimetoprim/Sulfametoxazol (o Cefoperazona/Sulbactam)? ¿Se quita
        el segundo Cefepime? Hoy se carga literalmente como en la norma; el
        cambio, si lo hay, es agregar o modificar un ítem del catálogo.
+     - **Consulta posterior — personal de salud (Anexo 9):** la norma pide
+       un total por año sin decir con qué corte, pero el personal cambia
+       durante el año (ingresos de SERUMS, rotación de internos y
+       residentes). ¿Se cuenta al inicio del año, un promedio, el máximo, o
+       se actualiza en cada ingreso? ¿En qué condición va el SERUMS (no está
+       entre las 6 del Anexo 9: ¿contratado u otro?)? Hoy hay un registro
+       por año, editable, y el indicador 9 de todos los meses usa el último
+       valor guardado. Si el área pide corte por mes, el cambio es pasar
+       `iaas_personal` a año-mes y que cada mes tome el suyo.
      - Fuera del alcance por ahora, salvo que el área lo pida: notificación
        de brotes y de cepas resistentes en 24 h (VI y VII), estudio de
        prevalencia anual (5.1.5) y supervisión (IX).
