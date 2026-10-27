@@ -178,7 +178,7 @@ class NotificacionSemanalController extends Controller
             $establecimiento = Establecimiento::buscar($establecimientoId);
             $admins = Database::conexion()->query("SELECT email FROM usuario WHERE rol = 'ADMIN' AND activo = 1")->fetchAll();
             foreach ($admins as $admin) {
-                MailService::enviar($admin['email'], "VIGÍA: solicitud de reapertura de la SE $semana",
+                MailService::enviar($admin['email'], "VIGÍA PNP: solicitud de reapertura de la SE $semana",
                     "{$usuario['nombre']} (" . ($establecimiento['nombre'] ?? '') . ") solicita reabrir la SE $semana · $anio.\n\nMotivo: $motivo\n\nRevísala en Notificación semanal.");
             }
             Flash::set('Solicitud enviada. La semana sigue cerrada hasta que un administrador la reabra.');
@@ -236,9 +236,9 @@ class NotificacionSemanalController extends Controller
                 continue;
             }
             foreach ($registradores[$id] as $registrador) {
-                $enviados += MailService::enviar($registrador['email'], "VIGÍA: falta cerrar la SE $semana",
+                $enviados += MailService::enviar($registrador['email'], "VIGÍA PNP: falta cerrar la SE $semana",
                     "Hola, {$registrador['nombre']}:\n\n" . nombreEnOracion($establecimiento['nombre']) . " todavía no cerró la SE $semana · $anio"
-                    . ' (plazo: ' . $plazo->format('d/m/Y H:i') . ").\n\nCerrar la semana es obligatorio aunque no haya casos: entra a VIGÍA, Notificación semanal.") ? 1 : 0;
+                    . ' (plazo: ' . $plazo->format('d/m/Y H:i') . ").\n\nCerrar la semana es obligatorio aunque no haya casos: entra a VIGÍA PNP, Notificación semanal.") ? 1 : 0;
             }
         }
 

@@ -4698,7 +4698,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.lastChild.textContent = el.getAttribute('data-notif-dx') === 'largo' ? 'Notificación ' + etiqueta.toLowerCase() : etiqueta;
     });
     var base = document.querySelector('[data-titulo-base]');
-    if (base) document.title = 'VIGÍA · ' + (valido ? 'Nuevo registro · ' + nombre : 'Nueva ficha · ' + base.getAttribute('data-titulo-base'));
+    if (base) document.title = 'VIGÍA PNP · ' + (valido ? 'Nuevo registro · ' + nombre : 'Nueva ficha · ' + base.getAttribute('data-titulo-base'));
   }
 
   function cotejar(input) {

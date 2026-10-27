@@ -168,7 +168,7 @@ class ReportesController extends Controller
         }
         $linea([]);
 
-        $linea(['N.°', 'Código del paciente', 'N.° de historia clínica', 'Edad', 'Tipo de edad', 'Sexo', 'Servicio', 'Clasificación de caso', 'Fecha de defunción', 'Notificado', 'Observaciones', 'Ficha VIGÍA']);
+        $linea(['N.°', 'Código del paciente', 'N.° de historia clínica', 'Edad', 'Tipo de edad', 'Sexo', 'Servicio', 'Clasificación de caso', 'Fecha de defunción', 'Notificado', 'Observaciones', 'Ficha VIGÍA PNP']);
         foreach ($casos as $indice => $caso) {
             $linea([
                 $indice + 1,
@@ -252,7 +252,7 @@ class ReportesController extends Controller
         $linea(['Establecimiento notificante', $encabezado['establecimiento'] ?: 'Todos', 'Responsable', (string) (Auth::usuario()['nombre'] ?? '')]);
         $linea([]);
 
-        $linea(['N.°', 'Apellidos y nombres', 'Sexo (1)', 'Edad gestacional (semanas)', 'Nacimiento: fecha', 'Nacimiento: hora', 'Muerte: fecha', 'Muerte: hora', 'Peso al nacer (gramos)', 'Tipo de muerte: fetal', 'Tipo de muerte: neonatal', 'Causa básica de muerte (2)', 'Diagnóstico CIE10', 'N.° días de estancia hospitalaria *', 'Lugar del parto (3)', 'Momento: anteparto', 'Momento: intra-parto', 'Momento: post-parto', 'Lugar de la muerte (4)', 'Residencia habitual de la madre: Dpto.', 'Prov.', 'Distrito', 'Establecimiento', 'Ficha VIGÍA']);
+        $linea(['N.°', 'Apellidos y nombres', 'Sexo (1)', 'Edad gestacional (semanas)', 'Nacimiento: fecha', 'Nacimiento: hora', 'Muerte: fecha', 'Muerte: hora', 'Peso al nacer (gramos)', 'Tipo de muerte: fetal', 'Tipo de muerte: neonatal', 'Causa básica de muerte (2)', 'Diagnóstico CIE10', 'N.° días de estancia hospitalaria *', 'Lugar del parto (3)', 'Momento: anteparto', 'Momento: intra-parto', 'Momento: post-parto', 'Lugar de la muerte (4)', 'Residencia habitual de la madre: Dpto.', 'Prov.', 'Distrito', 'Establecimiento', 'Ficha VIGÍA PNP']);
         foreach ($casos as $indice => $caso) {
             $linea([
                 $indice + 1,
@@ -335,7 +335,7 @@ class ReportesController extends Controller
             'Lugar probable de infección: provincia', 'Distrito', 'Localidad', 'Dirección de residencia', 'Diagnóstico CIE-10',
             'Tipo de Dx P', 'C', 'D', 'Protegido SI', 'NO', 'IG', 'Fecha de inicio de síntomas', 'Fecha de difusión', 'Fecha de notificación',
             'Ficha de investigación SI', 'NO', 'Vigilancia pasiva', 'Búsqueda activa', 'Unidad de origen', 'Situación del paciente',
-            'Descanso médico 1: inicio', 'Término', 'Descanso médico 2: inicio', 'Término', 'Fecha de alta', 'Observaciones', 'Ficha VIGÍA']);
+            'Descanso médico 1: inicio', 'Término', 'Descanso médico 2: inicio', 'Término', 'Fecha de alta', 'Observaciones', 'Ficha VIGÍA PNP']);
         foreach ($casos as $i => $c) {
             $linea([
                 $i + 1, $c['grado'], $c['act_ret'], $marca($c['familiar']), $c['nombre'],
@@ -464,7 +464,7 @@ class ReportesController extends Controller
         $linea(['Dirección de salud', 'DIRSAPOL', 'Red de salud', $encabezado['red'], 'Establecimiento', $encabezado['establecimiento'] ?: 'Todos']);
         $linea(['Semana N.°', $filtros['semana'] . ' - ' . $filtros['anio'], 'Día', $dia ? fechaIsoADmy($dia) : 'Toda la semana']);
         $linea([]);
-        $linea(['N.°', 'Grado', 'ACT/RET', 'F', 'H.CL', 'Fecha', 'Apellidos y nombres', 'DNI', 'Edad M', 'Edad F', 'Dirección', 'Distrito de residencia', 'Temperatura', 'Dx CIE-10', 'Diagnóstico', 'Servicio', 'Registro VIGÍA']);
+        $linea(['N.°', 'Grado', 'ACT/RET', 'F', 'H.CL', 'Fecha', 'Apellidos y nombres', 'DNI', 'Edad M', 'Edad F', 'Dirección', 'Distrito de residencia', 'Temperatura', 'Dx CIE-10', 'Diagnóstico', 'Servicio', 'Registro VIGÍA PNP']);
         foreach ($casos as $i => $c) {
             $linea([
                 $i + 1, $c['grado'], $c['act_ret'], $marca($c['familiar']), $c['historia'], fechaIsoADmy($c['fecha']), $c['nombre'], $c['dni'],

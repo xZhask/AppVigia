@@ -8,7 +8,7 @@ use App\Core\Csrf;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recuperar contraseña · VIGÍA</title>
+<title>Recuperar contraseña · VIGÍA PNP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -43,7 +43,7 @@ use App\Core\Csrf;
       <div class="auth-form">
         <h2>Revisa tu correo</h2>
         <p class="lead">
-          Si ese correo tiene una cuenta en VIGÍA, te enviamos un enlace para restablecer
+          Si ese correo tiene una cuenta en VIGÍA PNP, te enviamos un enlace para restablecer
           la contraseña. El enlace vence en 1 hora.
         </p>
 
@@ -65,7 +65,7 @@ use App\Core\Csrf;
       <form class="auth-form" method="post" action="/login/olvide">
         <?= Csrf::campoOculto() ?>
         <h2>Recuperar contraseña</h2>
-        <p class="lead">Ingresa tu correo institucional. Si tiene una cuenta en VIGÍA, te enviaremos un enlace para restablecer la contraseña.</p>
+        <p class="lead">Ingresa tu correo institucional. Si tiene una cuenta en VIGÍA PNP, te enviaremos un enlace para restablecer la contraseña.</p>
 
         <div class="auth-field">
           <label class="fl" for="email">Correo institucional</label>

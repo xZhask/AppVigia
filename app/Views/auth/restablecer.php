@@ -8,7 +8,7 @@ use App\Core\Csrf;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Restablecer contraseña · VIGÍA</title>
+<title>Restablecer contraseña · VIGÍA PNP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -63,7 +63,7 @@ use App\Core\Csrf;
         <?= Csrf::campoOculto() ?>
         <input type="hidden" name="token" value="<?= e($token) ?>">
         <h2>Elige una contraseña nueva</h2>
-        <p class="lead">Mínimo 8 caracteres. Úsala solo para tu cuenta institucional de VIGÍA.</p>
+        <p class="lead">Mínimo 8 caracteres. Úsala solo para tu cuenta institucional de VIGÍA PNP.</p>
 
         <?php if (!empty($errores['general'])): ?>
           <div class="auth-alert">

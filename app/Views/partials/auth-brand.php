@@ -6,7 +6,7 @@
       </svg>
     </div>
     <div>
-      <div class="auth-wordmark">VIGÍA</div>
+      <div class="auth-wordmark">VIGÍA PNP</div>
       <div class="auth-wordmark-sub">Vigilancia · DIRSAPOL</div>
     </div>
   </div>

@@ -122,8 +122,8 @@ class AuthController
 
                 MailService::enviar(
                     $usuario['email'],
-                    'VIGÍA · Restablecer contraseña',
-                    "Solicitaste restablecer tu contraseña en VIGÍA.\n\n"
+                    'VIGÍA PNP · Restablecer contraseña',
+                    "Solicitaste restablecer tu contraseña en VIGÍA PNP.\n\n"
                         . "Usa este enlace (válido por 1 hora):\n$enlace\n\n"
                         . "Si no fuiste tú, ignora este correo: tu contraseña sigue igual."
                 );
