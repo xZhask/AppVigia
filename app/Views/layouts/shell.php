@@ -64,6 +64,7 @@ $navItems = [
     ['ruta' => 'catalogos/establecimientos', 'etiqueta' => 'Establecimientos', 'crumb' => 'Establecimientos'],
     ['ruta' => 'catalogos/enfermedades',     'etiqueta' => 'Enfermedades',     'crumb' => 'Enfermedades'],
     ['ruta' => 'catalogos/usuarios',         'etiqueta' => 'Usuarios',         'crumb' => 'Usuarios'],
+    ['ruta' => 'sistema/errores',            'etiqueta' => 'Errores',          'crumb' => 'Errores del sistema'],
 ];
 
 $crumbActual = 'Panel';
@@ -77,7 +78,7 @@ foreach ($navItems as $item) {
 }
 if (!$coincidenciaExacta) {
     foreach ($navItems as $item) {
-        if (str_starts_with($item['ruta'], 'catalogos/') && str_starts_with($rutaActual, $item['ruta'] . '/')) {
+        if ((str_starts_with($item['ruta'], 'catalogos/') || str_starts_with($item['ruta'], 'sistema/')) && str_starts_with($rutaActual, $item['ruta'] . '/')) {
             $crumbActual = $item['crumb'];
             break;
         }
@@ -85,6 +86,17 @@ if (!$coincidenciaExacta) {
 }
 
 $puedeVerCatalogos = Auth::tieneRol('ADMIN');
+
+// Errores sin resolver (2026-10-27), para la insignia del ADMIN. Sin la
+// tabla (migración sin correr) no rompe las páginas.
+$erroresPendientes = 0;
+if ($puedeVerCatalogos) {
+    try {
+        $erroresPendientes = \App\Models\ErrorRegistro::contarPendientes();
+    } catch (\PDOException $e) {
+        error_log('Menú errores: ' . $e->getMessage());
+    }
+}
 
 // Grupo IAAS (2026-10-26). El REGISTRADOR ve su establecimiento; el ADMIN, el
 // que eligió en el módulo. Sin hospitalización: solo exposición laboral e
@@ -128,6 +140,8 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
     if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
   })();
 </script>
+<meta name="csrf-token" content="<?= e(Csrf::token()) ?>">
+<script src="<?= e(asset('/js/errores.js')) ?>"></script>
 </head>
 <body<?= $mensajeFlash !== null ? ' data-flash="' . e($mensajeFlash) . '"' : '' ?>>
 <div class="app">
@@ -220,6 +234,11 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
       <a class="nav-item<?= $rutaActual === 'catalogos/iaas' ? ' active' : '' ?>" href="/catalogos/iaas">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 2v2M8.5 13v2M2 8.5h2M13 8.5h2M3.9 3.9l1.4 1.4M11.7 11.7l1.4 1.4M3.9 13.1l1.4-1.4M11.7 5.3l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         Parámetros IAAS
+      </a>
+      <a class="nav-item<?= $rutaActual === 'sistema/errores' ? ' active' : '' ?>" href="/sistema/errores">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M8.5 2.5 15 14H2L8.5 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 7v3M8.5 12h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Errores
+        <?php if ($erroresPendientes > 0): ?><span class="count pendientes mono" title="Errores sin resolver"><?= $erroresPendientes ?></span><?php endif; ?>
       </a>
       <?php endif; ?>
       <?php endif; ?>

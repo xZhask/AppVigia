@@ -1,5 +1,14 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Regenerado el 2026-10-27 (decimosexta vez). Cambio de ESQUEMA:
+--   - Tabla error_registro: registro de errores del servidor (excepciones,
+--     avisos, caidas graves) y del navegador, con usuario, establecimiento y
+--     pantalla. Su id es el codigo que ve el usuario (E-00042); el ADMIN los
+--     revisa en /sistema/errores. Sin datos de configuracion nuevos.
+--     Migracion: sql/migraciones/add_registro_errores.php.
+-- ============================================================================
+--
+-- Sesion anterior (2026-10-26, decimoquinta vez):
 -- Regenerado el 2026-10-26 (decimoquinta vez). Cambio de ESQUEMA:
 --   - Modulo IAAS (NTS N 163-MINSA/2020/CDC, anexos 4 a 11): 15 tablas
 --     iaas_* (servicios y salas, ronda diaria con marcas por dispositivo,
@@ -1076,6 +1085,44 @@ CREATE TABLE `enfermedad` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `error_registro`
+--
+
+DROP TABLE IF EXISTS `error_registro`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `error_registro` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `huella` char(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `origen` enum('PHP','JS') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nivel` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `mensaje` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `archivo` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `linea` int DEFAULT NULL,
+  `traza` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `metodo` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ruta` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `campos_enviados` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `usuario_id` int DEFAULT NULL,
+  `establecimiento_id` int DEFAULT NULL,
+  `navegador` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `resuelto_en` timestamp NULL DEFAULT NULL,
+  `resuelto_por` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_error_huella` (`huella`,`creado_en`),
+  KEY `ix_error_creado` (`creado_en`),
+  KEY `fk_error_usuario` (`usuario_id`),
+  KEY `fk_error_establecimiento` (`establecimiento_id`),
+  KEY `fk_error_resuelto_por` (`resuelto_por`),
+  CONSTRAINT `fk_error_establecimiento` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_error_resuelto_por` FOREIGN KEY (`resuelto_por`) REFERENCES `usuario` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_error_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `establecimiento`
 --
 
@@ -2023,4 +2070,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-26 23:49:14
+-- Dump completed on 2026-10-27  1:27:13

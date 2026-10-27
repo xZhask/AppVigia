@@ -7,6 +7,7 @@ use App\Core\Csrf;
 use App\Core\CsvLector;
 use App\Core\Database;
 use App\Core\Flash;
+use App\Core\RegistroErrores;
 use App\Core\XlsxEscritor;
 use App\Core\XlsxLector;
 use App\Models\CampoDef;
@@ -250,7 +251,7 @@ class ImportacionController extends Controller
         } catch (Throwable $e) {
             $pdo->rollBack();
             error_log('Error al importar lote: ' . $e->getMessage());
-            Flash::set('No se pudo completar la importación por un error interno. No se guardó ninguna fila.');
+            Flash::set('No se pudo completar la importación por un error interno' . RegistroErrores::sufijoCodigo(RegistroErrores::registrarExcepcion($e)) . '. No se guardó ninguna fila.');
             header('Location: /casos/importar?enfermedad_id=' . $enfermedadId);
             exit;
         }

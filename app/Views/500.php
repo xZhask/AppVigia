@@ -10,7 +10,10 @@
 <body>
 <div class="view" style="max-width:520px;padding:80px 28px;text-align:center;margin:0 auto">
   <div class="page-title" style="margin-bottom:8px">Ocurrió un error inesperado</div>
-  <p class="page-desc" style="margin-bottom:20px">El sistema no pudo completar la acción. El detalle técnico quedó registrado; si el problema persiste, contacta al administrador.</p>
+  <p class="page-desc" style="margin-bottom:20px">El sistema no pudo completar la acción. El detalle técnico quedó registrado; si el problema persiste, comunícalo al Área de Epidemiología<?= !empty($codigoError) ? ' con este código' : '' ?>.</p>
+  <?php if (!empty($codigoError)): ?>
+    <div class="error-codigo"><span>Código del error</span><b class="mono"><?= e($codigoError) ?></b></div>
+  <?php endif; ?>
   <a class="btn btn-primary" href="/">Volver al panel</a>
 </div>
 </body>

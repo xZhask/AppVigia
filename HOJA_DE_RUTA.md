@@ -1,4 +1,4 @@
-# Hoja de ruta — estado al 2026-10-26
+# Hoja de ruta — estado al 2026-10-27
 
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
@@ -10,7 +10,7 @@ Servidor: MySQL 8.4.3 de Laragon. La app se conecta según
 
 ### 1.1 Instalar la base desde cero (estación sin `vigia`)
 
-`sql/01_esquema_actual.sql` trae la estructura de las 48 tablas (las 15 `iaas_*` desde el 26/10) y la
+`sql/01_esquema_actual.sql` trae la estructura de las 51 tablas (las 15 `iaas_*` desde el 26/10 y `error_registro` desde el 27/10) y la
 configuración de las 24 fichas (enfermedades, secciones, campos, catálogos,
 ubigeo, establecimientos, grados y el catálogo CIE-10 del MINSA), ya cargada
 con el manifiesto del 16/10. No
@@ -63,7 +63,8 @@ Para que no vuelva a pasar:
   el archivo tal cual y comparar contra `vigia` las columnas, índices y claves
   foráneas (`information_schema`) y el contenido de las 16 tablas de
   configuración (desde el 21/10 también `cie10_vigilancia`; desde el 26/10,
-  los tres catálogos `iaas_*`). Luego borrar `vigia_limpia`. El 26/10 dio 601
+  los tres catálogos `iaas_*`). Luego borrar `vigia_limpia`. El 27/10 dio 51
+  tablas, 619 columnas, 193 índices y 92 claves foráneas idénticas. El 26/10 dio 601
   columnas, 186 índices y 89 claves foráneas idénticas. El 15/10 dio 403 columnas,
   115 índices y 53 claves foráneas idénticas, 24 enfermedades, 195 secciones,
   1216 campos, 338 catálogos y 1861 ítems.
@@ -82,6 +83,7 @@ php sql/migraciones/cierre_notificacion_semanal.php
 php sql/migraciones/add_catalogos_rediseno.php
 php sql/migraciones/add_registro_pnp.php
 php sql/migraciones/add_modulo_iaas.php
+php sql/migraciones/add_registro_errores.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -119,6 +121,11 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   sus catálogos (Anexo 11, antimicrobianos literales y horas t). No toca las
   fichas. Se puede correr más de una vez: los catálogos se cargan solo si
   están vacíos.
+- `add_registro_errores.php` (27/10): tabla `error_registro`, el registro
+  de errores del servidor y del navegador (`App\Core\RegistroErrores`). El
+  id es el código que ve el usuario (E-00042); el ADMIN los revisa en
+  Catálogos > Errores (`/sistema/errores`). No guarda lo escrito en los
+  formularios, solo los nombres de los campos. Se puede correr más de una vez.
 - `add_registro_pnp.php` (21/10, antes del cargador): registros PNP.
   `enfermedad.modalidad` (FICHA/REGISTRO), `caso.cie10_dx`,
   `caso.caso_origen_id`, la tabla `cie10_vigilancia` (listado de vigilancia

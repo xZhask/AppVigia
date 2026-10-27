@@ -6,6 +6,7 @@ use App\Controllers\AuthController;
 use App\Controllers\CasosController;
 use App\Controllers\CuestionariosController;
 use App\Controllers\EnfermedadesController;
+use App\Controllers\ErroresController;
 use App\Controllers\EstablecimientosController;
 use App\Controllers\GradosController;
 use App\Controllers\IaasCasosController;
@@ -23,6 +24,7 @@ use App\Controllers\UbigeoController;
 use App\Controllers\UnidadesController;
 use App\Controllers\UsuariosController;
 use App\Core\Auth;
+use App\Core\RegistroErrores;
 use App\Core\Router;
 use App\Core\Session;
 
@@ -37,13 +39,9 @@ ini_set('display_errors', $config['app']['debug'] ? '1' : '0');
 // la sobreescriben explícitamente (header() reemplaza por nombre).
 header('Content-Type: text/html; charset=UTF-8');
 
-set_exception_handler(function (\Throwable $e): void {
-    error_log('Excepción no capturada: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
-    if (!headers_sent()) {
-        http_response_code(500);
-    }
-    require __DIR__ . '/../app/Views/500.php';
-});
+// Excepciones, avisos y caídas graves quedan en error_registro con un código
+// (E-00042) que se muestra al usuario; ver App\Core\RegistroErrores.
+RegistroErrores::instalar();
 
 Session::iniciar();
 
@@ -359,6 +357,20 @@ $router->post('/catalogos/iaas/antimicrobiano', function () {
 });
 $router->post('/catalogos/iaas/microorganismo', function () {
     (new IaasParametrosController())->guardarMicroorganismo();
+});
+
+// ---------- Errores del sistema (2026-10-27) ----------
+$router->get('/sistema/errores', function () {
+    (new ErroresController())->index();
+});
+$router->get('/sistema/errores/{id}', function ($id) {
+    (new ErroresController())->ver($id);
+});
+$router->post('/sistema/errores/{id}/resolver', function ($id) {
+    (new ErroresController())->resolver($id);
+});
+$router->post('/errores/js', function () {
+    (new ErroresController())->registrarJs();
 });
 
 // ---------- Catálogo: enfermedades ----------

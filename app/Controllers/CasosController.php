@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Flash;
+use App\Core\RegistroErrores;
 use App\Core\ReniecService;
 use App\Models\CampoDef;
 use App\Models\Caso;
@@ -769,7 +770,7 @@ class CasosController extends Controller
         } catch (Throwable $e) {
             $pdo->rollBack();
             error_log('Error al registrar ficha: ' . $e->getMessage());
-            Flash::set('No se pudo registrar la ficha por un error interno. Intenta nuevamente.');
+            Flash::set('No se pudo registrar la ficha por un error interno' . RegistroErrores::sufijoCodigo(RegistroErrores::registrarExcepcion($e)) . '. Intenta nuevamente; si se repite, comunícalo al Área de Epidemiología.');
             header('Location: /casos/nuevo');
             exit;
         }
@@ -1526,7 +1527,7 @@ class CasosController extends Controller
         } catch (Throwable $e) {
             $pdo->rollBack();
             error_log('Error al actualizar ficha: ' . $e->getMessage());
-            Flash::set('No se pudo guardar la ficha por un error interno. Intenta nuevamente.');
+            Flash::set('No se pudo guardar la ficha por un error interno' . RegistroErrores::sufijoCodigo(RegistroErrores::registrarExcepcion($e)) . '. Intenta nuevamente; si se repite, comunícalo al Área de Epidemiología.');
             header('Location: /casos/' . $id . '/editar');
             exit;
         }
