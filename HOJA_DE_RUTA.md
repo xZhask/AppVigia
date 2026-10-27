@@ -382,8 +382,31 @@ No tocar sin una respuesta explícita.
 
 6. **Vigilancia de IAAS (abierta 26/10):** anexos nuevos que manejará el
    área, en `docs/fuentes/IAAS anexos 4-11 (CDC-MINSA).pdf` (págs. 36-48 de
-   un documento técnico del CDC-MINSA). Es un módulo propio, no una ficha
-   más: los indicadores necesitan denominadores que hoy no existen.
+   la NTS N° 163-MINSA/2020/CDC; la norma completa la consiguió el usuario
+   el 26/10). Es un módulo propio, no una ficha más: los indicadores
+   necesitan denominadores que hoy no existen.
+   - **Resuelto con la NTS 163 (26/10):**
+     - Las páginas que faltaban son los instructivos de los Anexos 4, 5, 6-7
+       y 8. Los Anexos 1 a 3 son el ciclo de la vigilancia, la lista de
+       eventos obligatorios por UPSS y los criterios de caso.
+     - CVP, NPT y hemodiálisis: el "Factor de riesgo" del Anexo 4 es abierto
+       (VM, CVC y CUP son ejemplos), así que sirve para los 6 dispositivos.
+       El Anexo 2 fija qué UPSS vigila cada uno: CVP solo en UCI neonatal y
+       neonatología; hemodiálisis solo en UCI adultos; CUP también en
+       Medicina y Cirugía.
+     - Las ISQ y las endometritis se cuentan en el mes del procedimiento, no
+       en el de la infección (Anexo 3), y el "Total de días" del Anexo 4
+       excluye los días con la IAAS en tratamiento (marca x).
+     - Opciones del Anexo 8 (profesión, condición, servicio, profundidad,
+       fluido, EPP, procedimiento) y del Anexo 5 (tipo de cultivo 1-4 + otro,
+       hasta 2 microorganismos, clase de herida L/LC/C/I, ASA 1-5, índice de
+       riesgo de ISQ de 0 a 3) en sus instructivos.
+     - Las erratas del antibiograma y del Anexo 11 están en la norma
+       original, no en la copia. La norma además se cita mal a sí misma: los
+       indicadores están en el Anexo 10, no en el 9 (5.1.3).
+     - Ámbito: obligatoria para las IPRESS de Sanidad PNP. La exposición
+       laboral (Anexo 8) aplica a "todos los servicios", también sin
+       hospitalización.
    - Flujo propuesto. Numeradores: ficha de IAAS (Anexo 5), una por
      infección, y registro de exposición laboral a sangre (Anexo 8), uno por
      evento. Denominadores: seguimiento de pacientes con dispositivo (Anexo 4,
@@ -394,17 +417,24 @@ No tocar sin una respuesta explícita.
      endometritis e ISQ se cuentan desde las fichas (como el consolidado
      EDA/IRA), para que no se contradigan.
    - Por decidir con el área:
-     - Anexo 4: ¿marca diaria por paciente, como el papel, o solo fechas de
-       instalación y retiro con los días calculados?
-     - El Anexo 10 pide días de CVP, NPT y catéter de hemodiálisis, pero el
-       Anexo 4 solo contempla VM, CVC y CUP: sin eso no salen los
-       indicadores 2 a 4.
-     - Faltan las págs. 37, 39, 40, 43 y 45 (el Anexo 5 corta en el punto
-       4.5) y los Anexos 1 a 3.
-     - Erratas del papel: "Cefepime" repetido y "Sulfaperazona/Sulfametoxazol"
-       en el antibiograma; "Pseudomonas aeroginosa" y "Aspergillus niger spp"
-       (código ASP = Aspergillus spp) en el Anexo 11.
-     - ¿Qué IPRESS PNP lo usarán? (solo las que tienen hospitalización).
+     - **Relación con el aplicativo del CDC:** la norma manda notificar el
+       consolidado mensual allí, hasta el 7.° día hábil del mes siguiente
+       (5.1.2.5). ¿VIGÍA lo reemplaza internamente, sirve para preparar lo
+       que se transcribe, o tiene que exportar?
+     - Anexo 4: la norma pide anotarlo en cada visita diaria (5.1.2). ¿Marca
+       diaria, o fechas de instalación y retiro? Con solo fechas faltaría el
+       fin del tratamiento de la IAAS para excluir esos días.
+     - "Horas t" del índice de riesgo de ISQ: es el percentil 75 de la
+       duración de cada cirugía vigilada, y la norma no da los valores.
+     - Neonatos: estratificar por peso al nacer (≤750, 751-1000, 1001-1500,
+       1501-2500, >2500 g; 5.1.2.1). ¿Se pide en los reportes?
+     - Antibiograma: ¿"Sulfaperazona/Sulfametoxazol" es Trimetoprim/
+       Sulfametoxazol? Se propone mostrar Cefepime una sola vez.
+     - Qué IPRESS PNP tienen las UPSS del Anexo 2 (UCI, neonatología,
+       gineco-obstetricia, cirugía, traumatología, medicina).
+     - Fuera del alcance por ahora, salvo que el área lo pida: notificación
+       de brotes y de cepas resistentes en 24 h (VI y VII), estudio de
+       prevalencia anual (5.1.5) y supervisión (IX).
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
