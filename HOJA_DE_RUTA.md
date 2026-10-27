@@ -426,6 +426,11 @@ No tocar sin una respuesta explícita.
        les aplica el Anexo 8.
      - Antibiograma: se carga tal como está en la norma (Cefepime dos veces,
        "Sulfaperazona/Sulfametoxazol").
+     - Alcance: solo los anexos de la norma; no se intenta calzar con el
+       aplicativo del CDC por ahora.
+     - Anexo 4 con **marca diaria** por paciente y dispositivo, como el
+       papel: da los días que excluyen la IAAS en tratamiento (x), los días
+       por peso al nacer en neonatos y la continuidad entre meses (*).
    - **Propuesto, falta el visto bueno:**
      - "Horas t": tabla editable por tipo de cirugía, cargada con los
        valores de referencia NNIS/NHSN (cesárea 1 h; colecistectomía y
@@ -440,11 +445,6 @@ No tocar sin una respuesta explícita.
        en la ficha, y estratificar en 5 categorías solo en los reportes de
        UCI neonatal y neonatología.
    - Por decidir con el área:
-     - **Formato del aplicativo del CDC:** pantallas o plantilla de carga,
-       para que el reporte de VIGÍA salga en el mismo orden.
-     - Anexo 4: la norma pide anotarlo en cada visita diaria (5.1.2). ¿Marca
-       diaria, o fechas de instalación y retiro? Con solo fechas faltaría el
-       fin del tratamiento de la IAAS para excluir esos días.
      - **Consulta posterior — antibiograma:** ¿"Sulfaperazona/Sulfametoxazol"
        es Trimetoprim/Sulfametoxazol (o Cefoperazona/Sulbactam)? ¿Se quita
        el segundo Cefepime? Hoy se carga tal cual.
