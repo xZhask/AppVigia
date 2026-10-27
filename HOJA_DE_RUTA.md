@@ -504,6 +504,43 @@ No tocar sin una respuesta explícita.
        de brotes y de cepas resistentes en 24 h (VI y VII), estudio de
        prevalencia anual (5.1.5) y supervisión (IX).
 
+7. **Próximo paso — solicitud de acceso desde el aplicativo (27/10).** Que
+   las IPRESS pidan su usuario con un formulario en vez de correo o mensaje,
+   y que el ADMIN apruebe o rechace. Se implementa **después** de la subida
+   al servidor de prueba (28/10): el piloto arranca con el proceso actual.
+   - Flujo: enlace "Solicitar acceso" en el login → formulario (DNI con
+     RENIEC que completa los nombres, correo, teléfono, IPRESS de la lista,
+     cargo, grado/CIP) → el solicitante confirma su correo con un enlace →
+     la solicitud llega a Catálogos > Usuarios > Solicitudes (insignia en el
+     menú) → Aprobar: crea el usuario (persona compartida, sin pisar datos)
+     y le envía un enlace para crear su contraseña (`PasswordResetToken`,
+     el mismo de "Olvidé mi contraseña") / Rechazar: con motivo, se le avisa.
+   - Seguridad: solo se pide REGISTRADOR de una IPRESS (nunca ADMIN);
+     **solo correos de dominios institucionales** (lista editable por el
+     ADMIN; los administra otra entidad del Estado, que ya verificó a la
+     persona); límite por IP, campo trampa y CSRF; respuesta siempre igual
+     (no revela si el correo ya tiene cuenta); al aprobar se avisa si la
+     persona ya existe y cuántos registradores activos tiene la IPRESS;
+     solicitudes vencen a los 30 días y las rechazadas/vencidas se borran
+     tras un plazo; queda quién aprobó o rechazó y cuándo. Mejora sobre hoy:
+     el ADMIN ya no conoce ni envía contraseñas.
+   - Envío de correo: una cuenta **Gmail nueva de Epidemiología** por SMTP
+     (contraseña de aplicación, verificación en dos pasos; solo en
+     `config.php` del servidor). `MailService` usa hoy `mail()` de PHP y hay
+     que pasarlo a SMTP con TLS (sirve también para "Olvidé mi contraseña" y
+     los avisos de la notificación semanal). Remitente con nombre claro
+     ("VIGÍA PNP · Epidemiología DIRSAPOL") y avisar a las IPRESS de
+     antemano, para que no parezca phishing. A futuro: pedir a la entidad
+     que administra los correos una cuenta institucional de envío (solo
+     cambia la configuración).
+   - No recomendado: que el Gmail *reciba* solicitudes por correo y el
+     sistema las lea (el remitente se falsifica y es frágil).
+   - **Falta del usuario antes de implementar:** (1) los dominios exactos de
+     los correos institucionales; (2) prueba de envío desde la cuenta Gmail
+     nueva a 2-3 correos institucionales (¿llegan a la bandeja o a spam?);
+     (3) ¿se pide algún respaldo (memorando del jefe de la IPRESS) o basta
+     con los datos y la llamada del ADMIN cuando dude?
+
 ## 4. Pendiente — técnico, sin decisión de por medio
 
 - ~~**Reportes:** el orden y las columnas por clasificación solo conocen las 4
