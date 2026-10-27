@@ -71,6 +71,19 @@ require __DIR__ . '/_cabecera.php';
   <?php endif; ?>
 <?php endif; ?>
 
+<?php
+// Indicadores que no aparecen porque ningún servicio del establecimiento los vigila (Anexo 2).
+$nombresInd = [1 => 'ITS por CVC', 2 => 'ITS por CVP', 3 => 'ITS por NPT', 4 => 'ITS por catéter de hemodiálisis', 5 => 'ITU por CUP', 6 => 'neumonía por VM', 7 => 'ISQ', 8 => 'endometritis'];
+$ausentes = array_diff_key($nombresInd, array_flip(array_column($filas, 'n')));
+$nombreEst = \App\Models\Establecimiento::nombreVisible($establecimiento);
+?>
+<?php if (!$configuracion): ?>
+  <div class="iaas-aviso warn"><div><b><?= e($nombreEst) ?> todavía no indicó qué servicios tiene.</b> Por eso solo aparece el indicador 9 (exposición laboral), que aplica a toda IPRESS. Los indicadores 1 al 8 dependen de los servicios con hospitalización (UCI, neonatología, gineco-obstetricia, cirugía…) y aparecen al indicarlos.</div>
+    <a class="btn btn-ghost ns-btn-sm" href="/iaas/servicios">Indicar servicios</a></div>
+<?php elseif ($sinHosp): ?>
+  <div class="iaas-aviso info"><div><?= e($nombreEst) ?> está registrado <b>sin hospitalización</b>: de los indicadores del Anexo 10 solo le corresponde el 9 (exposición laboral). <a href="/iaas/servicios">Cambiar</a></div></div>
+<?php endif; ?>
+
 <section class="card table-card iaas-ind">
   <div class="card-head"><div><h3>Indicadores del mes</h3><div class="sub">Anexo 10 · <?= $salaId ? 'sala elegida' : 'todo el establecimiento' ?> · clic en un número para ver de dónde sale</div></div></div>
   <div class="tabla-desplazable">
@@ -103,7 +116,8 @@ require __DIR__ . '/_cabecera.php';
       <?php endforeach; ?>
     </table>
   </div>
-  <p class="iaas-nota-tabla">«—» = sin denominador en el mes. Las ISQ y las endometritis se cuentan en el mes del procedimiento; los días con la IAAS en tratamiento (×) no suman al denominador.</p>
+  <p class="iaas-nota-tabla">«—» = sin denominador en el mes. Las ISQ y las endometritis se cuentan en el mes del procedimiento; los días con la IAAS en tratamiento (×) no suman al denominador.
+    <?php if ($configuracion && !$sinHosp && $ausentes): ?><br>No aparecen <?= count($ausentes) === 1 ? 'el indicador' : 'los indicadores' ?> de <?= e(implode(', ', $ausentes)) ?>: <?= $salaId ? 'esta sala no los vigila' : 'ningún servicio de este establecimiento los vigila' ?> (Anexo 2). <a href="/iaas/servicios">Ver servicios</a><?php endif; ?></p>
 </section>
 
 <?php if ($resultado['neonatos']): ?>

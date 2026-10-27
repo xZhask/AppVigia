@@ -1740,3 +1740,7 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
   .iaas-ficha-cols{grid-template-columns:1fr}
   .iaas-ficha .section{break-inside:avoid}
 }
+.iaas-tabla-ind a.iaas-alerta-txt{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12.5px}
+.iaas-nota-tabla a{color:var(--accent-deep);font-weight:600}
+.iaas-aviso > .btn{margin-left:auto}
+.iaas-aviso a.btn{text-decoration:none;color:var(--ink-2);font-weight:500}
