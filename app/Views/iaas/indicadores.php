@@ -181,6 +181,8 @@ $nombreEst = \App\Models\Establecimiento::nombreVisible($establecimiento);
   <section class="card tarjeta iaas-personal" id="personal">
     <div class="tarjeta-cab"><div><h3>Personal de salud <?= $anio ?></h3><div class="sub">Anexo 9 · denominador de la exposición laboral</div></div><div class="spacer"></div>
       <?php if ($personal): ?><span class="ns-chip con"><i></i><?= IaasIndicadores::totalPersonal($personal) ?> en total</span><?php else: ?><span class="ns-chip warn"><i></i>Sin registrar</span><?php endif; ?></div>
+    <?php $plazoPersonal = IaasNorma::plazoNotificacion(1, $anio); ?>
+    <p class="iaas-personal-nota">Se registra una vez por año: el Anexo 9 pide el total del personal de la IPRESS, sin fecha propia. Como el indicador 9 se notifica desde enero, regístralo antes del <b><?= (int) $plazoPersonal->format('j') ?> de febrero</b>, plazo para notificar enero (7.º día hábil del mes siguiente, NTS 163, 5.1.2.5). Si cambia durante el año, al actualizarlo se recalcula el indicador de todos los meses.</p>
     <form method="post" action="/iaas/indicadores/personal">
       <?= Csrf::campoOculto() ?><input type="hidden" name="anio" value="<?= $anio ?>"><input type="hidden" name="volver_mes" value="<?= e($claveMes) ?>">
       <div class="iaas-personal-grid">

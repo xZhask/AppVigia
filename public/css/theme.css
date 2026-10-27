@@ -1744,3 +1744,5 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
 .iaas-nota-tabla a{color:var(--accent-deep);font-weight:600}
 .iaas-aviso > .btn{margin-left:auto}
 .iaas-aviso a.btn{text-decoration:none;color:var(--ink-2);font-weight:500}
+.iaas-personal-nota{margin:0 0 12px;padding:9px 12px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:6px;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.iaas-personal-nota b{color:var(--ink)}

@@ -281,6 +281,20 @@ class IaasNorma
     }
 
     /**
+     * Plazo para notificar un mes vigilado: séptimo día hábil del mes
+     * siguiente (5.1.2.5). Cuenta de lunes a viernes, sin feriados.
+     */
+    public static function plazoNotificacion(int $mes, int $anio): \DateTimeImmutable
+    {
+        $dia = (new \DateTimeImmutable(sprintf('%04d-%02d-01', $anio, $mes)))->modify('first day of next month');
+        for ($habiles = 0; ; $dia = $dia->modify('+1 day')) {
+            if ((int) $dia->format('N') <= 5 && ++$habiles === 7) {
+                return $dia;
+            }
+        }
+    }
+
+    /**
      * Índice de riesgo de ISQ (Anexo 5, ítem 32): herida contaminada o sucia
      * (1), ASA 3-5 (1) y duración mayor que las horas t de esa cirugía (1).
      * Devuelve null si falta algún dato o la cirugía no tiene horas t.
