@@ -19,7 +19,7 @@ require __DIR__ . '/../_cabecera.php';
   <form method="get" class="toolbar iaas-filtros">
     <?php if ($pestana !== 'TODAS'): ?><input type="hidden" name="pestana" value="<?= e($pestana) ?>"><?php endif; ?>
     <label class="search"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="m10.5 10.5 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      <input name="q" value="<?= e($filtros['q']) ?>" placeholder="Paciente, documento o historia clínica" aria-label="Buscar"></label>
+      <input name="q" value="<?= e($filtros['q']) ?>" placeholder="Paciente, DNI o historia clínica" aria-label="Buscar"></label>
     <div class="filtro-caja"><select name="tipo" data-nosearch="true" aria-label="Tipo de IAAS" onchange="this.form.submit()">
       <option value="">Todos los tipos</option>
       <?php foreach (['ITS' => 'ITS', 'ITU' => 'ITU', 'NEU' => 'Neumonía', 'ISQ' => 'ISQ', 'END' => 'Endometritis'] as $cod => $et): ?>
@@ -54,7 +54,7 @@ require __DIR__ . '/../_cabecera.php';
           ?>
             <tr class="iaas-fila-enlace<?= $c['anulado_en'] ? ' anulada' : '' ?>" data-href="/iaas/casos/<?= (int) $c['id'] ?>">
               <td><a class="mono iaas-cod-ficha" href="/iaas/casos/<?= (int) $c['id'] ?>"><?= e(IaasCaso::codigo($c)) ?></a><div class="cell-sub"><?= e(date('d/m/Y', strtotime($c['fecha_iaas']))) ?></div></td>
-              <td><div class="pt-name"><?= e(Persona::nombreCompleto($c)) ?></div><div class="pt-doc"><?= e($c['historia_clinica'] ? 'HC ' . $c['historia_clinica'] : documentoParaMostrar($c['tipo_doc'], $c['num_doc'])) ?></div></td>
+              <td><div class="pt-name"><?= e(Persona::nombreCompleto($c)) ?></div><div class="pt-doc"><?= e($c['tipo_doc'] === 'SIN_DOCUMENTO' && $c['historia_clinica'] ? 'HC ' . $c['historia_clinica'] : documentoParaMostrar($c['tipo_doc'], $c['num_doc'])) ?></div></td>
               <td><span class="iaas-tipo-chip t-<?= e($c['tipo_iaas']) ?>"><?= e(IaasNorma::TIPOS_IAAS_SIGLA[$c['tipo_iaas']]) ?></span></td>
               <td><?= e($riesgo) ?></td>
               <td><?= e(IaasNorma::nombreSala(['upss' => $c['upss'], 'nombre' => $c['sala_nombre']])) ?></td>
