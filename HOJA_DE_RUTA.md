@@ -380,6 +380,32 @@ No tocar sin una respuesta explícita.
      contado caso por caso, código RENIPRESS, "Difusión" = fecha de
      notificación y tipo de Dx P = probable.
 
+6. **Vigilancia de IAAS (abierta 26/10):** anexos nuevos que manejará el
+   área, en `docs/fuentes/IAAS anexos 4-11 (CDC-MINSA).pdf` (págs. 36-48 de
+   un documento técnico del CDC-MINSA). Es un módulo propio, no una ficha
+   más: los indicadores necesitan denominadores que hoy no existen.
+   - Flujo propuesto. Numeradores: ficha de IAAS (Anexo 5), una por
+     infección, y registro de exposición laboral a sangre (Anexo 8), uno por
+     evento. Denominadores: seguimiento de pacientes con dispositivo (Anexo 4,
+     días-dispositivo), partos y cirugías por día (Anexos 6 y 7) y personal de
+     salud por año (Anexo 9). Indicadores calculados (Anexo 10) y catálogo de
+     microorganismos (Anexo 11) para la ficha.
+   - Propuesto: en los Anexos 6 y 7 solo se ingresan partos y cirugías; las
+     endometritis e ISQ se cuentan desde las fichas (como el consolidado
+     EDA/IRA), para que no se contradigan.
+   - Por decidir con el área:
+     - Anexo 4: ¿marca diaria por paciente, como el papel, o solo fechas de
+       instalación y retiro con los días calculados?
+     - El Anexo 10 pide días de CVP, NPT y catéter de hemodiálisis, pero el
+       Anexo 4 solo contempla VM, CVC y CUP: sin eso no salen los
+       indicadores 2 a 4.
+     - Faltan las págs. 37, 39, 40, 43 y 45 (el Anexo 5 corta en el punto
+       4.5) y los Anexos 1 a 3.
+     - Erratas del papel: "Cefepime" repetido y "Sulfaperazona/Sulfametoxazol"
+       en el antibiograma; "Pseudomonas aeroginosa" y "Aspergillus niger spp"
+       (código ASP = Aspergillus spp) en el Anexo 11.
+     - ¿Qué IPRESS PNP lo usarán? (solo las que tienen hospitalización).
+
 ## 4. Pendiente — técnico, sin decisión de por medio
 
 - ~~**Reportes:** el orden y las columnas por clasificación solo conocen las 4
