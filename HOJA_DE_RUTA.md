@@ -416,22 +416,38 @@ No tocar sin una respuesta explícita.
    - Propuesto: en los Anexos 6 y 7 solo se ingresan partos y cirugías; las
      endometritis e ISQ se cuentan desde las fichas (como el consolidado
      EDA/IRA), para que no se contradigan.
+   - **Decidido por el usuario (26/10):**
+     - VIGÍA no reemplaza al aplicativo del CDC ni a otros sistemas: se
+       registra en VIGÍA y de aquí sale el reporte para transcribir al CDC u
+       otros sistemas.
+     - Por ahora lo usan todas las IPRESS; se restringirá después. Para
+       restringir sirve `establecimiento.categoria` (RENIPRESS): puestos,
+       postas y policlínicos (I-1 a I-3) no tienen hospitalización, pero sí
+       les aplica el Anexo 8.
+     - Antibiograma: se carga tal como está en la norma (Cefepime dos veces,
+       "Sulfaperazona/Sulfametoxazol").
+   - **Propuesto, falta el visto bueno:**
+     - "Horas t": tabla editable por tipo de cirugía, cargada con los
+       valores de referencia NNIS/NHSN (cesárea 1 h; colecistectomía y
+       hernioplastía 2 h; prótesis de cadera 3 h). Se guarda la duración en
+       minutos y el índice se calcula al mostrarlo, así que cambiar t
+       recalcula todo. Cuando haya un año de datos, VIGÍA puede proponer el
+       P75 local. Ojo: el Anexo 7 no cuenta cirugías por índice de riesgo,
+       así que las tasas no se pueden estratificar; el índice solo describe
+       los casos.
+     - Neonatos: capturar "Peso al nacer (g)" (el papel dice "Peso
+       (neonato)", pero 5.1.2.1 manda usar el del nacimiento) en el Anexo 4 y
+       en la ficha, y estratificar en 5 categorías solo en los reportes de
+       UCI neonatal y neonatología.
    - Por decidir con el área:
-     - **Relación con el aplicativo del CDC:** la norma manda notificar el
-       consolidado mensual allí, hasta el 7.° día hábil del mes siguiente
-       (5.1.2.5). ¿VIGÍA lo reemplaza internamente, sirve para preparar lo
-       que se transcribe, o tiene que exportar?
+     - **Formato del aplicativo del CDC:** pantallas o plantilla de carga,
+       para que el reporte de VIGÍA salga en el mismo orden.
      - Anexo 4: la norma pide anotarlo en cada visita diaria (5.1.2). ¿Marca
        diaria, o fechas de instalación y retiro? Con solo fechas faltaría el
        fin del tratamiento de la IAAS para excluir esos días.
-     - "Horas t" del índice de riesgo de ISQ: es el percentil 75 de la
-       duración de cada cirugía vigilada, y la norma no da los valores.
-     - Neonatos: estratificar por peso al nacer (≤750, 751-1000, 1001-1500,
-       1501-2500, >2500 g; 5.1.2.1). ¿Se pide en los reportes?
-     - Antibiograma: ¿"Sulfaperazona/Sulfametoxazol" es Trimetoprim/
-       Sulfametoxazol? Se propone mostrar Cefepime una sola vez.
-     - Qué IPRESS PNP tienen las UPSS del Anexo 2 (UCI, neonatología,
-       gineco-obstetricia, cirugía, traumatología, medicina).
+     - **Consulta posterior — antibiograma:** ¿"Sulfaperazona/Sulfametoxazol"
+       es Trimetoprim/Sulfametoxazol (o Cefoperazona/Sulbactam)? ¿Se quita
+       el segundo Cefepime? Hoy se carga tal cual.
      - Fuera del alcance por ahora, salvo que el área lo pida: notificación
        de brotes y de cepas resistentes en 24 h (VI y VII), estudio de
        prevalencia anual (5.1.5) y supervisión (IX).
