@@ -431,10 +431,11 @@ No tocar sin una respuesta explícita.
      - Anexo 4 con **marca diaria** por paciente y dispositivo, como el
        papel: da los días que excluyen la IAAS en tratamiento (x), los días
        por peso al nacer en neonatos y la continuidad entre meses (*).
-   - **Propuesto, falta el visto bueno:**
+   - **Aprobado por el usuario (26/10):**
      - "Horas t": tabla editable por tipo de cirugía, cargada con los
        valores de referencia NNIS/NHSN (cesárea 1 h; colecistectomía y
-       hernioplastía 2 h; prótesis de cadera 3 h). Se guarda la duración en
+       hernioplastía 2 h; prótesis de cadera 3 h). Si el área los cambia,
+       se ajustan antes del lanzamiento. Se guarda la duración en
        minutos y el índice se calcula al mostrarlo, así que cambiar t
        recalcula todo. Cuando haya un año de datos, VIGÍA puede proponer el
        P75 local. Ojo: el Anexo 7 no cuenta cirugías por índice de riesgo,
@@ -447,7 +448,8 @@ No tocar sin una respuesta explícita.
    - Por decidir con el área:
      - **Consulta posterior — antibiograma:** ¿"Sulfaperazona/Sulfametoxazol"
        es Trimetoprim/Sulfametoxazol (o Cefoperazona/Sulbactam)? ¿Se quita
-       el segundo Cefepime? Hoy se carga tal cual.
+       el segundo Cefepime? Hoy se carga literalmente como en la norma; el
+       cambio, si lo hay, es agregar o modificar un ítem del catálogo.
      - Fuera del alcance por ahora, salvo que el área lo pida: notificación
        de brotes y de cepas resistentes en 24 h (VI y VII), estudio de
        prevalencia anual (5.1.5) y supervisión (IX).
