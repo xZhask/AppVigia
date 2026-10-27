@@ -1327,3 +1327,416 @@ html[data-theme="dark"] .cat-rol.ADMIN{color:#A99FF0;background:#231F40;border-c
 .modal-item.modal-par .modal-cie{width:46px}
 /* La búsqueda de la ventana "Cambiar enfermedad" oculta ítems con [hidden]; display:flex lo anulaba (2026-10-21) */
 .modal-item[hidden]{display:none}
+
+/* ============================================================
+   IAAS (2026-10-26): NTS N° 163-MINSA/2020/CDC, anexos 4 a 11.
+   Ronda diaria, fichas, exposición laboral, indicadores y parámetros.
+   ============================================================ */
+:root{--iaas-t:#C2622D;--iaas-t-bg:#FDF0E3;--iaas-h:#8A97A2}
+html[data-theme="dark"]{--iaas-t:#F2A766;--iaas-t-bg:#3A2617;--iaas-h:#6C7B87}
+.iaas-head .eyebrow{margin-bottom:4px}
+.iaas-est-sel{display:inline-flex;min-width:280px;max-width:100%}
+.iaas-est-sel .sel-wrap,.iaas-est-sel select{width:100%}
+.iaas-vacio{padding:28px 26px;text-align:left}
+.iaas-vacio h2{margin:0 0 6px;font-family:"IBM Plex Serif",serif;font-weight:500;font-size:19px;color:var(--ink)}
+.iaas-vacio p{margin:0 0 14px;color:var(--muted);max-width:640px}
+.iaas-sep{margin-top:16px}
+.ns-chip.warn{color:var(--ns-warn);background:var(--ns-warn-bg)}
+
+/* Avisos */
+.iaas-aviso{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;padding:12px 16px;border-radius:var(--radius);border:1px solid;margin-bottom:14px;font-size:13px;color:var(--ink)}
+.iaas-aviso > svg{flex:none;margin-top:1px}
+.iaas-aviso > div{flex:1;min-width:220px}
+.iaas-aviso ul{margin:6px 0 0;padding-left:18px}
+.iaas-aviso a{color:var(--accent-deep);font-weight:600;text-decoration:underline;margin-left:4px}
+.iaas-aviso form{margin-left:auto}
+.iaas-aviso.warn{background:var(--ns-warn-bg);border-color:var(--ns-warn-line)} .iaas-aviso.warn > svg{color:var(--ns-warn)}
+.iaas-aviso.crit{background:var(--ns-crit-bg);border-color:var(--ns-crit-line)}
+.iaas-aviso.info{background:var(--surface-2);border-color:var(--line)} .iaas-aviso.info > svg{color:var(--muted)}
+.iaas-aviso-compacto{padding:9px 12px;font-size:12.5px}
+
+/* Configuración de servicios */
+.iaas-intro{display:flex;gap:16px;align-items:flex-start;padding:18px 20px;margin-bottom:16px;border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.iaas-intro h2{margin:0 0 4px;font-family:"IBM Plex Serif",serif;font-weight:500;font-size:19px;color:var(--ink)}
+.iaas-intro p{margin:0;color:var(--muted);font-size:13.5px}
+.iaas-intro-ico{width:42px;height:42px;border-radius:11px;background:var(--accent-soft);color:var(--accent-deep);display:grid;place-items:center;flex:none}
+.iaas-modo{border:0;margin:0 0 16px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.iaas-modo-op{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.iaas-modo-op input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px}
+.iaas-modo-op b{display:block;color:var(--ink);font-size:14px}
+.iaas-modo-op small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.iaas-modo-op:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.iaas-upss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.iaas-upss-grid[hidden]{display:none}
+.iaas-upss{padding:14px 16px;transition:border-color .15s,background-color .15s}
+.iaas-upss.on{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))}
+.iaas-upss-cab{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.iaas-upss-cab input{margin-top:3px;width:16px;height:16px;accent-color:var(--accent);flex:none}
+.iaas-upss-cab b{display:block;color:var(--ink)}
+.iaas-upss-cab small{display:block;color:var(--muted);font-size:12px;line-height:1.4;margin-top:2px}
+.iaas-upss-salas{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+.iaas-upss-salas[hidden]{display:none}
+.iaas-upss-salas textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink);resize:vertical}
+.iaas-upss-salas textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.iaas-form-pie{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+
+/* Pestañas de sala */
+.iaas-salas{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:0 0 14px;scrollbar-width:thin}
+.iaas-sala{flex:none;display:flex;flex-direction:column;gap:2px;min-width:150px;padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-decoration:none;transition:border-color .15s}
+.iaas-sala b{font-size:13.5px;color:var(--ink);font-weight:600;white-space:nowrap}
+.iaas-sala small{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);white-space:nowrap}
+.iaas-sala:hover{border-color:#CFD7DD}
+.iaas-sala.sel{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.iaas-sala-cfg{min-width:0;align-items:center;justify-content:center;color:var(--muted);border-style:dashed}
+.iaas-pend{font-weight:700;color:var(--ns-warn);background:var(--ns-warn-bg);border-radius:10px;padding:0 7px}
+.iaas-ok{font-weight:700;color:var(--accent-deep)}
+
+/* Barra del día */
+.iaas-dia-barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.iaas-dia-barra .spacer{flex:1}
+.iaas-dia-nav .ns-semana-lbl{min-width:210px}
+.iaas-ir-fecha input{height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13px}
+.iaas-progreso{min-width:220px}
+.iaas-progreso-txt{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.iaas-progreso-txt b{color:var(--ink);font-family:"IBM Plex Mono",monospace}
+.iaas-progreso-barra{height:6px;border-radius:6px;background:var(--line-2);overflow:hidden}
+.iaas-progreso-barra i{display:block;height:100%;background:var(--accent);border-radius:6px;transition:width .3s}
+
+/* Ronda: pacientes y dispositivos */
+.iaas-ronda{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+.iaas-ronda.con-lado{grid-template-columns:minmax(0,1fr) 320px}
+.iaas-ronda.solo-proc{grid-template-columns:minmax(0,440px)}
+.iaas-pacientes{display:flex;flex-direction:column;gap:12px;min-width:0}
+.iaas-pac{padding:0;overflow:hidden}
+.iaas-pac.egresado{opacity:.7}
+.iaas-pac-cab{display:flex;align-items:flex-start;gap:12px;padding:14px 16px 10px}
+.iaas-cama{flex:none;min-width:40px;height:40px;padding:0 8px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-weight:600;font-size:14px;color:var(--ink)}
+.iaas-pac-id{flex:1;min-width:0}
+.iaas-pac-id b{display:block;font-size:14.5px;color:var(--ink)}
+.iaas-pac-id small{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+.iaas-pac-id .iaas-dx{color:var(--ink-2);font-style:italic}
+.iaas-pac-acc{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.ns-btn-sm.btn-quiet{padding:5px 9px;font-size:12.5px}
+.iaas-sin-disp{margin:0;padding:4px 16px 14px 68px;font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.iaas-disps{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-2)}
+.iaas-disp{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:6px 12px;padding:10px 16px 10px 68px;border-bottom:1px solid var(--line-2);position:relative}
+.iaas-disp:last-child{border-bottom:0}
+.iaas-disp::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent}
+.iaas-disp.pend::before{background:var(--ns-warn)}
+.iaas-disp.on::before{background:var(--accent)}
+.iaas-disp.tr::before{background:var(--iaas-t)}
+.iaas-disp.retirado{opacity:.65}
+.iaas-sigla{display:inline-flex;align-items:center;justify-content:center;min-width:42px;padding:2px 7px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-right:8px}
+.iaas-disp > .iaas-sigla{margin:0}
+.iaas-disp-txt b{display:block;font-size:13px;font-weight:500;color:var(--ink)}
+.iaas-disp-txt small{display:block;font-size:12px;color:var(--muted)}
+.iaas-caso-chip{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:600;color:var(--iaas-t);background:var(--iaas-t-bg);border-radius:12px;padding:1px 9px;text-decoration:none}
+.iaas-caso-chip:hover{text-decoration:underline}
+.iaas-marca-form{margin:0}
+.iaas-marca{display:inline-flex;align-items:center;gap:7px;min-width:136px;justify-content:center;padding:9px 14px;border-radius:10px;border:1.5px dashed var(--ns-warn-line);background:var(--surface);color:var(--ns-warn);font-weight:600;font-size:13px;min-height:42px;transition:background-color .15s,border-color .15s,color .15s}
+.iaas-marca:hover{border-style:solid}
+.iaas-marca-ico{font-size:15px;line-height:1}
+.iaas-marca[aria-pressed="true"]{border:1.5px solid var(--accent);background:var(--accent);color:#fff}
+.iaas-disp.tr .iaas-marca[aria-pressed="true"]{border-color:var(--iaas-t);background:var(--iaas-t)}
+html[data-theme="dark"] .iaas-marca[aria-pressed="true"]{color:#0b1115}
+.iaas-marca:disabled{opacity:.6;cursor:not-allowed}
+.iaas-marca.cargando{opacity:.6;pointer-events:none}
+.iaas-disp-acc{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.iaas-btn-iaas{color:var(--iaas-t)}
+.iaas-sim{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;font-style:normal;font-size:12px;font-weight:700;flex:none}
+.iaas-sim.E{background:var(--accent-soft);color:var(--accent-deep)}
+.iaas-sim.T{background:var(--iaas-t-bg);color:var(--iaas-t)}
+.iaas-sim.H{background:var(--line-2);color:var(--iaas-h)}
+.iaas-sim.F{background:repeating-linear-gradient(135deg,transparent 0 3px,color-mix(in srgb,var(--s-confirmado) 35%,transparent) 3px 4.5px);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--s-confirmado) 45%,transparent)}
+.iaas-sim.C{background:var(--line-2);color:var(--ink-2)}
+.iaas-cod{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--line);font-style:normal;font-size:10px;font-family:"IBM Plex Mono",monospace;color:var(--ink-2);margin:0 3px}
+.iaas-leyenda{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12px;color:var(--ink-2);margin:12px 0}
+.iaas-leyenda span{display:inline-flex;align-items:center;gap:6px}
+.iaas-leyenda-plegable{margin:16px 0 8px;font-size:12.5px;color:var(--muted)}
+.iaas-leyenda-plegable summary{cursor:pointer;width:max-content}
+.iaas-barra-pie{position:sticky;bottom:12px;z-index:15;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding:10px 12px 10px 16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.iaas-barra-txt{flex:1;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);min-width:160px}
+.iaas-barra-txt b{font-family:"IBM Plex Mono",monospace;color:var(--ns-warn);font-size:15px}
+.iaas-barra-txt svg{color:var(--accent)}
+.iaas-barra-pie form{margin:0}
+.iaas-barra-pie .btn-primary:disabled{opacity:.45;cursor:not-allowed}
+
+/* Partos y cirugías del día */
+.iaas-lado{position:sticky;top:76px}
+.iaas-proc .hint{display:block;margin:10px 0 12px;line-height:1.45}
+.iaas-paso{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line-2)}
+.iaas-paso label{font-size:13px;color:var(--ink)}
+.iaas-stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none}
+.iaas-stepper button{width:38px;height:38px;border:0;background:var(--surface-2);color:var(--ink);font-size:18px;line-height:1}
+.iaas-stepper button:hover{background:var(--line)}
+.iaas-stepper input{width:52px;height:38px;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);text-align:center;font-family:"IBM Plex Mono",monospace;font-size:15px;background:var(--surface);color:var(--ink);-moz-appearance:textfield}
+.iaas-stepper input::-webkit-outer-spin-button,.iaas-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.iaas-btn-bloque{width:100%;justify-content:center}
+
+/* Ventanas */
+.iaas-modal-ancho{width:min(760px,100%)}
+.modal-fondo:has(.iaas-modal-ancho){padding-top:4vh}
+.iaas-modal-cuerpo{padding:6px 20px 4px;max-height:68vh;overflow-y:auto}
+.iaas-modal-cuerpo .field{margin-bottom:12px}
+.iaas-modal-nota{font-size:13px;color:var(--ink-2);margin:0 0 14px;line-height:1.5}
+.ns-modal-acciones{flex-wrap:wrap}
+.iaas-fila-doc{display:grid;grid-template-columns:180px minmax(0,1fr) auto;gap:10px;align-items:end;margin-bottom:12px}
+.iaas-fila-doc .field{margin:0}
+.iaas-encontrado{padding:10px 12px;border-radius:9px;font-size:13px;margin-bottom:12px;background:var(--accent-soft);color:var(--ink)}
+.iaas-encontrado.warn{background:var(--ns-warn-bg)}
+.iaas-encontrado.info{background:var(--surface-2);color:var(--muted)}
+.iaas-encontrado[hidden]{display:none}
+.iaas-seg-radio{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface);width:max-content;max-width:100%}
+.iaas-seg-radio label{position:relative;cursor:pointer}
+.iaas-seg-radio input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.iaas-seg-radio span{display:block;padding:8px 14px;font-size:13px;color:var(--ink-2);border-right:1px solid var(--line)}
+.iaas-seg-radio label:last-child span{border-right:0}
+.iaas-seg-radio input:checked + span{background:var(--accent);color:#fff}
+html[data-theme="dark"] .iaas-seg-radio input:checked + span{color:#0b1115}
+.iaas-seg-radio input:focus-visible + span{outline:2px solid var(--accent);outline-offset:-2px}
+.iaas-disp-elegir{border:0;padding:0;margin-left:0;margin-right:0}
+.iaas-disp-elegir legend{margin-bottom:8px}
+.iaas-disp-op{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px}
+.iaas-disp-op label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.iaas-disp-op input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+.iaas-disp-op .control{padding:5px 9px;max-width:170px}
+.iaas-disp-op .control[hidden]{display:none}
+.iaas-disp-op:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 50%,var(--surface))}
+
+/* Opciones en tarjeta (radio grande) */
+.iaas-opciones{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:6px}
+.iaas-opciones[hidden]{display:none}
+.iaas-opciones.tres{grid-template-columns:repeat(3,1fr)}
+.iaas-opciones.cuatro{grid-template-columns:repeat(4,1fr)}
+.iaas-opciones.cinco{grid-template-columns:repeat(5,1fr)}
+.iaas-opciones.criterios{grid-template-columns:1fr 1fr}
+.iaas-opciones.chips{display:flex;flex-wrap:wrap;gap:6px}
+.iaas-opcion{position:relative;cursor:pointer}
+.iaas-opcion[hidden]{display:none}
+.iaas-opcion input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.iaas-opcion > span{display:block;height:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:12.5px;color:var(--muted);line-height:1.35;transition:border-color .15s,background-color .15s}
+.iaas-opcion > span b{display:block;font-size:13px;color:var(--ink);font-weight:600;margin-bottom:1px}
+.iaas-opcion > span small{display:block;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+.iaas-opciones.chips .iaas-opcion > span{padding:6px 12px;border-radius:20px;color:var(--ink-2)}
+.iaas-opcion:hover > span{border-color:#CFD7DD}
+.iaas-opcion input:checked + span{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent);color:var(--ink)}
+.iaas-opcion input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.iaas-opcion input:disabled + span{opacity:.5}
+
+/* Vista del mes */
+.iaas-mes{margin-bottom:16px;overflow:hidden}
+.iaas-mes-cab{padding:14px 16px 0;margin-bottom:10px}
+.iaas-mes-cab h3{display:flex;align-items:center}
+.iaas-grilla-wrap{overflow-x:auto;border-top:1px solid var(--line-2)}
+.iaas-grilla{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%}
+.iaas-grilla th,.iaas-grilla td{padding:0;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);height:34px;white-space:nowrap}
+.iaas-grilla thead th{position:sticky;top:0;background:var(--surface);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);padding:0 8px;text-align:left;z-index:2}
+.iaas-grilla thead th.dia{width:24px;min-width:24px;padding:0;text-align:center;font-family:"IBM Plex Mono",monospace;letter-spacing:0;text-transform:none}
+.iaas-grilla thead th.fds,.iaas-grilla td.fds{background:color-mix(in srgb,var(--line-2) 60%,var(--surface))}
+.iaas-grilla thead th.hoy{color:#fff;background:var(--accent)}
+.iaas-grilla td{padding:0 8px;color:var(--ink-2)}
+.iaas-grilla .fijo{position:sticky;background:var(--surface);z-index:1}
+.iaas-grilla thead .fijo{z-index:3}
+.iaas-grilla .c1{left:0;min-width:42px;text-align:center}
+.iaas-grilla .c2{left:42px;min-width:180px;max-width:190px;box-shadow:1px 0 0 var(--line)}
+.iaas-grilla tbody th.c2{font-weight:500;text-align:left;padding:4px 8px;line-height:1.25}
+.iaas-g-nom{display:block;color:var(--ink);overflow:hidden;text-overflow:ellipsis;max-width:174px}
+.iaas-grilla tbody th small{display:block;color:var(--faint);font-size:11px}
+.iaas-grilla .cen{text-align:center}
+.iaas-grilla .n{text-align:right}
+.iaas-grilla td.c{padding:0;width:24px;min-width:24px;text-align:center;font-weight:700;position:relative}
+.iaas-grilla td.c button{width:100%;height:33px;border:0;background:none;font:inherit;font-weight:700;color:inherit;cursor:pointer;padding:0}
+.iaas-grilla td.c button:hover{box-shadow:inset 0 0 0 2px var(--accent)}
+.iaas-grilla td.c.E{background:var(--accent-soft);color:var(--accent-deep)}
+.iaas-grilla td.c.T{background:var(--iaas-t-bg);color:var(--iaas-t)}
+.iaas-grilla td.c.H{color:var(--iaas-h);font-weight:400}
+.iaas-grilla td.c.F{background:repeating-linear-gradient(135deg,transparent 0 3px,color-mix(in srgb,var(--s-confirmado) 25%,transparent) 3px 4.5px)}
+.iaas-grilla td.c sup{position:absolute;top:2px;right:2px;font-size:8.5px;font-weight:700;color:var(--ink-2);line-height:1}
+.iaas-grilla td.c .cont{position:absolute;left:2px;top:1px;font-size:10px;color:var(--ink-2)}
+.iaas-grilla td.tot{font-weight:700;color:var(--ink);background:var(--surface-2)}
+.iaas-grilla tfoot th,.iaas-grilla tfoot td{background:var(--surface-2);font-weight:600;color:var(--ink);padding:0 8px}
+.iaas-grilla tbody tr:hover td:not(.c),.iaas-grilla tbody tr:hover th{background:color-mix(in srgb,var(--ink) 3%,var(--surface))}
+.iaas-tabla-proc{font-size:12.5px;width:100%;border-collapse:collapse}
+.iaas-tabla-proc th,.iaas-tabla-proc td{padding:5px 10px;border-bottom:1px solid var(--line-2)}
+.iaas-tabla-proc thead th{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);white-space:normal;vertical-align:bottom;max-width:130px;line-height:1.3}
+.iaas-tabla-proc th.inf,.iaas-tabla-proc td.inf{background:color-mix(in srgb,var(--iaas-t-bg) 55%,var(--surface))}
+.iaas-tabla-proc td.pos{color:var(--iaas-t);font-weight:700}
+.iaas-tabla-proc tbody th a{color:var(--accent-deep);text-decoration:none}
+.iaas-tabla-proc tr.fut th,.iaas-tabla-proc tr.fut td{color:var(--faint)}
+.iaas-tabla-proc .sinreg{color:var(--s-confirmado)}
+.iaas-tabla-proc tfoot th,.iaas-tabla-proc tfoot td{font-weight:700;background:var(--surface-2)}
+.iaas-tabla-proc .n{text-align:right}
+.iaas-print-cab,.iaas-print-firma{display:none}
+
+/* Ficha IAAS y exposición */
+.iaas-ficha-cols{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start}
+.iaas-ficha-main{min-width:0}
+.iaas-ficha .section{margin-bottom:14px}
+.iaas-found{margin-top:0}
+.iaas-dx{display:flex;flex-direction:column;gap:8px}
+.iaas-cie{position:relative;display:grid;grid-template-columns:200px minmax(0,1fr);gap:10px;align-items:center}
+.iaas-cie-desc{font-size:12.5px;color:var(--ink-2)}
+.iaas-cie-desc.err{color:var(--s-confirmado)}
+.iaas-cie-lista{position:absolute;left:0;top:100%;z-index:30;list-style:none;margin:4px 0 0;padding:4px;width:min(560px,100%);max-height:260px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.iaas-cie-lista[hidden]{display:none}
+.iaas-cie-lista li{padding:7px 9px;border-radius:7px;font-size:12.5px;cursor:pointer;color:var(--ink-2)}
+.iaas-cie-lista li b{font-family:"IBM Plex Mono",monospace;color:var(--ink);margin-right:8px}
+.iaas-cie-lista li:hover,.iaas-cie-lista li.on{background:var(--accent-soft)}
+.iaas-indice{display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px dashed var(--line);border-radius:9px;background:var(--paper)}
+.iaas-indice b{font-family:"IBM Plex Mono",monospace;font-size:22px;color:var(--ink);min-width:20px}
+.iaas-indice small{font-size:12px;color:var(--muted);line-height:1.4}
+.iaas-indice.r1 b{color:var(--ns-warn)} .iaas-indice.r2 b,.iaas-indice.r3 b{color:var(--s-confirmado)}
+.iaas-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:-4px 0 14px}
+.iaas-tab{border:0;background:none;padding:9px 14px;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.iaas-tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+.iaas-tab[data-tab-opcional]{color:var(--accent-deep)}
+.iaas-tab-panel[hidden]{display:none}
+.iaas-atb-cab{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.iaas-atb-lista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px}
+.iaas-atb-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line-2)}
+.iaas-atb-nom{font-size:13px;color:var(--ink-2)}
+.iaas-atb-fila.con .iaas-atb-nom{color:var(--ink);font-weight:500}
+.iaas-sir{display:inline-flex;align-items:center;gap:4px;flex:none}
+.iaas-sir label{position:relative;cursor:pointer}
+.iaas-sir input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.iaas-sir span{display:grid;place-items:center;width:30px;height:28px;border:1px solid var(--line);border-radius:7px;font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;color:var(--faint);background:var(--surface)}
+.iaas-sir label.S input:checked + span{background:var(--accent);border-color:var(--accent);color:#fff}
+.iaas-sir label.I input:checked + span{background:#C9A227;border-color:#C9A227;color:#fff}
+.iaas-sir label.R input:checked + span{background:var(--s-confirmado);border-color:var(--s-confirmado);color:#fff}
+.iaas-sir input:focus-visible + span{outline:2px solid var(--accent);outline-offset:1px}
+.iaas-sir-x{width:22px;height:22px;border:0;background:none;color:var(--faint);font-size:15px;border-radius:5px}
+.iaas-sir-x:hover{background:var(--line-2);color:var(--ink)}
+.iaas-sir-x[hidden]{visibility:hidden;display:block}
+.iaas-rail .rail-card p{margin-bottom:10px}
+.iaas-faltan{font-size:12.5px;padding:10px 12px;border-radius:9px;background:var(--ns-warn-bg);color:var(--ink);margin-bottom:12px}
+.iaas-faltan ul{margin:6px 0 0;padding-left:18px}
+.iaas-faltan.ok{background:var(--accent-soft)}
+.iaas-indice-secciones .pstep{text-decoration:none}
+.iaas-btn-peligro{color:var(--s-confirmado)}
+.iaas-bloque-cond[hidden],[data-factor][hidden],[data-solo-neonatal][hidden],[data-solo-tipo][hidden],[data-implante][hidden],[data-medicamento][hidden]{display:none}
+.iaas-otro{margin-top:8px;max-width:420px}
+.iaas-otro[hidden]{display:none}
+
+/* Listados */
+.iaas-pestanas{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 10px;overflow-x:auto}
+.iaas-pestanas a{display:flex;align-items:center;gap:8px;padding:12px 12px;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;margin-bottom:-1px}
+.iaas-pestanas a span{font-size:11.5px;background:var(--line-2);color:var(--muted);border-radius:12px;padding:0 7px}
+.iaas-pestanas a.on{color:var(--ink);border-bottom-color:var(--accent)}
+.iaas-pestanas a.pend span{background:var(--ns-warn-bg);color:var(--ns-warn)}
+.iaas-filtros .filtro-caja{min-width:170px}
+.iaas-est-sel .filtro-caja,.iaas-filtro-sala .filtro-caja{width:100%;min-width:260px}
+.iaas-tabla-param .filtro-caja{min-width:220px}
+.iaas-vacio-tabla{padding:28px 18px;color:var(--muted);font-size:13.5px;text-align:center}
+.iaas-tabla-casos{min-width:860px}
+.iaas-fila-enlace{cursor:pointer}
+.iaas-fila-enlace.anulada td{opacity:.55}
+.iaas-cod-ficha{color:var(--accent-deep);font-weight:600}
+.iaas-tipo-chip{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:12px;color:var(--c,var(--ink-2));background:color-mix(in srgb,var(--c,var(--ink-2)) 12%,transparent);white-space:nowrap}
+.iaas-tipo-chip.t-ITS{--c:var(--s-confirmado)} .iaas-tipo-chip.t-ITU{--c:var(--s-sospechoso)} .iaas-tipo-chip.t-NEU{--c:var(--s-descartado)}
+.iaas-tipo-chip.t-ISQ_SUP,.iaas-tipo-chip.t-ISQ_PROF{--c:var(--s-probable)} .iaas-tipo-chip.t-END{--c:#B0477C}
+.iaas-alerta-txt{color:var(--s-confirmado);font-weight:600}
+.iaas-kpis{margin-bottom:16px}
+
+/* Indicadores */
+.iaas-estado-mes{margin-bottom:16px}
+.iaas-estado-mes .ns-ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:20px}
+.iaas-filtro-sala .sel-wrap{min-width:240px}
+.iaas-ind{margin-bottom:16px}
+.iaas-tabla-ind td a{color:var(--accent-deep);font-weight:600;text-decoration:none}
+.iaas-tabla-ind td a:hover{text-decoration:underline}
+.iaas-tabla-ind th.n,.iaas-tabla-ind td.n{text-align:right}
+.iaas-grupo th{background:var(--surface-2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 16px}
+.iaas-tasa{font-size:15px;font-weight:600;color:var(--ink)}
+.iaas-tasa.nd{color:var(--faint);font-weight:400}
+.iaas-nota-tabla{margin:0;padding:10px 16px 14px;font-size:12px;color:var(--muted)}
+.iaas-ind-cols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+.iaas-calidad-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.iaas-calidad-lista > li{padding:12px 14px;border:1px solid var(--line);border-radius:10px}
+.iaas-calidad-lista > li.cerrada{background:color-mix(in srgb,var(--accent-soft) 40%,var(--surface))}
+.iaas-cal-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.iaas-cal-cab b{color:var(--ink);font-size:13.5px}
+.iaas-checks{list-style:none;margin:0 0 8px;padding:0;font-size:12.5px}
+.iaas-checks li{padding:2px 0 2px 20px;position:relative;color:var(--ink-2)}
+.iaas-checks li::before{position:absolute;left:0;top:2px;font-weight:700}
+.iaas-checks li.bien::before{content:"✓";color:var(--accent)}
+.iaas-checks li.mal::before{content:"!";color:var(--s-confirmado)}
+.iaas-checks li.mal a{color:var(--s-confirmado);font-weight:600;text-decoration:underline}
+.iaas-personal-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.iaas-personal-pie{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:13px;color:var(--muted)}
+.iaas-personal-pie b{color:var(--ink);font-size:16px}
+
+/* Parámetros */
+.iaas-param-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;margin-bottom:16px}
+.iaas-tabla-param td{padding:7px 10px;vertical-align:middle}
+.iaas-tabla-param th.n,.iaas-tabla-param td.n{text-align:right}
+.iaas-control-corto{width:110px;padding:6px 9px;margin-left:auto}
+.iaas-param-lista{margin:12px 0;padding-left:24px;font-size:12px;color:var(--faint)}
+.iaas-param-lista li{padding:2px 0}
+.iaas-param-lista li.inactivo .control,tr.inactivo td{opacity:.55}
+.iaas-param-fila{display:flex;align-items:center;gap:8px}
+.iaas-param-fila .control{flex:1;padding:6px 10px}
+.iaas-param-activo{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);white-space:nowrap}
+.iaas-param-nuevo .control{border-style:dashed}
+
+/* Oscuro */
+html[data-theme="dark"] .iaas-grilla thead th.hoy{color:#0b1115}
+html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:hover > span{border-color:#3A4A56}
+
+/* Responsivo */
+@media (max-width:1100px){
+  .iaas-ronda.con-lado{grid-template-columns:1fr}
+  .iaas-lado{position:static}
+  .iaas-ficha-cols,.iaas-ind-cols,.iaas-param-cols{grid-template-columns:1fr}
+  .iaas-rail{position:static}
+  .iaas-opciones.cinco{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:760px){
+  .iaas-modo{grid-template-columns:1fr}
+  .iaas-est-sel{min-width:0;width:100%}
+  .iaas-dia-barra .spacer{display:none}
+  .iaas-dia-nav{width:100%}
+  .iaas-dia-nav .ns-semana-lbl{flex:1;min-width:0}
+  .iaas-progreso{width:100%}
+  .iaas-pac-cab{flex-wrap:wrap}
+  .iaas-pac-acc{width:100%;justify-content:flex-start;margin-left:52px}
+  .iaas-disp{grid-template-columns:auto minmax(0,1fr);padding:10px 14px}
+  .iaas-disp .iaas-marca-form{grid-column:1/-1}
+  .iaas-marca{width:100%}
+  .iaas-disp-acc{grid-column:1/-1;justify-content:flex-start}
+  .iaas-sin-disp{padding-left:16px}
+  .iaas-barra-pie{bottom:8px;padding:10px}
+  .iaas-barra-pie .btn{flex:1;justify-content:center}
+  .iaas-barra-pie form{flex:1 1 100%}
+  .iaas-barra-pie form .btn{width:100%}
+  .iaas-fila-doc{grid-template-columns:1fr 1fr}
+  .iaas-fila-doc .btn{grid-column:1/-1;justify-content:center}
+  .iaas-opciones.tres,.iaas-opciones.cuatro,.iaas-opciones.cinco,.iaas-opciones.criterios{grid-template-columns:1fr 1fr}
+  .iaas-atb-lista{grid-template-columns:1fr}
+  .iaas-cie{grid-template-columns:1fr}
+  .iaas-personal-grid{grid-template-columns:1fr 1fr}
+  .iaas-grilla .c2{min-width:140px;max-width:150px}
+  .iaas-g-nom{max-width:140px}
+  .iaas-param-fila{flex-wrap:wrap}
+}
+
+/* Impresión: el formato del papel (el Anexo 4 en horizontal) */
+@page anexo4{size:A4 landscape;margin:10mm}
+@media print{
+  .iaas-salas,.iaas-dia-barra,.iaas-barra-pie,.iaas-leyenda-plegable,.iaas-rail,.iaas-aviso,.iaas-head .page-desc,.iaas-vista,[data-imprimir],.iaas-pestanas,.iaas-filtros,.iaas-calidad form,.iaas-calidad button,.iaas-personal form button{display:none!important}
+  .view-ancha .iaas-mes,.iaas-print-cab{page:anexo4}
+  .iaas-print-cab{display:block;margin-bottom:8px}
+  .iaas-print-tit{font-weight:700;text-transform:uppercase;font-size:12px}
+  .iaas-print-sub{font-size:11px;margin-bottom:6px}
+  .iaas-print-datos{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:11px}
+  .iaas-print-firma{display:flex;justify-content:flex-end;margin-top:36px}
+  .iaas-print-firma span{border-top:1px solid #000;padding-top:4px;min-width:240px;text-align:center;font-size:11px}
+  .iaas-grilla-wrap{overflow:visible}
+  .iaas-grilla{font-size:9px;width:100%}
+  .iaas-grilla th,.iaas-grilla td{height:20px;border-color:#999}
+  .iaas-grilla .fijo,.iaas-grilla thead th{position:static}
+  .iaas-grilla td.c,.iaas-grilla thead th.dia{width:auto;min-width:0}
+  .iaas-grilla td.c button{height:19px}
+  .iaas-grilla td,.iaas-tabla-proc td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .iaas-ficha-cols{grid-template-columns:1fr}
+  .iaas-ficha .section{break-inside:avoid}
+}

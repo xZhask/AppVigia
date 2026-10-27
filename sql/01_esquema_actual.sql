@@ -1,5 +1,16 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Regenerado el 2026-10-26 (decimoquinta vez). Cambio de ESQUEMA:
+--   - Modulo IAAS (NTS N 163-MINSA/2020/CDC, anexos 4 a 11): 15 tablas
+--     iaas_* (servicios y salas, ronda diaria con marcas por dispositivo,
+--     partos y cirugias del dia, ficha del Anexo 5 con cultivos y
+--     antibiograma, exposicion laboral, personal por anio y cierre mensual).
+--   - Datos de configuracion nuevos: iaas_microorganismo (Anexo 11),
+--     iaas_antimicrobiano (Anexo 5, 4.5, literal) e iaas_horas_t (NNIS).
+--     Migracion: sql/migraciones/add_modulo_iaas.php.
+-- ============================================================================
+--
+-- Sesion anterior (2026-10-21, decimocuarta vez):
 -- Regenerado el 2026-10-21 (decimocuarta vez). Cambio de ESQUEMA y de FICHAS:
 --   - Registros PNP: enfermedad.modalidad (FICHA/REGISTRO), caso.cie10_dx,
 --     caso.caso_origen_id (fk_caso_origen) y la tabla cie10_vigilancia
@@ -1110,6 +1121,398 @@ CREATE TABLE `grado_pnp` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `iaas_antibiograma`
+--
+
+DROP TABLE IF EXISTS `iaas_antibiograma`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_antibiograma` (
+  `cultivo_id` int NOT NULL,
+  `antimicrobiano_id` int NOT NULL,
+  `resultado` enum('S','I','R') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`cultivo_id`,`antimicrobiano_id`),
+  KEY `fk_iaas_atb_antimicrobiano` (`antimicrobiano_id`),
+  CONSTRAINT `fk_iaas_atb_antimicrobiano` FOREIGN KEY (`antimicrobiano_id`) REFERENCES `iaas_antimicrobiano` (`id`),
+  CONSTRAINT `fk_iaas_atb_cultivo` FOREIGN KEY (`cultivo_id`) REFERENCES `iaas_cultivo` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_antimicrobiano`
+--
+
+DROP TABLE IF EXISTS `iaas_antimicrobiano`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_antimicrobiano` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `orden` smallint NOT NULL DEFAULT '0',
+  `activo` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_caso`
+--
+
+DROP TABLE IF EXISTS `iaas_caso`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_caso` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `establecimiento_id` int NOT NULL,
+  `sala_id` int NOT NULL,
+  `internacion_id` int DEFAULT NULL,
+  `dispositivo_id` int DEFAULT NULL,
+  `persona_id` int NOT NULL,
+  `estado` enum('POR_COMPLETAR','COMPLETO') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'POR_COMPLETAR',
+  `historia_clinica` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `peso_nacer_g` smallint unsigned DEFAULT NULL,
+  `fecha_ingreso_ipress` date DEFAULT NULL,
+  `fecha_ingreso_servicio` date DEFAULT NULL,
+  `fecha_egreso_servicio` date DEFAULT NULL,
+  `condicion_egreso` enum('V','F','T') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `dx1_cie10` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `dx2_cie10` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `dx3_cie10` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `tipo_iaas` enum('ITS','ITU','NEU','ISQ_SUP','ISQ_PROF','END') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fecha_iaas` date NOT NULL,
+  `criterio` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `its_secundaria` tinyint(1) DEFAULT NULL,
+  `dispositivo_tipo` enum('CVC','CVP','NPT','HD','CUP','VM') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fecha_instalacion` date DEFAULT NULL,
+  `fecha_retiro` date DEFAULT NULL,
+  `procedimiento_tipo` enum('PARTO_VAGINAL','CESAREA','COLE_LAPAROTOMIA','COLE_LAPAROSCOPIA','HERNIOPLASTIA','PROTESIS_CADERA','OTRA') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `procedimiento_nombre` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fecha_procedimiento` date DEFAULT NULL,
+  `duracion_min` smallint unsigned DEFAULT NULL,
+  `clase_herida` enum('L','LC','C','I') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `asa` tinyint DEFAULT NULL,
+  `implante` tinyint(1) DEFAULT NULL,
+  `fecha_fin_tratamiento` date DEFAULT NULL,
+  `observaciones` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `creado_por` int NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `actualizado_en` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `anulado_por` int DEFAULT NULL,
+  `anulado_en` timestamp NULL DEFAULT NULL,
+  `motivo_anulacion` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_iaas_caso_est` (`establecimiento_id`,`fecha_iaas`),
+  KEY `fk_iaas_caso_sala` (`sala_id`),
+  KEY `fk_iaas_caso_int` (`internacion_id`),
+  KEY `fk_iaas_caso_disp` (`dispositivo_id`),
+  KEY `fk_iaas_caso_persona` (`persona_id`),
+  KEY `fk_iaas_caso_creado` (`creado_por`),
+  KEY `fk_iaas_caso_anulado` (`anulado_por`),
+  CONSTRAINT `fk_iaas_caso_anulado` FOREIGN KEY (`anulado_por`) REFERENCES `usuario` (`id`),
+  CONSTRAINT `fk_iaas_caso_creado` FOREIGN KEY (`creado_por`) REFERENCES `usuario` (`id`),
+  CONSTRAINT `fk_iaas_caso_disp` FOREIGN KEY (`dispositivo_id`) REFERENCES `iaas_dispositivo` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_iaas_caso_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_iaas_caso_int` FOREIGN KEY (`internacion_id`) REFERENCES `iaas_internacion` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_iaas_caso_persona` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`),
+  CONSTRAINT `fk_iaas_caso_sala` FOREIGN KEY (`sala_id`) REFERENCES `iaas_sala` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_cierre_mes`
+--
+
+DROP TABLE IF EXISTS `iaas_cierre_mes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_cierre_mes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sala_id` int NOT NULL,
+  `anio` smallint NOT NULL,
+  `mes` tinyint NOT NULL,
+  `usuario_id` int NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `reabierto_por` int DEFAULT NULL,
+  `reabierto_en` timestamp NULL DEFAULT NULL,
+  `motivo_reapertura` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_iaas_cierre` (`sala_id`,`anio`,`mes`),
+  KEY `fk_iaas_cierre_usuario` (`usuario_id`),
+  KEY `fk_iaas_cierre_reabierto` (`reabierto_por`),
+  CONSTRAINT `fk_iaas_cierre_reabierto` FOREIGN KEY (`reabierto_por`) REFERENCES `usuario` (`id`),
+  CONSTRAINT `fk_iaas_cierre_sala` FOREIGN KEY (`sala_id`) REFERENCES `iaas_sala` (`id`),
+  CONSTRAINT `fk_iaas_cierre_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_cultivo`
+--
+
+DROP TABLE IF EXISTS `iaas_cultivo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_cultivo` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `caso_id` int NOT NULL,
+  `orden` tinyint NOT NULL,
+  `tipo_cultivo` enum('HEMOCULTIVO','UROCULTIVO','SECRECION_BRONQUIAL','SECRECION_HERIDA','OTRO') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `tipo_cultivo_otro` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fecha_extraccion` date DEFAULT NULL,
+  `microorganismo_id` int DEFAULT NULL,
+  `microorganismo_otro` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `blee` enum('SI','NO') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `otro_mecanismo` varchar(160) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_iaas_cultivo` (`caso_id`,`orden`),
+  KEY `fk_iaas_cultivo_micro` (`microorganismo_id`),
+  CONSTRAINT `fk_iaas_cultivo_caso` FOREIGN KEY (`caso_id`) REFERENCES `iaas_caso` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_iaas_cultivo_micro` FOREIGN KEY (`microorganismo_id`) REFERENCES `iaas_microorganismo` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_dispositivo`
+--
+
+DROP TABLE IF EXISTS `iaas_dispositivo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_dispositivo` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `internacion_id` int NOT NULL,
+  `tipo` enum('CVC','CVP','NPT','HD','CUP','VM') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fecha_instalacion` date NOT NULL,
+  `fecha_retiro` date DEFAULT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_iaas_disp_int` (`internacion_id`),
+  CONSTRAINT `fk_iaas_disp_int` FOREIGN KEY (`internacion_id`) REFERENCES `iaas_internacion` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_establecimiento`
+--
+
+DROP TABLE IF EXISTS `iaas_establecimiento`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_establecimiento` (
+  `establecimiento_id` int NOT NULL,
+  `sin_hospitalizacion` tinyint(1) NOT NULL DEFAULT '0',
+  `actualizado_por` int NOT NULL,
+  `actualizado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`establecimiento_id`),
+  KEY `fk_iaas_est_usuario` (`actualizado_por`),
+  CONSTRAINT `fk_iaas_est_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_iaas_est_usuario` FOREIGN KEY (`actualizado_por`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_exposicion`
+--
+
+DROP TABLE IF EXISTS `iaas_exposicion`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_exposicion` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `establecimiento_id` int NOT NULL,
+  `identificador` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `edad_anios` tinyint unsigned DEFAULT NULL,
+  `sexo` enum('M','F') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `profesion` enum('MEDICINA','ENFERMERIA','TEC_ENFERMERIA','TEC_LABORATORIO','LIMPIEZA','OTRO') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `profesion_otra` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `condicion` enum('ESTUDIANTE','INTERNO','RESIDENTE','NOMBRADO','CONTRATADO','OTRO') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `servicio` enum('EMERGENCIA','OBSTETRICIA','CENTRO_QUIRURGICO','UCI','CONSULTORIOS','BANCO_SANGRE','LABORATORIO','OTRO') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `servicio_otro` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `factor` enum('PUNZOCORTANTE','SALPICADURA') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fecha` date NOT NULL,
+  `hora` time DEFAULT NULL,
+  `objeto` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `profundidad` enum('SUPERFICIAL','MODERADA','GRAVE') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fluido` enum('SANGRE','ORINA','VOMITO','ESPUTO','OTRO') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fluido_otro` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `epp` set('GUANTES','LENTES','MANDIL','MASCARILLA','RESPIRADOR') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `localizacion` enum('MANO','OTRA') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `paciente_fuente` tinyint(1) DEFAULT NULL,
+  `procedimiento` enum('DESCONOCIDO','INYECCION_IM_SC','OTRA_INYECCION','VIA_IV','SUTURA','TOMA_MUESTRA','OTRO') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `procedimiento_otro` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `profilaxis` tinyint(1) DEFAULT NULL,
+  `profilaxis_medicamento` varchar(160) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `observaciones` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `creado_por` int NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `anulado_por` int DEFAULT NULL,
+  `anulado_en` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_iaas_expo_est` (`establecimiento_id`,`fecha`),
+  KEY `fk_iaas_expo_creado` (`creado_por`),
+  KEY `fk_iaas_expo_anulado` (`anulado_por`),
+  CONSTRAINT `fk_iaas_expo_anulado` FOREIGN KEY (`anulado_por`) REFERENCES `usuario` (`id`),
+  CONSTRAINT `fk_iaas_expo_creado` FOREIGN KEY (`creado_por`) REFERENCES `usuario` (`id`),
+  CONSTRAINT `fk_iaas_expo_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_horas_t`
+--
+
+DROP TABLE IF EXISTS `iaas_horas_t`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_horas_t` (
+  `procedimiento` enum('PARTO_VAGINAL','CESAREA','COLE_LAPAROTOMIA','COLE_LAPAROSCOPIA','HERNIOPLASTIA','PROTESIS_CADERA') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `horas` decimal(4,2) NOT NULL,
+  `actualizado_por` int DEFAULT NULL,
+  `actualizado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`procedimiento`),
+  KEY `fk_iaas_horas_usuario` (`actualizado_por`),
+  CONSTRAINT `fk_iaas_horas_usuario` FOREIGN KEY (`actualizado_por`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_internacion`
+--
+
+DROP TABLE IF EXISTS `iaas_internacion`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_internacion` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sala_id` int NOT NULL,
+  `persona_id` int NOT NULL,
+  `n_cama` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `historia_clinica` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fecha_ingreso` date NOT NULL,
+  `peso_nacer_g` smallint unsigned DEFAULT NULL,
+  `diagnostico_ingreso` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `diagnostico_vigilado` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fecha_egreso` date DEFAULT NULL,
+  `condicion_egreso` enum('V','F','T') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `observaciones` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `creado_por` int NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_iaas_int_sala` (`sala_id`,`fecha_ingreso`),
+  KEY `fk_iaas_int_persona` (`persona_id`),
+  KEY `fk_iaas_int_usuario` (`creado_por`),
+  CONSTRAINT `fk_iaas_int_persona` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`),
+  CONSTRAINT `fk_iaas_int_sala` FOREIGN KEY (`sala_id`) REFERENCES `iaas_sala` (`id`),
+  CONSTRAINT `fk_iaas_int_usuario` FOREIGN KEY (`creado_por`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_marca`
+--
+
+DROP TABLE IF EXISTS `iaas_marca`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_marca` (
+  `dispositivo_id` int NOT NULL,
+  `fecha` date NOT NULL,
+  `estado` enum('E','T') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `usuario_id` int NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`dispositivo_id`,`fecha`),
+  KEY `ix_iaas_marca_fecha` (`fecha`),
+  KEY `fk_iaas_marca_usuario` (`usuario_id`),
+  CONSTRAINT `fk_iaas_marca_disp` FOREIGN KEY (`dispositivo_id`) REFERENCES `iaas_dispositivo` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_iaas_marca_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_microorganismo`
+--
+
+DROP TABLE IF EXISTS `iaas_microorganismo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_microorganismo` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `familia` tinyint NOT NULL,
+  `nombre` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `abreviatura` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `orden` smallint NOT NULL DEFAULT '0',
+  `activo` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_personal`
+--
+
+DROP TABLE IF EXISTS `iaas_personal`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_personal` (
+  `establecimiento_id` int NOT NULL,
+  `anio` smallint NOT NULL,
+  `estudiante` smallint unsigned NOT NULL DEFAULT '0',
+  `interno` smallint unsigned NOT NULL DEFAULT '0',
+  `residente` smallint unsigned NOT NULL DEFAULT '0',
+  `nombrado` smallint unsigned NOT NULL DEFAULT '0',
+  `contratado` smallint unsigned NOT NULL DEFAULT '0',
+  `otro` smallint unsigned NOT NULL DEFAULT '0',
+  `actualizado_por` int NOT NULL,
+  `actualizado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`establecimiento_id`,`anio`),
+  KEY `fk_iaas_personal_usuario` (`actualizado_por`),
+  CONSTRAINT `fk_iaas_personal_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_iaas_personal_usuario` FOREIGN KEY (`actualizado_por`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_procedimiento`
+--
+
+DROP TABLE IF EXISTS `iaas_procedimiento`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_procedimiento` (
+  `sala_id` int NOT NULL,
+  `fecha` date NOT NULL,
+  `tipo` enum('PARTO_VAGINAL','CESAREA','COLE_LAPAROTOMIA','COLE_LAPAROSCOPIA','HERNIOPLASTIA','PROTESIS_CADERA') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cantidad` smallint unsigned NOT NULL DEFAULT '0',
+  `usuario_id` int NOT NULL,
+  `actualizado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`sala_id`,`fecha`,`tipo`),
+  KEY `fk_iaas_proc_usuario` (`usuario_id`),
+  CONSTRAINT `fk_iaas_proc_sala` FOREIGN KEY (`sala_id`) REFERENCES `iaas_sala` (`id`),
+  CONSTRAINT `fk_iaas_proc_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `iaas_sala`
+--
+
+DROP TABLE IF EXISTS `iaas_sala`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `iaas_sala` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `establecimiento_id` int NOT NULL,
+  `upss` enum('UCI_ADULTOS','UCI_PEDIATRICA','UCI_NEONATAL','NEONATOLOGIA','GINECO_OBSTETRICIA','CIRUGIA','TRAUMATOLOGIA','MEDICINA') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nombre` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT '1',
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_iaas_sala` (`establecimiento_id`,`upss`,`nombre`),
+  CONSTRAINT `fk_iaas_sala_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `login_intento`
 --
 
@@ -1125,7 +1528,7 @@ CREATE TABLE `login_intento` (
   PRIMARY KEY (`id`),
   KEY `ix_login_email_fecha` (`email`,`fecha`),
   KEY `ix_login_ip_fecha` (`ip`,`fecha`)
-) ENGINE=InnoDB AUTO_INCREMENT=986 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=987 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1552,6 +1955,36 @@ INSERT INTO `grado_pnp` VALUES (1,'Gral. Pol.','General de Policía','OFICIAL_GE
 UNLOCK TABLES;
 
 --
+-- Dumping data for table `iaas_antimicrobiano`
+--
+
+LOCK TABLES `iaas_antimicrobiano` WRITE;
+/*!40000 ALTER TABLE `iaas_antimicrobiano` DISABLE KEYS */;
+INSERT INTO `iaas_antimicrobiano` VALUES (1,'Ceftazidime',1,1),(2,'Cefepime',2,1),(3,'Ceftriaxona',3,1),(4,'Ciprofloxacina',4,1),(5,'Meropenem',5,1),(6,'Ampicilina/Sulbactam',6,1),(7,'Cefotaxima',7,1),(8,'Aztreonam',8,1),(9,'Cefuroxima',9,1),(10,'Ticarcilina/Acido Clavulánico',10,1),(11,'Imipenem',11,1),(12,'Piperacilina/Tazobactam',12,1),(13,'Cefepime',13,1),(14,'Gentamicina',14,1),(15,'Amikacina',15,1),(16,'Sulfaperazona/Sulfametoxazol',16,1),(17,'Acido Nalixidico',17,1),(18,'Norfloxacino',18,1),(19,'Oxacilina',19,1),(20,'Vancomicina',20,1),(21,'Eritromicina',21,1),(22,'Linezolid',22,1);
+/*!40000 ALTER TABLE `iaas_antimicrobiano` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `iaas_horas_t`
+--
+
+LOCK TABLES `iaas_horas_t` WRITE;
+/*!40000 ALTER TABLE `iaas_horas_t` DISABLE KEYS */;
+INSERT INTO `iaas_horas_t` VALUES ('CESAREA',1.00,NULL,'2026-10-27 04:48:44'),('COLE_LAPAROTOMIA',2.00,NULL,'2026-10-27 04:48:44'),('COLE_LAPAROSCOPIA',2.00,NULL,'2026-10-27 04:48:44'),('HERNIOPLASTIA',2.00,NULL,'2026-10-27 04:48:44'),('PROTESIS_CADERA',3.00,NULL,'2026-10-27 04:48:44');
+/*!40000 ALTER TABLE `iaas_horas_t` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `iaas_microorganismo`
+--
+
+LOCK TABLES `iaas_microorganismo` WRITE;
+/*!40000 ALTER TABLE `iaas_microorganismo` DISABLE KEYS */;
+INSERT INTO `iaas_microorganismo` VALUES (1,1,'Staphylococcus aureus','SAU',1,1),(2,1,'Staphylococcus epidermidis','SEP',2,1),(3,1,'Staphylococcus saprophyticus','SAP',3,1),(4,1,'Staphylococcus coagulasa-negativo','SCN',4,1),(5,1,'Staphylococcus spp','STA',5,1),(6,1,'Enterococcus faecalis','EFA',6,1),(7,1,'Enterococcus faecium','EFM',7,1),(8,1,'Enterococcus spp','ENT',8,1),(9,1,'Otros cocos gram positivos','Otros cocos gram positivos',9,1),(10,2,'Listeria monocytogenes','LMO',10,1),(11,3,'Escherichia coli','ECO',11,1),(12,3,'Enterobacter cloacae','ECL',12,1),(13,3,'Enterobacter aerogenes','EAE',13,1),(14,3,'Enterobacter spp','EN-',14,1),(15,3,'klebsiella pneumoniae','KPN',15,1),(16,3,'klebsiella spp.','KL-',16,1),(17,3,'klebsiella oxytoca','KOX',17,1),(18,3,'Morganella morganii','MMO',18,1),(19,3,'Proteus mirabilis','PMI',19,1),(20,3,'Proteus spp.','PR-',20,1),(21,3,'Otras enterobacterias','Otras enterobacterias',21,1),(22,4,'Pseudomonas aeroginosa','PAE',22,1),(23,4,'Pseudomonas spp','PS-',23,1),(24,4,'Acinetobacter baumannii','ABA',24,1),(25,4,'Acinetobacter calcoaceticus','ACA',25,1),(26,4,'Acinetobacter spp','AC-',26,1),(27,4,'Stenotrophomonas maltophilia','PMA',27,1),(28,4,'Otras pseudomonas no fermentadores','Otros no fermentadores',28,1),(29,5,'Candida albicans','CAL',29,1),(30,5,'Candida no albicans','CXA',30,1),(31,5,'Cryptococcus neoformans','CNE',31,1),(32,5,'Otras levaduras','otras levaduras',32,1),(33,6,'Aspergillus fumigatus','AFU',33,1),(34,6,'Aspergillus flavus','AFL',34,1),(35,6,'Aspergillus niger','ANI',35,1),(36,6,'Aspergillus niger spp','ASP',36,1),(37,6,'Otros hongos filamentosos','Otros hongos filamentosos',37,1),(38,7,'Otros microorganismos no incluidos en el listado','Otro',38,1);
+/*!40000 ALTER TABLE `iaas_microorganismo` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Dumping data for table `provincia`
 --
 
@@ -1590,4 +2023,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-21 17:56:10
+-- Dump completed on 2026-10-26 23:49:14

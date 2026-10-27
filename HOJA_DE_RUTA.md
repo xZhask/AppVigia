@@ -1,4 +1,4 @@
-# Hoja de ruta — estado al 2026-10-21
+# Hoja de ruta — estado al 2026-10-26
 
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
@@ -10,7 +10,7 @@ Servidor: MySQL 8.4.3 de Laragon. La app se conecta según
 
 ### 1.1 Instalar la base desde cero (estación sin `vigia`)
 
-`sql/01_esquema_actual.sql` trae la estructura de las 33 tablas y la
+`sql/01_esquema_actual.sql` trae la estructura de las 48 tablas (las 15 `iaas_*` desde el 26/10) y la
 configuración de las 24 fichas (enfermedades, secciones, campos, catálogos,
 ubigeo, establecimientos, grados y el catálogo CIE-10 del MINSA), ya cargada
 con el manifiesto del 16/10. No
@@ -51,7 +51,7 @@ Para que no vuelva a pasar:
 
   ```
   mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --routines --triggers --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-data --result-file=estructura.sql vigia
-  mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-create-info --skip-triggers --result-file=datos.sql vigia campo_def catalogo catalogo_item cie10 cie10_vigilancia departamento distrito enfermedad establecimiento grado_pnp provincia red_salud seccion_def
+  mysqldump --host=127.0.0.1 -uroot --column-statistics=0 --single-transaction --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-create-info --skip-triggers --result-file=datos.sql vigia campo_def catalogo catalogo_item cie10 cie10_vigilancia departamento distrito enfermedad establecimiento grado_pnp iaas_antimicrobiano iaas_horas_t iaas_microorganismo provincia red_salud seccion_def
   ```
 
   Armar el archivo en este orden: la cabecera de comentarios (agregar arriba
@@ -61,8 +61,10 @@ Para que no vuelva a pasar:
   `estructura.sql`.
 - **Probar que se instala antes de commitear:** crear `vigia_limpia`, importar
   el archivo tal cual y comparar contra `vigia` las columnas, índices y claves
-  foráneas (`information_schema`) y el contenido de las 13 tablas de
-  configuración (desde el 21/10 también `cie10_vigilancia`). Luego borrar `vigia_limpia`. El 15/10 dio 403 columnas,
+  foráneas (`information_schema`) y el contenido de las 16 tablas de
+  configuración (desde el 21/10 también `cie10_vigilancia`; desde el 26/10,
+  los tres catálogos `iaas_*`). Luego borrar `vigia_limpia`. El 26/10 dio 601
+  columnas, 186 índices y 89 claves foráneas idénticas. El 15/10 dio 403 columnas,
   115 índices y 53 claves foráneas idénticas, 24 enfermedades, 195 secciones,
   1216 campos, 338 catálogos y 1861 ítems.
 
@@ -79,6 +81,7 @@ php sql/migraciones/add_notificacion_semanal.php
 php sql/migraciones/cierre_notificacion_semanal.php
 php sql/migraciones/add_catalogos_rediseno.php
 php sql/migraciones/add_registro_pnp.php
+php sql/migraciones/add_modulo_iaas.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -112,6 +115,10 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   con el último login exitoso de `login_intento`), `usuario.motivo_inactivo`,
   `establecimiento.nombre_corto` y `establecimiento.motivo_inactivo`, para los
   catálogos rediseñados. Se puede correr más de una vez.
+- `add_modulo_iaas.php` (26/10): las 15 tablas `iaas_*` del módulo IAAS y
+  sus catálogos (Anexo 11, antimicrobianos literales y horas t). No toca las
+  fichas. Se puede correr más de una vez: los catálogos se cargan solo si
+  están vacíos.
 - `add_registro_pnp.php` (21/10, antes del cargador): registros PNP.
   `enfermedad.modalidad` (FICHA/REGISTRO), `caso.cie10_dx`,
   `caso.caso_origen_id`, la tabla `cie10_vigilancia` (listado de vigilancia
@@ -385,6 +392,33 @@ No tocar sin una respuesta explícita.
    la NTS N° 163-MINSA/2020/CDC; la norma completa la consiguió el usuario
    el 26/10). Es un módulo propio, no una ficha más: los indicadores
    necesitan denominadores que hoy no existen.
+   - **Implementado (26/10):** grupo "IAAS" en el menú (Ronda diaria, Casos
+     IAAS, Exposición laboral, Indicadores) y Catálogos > Parámetros IAAS.
+     Migración `add_modulo_iaas.php`; código en `IaasNorma` (reglas de la
+     norma), `IaasRonda`, `IaasCaso`, `IaasIndicadores` y los controladores
+     `Iaas*Controller`. Probado en navegador (escritorio, celular y tema
+     oscuro); los datos de prueba se borraron.
+     - Cada IPRESS responde primero qué servicios tiene (Anexo 2). "Sin
+       hospitalización" deja solo Exposición laboral e Indicadores.
+     - Ronda: hoy por defecto, marca por dispositivo en un toque, "Confirmar
+       sala" y aviso de días sin marcar con "Completar como sigue igual".
+       "Inicia IAAS" crea la ficha por completar; sus días se marcan × hasta
+       el fin del tratamiento y no suman. La vista del mes es la grilla del
+       Anexo 4 (editable por celda, imprimible en horizontal) y, en
+       gineco-obstetricia y cirugía, la planilla de los Anexos 6 y 7.
+     - La ficha del Anexo 5 tiene tablas propias (`iaas_caso`, cultivos y
+       antibiograma), no usa el motor de fichas: así no se mezcla con Fichas,
+       la notificación semanal ni los reportes por SE. Se puede guardar
+       incompleta; queda "completa" sola cuando tiene lo que pide la norma.
+     - Cierre del mes por sala desde el día 1 del mes siguiente; un mes
+       cerrado no deja editar la ronda. Solo el ADMIN lo reabre, con motivo.
+   - **Supuestos a confirmar con el área** (decididos al implementar):
+     - El día de la instalación cuenta como día de exposición; el del retiro,
+       no. El egreso retira los dispositivos que seguían instalados.
+     - Un paciente está en una sola sala a la vez: para pasarlo a otra se
+       registra el egreso (transferido) y se lo agrega en la nueva.
+     - La exposición laboral no guarda el nombre del trabajador (el papel
+       tampoco lo pide), solo HC/autogenerado/DNI, edad y sexo.
    - **Resuelto con la NTS 163 (26/10):**
      - Las páginas que faltaban son los instructivos de los Anexos 4, 5, 6-7
        y 8. Los Anexos 1 a 3 son el ciclo de la vigilancia, la lista de

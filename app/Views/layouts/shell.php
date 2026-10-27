@@ -54,6 +54,13 @@ $navItems = [
     ['ruta' => 'febriles',    'etiqueta' => 'Registro de febriles', 'crumb' => 'Registro de febriles'],
     ['ruta' => 'notificacion-semanal', 'etiqueta' => 'Notificación semanal', 'crumb' => 'Notificación semanal'],
     ['ruta' => 'reportes',    'etiqueta' => 'Reportes',    'crumb' => 'Reportes'],
+    ['ruta' => 'iaas/ronda',       'etiqueta' => 'Ronda diaria',       'crumb' => 'IAAS · Ronda diaria'],
+    ['ruta' => 'iaas/servicios',   'etiqueta' => 'Servicios vigilados', 'crumb' => 'IAAS · Servicios vigilados'],
+    ['ruta' => 'iaas/casos',       'etiqueta' => 'Casos IAAS',         'crumb' => 'IAAS · Casos'],
+    ['ruta' => 'iaas/exposicion',  'etiqueta' => 'Exposición laboral', 'crumb' => 'IAAS · Exposición laboral'],
+    ['ruta' => 'iaas/indicadores', 'etiqueta' => 'Indicadores',        'crumb' => 'IAAS · Indicadores'],
+    ['ruta' => 'iaas',             'etiqueta' => 'IAAS',               'crumb' => 'IAAS'],
+    ['ruta' => 'catalogos/iaas',   'etiqueta' => 'Parámetros IAAS',    'crumb' => 'Parámetros IAAS'],
     ['ruta' => 'catalogos/establecimientos', 'etiqueta' => 'Establecimientos', 'crumb' => 'Establecimientos'],
     ['ruta' => 'catalogos/enfermedades',     'etiqueta' => 'Enfermedades',     'crumb' => 'Enfermedades'],
     ['ruta' => 'catalogos/usuarios',         'etiqueta' => 'Usuarios',         'crumb' => 'Usuarios'],
@@ -78,6 +85,29 @@ if (!$coincidenciaExacta) {
 }
 
 $puedeVerCatalogos = Auth::tieneRol('ADMIN');
+
+// Grupo IAAS (2026-10-26). El REGISTRADOR ve su establecimiento; el ADMIN, el
+// que eligió en el módulo. Sin hospitalización: solo exposición laboral e
+// indicadores. Si las tablas aún no existen (migración sin correr), el grupo
+// se muestra sin insignias en vez de romper todas las páginas.
+$iaasMenu = ['sin_hosp' => false, 'ronda' => 0, 'casos' => 0, 'mes' => 0];
+if ($usuarioActual && !$usuarioActual['perfil_incompleto']) {
+    $iaasEst = $usuarioActual['rol'] === 'ADMIN' ? ($_SESSION['iaas_est'] ?? null) : $usuarioActual['establecimiento_id'];
+    if ($iaasEst) {
+        try {
+            $iaasConfig = \App\Models\IaasSala::configuracion((int) $iaasEst);
+            $iaasMenu['sin_hosp'] = $iaasConfig && $iaasConfig['sin_hospitalizacion'];
+            if ($iaasConfig && !$iaasMenu['sin_hosp']) {
+                $iaasMenu['ronda'] = \App\Models\IaasRonda::salasPendientesHoy((int) $iaasEst);
+                $iaasMenu['casos'] = \App\Models\IaasCaso::contarPorCompletar((int) $iaasEst);
+                $iaasMenu['mes'] = \App\Models\IaasIndicadores::salasSinCerrarMesAnterior((int) $iaasEst);
+            }
+        } catch (\PDOException $e) {
+            error_log('Menú IAAS: ' . $e->getMessage());
+        }
+    }
+}
+$enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_starts_with($rutaActual, 'iaas/' . $seccion . '/');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -150,6 +180,29 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
         Reportes
       </a>
 
+      <div class="nav-label" title="Infecciones asociadas a la atención de salud">IAAS</div>
+      <?php if (!$iaasMenu['sin_hosp']): ?>
+      <a class="nav-item<?= $enIaas('ronda') || $enIaas('servicios') ? ' active' : '' ?>" href="/iaas/ronda">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="2.5" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="m5.5 8.7 2 2 4-4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Ronda diaria
+        <?php if ($iaasMenu['ronda'] > 0): ?><span class="count pendientes mono" title="Salas con dispositivos sin marcar hoy"><?= $iaasMenu['ronda'] ?></span><?php endif; ?>
+      </a>
+      <a class="nav-item<?= $enIaas('casos') ? ' active' : '' ?>" href="/iaas/casos">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M4 2.5h6l3 3V14a.5.5 0 0 1-.5.5h-8.5A.5.5 0 0 1 3.5 14V3a.5.5 0 0 1 .5-.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8.5" cy="9.5" r="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M8.5 6.3v1M8.5 11.7v1M5.3 9.5h1M10.7 9.5h1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Casos IAAS
+        <?php if ($iaasMenu['casos'] > 0): ?><span class="count pendientes mono" title="Fichas IAAS por completar"><?= $iaasMenu['casos'] ?></span><?php endif; ?>
+      </a>
+      <?php endif; ?>
+      <a class="nav-item<?= $enIaas('exposicion') ? ' active' : '' ?>" href="/iaas/exposicion">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="m10.5 2.5 4 4M12.5 4.5 6 11l-2.5.5L4 9l6.5-6.5M3.5 13.5l1.5-1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Exposición laboral
+      </a>
+      <a class="nav-item<?= $enIaas('indicadores') ? ' active' : '' ?>" href="/iaas/indicadores">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M2.5 14.5h12M4.5 11.5l3-3.5 2.5 2 4-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Indicadores
+        <?php if ($iaasMenu['mes'] > 0): ?><span class="estado-se" title="Salas sin cerrar el mes anterior">Mes pendiente</span><?php endif; ?>
+      </a>
+
       <?php if ($puedeVerCatalogos): ?>
       <div class="nav-label">Catálogos</div>
       <a class="nav-item<?= $rutaActual === 'catalogos/establecimientos' || str_starts_with($rutaActual, 'catalogos/establecimientos/') || $rutaActual === 'catalogos/redes' || str_starts_with($rutaActual, 'catalogos/redes/') ? ' active' : '' ?>" href="/catalogos/establecimientos">
@@ -163,6 +216,10 @@ $puedeVerCatalogos = Auth::tieneRol('ADMIN');
       <a class="nav-item<?= $rutaActual === 'catalogos/usuarios' || str_starts_with($rutaActual, 'catalogos/usuarios/') || $rutaActual === 'catalogos/grados' || str_starts_with($rutaActual, 'catalogos/grados/') || $rutaActual === 'catalogos/unidades' || str_starts_with($rutaActual, 'catalogos/unidades/') ? ' active' : '' ?>" href="/catalogos/usuarios">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="6" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 14c0-2.6 2.2-4.2 5-4.2S13.5 11.4 13.5 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         Usuarios
+      </a>
+      <a class="nav-item<?= $rutaActual === 'catalogos/iaas' ? ' active' : '' ?>" href="/catalogos/iaas">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 2v2M8.5 13v2M2 8.5h2M13 8.5h2M3.9 3.9l1.4 1.4M11.7 11.7l1.4 1.4M3.9 13.1l1.4-1.4M11.7 5.3l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Parámetros IAAS
       </a>
       <?php endif; ?>
       <?php endif; ?>

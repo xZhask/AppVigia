@@ -8,6 +8,11 @@ use App\Controllers\CuestionariosController;
 use App\Controllers\EnfermedadesController;
 use App\Controllers\EstablecimientosController;
 use App\Controllers\GradosController;
+use App\Controllers\IaasCasosController;
+use App\Controllers\IaasExposicionController;
+use App\Controllers\IaasIndicadoresController;
+use App\Controllers\IaasParametrosController;
+use App\Controllers\IaasRondaController;
 use App\Controllers\ImportacionController;
 use App\Controllers\NotificacionSemanalController;
 use App\Controllers\PanelController;
@@ -266,6 +271,94 @@ $router->post('/reportes/muerte-fetal-neonatal/sin-casos', function () {
 });
 $router->post('/reportes/muerte-fetal-neonatal/sin-casos/anular', function () {
     (new ReportesController())->anularSinCasosMuerteFetalNeonatal();
+});
+
+// ---------- IAAS (2026-10-26): NTS N° 163-MINSA/2020/CDC, anexos 4 a 11 ----------
+$router->get('/iaas', function () {
+    (new IaasRondaController())->inicio();
+});
+$router->get('/iaas/servicios', function () {
+    (new IaasRondaController())->servicios();
+});
+$router->post('/iaas/servicios', function () {
+    (new IaasRondaController())->guardarServicios();
+});
+$router->get('/iaas/ronda', function () {
+    (new IaasRondaController())->ronda();
+});
+$router->get('/iaas/paciente', function () {
+    (new IaasRondaController())->buscarPersona();
+});
+foreach ([
+    'marcar' => 'marcar', 'confirmar' => 'confirmar', 'completar' => 'completar', 'ingresar' => 'ingresar',
+    'dispositivo' => 'agregarDispositivo', 'retirar' => 'retirar', 'egresar' => 'egresar', 'internacion' => 'editarInternacion',
+    'iniciar-iaas' => 'iniciarIaas', 'fin-tratamiento' => 'finTratamiento', 'procedimientos' => 'procedimientos',
+] as $accionRonda => $metodoRonda) {
+    $router->post('/iaas/ronda/' . $accionRonda, function () use ($metodoRonda) {
+        (new IaasRondaController())->$metodoRonda();
+    });
+}
+$router->get('/iaas/casos', function () {
+    (new IaasCasosController())->index();
+});
+$router->get('/iaas/casos/nuevo', function () {
+    (new IaasCasosController())->nuevo();
+});
+$router->post('/iaas/casos', function () {
+    (new IaasCasosController())->crear();
+});
+$router->post('/iaas/casos/{id}/anular', function ($id) {
+    (new IaasCasosController())->anular($id);
+});
+$router->get('/iaas/casos/{id}', function ($id) {
+    (new IaasCasosController())->ver($id);
+});
+$router->post('/iaas/casos/{id}', function ($id) {
+    (new IaasCasosController())->actualizar($id);
+});
+$router->get('/iaas/exposicion', function () {
+    (new IaasExposicionController())->index();
+});
+$router->get('/iaas/exposicion/nueva', function () {
+    (new IaasExposicionController())->nueva();
+});
+$router->post('/iaas/exposicion', function () {
+    (new IaasExposicionController())->crear();
+});
+$router->post('/iaas/exposicion/{id}/anular', function ($id) {
+    (new IaasExposicionController())->anular($id);
+});
+$router->get('/iaas/exposicion/{id}', function ($id) {
+    (new IaasExposicionController())->ver($id);
+});
+$router->post('/iaas/exposicion/{id}', function ($id) {
+    (new IaasExposicionController())->actualizar($id);
+});
+$router->get('/iaas/indicadores', function () {
+    (new IaasIndicadoresController())->index();
+});
+$router->post('/iaas/indicadores/cerrar', function () {
+    (new IaasIndicadoresController())->cerrar();
+});
+$router->post('/iaas/indicadores/reabrir', function () {
+    (new IaasIndicadoresController())->reabrir();
+});
+$router->post('/iaas/indicadores/personal', function () {
+    (new IaasIndicadoresController())->guardarPersonal();
+});
+
+// ---------- Catálogo: parámetros IAAS ----------
+$router->get('/catalogos/iaas', function () {
+    (new IaasParametrosController())->index();
+});
+$router->post('/catalogos/iaas/horas', function () {
+    (new IaasParametrosController())->guardarHoras();
+});
+$router->post('/catalogos/iaas/antimicrobiano', function () {
+    (new IaasParametrosController())->guardarAntimicrobiano();
+});
+$router->post('/catalogos/iaas/microorganismo', function () {
+    (new IaasParametrosController())->guardarMicroorganismo();
 });
 
 // ---------- Catálogo: enfermedades ----------
