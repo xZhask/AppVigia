@@ -418,7 +418,7 @@ No tocar sin una respuesta explícita.
      - Un paciente está en una sola sala a la vez: para pasarlo a otra se
        registra el egreso (transferido) y se lo agrega en la nueva.
      - La exposición laboral no guarda el nombre del trabajador (el papel
-       tampoco lo pide), solo HC/autogenerado/DNI, edad y sexo.
+       tampoco lo pide), solo DNI/HC/autogenerado, edad y sexo.
    - **Resuelto con la NTS 163 (26/10):**
      - Las páginas que faltaban son los instructivos de los Anexos 4, 5, 6-7
        y 8. Los Anexos 1 a 3 son el ciclo de la vigilancia, la lista de

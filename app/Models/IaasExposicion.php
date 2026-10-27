@@ -8,7 +8,7 @@ use App\Core\Model;
  * Exposición laboral a agentes patógenos de la sangre en el personal de la
  * salud (Anexo 8). Son datos de salud del propio personal: cada
  * establecimiento ve solo los suyos. El papel no pide el nombre, solo
- * HC/autogenerado/DNI, edad y sexo; aquí tampoco.
+ * DNI/HC/autogenerado, edad y sexo; aquí tampoco.
  */
 class IaasExposicion extends Model
 {

@@ -70,7 +70,7 @@ require __DIR__ . '/../_cabecera.php';
         <div class="section-head"><span class="section-num">2</span><h3>Persona expuesta</h3><span class="adapt">El formato no pide el nombre</span></div>
         <div class="section-body">
           <div class="fields thirds">
-            <div class="field"><label class="fl" for="xId">HC, autogenerado o DNI</label><div class="control mono"><input id="xId" name="identificador" maxlength="30" value="<?= e($v('identificador')) ?>"></div></div>
+            <div class="field"><label class="fl" for="xId">DNI, HC o autogenerado</label><div class="control mono"><input id="xId" name="identificador" maxlength="30" value="<?= e($v('identificador')) ?>"></div></div>
             <div class="field"><label class="fl" for="xEdad">Edad (años)</label><div class="control mono"><input type="number" id="xEdad" name="edad_anios" min="14" max="99" value="<?= e($v('edad_anios')) ?>"></div></div>
             <div class="field"><span class="fl">Sexo</span><div class="iaas-seg-radio"><label><input type="radio" <?= $radio('sexo', 'M', $v('sexo')) ?>><span>M</span></label><label><input type="radio" <?= $radio('sexo', 'F', $v('sexo')) ?>><span>F</span></label></div></div>
           </div>
