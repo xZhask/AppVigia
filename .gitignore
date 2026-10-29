@@ -13,3 +13,7 @@
 # Artefactos de SO/editor.
 Thumbs.db
 .DS_Store
+
+# Configuración propia de cada estación o servidor (tokens, claves). El
+# repositorio es público: ver config/config.php.
+/config/config.local.php

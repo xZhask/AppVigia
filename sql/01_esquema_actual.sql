@@ -1,5 +1,16 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Editado a mano el 2026-10-29 (sin regenerar). Cambio de ESQUEMA:
+--   - reniec_consulta.resultado (ENCONTRADO, NO_ENCONTRADO, RECHAZADA, FALLA)
+--     e indice ix_reniec_resultado: PersonaService no repite un DNI que
+--     RENIEC no tenia, pausa las consultas tras un rechazo del proveedor
+--     (cuota agotada o token invalido) y limita las consultas por usuario y
+--     dia. Solo se toco ese CREATE TABLE (la tabla no lleva INSERT aqui).
+--     La proxima regeneracion desde la estacion de referencia lo incluye.
+--     Migracion: sql/migraciones/add_reniec_resultado.php.
+-- ============================================================================
+--
+-- Sesion anterior (2026-10-27, decimosexta vez):
 -- Regenerado el 2026-10-27 (decimosexta vez). Cambio de ESQUEMA:
 --   - Tabla error_registro: registro de errores del servidor (excepciones,
 --     avisos, caidas graves) y del navegador, con usuario, establecimiento y
@@ -1819,10 +1830,12 @@ CREATE TABLE `reniec_consulta` (
   `usuario_id` int NOT NULL,
   `dni` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL,
   `encontrado` tinyint(1) NOT NULL,
+  `resultado` enum('ENCONTRADO','NO_ENCONTRADO','RECHAZADA','FALLA') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'FALLA',
   `fecha` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `ix_reniec_usuario` (`usuario_id`),
   KEY `ix_reniec_dni` (`dni`),
+  KEY `ix_reniec_resultado` (`resultado`,`fecha`),
   CONSTRAINT `fk_reniec_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=265 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

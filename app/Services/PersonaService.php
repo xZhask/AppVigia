@@ -11,23 +11,29 @@ class PersonaService
     /**
      * Busca una persona por documento. Si no existe y es DNI, consulta a RENIEC
      * y, si hay éxito, crea el registro en la base de datos y lo devuelve.
+     *
+     * Es la única puerta hacia RENIEC. Solo consulta con sesión iniciada y
+     * cuando ReniecConsulta::motivoParaNoConsultar() no lo desaconseja
+     * (pausa tras cuota agotada, DNI no encontrado hace poco, límite diario
+     * del usuario); si no consulta, devuelve null y se digita a mano.
      */
     public static function buscarOCrear(string $tipoDoc, string $numDoc): ?array
     {
         $persona = Persona::buscarPorDocumento($tipoDoc, $numDoc);
-        
+
         if ($persona) {
             return $persona;
         }
 
-        if ($tipoDoc === 'DNI' && preg_match('/^\d{8}$/', $numDoc)) {
-            $datosReniec = ReniecService::buscarPorDni($numDoc);
+        $usuario = Auth::usuario();
+        $usuarioId = $usuario ? (int) $usuario['id'] : 0;
 
-            $usuario = Auth::usuario();
-            $usuarioId = $usuario ? (int) $usuario['id'] : 0;
-            if ($usuarioId > 0) {
-                ReniecConsulta::registrar($usuarioId, $numDoc, $datosReniec !== null);
-            }
+        if ($tipoDoc === 'DNI' && preg_match('/^\d{8}$/', $numDoc) && $usuarioId > 0
+            && ReniecService::configurado()
+            && ReniecConsulta::motivoParaNoConsultar($usuarioId, $numDoc) === null) {
+            $consulta = ReniecService::consultar($numDoc);
+            ReniecConsulta::registrar($usuarioId, $numDoc, $consulta['estado']);
+            $datosReniec = $consulta['datos'];
 
             if ($datosReniec) {
                 $id = Persona::crear([

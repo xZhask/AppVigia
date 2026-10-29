@@ -1,7 +1,11 @@
 <?php
-// Configuración del entorno. No versionar credenciales reales en producción.
+// Configuración del entorno. Este archivo está en git (repositorio público):
+// NUNCA escribir aquí tokens ni claves. Lo propio de cada estación o
+// servidor (token de RENIEC, clave de la BD...) va en config.local.php, que
+// git ignora y se combina al final sobre estos valores. Plantilla:
+// config.local.example.php.
 
-return [
+$config = [
     'db' => [
         'host'    => '127.0.0.1',
         'puerto'  => '3306',
@@ -45,9 +49,23 @@ return [
         // URL del proveedor de consulta RENIEC, con {dni} como marcador de
         // reemplazo. Vacío = integración apagada (los campos se digitan a
         // mano, sin error). Nunca exponer el token al navegador: la llamada
-        // sale siempre del servidor, vía ReniecService.
+        // sale siempre del servidor, vía ReniecService. El token va en
+        // config.local.php.
         'url'     => 'https://apiperu.dev/api/dni/{dni}',
-        'token'   => '941c6ff9a8023744ab41617d1b90add48a7b55847bae8b4a3f0a21ac0571e849',
+        'token'   => '',
         'timeout' => 5,
+        // Cuidado del plan (las consultas tienen tope mensual). 0 = apagado.
+        //   limite_diario_usuario: consultas reales por usuario y día.
+        //   recordar_no_encontrado_dias: no repetir un DNI que RENIEC no
+        //     tenía durante estos días (se digita a mano).
+        //   pausa_rechazo_horas: tras un rechazo del proveedor (cuota
+        //     agotada o token inválido) nadie consulta durante estas horas.
+        'limite_diario_usuario'       => 20,
+        'recordar_no_encontrado_dias' => 30,
+        'pausa_rechazo_horas'         => 6,
     ],
 ];
+
+$local = __DIR__ . '/config.local.php';
+
+return is_file($local) ? array_replace_recursive($config, require $local) : $config;

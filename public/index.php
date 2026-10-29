@@ -18,7 +18,6 @@ use App\Controllers\ImportacionController;
 use App\Controllers\NotificacionSemanalController;
 use App\Controllers\PanelController;
 use App\Controllers\RedesController;
-use App\Controllers\ReniecController;
 use App\Controllers\ReportesController;
 use App\Controllers\UbigeoController;
 use App\Controllers\UnidadesController;
@@ -65,7 +64,7 @@ if (!in_array($rutaSolicitada, $rutasPublicas, true) && !Auth::estaAutenticado()
 
 if (Auth::estaAutenticado()) {
     $usuario = Auth::usuario();
-    $esRutaPermitidaIncompleto = in_array($rutaSolicitada, ['perfil/completar', 'logout']) || str_starts_with($rutaSolicitada, 'api/reniec/');
+    $esRutaPermitidaIncompleto = in_array($rutaSolicitada, ['perfil/completar', 'logout']);
     if ($usuario['perfil_incompleto'] && !$esRutaPermitidaIncompleto) {
         header('Location: /perfil/completar');
         exit;
@@ -502,11 +501,6 @@ $router->get('/api/provincias', function () {
 });
 $router->get('/api/distritos', function () {
     (new UbigeoController())->distritos();
-});
-
-// ---------- API RENIEC (proxy del servidor; nunca directo desde el navegador) ----------
-$router->get('/api/reniec/{dni}', function ($dni) {
-    (new ReniecController())->buscar($dni);
 });
 
 $router->despachar($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

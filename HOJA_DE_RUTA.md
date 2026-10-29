@@ -1,4 +1,4 @@
-# Hoja de ruta — estado al 2026-10-27
+# Hoja de ruta — estado al 2026-10-29
 
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
@@ -7,6 +7,21 @@ bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 
 Servidor: MySQL 8.4.3 de Laragon. La app se conecta según
 `config/config.php` (`127.0.0.1:3306`, base `vigia`, `root` sin clave).
+
+**Configuración propia de cada estación (desde el 29/10).** El repositorio es
+público: `config/config.php` no lleva tokens ni claves. Lo propio de cada
+estación o servidor va en `config/config.local.php` (git lo ignora; plantilla
+`config/config.local.example.php`), que se combina por clave sobre
+`config.php`. Sin él, RENIEC queda apagado (los datos se digitan a mano).
+Cada estación nueva, y las que ya existen después del `git pull` del 29/10:
+
+```
+copy config\config.local.example.php config\config.local.php
+```
+
+y escribir ahí el token de apiperu.dev (`'reniec' => ['token' => '...']`).
+Si el servidor tenía claves propias escritas en `config.php`, pasarlas a su
+`config.local.php` antes del pull.
 
 ### 1.1 Instalar la base desde cero (estación sin `vigia`)
 
@@ -84,6 +99,7 @@ php sql/migraciones/add_catalogos_rediseno.php
 php sql/migraciones/add_registro_pnp.php
 php sql/migraciones/add_modulo_iaas.php
 php sql/migraciones/add_registro_errores.php
+php sql/migraciones/add_reniec_resultado.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -126,6 +142,19 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   id es el código que ve el usuario (E-00042); el ADMIN los revisa en
   Catálogos > Errores (`/sistema/errores`). No guarda lo escrito en los
   formularios, solo los nombres de los campos. Se puede correr más de una vez.
+- `add_reniec_resultado.php` (29/10): `reniec_consulta.resultado`
+  (ENCONTRADO, NO_ENCONTRADO, RECHAZADA, FALLA). El plan de apiperu.dev
+  llegó a 100/100 en octubre porque el token estaba en `config.php`, en el
+  repositorio público (se regeneró el token). Desde entonces
+  `PersonaService::buscarOCrear()` es la única puerta a RENIEC (se quitó
+  `/api/reniec/{dni}`, que no pasaba por el padrón) y no consulta: tras un
+  rechazo del proveedor (cuota o token; 6 h para todos), un DNI que RENIEC
+  no tenía (30 días) ni más de 20 consultas por usuario y día. Los tres
+  valores están en `config.php` (`reniec`). `01_esquema_actual.sql` se editó
+  a mano solo en ese `CREATE TABLE` (sin `INSERT`; instalación probada en
+  `vigia_limpia`): esta estación no es la de referencia y regenerar desde
+  aquí cambiaba los ids de las fichas. La próxima regeneración desde la
+  estación de referencia lo deja como siempre. Se puede correr más de una vez.
 - `add_registro_pnp.php` (21/10, antes del cargador): registros PNP.
   `enfermedad.modalidad` (FICHA/REGISTRO), `caso.cie10_dx`,
   `caso.caso_origen_id`, la tabla `cie10_vigilancia` (listado de vigilancia
