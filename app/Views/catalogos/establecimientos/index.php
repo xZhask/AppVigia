@@ -147,7 +147,7 @@ $plantillas = '';
                   <ul class="cat-lista">
                     <?php foreach ($todos as $u): ?>
                       <li><span class="cat-av"><?= e(iniciales($u['nombre'])) ?></span>
-                        <div><?= e(nombreEnOracion($u['nombre'])) ?><small><?= e($u['email']) ?> · <?= $u['rol'] === 'ADMIN' ? 'Administrador' : 'Registrador/a' ?><?= $u['activo'] ? '' : ' · inactivo' ?></small></div>
+                        <div><?= e(nombreEnOracion($u['nombre'])) ?><small><?= $u['email'] ? e($u['email']) . ' · ' : '' ?><?= $u['rol'] === 'ADMIN' ? 'Administrador' : 'Registrador/a' ?><?= $u['activo'] ? '' : ' · inactivo' ?></small></div>
                         <span class="cuando<?= $u['ultimo_acceso'] === null ? ' cat-viejo' : '' ?>"><?= e(ResumenCatalogo::textoAcceso($u['ultimo_acceso'])) ?></span></li>
                     <?php endforeach; ?>
                   </ul>

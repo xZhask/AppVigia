@@ -20,7 +20,9 @@ class AuthController
         $error = $_SESSION['_error_login'] ?? null;
         $intentosRestantes = $_SESSION['_intentos_restantes_login'] ?? null;
         $mensaje = $_SESSION['_mensaje_login'] ?? null;
-        unset($_SESSION['_error_login'], $_SESSION['_intentos_restantes_login'], $_SESSION['_mensaje_login']);
+        // Lo escrito en el intento anterior, para no volver a digitarlo.
+        $documento = $_SESSION['_documento_login'] ?? '';
+        unset($_SESSION['_error_login'], $_SESSION['_intentos_restantes_login'], $_SESSION['_mensaje_login'], $_SESSION['_documento_login']);
 
         require __DIR__ . '/../Views/auth/login.php';
     }
@@ -39,30 +41,33 @@ class AuthController
             exit;
         }
 
-        $email = trim($_POST['email'] ?? '');
+        // Documento (DNI) con que se entra; sin espacios, que a veces se
+        // cuelan al copiar el número.
+        $documento = preg_replace('/\s+/', '', (string) ($_POST['documento'] ?? ''));
         $clave = (string) ($_POST['clave'] ?? '');
         $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $_SESSION['_documento_login'] = mb_substr($documento, 0, 120);
 
-        if ($email !== '' && LoginIntento::estaBloqueado($email, $ip)) {
+        if ($documento !== '' && LoginIntento::estaBloqueado($documento, $ip)) {
             $_SESSION['_error_login'] = 'Demasiados intentos fallidos. Espera unos minutos antes de volver a intentarlo.';
             header('Location: /login');
             exit;
         }
 
         // Auth::intentarLogin() compara siempre contra un hash (real o
-        // señuelo) para que el tiempo de respuesta no delate si el correo
-        // existe; por eso se llama igual aunque el correo venga vacío.
-        $exito = $email !== '' && $clave !== '' && Auth::intentarLogin($email, $clave);
+        // señuelo) para que el tiempo de respuesta no delate si el documento
+        // tiene cuenta; por eso se llama igual aunque venga vacío.
+        $exito = $documento !== '' && $clave !== '' && Auth::intentarLogin($documento, $clave);
 
-        if ($email !== '') {
-            LoginIntento::registrar($email, $ip, $exito);
+        if ($documento !== '') {
+            LoginIntento::registrar($documento, $ip, $exito);
         }
 
         if (!$exito) {
-            $_SESSION['_error_login'] = 'Correo o contraseña incorrectos.';
+            $_SESSION['_error_login'] = 'DNI o contraseña incorrectos.';
 
-            if ($email !== '') {
-                $restantes = LoginIntento::intentosRestantes($email, $ip);
+            if ($documento !== '') {
+                $restantes = LoginIntento::intentosRestantes($documento, $ip);
                 $intentosUsados = LoginIntento::MAX_INTENTOS - $restantes;
                 // "Solo después del primer fallo": con 1 solo fallo no se
                 // muestra el contador todavía.
@@ -76,7 +81,7 @@ class AuthController
         }
 
         $destino = $_SESSION['_url_deseada'] ?? '/';
-        unset($_SESSION['_url_deseada']);
+        unset($_SESSION['_url_deseada'], $_SESSION['_documento_login']);
         header('Location: ' . $destino);
         exit;
     }
@@ -111,12 +116,14 @@ class AuthController
             exit;
         }
 
-        $email = trim($_POST['email'] ?? '');
+        $documento = preg_replace('/\s+/', '', (string) ($_POST['documento'] ?? ''));
 
-        if ($email !== '') {
-            $usuario = Usuario::buscarPorEmail($email);
+        if ($documento !== '') {
+            $usuario = Usuario::buscarPorDocumento($documento);
 
-            if ($usuario && (int) $usuario['activo'] === 1) {
+            // Sin correo registrado no hay a dónde enviar el enlace: el ADMIN
+            // le asigna una contraseña nueva desde Catálogos > Usuarios.
+            if ($usuario && (int) $usuario['activo'] === 1 && !empty($usuario['email'])) {
                 $token = PasswordResetToken::crear((int) $usuario['id']);
                 $enlace = $this->urlBase() . '/login/restablecer?token=' . $token;
 
@@ -128,9 +135,10 @@ class AuthController
                         . "Si no fuiste tú, ignora este correo: tu contraseña sigue igual."
                 );
             }
-            // Si el correo no existe o está inactivo, no se hace nada más:
-            // ni se crea token ni se envía correo, pero la respuesta al
-            // usuario es idéntica en ambos casos (ver _olvide_enviado abajo).
+            // Si el documento no tiene cuenta, está inactiva o no tiene
+            // correo, no se hace nada más: ni se crea token ni se envía
+            // correo, pero la respuesta al usuario es idéntica en todos los
+            // casos (ver _olvide_enviado abajo).
         }
 
         $_SESSION['_olvide_enviado'] = true;

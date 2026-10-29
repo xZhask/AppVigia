@@ -41,10 +41,10 @@ use App\Core\Csrf;
     <?php if ($enviado): ?>
 
       <div class="auth-form">
-        <h2>Revisa tu correo</h2>
+        <h2>Solicitud recibida</h2>
         <p class="lead">
-          Si ese correo tiene una cuenta en VIGÍA PNP, te enviamos un enlace para restablecer
-          la contraseña. El enlace vence en 1 hora.
+          Si ese DNI tiene una cuenta en VIGÍA PNP con correo registrado, te enviamos a ese
+          correo un enlace para restablecer la contraseña. El enlace vence en 1 hora.
         </p>
 
         <div class="auth-alert-ok">
@@ -52,7 +52,7 @@ use App\Core\Csrf;
             <circle cx="8" cy="8" r="6.4" stroke="currentColor" stroke-width="1.3"/>
             <path d="M5 8.3 7 10.3 11 5.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>Si no llega en unos minutos, revisa la carpeta de spam antes de solicitarlo de nuevo.</span>
+          <span>Si no llega en unos minutos (revisa también la carpeta de spam) o no registraste un correo, pide al Área de Epidemiología que te asigne una contraseña nueva.</span>
         </div>
 
         <div class="auth-row" style="justify-content:flex-start">
@@ -65,16 +65,17 @@ use App\Core\Csrf;
       <form class="auth-form" method="post" action="/login/olvide">
         <?= Csrf::campoOculto() ?>
         <h2>Recuperar contraseña</h2>
-        <p class="lead">Ingresa tu correo institucional. Si tiene una cuenta en VIGÍA PNP, te enviaremos un enlace para restablecer la contraseña.</p>
+        <p class="lead">Ingresa tu DNI. Si tu cuenta tiene un correo registrado, te enviaremos ahí un enlace para restablecer la contraseña. Si no, el Área de Epidemiología puede asignarte una nueva.</p>
 
         <div class="auth-field">
-          <label class="fl" for="email">Correo institucional</label>
+          <label class="fl" for="documento">DNI</label>
           <div class="control">
             <svg class="lead" width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
               <rect x="1.5" y="3" width="12" height="9" rx="1.6" stroke="currentColor" stroke-width="1.3"/>
-              <path d="m2 4 5.5 4L13 4" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              <circle cx="5.2" cy="6.9" r="1.4" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M3.4 10c.4-.9 1-1.3 1.8-1.3s1.4.4 1.8 1.3M8.8 6.3h2.8M8.8 8.6h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
-            <input type="email" id="email" name="email" placeholder="nombre@dirsapol.gob.pe"
+            <input type="text" id="documento" name="documento" placeholder="12345678" inputmode="numeric" maxlength="120"
                    autocomplete="username" autofocus spellcheck="false" required>
           </div>
         </div>

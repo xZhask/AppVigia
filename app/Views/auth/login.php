@@ -53,7 +53,7 @@ use App\Core\Csrf;
         </div>
       <?php endif; ?>
 
-      <!-- Estado de error: genérico. Nunca indica si el correo existe. -->
+      <!-- Estado de error: genérico. Nunca indica si el documento tiene cuenta. -->
       <?php if (!empty($error)): ?>
         <div class="auth-alert">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -74,15 +74,18 @@ use App\Core\Csrf;
       <?php endif; ?>
 
       <div class="auth-field">
-        <label class="fl" for="email">Correo institucional</label>
+        <label class="fl" for="documento">DNI</label>
         <div class="control">
           <svg class="lead" width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
             <rect x="1.5" y="3" width="12" height="9" rx="1.6" stroke="currentColor" stroke-width="1.3"/>
-            <path d="m2 4 5.5 4L13 4" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            <circle cx="5.2" cy="6.9" r="1.4" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M3.4 10c.4-.9 1-1.3 1.8-1.3s1.4.4 1.8 1.3M8.8 6.3h2.8M8.8 8.6h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
           </svg>
-          <input type="email" id="email" name="email" placeholder="nombre@dirsapol.gob.pe"
-                 value="<?= e($_POST['email'] ?? '') ?>"
-                 autocomplete="username" autofocus spellcheck="false" required>
+          <!-- type="text": también entran carnés de extranjería y, por única
+               vez, las cuentas sin documento con su correo (Auth::intentarLogin). -->
+          <input type="text" id="documento" name="documento" placeholder="12345678"
+                 value="<?= e($documento ?? '') ?>" inputmode="numeric" maxlength="120"
+                 autocomplete="username" <?= empty($documento) ? 'autofocus' : '' ?> spellcheck="false" required>
         </div>
       </div>
 
@@ -95,7 +98,7 @@ use App\Core\Csrf;
               <path d="M5 6.5V4.8a2.5 2.5 0 0 1 5 0v1.7" stroke="currentColor" stroke-width="1.3"/>
             </svg>
             <input type="password" id="password" name="clave" placeholder="••••••••"
-                   autocomplete="current-password" style="padding-right:30px" required>
+                   autocomplete="current-password" style="padding-right:30px" <?= empty($documento) ? '' : 'autofocus' ?> required>
           </div>
           <button type="button" class="pw-toggle" id="pwBtn" aria-label="Mostrar contraseña">
             <svg width="16" height="16" viewBox="0 0 15 15" fill="none" aria-hidden="true">

@@ -13,8 +13,14 @@ use Throwable;
  */
 class MailService
 {
-    public static function enviar(string $para, string $asunto, string $cuerpoTexto): bool
+    public static function enviar(?string $para, string $asunto, string $cuerpoTexto): bool
     {
+        // El correo del usuario es opcional desde el 29/10 (se entra con
+        // DNI): sin destinatario no hay nada que enviar.
+        if (trim((string) $para) === '') {
+            return false;
+        }
+
         try {
             $config = require __DIR__ . '/../../config/config.php';
             $desde = trim($config['mail']['desde'] ?? '');

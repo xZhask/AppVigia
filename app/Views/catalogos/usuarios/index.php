@@ -97,7 +97,7 @@ $plantillas = '';
               data-f-rol="<?= e($u['rol']) ?>" data-f-red="<?= (int) ($u['red_id'] ?? 0) ?>"
               data-o-nombre="<?= e($u['nombre']) ?>" data-o-rol="<?= e($roles[$u['rol']][0] ?? $u['rol']) ?>" data-o-alc="<?= e($estVisible ?? 'Nacional') ?>"
               data-o-acc="<?= $dias === null ? 99999 : $dias ?>" data-o-fichas="<?= $esReg ? $n : '' ?>">
-            <td><div class="pt-name"><?= e($nombre) ?><?= $soyYo ? ' <span class="cell-sub" style="display:inline">(tú)</span>' : '' ?></div><div class="cell-sub"><?= e($u['email']) ?></div></td>
+            <td><div class="pt-name"><?= e($nombre) ?><?= $soyYo ? ' <span class="cell-sub" style="display:inline">(tú)</span>' : '' ?></div><div class="cell-sub cat-mono"><?= e($documento ?: 'Sin documento: entra con su correo') ?></div></td>
             <td><span class="cat-rol <?= e($u['rol']) ?>"><?= e($roles[$u['rol']][0] ?? $u['rol']) ?></span></td>
             <td><?php if ($esReg): ?><?= e($estVisible ?? '—') ?><div class="cell-sub"><?= e($u['red_nombre'] ?? '') ?><?= $u['establecimiento_id'] && !$u['establecimiento_activo'] ? ' · <span class="cat-viejo">establecimiento inactivo</span>' : '' ?></div><?php else: ?>Nacional<div class="cell-sub">Todas las redes</div><?php endif; ?></td>
             <td class="<?= $activo && ($dias === null || $dias > ResumenCatalogo::DIAS_SIN_ACCESO) ? 'cat-viejo' : '' ?>"><?= e(ResumenCatalogo::textoAcceso($u['ultimo_acceso'])) ?></td>
@@ -113,7 +113,7 @@ $plantillas = '';
           </template>
           <template id="det-<?= $id ?>">
             <div class="cat-cajon-cab">
-              <div style="min-width:0"><h2><?= e($nombre) ?></h2><p><?= e($u['email']) ?></p>
+              <div style="min-width:0"><h2><?= e($nombre) ?></h2><p><?= e($documento ?: ($u['email'] ?? '')) ?></p>
                 <div class="cat-etiquetas"><span class="cat-rol <?= e($u['rol']) ?>"><?= e($roles[$u['rol']][0] ?? $u['rol']) ?></span><?= $activo ? '<span class="cat-badge ok"><i></i>Activo</span>' : '<span class="cat-badge"><i></i>Inactivo</span>' ?><?= $soyYo ? '<span class="cat-badge">Tu cuenta</span>' : '' ?></div></div>
               <button type="button" class="cat-acc" data-cerrar-cajon aria-label="Cerrar"><?= $ico['x'] ?></button>
             </div>
@@ -133,7 +133,7 @@ $plantillas = '';
                   <span>Documento</span><b class="cat-mono"><?= e($documento ?: '—') ?></b>
                   <span>Grado</span><span><?= e($u['grado_nombre'] ?? '— (civil o sin grado)') ?></span>
                   <?php if (!empty($u['cip'])): ?><span>CIP</span><span class="cat-mono"><?= e($u['cip']) ?></span><?php endif; ?>
-                  <span>Correo</span><span><?= e($u['email']) ?></span>
+                  <span>Correo</span><span><?= e($u['email'] ?: '— (opcional)') ?></span>
                   <span>Último acceso</span><span class="<?= $u['ultimo_acceso'] === null ? 'cat-viejo' : '' ?>"><?= e(ResumenCatalogo::textoAcceso($u['ultimo_acceso'])) ?></span>
                   <span>Cuenta creada</span><span><?= e(date('d/m/Y', strtotime($u['creado_en']))) ?></span>
                 </div>

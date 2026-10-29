@@ -222,14 +222,25 @@ class UsuariosController extends Controller
                 $datos['mostrar_manual'] = true;
             } else {
                 $datos['persona_id'] = $persona['id'];
+                // usuario.nombre es obligatorio (NOT NULL, sin valor por
+                // defecto): sin él, el alta fallaba con MySQL en modo estricto.
+                $datos['nombre'] = \App\Models\Persona::nombreCompleto($persona);
                 if (Usuario::existePersona($datos['persona_id'], $idActual)) {
                     $errores['documento'] = 'Ya existe un usuario asociado a este documento.';
+                } elseif (Usuario::existeDocumento($datos['num_doc'], $idActual)) {
+                    // Se entra con el número de documento: dos cuentas con el
+                    // mismo número (aunque de distinto tipo) no podrían entrar.
+                    $errores['documento'] = 'Ya existe un usuario con este número de documento.';
                 }
             }
         }
 
-        if ($datos['email'] === '' || !filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
-            $errores['email'] = 'Ingresa un correo electrónico válido.';
+        // Opcional desde el 29/10 (se entra con DNI): solo para avisos y para
+        // "Olvidé mi contraseña" cuando el envío de correo esté configurado.
+        if ($datos['email'] === '') {
+            $datos['email'] = null;
+        } elseif (!filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
+            $errores['email'] = 'Ingresa un correo electrónico válido o déjalo vacío.';
         } elseif (Usuario::existeEmail($datos['email'], $idActual)) {
             $errores['email'] = 'Ya existe un usuario con este correo.';
         }

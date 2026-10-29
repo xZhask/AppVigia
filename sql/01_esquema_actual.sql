@@ -1,5 +1,12 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Editado a mano el 2026-10-29 (sin regenerar), segundo cambio del dia:
+--   - Ingreso con DNI y contrasena: usuario.email pasa a ser opcional (NULL)
+--     y login_intento.email se llama identificador (indice
+--     ix_login_identificador_fecha). Solo esos dos CREATE TABLE (ninguna
+--     de las dos tablas lleva INSERT aqui).
+--     Migracion: sql/migraciones/login_por_documento.php.
+--
 -- Editado a mano el 2026-10-29 (sin regenerar). Cambio de ESQUEMA:
 --   - reniec_consulta.resultado (ENCONTRADO, NO_ENCONTRADO, RECHAZADA, FALLA)
 --     e indice ix_reniec_resultado: PersonaService no repite un DNI que
@@ -1579,12 +1586,12 @@ DROP TABLE IF EXISTS `login_intento`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `login_intento` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `email` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `identificador` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
   `ip` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
   `exitoso` tinyint(1) NOT NULL,
   `fecha` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `ix_login_email_fecha` (`email`,`fecha`),
+  KEY `ix_login_identificador_fecha` (`identificador`,`fecha`),
   KEY `ix_login_ip_fecha` (`ip`,`fecha`)
 ) ENGINE=InnoDB AUTO_INCREMENT=987 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1893,7 +1900,7 @@ CREATE TABLE `usuario` (
   `persona_id` int DEFAULT NULL,
   `perfil_incompleto` tinyint(1) NOT NULL DEFAULT '0',
   `nombre` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `rol` enum('ADMIN','REGISTRADOR') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'REGISTRADOR',
   `establecimiento_id` int DEFAULT NULL,

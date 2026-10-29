@@ -69,7 +69,8 @@ class PerfilController extends Controller
                 $errores['documento'] = 'No se encontraron datos para este documento en RENIEC ni en el padrón local. Completa tus apellidos y nombres para registrarte manualmente.';
                 $mostrarManual = true;
             } else {
-                if (Usuario::existePersona($persona['id'], (int) $usuario['id'])) {
+                if (Usuario::existePersona($persona['id'], (int) $usuario['id'])
+                    || Usuario::existeDocumento($numDoc, (int) $usuario['id'])) {
                     $errores['documento'] = 'Este documento ya está asociado a otra cuenta de usuario.';
                 } else {
                     // Guardar referencia a la persona placeholder antes de sobrescribir
@@ -95,7 +96,7 @@ class PerfilController extends Controller
                         }
                     }
 
-                    Flash::set('Perfil completado exitosamente. Bienvenido/a, ' . $usuario['nombre']);
+                    Flash::set('Perfil completado. Bienvenido/a, ' . $usuario['nombre'] . '. Desde ahora entras con tu número de documento (' . $numDoc . ') y tu contraseña.');
                     header('Location: /');
                     exit;
                 }

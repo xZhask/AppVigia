@@ -12,9 +12,23 @@ class Auth
     // el tiempo de respuesta no depende de si el correo existe.
     private const HASH_SENUELO = '$2y$12$OEI7VlDoim5KlyTQFEY6ouu7WghSAU3MePH5DQRK0yI/iHLnZ.TiC';
 
-    public static function intentarLogin(string $email, string $clave): bool
+    /**
+     * Ingreso con documento (el DNI de la persona del usuario) y contraseña.
+     * Un identificador con "@" se busca como correo, pero solo en cuentas
+     * que todavía no tienen documento (creadas por scripts/migrar_usuarios.php
+     * o antes del 29/10): entran así una vez, completan el perfil y desde
+     * ahí usan su documento.
+     */
+    public static function intentarLogin(string $identificador, string $clave): bool
     {
-        $fila = Usuario::buscarPorEmail($email);
+        if (str_contains($identificador, '@')) {
+            $fila = Usuario::buscarPorEmail($identificador);
+            if ($fila && trim((string) ($fila['persona_num_doc'] ?? '')) !== '') {
+                $fila = null;
+            }
+        } else {
+            $fila = Usuario::buscarPorDocumento($identificador);
+        }
         $existeYActivo = $fila && (int) $fila['activo'] === 1;
         $hashParaComparar = $existeYActivo ? $fila['password_hash'] : self::HASH_SENUELO;
         $claveValida = password_verify($clave, $hashParaComparar);

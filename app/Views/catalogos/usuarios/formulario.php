@@ -57,11 +57,12 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
         </div>
         <?php endif; ?>
         <div class="field">
-          <label class="fl">Correo electrónico <span class="req">*</span></label>
+          <label class="fl">Correo electrónico</label>
           <div class="control mono <?= isset($errores['email']) ? 'err' : '' ?>">
-            <input type="email" name="email" value="<?= e($usuario['email']) ?>" required>
+            <input type="email" name="email" value="<?= e($usuario['email']) ?>">
           </div>
-          <?php if (isset($errores['email'])): ?><span class="hint err"><?= e($errores['email']) ?></span><?php endif; ?>
+          <?php if (isset($errores['email'])): ?><span class="hint err"><?= e($errores['email']) ?></span>
+          <?php else: ?><span class="hint">Opcional. Se entra con el documento; el correo sirve para avisos y para recuperar la contraseña.</span><?php endif; ?>
         </div>
         <div class="field">
           <label class="fl">Rol <span class="req">*</span></label>

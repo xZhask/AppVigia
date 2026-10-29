@@ -27,9 +27,17 @@ detalle de cada paso está en §1.
 5. **Comprobar:** la base debe tener las tablas que dice §1.1 (51 al
    29/10) y la app debe abrir sin errores.
 
-Pendiente de una sola vez, por estación (29/10): pasos 3 y
-`add_reniec_resultado.php` (ya está en §1.3). El nombre de la PC lo da
-`hostname`.
+Pendiente de una sola vez, por estación (29/10): paso 3,
+`add_reniec_resultado.php` y `login_por_documento.php` (los dos ya están en
+§1.3). El nombre de la PC lo da `hostname`.
+
+**Desde el 29/10 se entra con DNI y contraseña, no con el correo.** Cada
+usuario entra con el número de documento de su persona (el que se puso al
+crearlo en Catálogos > Usuarios); la contraseña no cambia. Las cuentas que
+aún no tienen documento (perfil incompleto) entran **una vez** con su correo,
+completan el perfil y desde ahí con el DNI. El correo es opcional. Si alguien
+olvida la contraseña y no tiene correo (o el envío no está configurado), el
+ADMIN le pone una nueva en Catálogos > Usuarios > Editar.
 
 - [x] Estadistica02 (29/10)
 - [ ] Las demás PC
@@ -68,7 +76,7 @@ trae casos, personas ni usuarios. Desde la raíz del proyecto:
 ```
 mysql --host=127.0.0.1 -uroot -e "CREATE DATABASE vigia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 mysql --host=127.0.0.1 -uroot --default-character-set=utf8mb4 vigia -e "source sql/01_esquema_actual.sql"
-php scripts/crear_admin.php tu-correo@dominio "Tu nombre"
+php scripts/crear_admin.php 12345678 "Apellido paterno" "Apellido materno" "Nombres" [correo]
 php verificar_fichas.php
 php verificar_claves.php
 php verificar_render.php
@@ -78,8 +86,10 @@ php verificar_render.php
   completa, o esa carpeta en el PATH). Se usa `source` y no `<` porque
   PowerShell no admite esa redirección; así funciona igual en PowerShell, cmd
   y Git Bash (probado en PowerShell el 15/10).
-- `crear_admin.php` imprime una contraseña aleatoria una sola vez. Al entrar,
-  la app pide completar el perfil.
+- `crear_admin.php` (desde el 29/10) crea el ADMIN con su DNI, que es con lo
+  que entra; el correo es opcional. Imprime una contraseña aleatoria una sola
+  vez: cambiarla al entrar (Catálogos > Usuarios > Editar). No consulta
+  RENIEC: los nombres son los que se escriben (en mayúsculas).
 - No hace falta correr las migraciones ni el cargador: el archivo ya los trae
   aplicados (si se corren, no cambian nada).
 - Los tres verificadores deben salir en verde, sin huérfanos.
@@ -134,6 +144,7 @@ php sql/migraciones/add_registro_pnp.php
 php sql/migraciones/add_modulo_iaas.php
 php sql/migraciones/add_registro_errores.php
 php sql/migraciones/add_reniec_resultado.php
+php sql/migraciones/login_por_documento.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -176,6 +187,16 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   id es el código que ve el usuario (E-00042); el ADMIN los revisa en
   Catálogos > Errores (`/sistema/errores`). No guarda lo escrito en los
   formularios, solo los nombres de los campos. Se puede correr más de una vez.
+- `login_por_documento.php` (29/10): ingreso con DNI y contraseña en vez de
+  correo (el correo daba problemas). `usuario.email` pasa a opcional y
+  `login_intento.email` se llama `identificador`. Al final dice cuántos
+  usuarios activos no tienen documento todavía (entran una vez con su
+  correo). Mismo día: el alta de usuarios en Catálogos > Usuarios fallaba
+  siempre con MySQL en modo estricto (`usuario.nombre` sin valor); ahora
+  toma el nombre de la persona. Un número de documento solo puede tener una
+  cuenta (aunque sea de otro tipo), para que el ingreso no sea ambiguo.
+  `01_esquema_actual.sql` editado a mano solo en esos dos `CREATE TABLE`
+  (sin `INSERT`; instalación probada). Se puede correr más de una vez.
 - `add_reniec_resultado.php` (29/10): `reniec_consulta.resultado`
   (ENCONTRADO, NO_ENCONTRADO, RECHAZADA, FALLA). El plan de apiperu.dev
   llegó a 100/100 en octubre porque el token estaba en `config.php`, en el
