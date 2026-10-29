@@ -3,6 +3,40 @@
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 
+## 0. Al llegar a una estación (lista corta)
+
+Cada vez que se retoma en otra PC o en el servidor, en este orden. El
+detalle de cada paso está en §1.
+
+1. **Traer los cambios:** `git pull --ff-only`.
+2. **Respaldar la base antes de migrar** (Git Bash; en PowerShell, la misma
+   línea con `--result-file=respaldo.sql` en vez de `>`):
+   `C:/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysqldump -uroot -h127.0.0.1 --single-transaction --routines vigia > respaldo.sql`
+   (guardarlo fuera del proyecto o en `/backups/`, que git ignora).
+3. **Revisar que exista `config/config.local.php`** (no viene con el pull:
+   git lo ignora a propósito porque el repositorio es público). Si no existe:
+   `copy config\config.local.example.php config\config.local.php` y escribir
+   el token de apiperu.dev en `'reniec' => ['token' => '...']`. El token se
+   ve en el panel de apiperu.dev; **nunca** escribirlo en `config.php`, en un
+   commit ni en este archivo. Sin `config.local.php` la app funciona, pero
+   sin RENIEC (los nombres se digitan a mano).
+4. **Correr la secuencia de §1.3** completa (todas se pueden repetir sin
+   daño). Avisos que son normales: el cargador dice "No se borra sin
+   --confirmar-perdida" en O95 y P96 (protege datos capturados; no pasar
+   esa opción).
+5. **Comprobar:** la base debe tener las tablas que dice §1.1 (51 al
+   29/10) y la app debe abrir sin errores.
+
+Pendiente de una sola vez, por estación (29/10): pasos 3 y
+`add_reniec_resultado.php` (ya está en §1.3). El nombre de la PC lo da
+`hostname`.
+
+- [x] Estadistica02 (29/10)
+- [ ] Las demás PC
+- [ ] Servidor de prueba
+
+Al terminar en una, marcarla aquí y commitear.
+
 ## 1. Base de datos
 
 Servidor: MySQL 8.4.3 de Laragon. La app se conecta según
