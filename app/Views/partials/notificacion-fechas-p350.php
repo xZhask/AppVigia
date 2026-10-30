@@ -88,19 +88,17 @@ $casoCaptadoEn   = $campoP35('p35_0_caso_captado_en');
     <label class="fl" style="font-weight:600; margin-bottom:10px; display:block;">Caso captado en:</label>
     <div class="control-radio-group" style="display:flex; flex-wrap:wrap; gap:16px 24px; align-items:center;">
       <?php
-      $optsCapt = [
-          'Emergencia' => 'Emergencia',
-          'Hospitalización' => 'Hospitalización',
-          'Consultorio externo' => 'Consultorio externo',
-          'Búsqueda institucional' => 'Búsqueda institucional'
-      ];
-      $valCapt = $casoCaptadoEn['val'];
-      foreach ($optsCapt as $oVal => $oLabel):
-          $chk = ($valCapt === $oVal || $valCapt === strtoupper(str_replace(' ', '_', $oVal))) ? 'checked' : '';
+      // Opciones del catálogo (valor = código, p. ej. CONSULTORIO_EXTERNO),
+      // como notificacion-fechas-a370.php. Hasta el 2026-10-30 eran 4
+      // etiquetas escritas aquí ("Consultorio externo") y el servidor las
+      // rechazaba ("Selecciona una opción válida"): marcar el campo impedía
+      // registrar la ficha.
+      $valCapt = (string) $casoCaptadoEn['val'];
+      foreach ($casoCaptadoEn['opciones'] as $op):
       ?>
         <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:14px;">
-          <input type="radio" name="<?= $casoCaptadoEn['name'] ?>" value="<?= e($oVal) ?>" <?= $chk ?>>
-          <span><?= e($oLabel) ?></span>
+          <input type="radio" name="<?= $casoCaptadoEn['name'] ?>" value="<?= e($op['valor']) ?>" <?= $valCapt === (string) $op['valor'] ? 'checked' : '' ?>>
+          <span><?= e($op['etiqueta']) ?></span>
         </label>
       <?php endforeach; ?>
     </div>
