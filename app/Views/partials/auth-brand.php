@@ -11,7 +11,7 @@
       </svg>
     </div>
     <div>
-      <div class="auth-wordmark">VIGÍA PNP</div>
+      <div class="auth-wordmark">VIGÍA <span class="auth-wordmark-pnp">PNP</span></div>
       <div class="auth-wordmark-sub">Vigilancia · DIRSAPOL</div>
     </div>
   </div>

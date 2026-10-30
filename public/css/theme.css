@@ -1792,3 +1792,7 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
    currentColor; el color lo da esta clase, blanco sobre el contenedor verde
    (.brand-mark y .auth-mark) en modo claro y oscuro. */
 .marca-vigia{display:block;color:#fff}
+
+/* Login (2026-10-30, pedido del usuario): «PNP» del wordmark en el verde del
+   panel (el mismo de .auth-statement h1 em); el resto del lockup no cambia. */
+.auth-wordmark-pnp{color:#6FCBB9}
