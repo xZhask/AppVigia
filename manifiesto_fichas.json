@@ -117,43 +117,7 @@
           "clasificar": "DESCARTADO"
         },
         {
-          "si": {
-            "clave": "a97_clasificacion_fiebre_amarilla",
-            "valores": [
-              "SINDROME_FEBRIL"
-            ]
-          },
-          "clasificar": "SOSPECHOSO"
-        },
-        {
-          "si": {
-            "clave": "a97_clasificacion_fiebre_amarilla",
-            "valores": [
-              "PROBABLE"
-            ]
-          },
-          "clasificar": "PROBABLE"
-        },
-        {
-          "si": {
-            "clave": "a97_clasificacion_fiebre_amarilla",
-            "valores": [
-              "CONFIRMADO"
-            ]
-          },
-          "clasificar": "CONFIRMADO"
-        },
-        {
-          "si": {
-            "clave": "a97_clasificacion_fiebre_amarilla",
-            "valores": [
-              "DESCARTADO"
-            ]
-          },
-          "clasificar": "DESCARTADO"
-        },
-        {
-          "_nota": "Ninguna de las 3 elegida (las reglas anteriores ya cubren cualquier valor).",
+          "_nota": "Ninguna de las 2 elegida (las reglas anteriores ya cubren cualquier valor). Hasta el 2026-10-30 eran 3: la de fiebre amarilla se quitó con su opción (ver _nota_fiebre_amarilla en a97_enfermedad_evento).",
           "si": {
             "clave": "a97_clasificacion",
             "valores": [
@@ -183,9 +147,9 @@
                 "Chikungunya (CIE-10: A92.0)",
                 "Chikungunya grave (CIE-10: A92.5)",
                 "Zika (CIE-10: U06.9)",
-                "Otras arbovirosis",
-                "Fiebre amarilla (CIE-10: A95)"
+                "Otras arbovirosis"
               ],
+              "_nota_fiebre_amarilla": "2026-10-30 (decisión del usuario: \"si tiene su ficha propia, esa es la que manda\"): se quitó la opción \"Fiebre amarilla (CIE-10: A95)\" y, con ella, a97_clasificacion_fiebre_amarilla y sus 4 reglas_campos. Fiebre amarilla se notifica solo en su ficha A95; tenerla en las dos hacía que un mismo caso pudiera sumar en dos filas de los reportes. En bases con casos lo aplica sql/migraciones/set_a97_sin_fiebre_amarilla.php.",
               "_nota_cie10": "2026-08-14 (pedido del usuario, mismo patrón que b05_enfermedad_notificada: \"Sarampión (CIE-10: B05)\"): códigos tomados del encabezado del propio PDF de A97 (pág. 49, \"CIE 10: dengue sin signos (A97.0) dengue con signos de alarma(A97.1) dengue grave(A97.2) Chikungunya(A92.0) Chikungunya Grave(A92.5) Zika (U06.9)\"). Fiebre amarilla no viene en ese encabezado -- se usó A95, el mismo CIE10 que ya tiene su propia ficha en este sistema (fila 6, \"Fiebre amarilla\"). \"Otras arbovirosis\" se dejó SIN código, igual que \"Otras febriles eruptivas\" en b05_enfermedad_notificada (catch-all sin CIE10 específico verificable). IMPORTANTE: cambiar estas etiquetas cambia el valor interno (slug) que dependen a97_clasificacion/_zika/_fiebre_amarilla/a97_otras_arbovirosis_especificar -- sus valor_activador se actualizaron en la misma pasada, ver esos campos más abajo."
             }
           ]
@@ -533,7 +497,7 @@
         {
           "nombre": "Clasificación",
           "orden": 7,
-          "_nota": "El PDF (pág. 49) modela la clasificación como una grilla de 3 formas distintas según la enfermedad marcada en 'Enfermedad / evento a notificar' -- ya no un SELECT combinado de 24 opciones. Grupo A (Dengue x3, Chikungunya x2) usa Probable/Confirmado/Descartado; Zika usa Sospechoso/Confirmado/Descartado; Fiebre amarilla usa 4 valores planos (Síndrome febril/Probable/Confirmado/Descartado); Otras arbovirosis no trae checkboxes de severidad en el PDF, solo la línea de especificar.",
+          "_nota": "El PDF (pág. 49) modela la clasificación como una grilla de 3 formas distintas según la enfermedad marcada en 'Enfermedad / evento a notificar' -- ya no un SELECT combinado de 24 opciones. Grupo A (Dengue x3, Chikungunya x2) usa Probable/Confirmado/Descartado; Zika usa Sospechoso/Confirmado/Descartado; Fiebre amarilla usa 4 valores planos (Síndrome febril/Probable/Confirmado/Descartado); Otras arbovirosis no trae checkboxes de severidad en el PDF, solo la línea de especificar. Desde el 2026-10-30 la forma de fiebre amarilla no se usa aquí: fiebre amarilla va en su ficha A95 (ver _nota_fiebre_amarilla).",
           "campos": [
             {
               "clave": "a97_clasificacion",
@@ -560,20 +524,6 @@
               ],
               "depende_de": "Enfermedad / evento a notificar",
               "valor_activador": "ZIKA_CIE_10_U06_9"
-            },
-            {
-              "clave": "a97_clasificacion_fiebre_amarilla",
-              "etiqueta": "Clasificación (Fiebre amarilla)",
-              "tipo": "SELECT",
-              "orden": 3,
-              "opciones": [
-                "Síndrome febril",
-                "Probable",
-                "Confirmado",
-                "Descartado"
-              ],
-              "depende_de": "Enfermedad / evento a notificar",
-              "valor_activador": "FIEBRE_AMARILLA_CIE_10_A95"
             },
             {
               "clave": "a97_otras_arbovirosis_especificar",

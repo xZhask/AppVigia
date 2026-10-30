@@ -46,17 +46,24 @@ ADMIN le pone una nueva en Catálogos > Usuarios > Editar.
 
 Al terminar en una, marcarla aquí y commitear.
 
-**En curso (30/10) — descargas en Excel con diseño, SIN PROBAR con datos.**
-Las 7 descargas (listado de fichas, reporte general, búsqueda activa VIH,
-muerte fetal/neonatal, registro individual y VIH, consolidado PNP, febriles)
-pasaron de CSV a `.xlsx` con `App\Core\LibroXlsx` (encabezados agrupados
-como el Excel oficial de `docs/fuentes`, colores del sistema, fechas reales,
-filtros, encabezado fijo, A4 horizontal). El generador se probó solo con un
-libro de ejemplo (válido en openpyxl); las descargas reales quedaron sin
-probar porque MySQL se detuvo. Al retomar: descargar cada una desde la app
-con datos (una semana con casos), abrirlas en Excel y revisar diseño y
-valores contra la pantalla. `XlsxEscritor` sigue solo para la plantilla de
-importación.
+**Descargas en Excel con diseño (30/10) — probadas con datos; falta mirarlas
+en Excel.** Las 7 descargas (listado de fichas, reporte general, búsqueda
+activa VIH, muerte fetal/neonatal, registro individual y VIH, consolidado
+PNP, febriles) pasaron de CSV a `.xlsx` con `App\Core\LibroXlsx`
+(encabezados agrupados como el Excel oficial de `docs/fuentes`, colores del
+sistema, fechas reales, filtros, encabezado fijo, A4 horizontal).
+`XlsxEscritor` sigue solo para la plantilla de importación.
+
+Probado el 30/10 en Estadistica02 con los casos de prueba (SE 30–43, SE 40
+para las semanales), como ADMIN y como REGISTRADOR: las 7 bajan como .xlsx;
+zip y XML válidos, sin combinadas superpuestas ni celdas fuera de orden ni
+estilos inexistentes (lo que Excel "repara"); los totales cuadran con la base
+(93 casos sin anular; SE 40 = 23 en el registro individual + 2 en el de VIH;
+leishmaniasis 8); fechas como fecha, DNI como texto, VIH con iniciales; un
+REGISTRADOR recibe solo su establecimiento aunque pida otro en la URL.
+Falta: (1) **abrirlas en Excel** y revisar el diseño a ojo (colores, anchos,
+impresión); (2) consolidado PNP y febriles con registros PNP reales (la base
+de prueba no tiene ninguno; salen bien vacíos).
 
 ## 1. Base de datos
 
@@ -104,7 +111,11 @@ php verificar_render.php
   vez: cambiarla al entrar (Catálogos > Usuarios > Editar). No consulta
   RENIEC: los nombres son los que se escriben (en mayúsculas).
 - No hace falta correr las migraciones ni el cargador: el archivo ya los trae
-  aplicados (si se corren, no cambian nada).
+  aplicados (si se corren, no cambian nada). **Excepción desde el 30/10:**
+  correr `php sql/migraciones/set_a97_sin_fiebre_amarilla.php` después de
+  importar, porque el archivo todavía trae la opción "Fiebre amarilla" en A97
+  (sin eso `verificar_fichas.php` marca diferencias en A97). Deja de hacer
+  falta cuando se regenere el archivo en la estación de referencia.
 - Los tres verificadores deben salir en verde, sin huérfanos.
 
 ### 1.2 Mantener `sql/01_esquema_actual.sql` instalable
@@ -171,6 +182,7 @@ php sql/migraciones/set_fecha_notif_en.php A37.0 B01 B26 A35 A33 A80 P35.0
 php sql/migraciones/set_o95_categoria_desde_ipress.php
 php sql/migraciones/set_z21_observaciones_ambas_ramas.php
 php sql/migraciones/copiar_nucleo_ajustes.php P96
+php sql/migraciones/set_a97_sin_fiebre_amarilla.php
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -200,6 +212,13 @@ php sql/migraciones/copiar_nucleo_ajustes.php P96
   id es el código que ve el usuario (E-00042); el ADMIN los revisa en
   Catálogos > Errores (`/sistema/errores`). No guarda lo escrito en los
   formularios, solo los nombres de los campos. Se puede correr más de una vez.
+- `set_a97_sin_fiebre_amarilla.php` (30/10, después del cargador y de
+  `set_clasificacion_propia.php`): decisión del usuario, "si tiene su ficha
+  propia, esa es la que manda". Quita de A97 la opción "Fiebre amarilla
+  (CIE-10: A95)", el campo "Clasificación (Fiebre amarilla)" con su catálogo
+  y sus 4 reglas de clasificación; fiebre amarilla se notifica solo en A95.
+  Si algún caso de A97 guardó esa opción, no toca nada y lista los códigos
+  (hay que pasarlos antes a A95). Se puede correr más de una vez.
 - `login_por_documento.php` (29/10): ingreso con DNI y contraseña en vez de
   correo (el correo daba problemas). `usuario.email` pasa a opcional y
   `login_intento.email` se llama `identificador`. Al final dice cuántos
