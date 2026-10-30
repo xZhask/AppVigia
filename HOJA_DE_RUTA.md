@@ -116,6 +116,21 @@ php verificar_render.php
   completa, o esa carpeta en el PATH). Se usa `source` y no `<` porque
   PowerShell no admite esa redirección; así funciona igual en PowerShell, cmd
   y Git Bash (probado en PowerShell el 15/10).
+- **Servidor de la marcha blanca (hosting con cPanel, sin consola PHP):** se
+  instala con `despliegue/vigia_servidor.sql` (un solo archivo para
+  phpMyAdmin: esquema + A97 sin fiebre amarilla en SQL + admin inicial) y
+  `despliegue/config.local.php` (se sube como `config/config.local.php`:
+  base, usuario y clave del hosting, `debug` en false y token de RENIEC). La
+  carpeta `despliegue/` está en `.gitignore` y solo existe en Estadistica02;
+  el SQL lo arma un script a partir de `01_esquema_actual.sql` y
+  `02_admin_inicial.sql`. Probado el 30/10 importándolo en una base vacía.
+- **Servidor de la marcha blanca:** en vez de `crear_admin.php`, importar
+  `sql/02_admin_inicial.sql` después del esquema (`-e "source
+  sql/02_admin_inicial.sql"`). Trae el ADMIN inicial (con su DNI y los datos
+  de RENIEC) con su contraseña ya cifrada. **No está en git** (DNI, nombre y hash
+  de una persona real en un repositorio público): se lleva al servidor a
+  mano desde la estación Estadistica02. La contraseña la tiene el usuario;
+  cambiarla al entrar (Catálogos > Usuarios > Editar).
 - `crear_admin.php` (desde el 29/10) crea el ADMIN con su DNI, que es con lo
   que entra; el correo es opcional. Imprime una contraseña aleatoria una sola
   vez: cambiarla al entrar (Catálogos > Usuarios > Editar). No consulta

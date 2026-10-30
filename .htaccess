@@ -1,0 +1,12 @@
+# Raíz del proyecto: nada de aquí se sirve por web (2026-10-30).
+# En el hosting el proyecto queda dentro de public_html/ y el dominio
+# principal podría leer config/, sql/, docs/, despliegue/... por su ruta
+# (odindeveloper.com/appvigiapnp.odindeveloper.com/...). El subdominio apunta
+# a public/, cuyo .htaccess vuelve a permitir el acceso solo a esa carpeta.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>

@@ -17,3 +17,11 @@ Thumbs.db
 # Configuración propia de cada estación o servidor (tokens, claves). El
 # repositorio es público: ver config/config.php.
 /config/config.local.php
+
+# Administrador inicial de la marcha blanca: DNI, nombre y hash de una
+# persona real. Se lleva al servidor a mano (ver HOJA_DE_RUTA.md §1.1).
+/sql/02_admin_inicial.sql
+
+# Archivos para subir al servidor (config con claves, SQL con el admin):
+# se generan en la estacion y se llevan a mano. Nunca a git.
+/despliegue/
