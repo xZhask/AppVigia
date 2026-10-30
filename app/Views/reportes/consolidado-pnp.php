@@ -25,7 +25,9 @@ $titulos = [
 // provincia y distrito de residencia, y la fila de totales.
 $tabla = function (string $nombre) use ($columnas, $datos, $titulos, $dato): void {
     $grupos = $columnas[$nombre];
-    $tresNiveles = is_array(reset(reset($grupos)));
+    // reset() pide una variable: encadenarlo deja un NOTICE en cada carga.
+    $primerGrupo = reset($grupos);
+    $tresNiveles = is_array(reset($primerGrupo));
     $claves = ConsolidadoPnp::clavesDe($grupos);
     $niveles = $tresNiveles ? 3 : 2;
     $totales = array_fill_keys($claves, 0);

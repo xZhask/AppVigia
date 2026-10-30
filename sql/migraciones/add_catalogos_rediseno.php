@@ -34,6 +34,14 @@ foreach ($agregar as $tabla => $columnas) {
     }
 }
 
+// login_por_documento.php (29/10) renombra login_intento.email a
+// identificador. Si ya corrió, el relleno sobra: desde el 19/10
+// Auth::intentarLogin() escribe ultimo_acceso en cada ingreso.
+if (!$pdo->query("SHOW COLUMNS FROM login_intento LIKE 'email'")->fetch()) {
+    echo "Último acceso: ya se escribe al ingresar (login_intento ya no tiene email); no hace falta rellenar.\n";
+    return;
+}
+
 $n = $pdo->exec(
     'UPDATE usuario u
        JOIN (SELECT email, MAX(fecha) AS ultima FROM login_intento WHERE exitoso = 1 GROUP BY email) li ON li.email = u.email
