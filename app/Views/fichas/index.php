@@ -118,7 +118,7 @@ $encabezadoOrden = function (string $clave, string $etiqueta) use ($filtros, $ur
   </div>
   <div class="spacer"></div>
   <?php if ($hayFichas): ?>
-  <a class="btn btn-ghost" href="<?= e('/casos/exportar' . substr($url(['page' => '']), 6)) ?>" title="Descarga en CSV las fichas de esta lista, con los filtros aplicados">
+  <a class="btn btn-ghost" href="<?= e('/casos/exportar' . substr($url(['page' => '']), 6)) ?>" title="Descarga en Excel las fichas de esta lista, con los filtros aplicados">
     <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 2.5v7M4 6.5l3 3 3-3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
     Exportar
   </a>

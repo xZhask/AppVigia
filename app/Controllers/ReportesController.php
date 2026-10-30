@@ -5,6 +5,7 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Flash;
+use App\Core\LibroXlsx;
 use App\Models\Caso;
 use App\Models\Consolidado;
 use App\Models\ConsolidadoPnp;
@@ -17,6 +18,11 @@ use App\Models\RegistroBusquedaActivaVih;
 
 class ReportesController extends Controller
 {
+    /** Membrete de las descargas en Excel (2026-10-30). */
+    private const MEMBRETE = 'VIGÍA PNP · ÁREA DE EPIDEMIOLOGÍA · DIRSAPOL';
+    /** Membrete de los formatos del Área de Epidemiología PNP (individual, consolidado, febriles). */
+    private const MEMBRETE_PNP = ['POLICÍA NACIONAL DEL PERÚ · DIRECCIÓN DE SALUD POLICIAL', 'ÁREA DE EPIDEMIOLOGÍA'];
+
     /**
      * Consolidado (rediseño 2026-10-17): tabla cruzada filas × columnas con
      * totales, vista Tabla | Gráfico y título armado con los filtros. Los
@@ -47,8 +53,8 @@ class ReportesController extends Controller
     }
 
     /**
-     * La misma tabla cruzada de la pantalla, en CSV (delimitador ; y BOM
-     * UTF-8, para que Excel en configuración regional es-PE lo abra directo).
+     * La misma tabla cruzada de la pantalla, en .xlsx con diseño (2026-10-30;
+     * antes CSV): la dimensión de columnas va como encabezado agrupado.
      */
     public function exportarExcel(): void
     {
@@ -58,40 +64,40 @@ class ReportesController extends Controller
         $cruce = Consolidado::cruzar($usuario, $f['enfermedad_id'], $f['desde'], $f['hasta'], $f['filas'], $f['columnas']);
         $dims = Consolidado::dimensiones();
         $variosAnios = $f['desde'][0] !== $f['hasta'][0];
+        $total = (int) $cruce['total'];
 
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="reporte_' . $f['filas'] . ($f['columnas'] ? '_' . $f['columnas'] : '') . '_' . date('Y-m-d') . '.csv"');
-        $salida = fopen('php://output', 'w');
-        fwrite($salida, "\xEF\xBB\xBF");
-        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
-
-        $linea([$this->tituloReporte($f, $enfermedad)]);
-        $linea([]);
-        $encabezado = [$dims[$f['filas']]['etiqueta']];
-        if ($f['columnas']) {
-            foreach ($cruce['columnas'] as $k) {
-                $encabezado[] = Consolidado::etiqueta($f['columnas'], $k);
-            }
+        $columnas = [['titulo' => $dims[$f['filas']]['etiqueta'], 'anchoMax' => 40]];
+        foreach ($f['columnas'] ? $cruce['columnas'] : [] as $k) {
+            $columnas[] = ['titulo' => Consolidado::etiqueta($f['columnas'], $k), 'grupo' => $dims[$f['columnas']]['etiqueta'], 'tipo' => 'entero', 'anchoMax' => 18];
         }
-        $linea(array_merge($encabezado, ['Total', '%']));
+        $columnas[] = ['titulo' => 'Total', 'tipo' => 'entero'];
+        $columnas[] = ['titulo' => '%', 'tipo' => 'porcentaje'];
+
+        $filas = [];
         foreach ($cruce['filas'] as $fila) {
             $celdas = [Consolidado::etiqueta($f['filas'], $fila, $variosAnios)];
-            if ($f['columnas']) {
-                foreach ($cruce['columnas'] as $k) {
-                    $celdas[] = $cruce['celdas'][$fila][$k] ?? 0;
-                }
+            foreach ($f['columnas'] ? $cruce['columnas'] : [] as $k) {
+                $celdas[] = $cruce['celdas'][$fila][$k] ?? 0;
             }
             $totalFila = $cruce['totalFila'][$fila] ?? 0;
-            $linea(array_merge($celdas, [$totalFila, $cruce['total'] ? number_format($totalFila / $cruce['total'] * 100, 1, ',', '') : '0,0']));
+            $filas[] = array_merge($celdas, [$totalFila, $total ? $totalFila / $total : 0]);
         }
         $pie = ['Total'];
-        if ($f['columnas']) {
-            foreach ($cruce['columnas'] as $k) {
-                $pie[] = $cruce['totalColumna'][$k] ?? 0;
-            }
+        foreach ($f['columnas'] ? $cruce['columnas'] : [] as $k) {
+            $pie[] = $cruce['totalColumna'][$k] ?? 0;
         }
-        $linea(array_merge($pie, [$cruce['total'], '100,0']));
-        fclose($salida);
+
+        $this->libro('Reporte de casos')
+            ->membrete([self::MEMBRETE])
+            ->titulo($this->tituloReporte($f, $enfermedad))
+            ->datos([
+                'Enfermedad' => $enfermedad ? $enfermedad['nombre'] : 'Todas',
+                'Periodo'    => $f['etiquetaPeriodo'],
+                'Ámbito'     => $usuario['rol'] === 'REGISTRADOR' ? ($usuario['establecimiento_nombre'] ?? '') : 'Nacional',
+                'Casos'      => $total,
+            ], 4)
+            ->tabla($columnas, $filas, ['totales' => array_merge($pie, [$total, $total ? 1 : 0]), 'congelar' => true, 'vacio' => 'Sin casos en el periodo'])
+            ->descargar('reporte_' . $f['filas'] . ($f['columnas'] ? '_' . $f['columnas'] : '') . '_' . date('Y-m-d'));
         exit;
     }
 
@@ -131,8 +137,8 @@ class ReportesController extends Controller
     }
 
     /**
-     * El mismo formato en CSV (; y BOM UTF-8, como exportarExcel()): encabezado,
-     * resumen y tabla de casos. Solo lo que trae el formato en papel: código del
+     * El mismo formato en .xlsx (2026-10-30; antes CSV): encabezado, resumen y
+     * tabla de casos. Solo lo que trae el formato en papel: código del
      * paciente e historia clínica, sin nombres ni documento.
      */
     public function exportarBusquedaActivaVih(): void
@@ -144,51 +150,60 @@ class ReportesController extends Controller
         $servicios = RegistroBusquedaActivaVih::SERVICIOS;
         $institucion = ['MINSA' => 'MINSA', 'ESSALUD' => 'EsSalud', 'FFAA_SANIDAD' => 'FFAA/FFPP', 'PRIVADO' => 'Privado'];
 
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="formulario_registro_gestantes_vih_ninos_expuestos_busqueda_activa_' . $filtros['desde'] . '_' . $filtros['hasta'] . '.csv"');
-        $salida = fopen('php://output', 'w');
-        fwrite($salida, "\xEF\xBB\xBF");
-        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
-
-        $linea([RegistroBusquedaActivaVih::NOMBRE]);
-        $linea(['DISA/DIRESA/GERESA', $encabezado['diresa'], 'Red', $encabezado['red'], 'Microrred', '']);
-        $linea(['Establecimiento de salud', $encabezado['establecimiento'] ?: 'Todos', 'Institución', $institucion[$encabezado['institucion']] ?? $encabezado['institucion']]);
-        $linea(['Departamento', $encabezado['departamento'], 'Provincia', $encabezado['provincia'], 'Distrito', $encabezado['distrito']]);
-        $linea(['Periodo de búsqueda activa', 'Desde', fechaIsoADmy($filtros['desde']), 'Hasta', fechaIsoADmy($filtros['hasta'])]);
-        $linea([]);
-
-        $linea(array_merge(['Casos', 'Total'], array_map(fn($codigo) => $servicios[$codigo]['larga'], RegistroBusquedaActivaVih::ORDEN_SERVICIOS_RESUMEN), ['Servicio sin dato', 'Notificados', 'No notificados', 'Notificación sin dato']));
+        $columnasResumen = [['titulo' => 'Casos'], ['titulo' => 'Total', 'tipo' => 'entero']];
+        foreach (RegistroBusquedaActivaVih::ORDEN_SERVICIOS_RESUMEN as $codigo) {
+            $columnasResumen[] = ['titulo' => $servicios[$codigo]['larga'], 'grupo' => 'Servicio', 'tipo' => 'entero', 'anchoMax' => 16];
+        }
+        $columnasResumen[] = ['titulo' => 'Sin dato', 'grupo' => 'Servicio', 'tipo' => 'entero'];
+        foreach (['Notificados', 'No notificados', 'Sin dato'] as $titulo) {
+            $columnasResumen[] = ['titulo' => $titulo, 'grupo' => 'Notificación', 'tipo' => 'entero', 'anchoMax' => 14];
+        }
+        $filasResumen = [];
         foreach (['GESTANTE' => 'Gestantes con VIH', 'NINO' => 'Niños nacidos expuestos'] as $tipo => $etiqueta) {
             $fila = $resumen[$tipo];
-            $linea(array_merge(
-                [$etiqueta, $fila['total']],
-                array_values($fila['servicio']),
-                [$fila['notificado']['SI'], $fila['notificado']['NO'], $fila['notificado']['SIN_DATO']]
-            ));
+            $filasResumen[] = array_merge([$etiqueta, $fila['total']], array_values($fila['servicio']),
+                [$fila['notificado']['SI'], $fila['notificado']['NO'], $fila['notificado']['SIN_DATO']]);
         }
-        $linea([]);
 
-        $linea(['N.°', 'Código del paciente', 'N.° de historia clínica', 'Edad', 'Tipo de edad', 'Sexo', 'Servicio', 'Clasificación de caso', 'Fecha de defunción', 'Notificado', 'Observaciones', 'Ficha VIGÍA PNP']);
+        $filas = [];
         foreach ($casos as $indice => $caso) {
-            $linea([
-                $indice + 1,
-                $caso['codigo'],
-                $caso['historia_clinica'],
-                $caso['edad'],
-                $caso['tipo_edad'],
-                $caso['sexo'],
-                $servicios[$caso['servicio']]['corta'] ?? '',
-                $caso['clasificacion'],
-                fechaIsoADmy($caso['fecha_defuncion']),
-                ['SI' => 'Sí', 'NO' => 'No'][$caso['notificado']] ?? '',
-                $caso['observaciones'],
-                $caso['codigo_ficha'],
-            ]);
+            $filas[] = [
+                $indice + 1, $caso['codigo'], $caso['historia_clinica'], $caso['edad'], $caso['tipo_edad'], $caso['sexo'],
+                $servicios[$caso['servicio']]['corta'] ?? '', $caso['clasificacion'], $caso['fecha_defuncion'],
+                ['SI' => 'Sí', 'NO' => 'No'][$caso['notificado']] ?? '', $caso['observaciones'], $caso['codigo_ficha'],
+            ];
         }
-        $linea([]);
-        $linea(['1 Tipo de edad: días (d), meses (m), años (a); 2 Clasificación de caso: Gestante con VIH (1), Aborto (2), Mortinato (3), Niño nacido expuesto al VIH (4); 3 Fecha de defunción de gestante, niño expuesto, de aborto o mortinato']);
 
-        fclose($salida);
+        $this->libro(RegistroBusquedaActivaVih::NOMBRE)
+            ->membrete([self::MEMBRETE])
+            ->titulo(RegistroBusquedaActivaVih::NOMBRE)
+            ->datos([
+                'DISA/DIRESA/GERESA' => $encabezado['diresa'], 'Red' => $encabezado['red'], 'Microrred' => '',
+                'Establecimiento de salud' => $encabezado['establecimiento'] ?: 'Todos', 'Institución' => $institucion[$encabezado['institucion']] ?? $encabezado['institucion'],
+                'Departamento' => $encabezado['departamento'], 'Provincia' => $encabezado['provincia'], 'Distrito' => $encabezado['distrito'],
+                'Periodo de búsqueda activa' => 'del ' . fechaIsoADmy($filtros['desde']) . ' al ' . fechaIsoADmy($filtros['hasta']),
+            ], 3)
+            ->seccion('Resumen')
+            ->tabla($columnasResumen, $filasResumen)
+            ->seccion('Casos')
+            ->tabla([
+                ['titulo' => 'N.°', 'tipo' => 'centro'],
+                ['titulo' => 'Código del paciente'],
+                ['titulo' => 'N.° de historia clínica'],
+                ['titulo' => 'Edad', 'tipo' => 'entero'],
+                ['titulo' => 'Tipo de edad (1)', 'tipo' => 'centro'],
+                ['titulo' => 'Sexo', 'tipo' => 'centro'],
+                ['titulo' => 'Servicio'],
+                ['titulo' => 'Clasificación de caso (2)', 'tipo' => 'centro'],
+                ['titulo' => 'Fecha de defunción (3)', 'tipo' => 'fecha'],
+                ['titulo' => 'Notificado', 'tipo' => 'centro'],
+                ['titulo' => 'Observaciones', 'anchoMax' => 40],
+                ['titulo' => 'Ficha VIGÍA PNP'],
+            ], $filas, ['vacio' => 'Sin casos en el periodo'])
+            ->nota('(1) Tipo de edad: días (d), meses (m), años (a).')
+            ->nota('(2) Clasificación de caso: Gestante con VIH (1), Aborto (2), Mortinato (3), Niño nacido expuesto al VIH (4).')
+            ->nota('(3) Fecha de defunción de gestante, niño expuesto, de aborto o mortinato.')
+            ->descargar('formulario_registro_gestantes_vih_ninos_expuestos_busqueda_activa_' . $filtros['desde'] . '_' . $filtros['hasta']);
         exit;
     }
 
@@ -226,8 +241,8 @@ class ReportesController extends Controller
     }
 
     /**
-     * El mismo listado en CSV (; y BOM UTF-8, como exportarExcel()), con las
-     * columnas y notas del Anexo 1.
+     * El mismo listado en .xlsx (2026-10-30; antes CSV), con las columnas
+     * agrupadas y las notas del Anexo 1.
      */
     public function exportarMuerteFetalNeonatal(): void
     {
@@ -238,61 +253,64 @@ class ReportesController extends Controller
         $negativa = ($enfermedad && $filtros['establecimiento_id'])
             ? NotificacionNegativa::buscar((int) $enfermedad['id'], $filtros['establecimiento_id'], $filtros['anio'], $filtros['semana'])
             : null;
-        $marca = fn(bool $marcado): string => $marcado ? 'X' : '';
 
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="ficha_notificacion_muerte_fetal_neonatal_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT) . '.csv"');
-        $salida = fopen('php://output', 'w');
-        fwrite($salida, "\xEF\xBB\xBF");
-        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
-
-        $linea([ListadoMuerteFetalNeonatal::NOMBRE]);
-        $linea([ListadoMuerteFetalNeonatal::SUBSISTEMA]);
-        $linea(['DISA / DIRESA / GERESA', $encabezado['diresa'], 'Distrito', $encabezado['distrito'], 'Semana epidemiológica', 'SE ' . $filtros['semana'] . ' - ' . $filtros['anio']]);
-        $linea(['Establecimiento notificante', $encabezado['establecimiento'] ?: 'Todos', 'Responsable', (string) (Auth::usuario()['nombre'] ?? '')]);
-        $linea([]);
-
-        $linea(['N.°', 'Apellidos y nombres', 'Sexo (1)', 'Edad gestacional (semanas)', 'Nacimiento: fecha', 'Nacimiento: hora', 'Muerte: fecha', 'Muerte: hora', 'Peso al nacer (gramos)', 'Tipo de muerte: fetal', 'Tipo de muerte: neonatal', 'Causa básica de muerte (2)', 'Diagnóstico CIE10', 'N.° días de estancia hospitalaria *', 'Lugar del parto (3)', 'Momento: anteparto', 'Momento: intra-parto', 'Momento: post-parto', 'Lugar de la muerte (4)', 'Residencia habitual de la madre: Dpto.', 'Prov.', 'Distrito', 'Establecimiento', 'Ficha VIGÍA PNP']);
+        $filas = [];
         foreach ($casos as $indice => $caso) {
-            $linea([
-                $indice + 1,
-                $caso['apellidos_nombres'],
-                $caso['sexo'],
-                $caso['edad_gestacional'],
-                fechaIsoADmy($caso['fecha_nacimiento']),
-                $caso['hora_nacimiento'],
-                fechaIsoADmy($caso['fecha_muerte']),
-                $caso['hora_muerte'],
-                $caso['peso'],
-                $marca($caso['tipo'] === 'FETAL'),
-                $marca($caso['tipo'] === 'NEONATAL'),
-                $caso['causa_basica'],
-                $caso['cie10'],
-                $caso['dias_estancia'],
-                $caso['lugar_parto'],
-                $marca($caso['momento'] === 'ANTEPARTO'),
-                $marca($caso['momento'] === 'INTRAPARTO'),
-                $marca($caso['momento'] === 'POSTPARTO'),
-                $caso['lugar_muerte'],
-                $caso['departamento'],
-                $caso['provincia'],
-                $caso['distrito'],
-                $caso['establecimiento'],
-                $caso['codigo_ficha'],
-            ]);
+            $filas[] = [
+                $indice + 1, $caso['apellidos_nombres'], $caso['sexo'], $caso['edad_gestacional'],
+                $caso['fecha_nacimiento'], $caso['hora_nacimiento'], $caso['fecha_muerte'], $caso['hora_muerte'], $caso['peso'],
+                $caso['tipo'] === 'FETAL', $caso['tipo'] === 'NEONATAL',
+                $caso['causa_basica'], $caso['cie10'], $caso['dias_estancia'], $caso['lugar_parto'],
+                $caso['momento'] === 'ANTEPARTO', $caso['momento'] === 'INTRAPARTO', $caso['momento'] === 'POSTPARTO',
+                $caso['lugar_muerte'], $caso['departamento'], $caso['provincia'], $caso['distrito'], $caso['establecimiento'], $caso['codigo_ficha'],
+            ];
         }
-        if (!$casos && $negativa && $negativa['anulada_en'] === null) {
-            $linea(['', 'SIN CASOS: notificación negativa registrada el ' . fechaIsoADmy($negativa['creado_en']) . ' por ' . $negativa['usuario_nombre']]);
-        }
-        $linea([]);
-        $linea(['Anexo 1 de la R.M. 279-2009/MINSA']);
-        $linea(['* Número de días de estancia hospitalaria: consignar solo para los casos de muerte neonatal.']);
-        $linea(['(1) SEXO: F = FEMENINO M = MASCULINO']);
-        $linea(['(2) CAUSA BÁSICA DE MUERTE: Es la entidad que inicia la cadena de acontecimientos que conducen a la muerte fetal o neonatal (CIE X). Solo se anotará una causa que aparece como causa básica en el certificado de defunción']);
-        $linea(['(3) LUGAR DEL PARTO: Colocar PI cuando es parto institucional y PD cuando sea parto domiciliario']);
-        $linea(['(4) LUGAR DE LA MUERTE: Consignar ES cuando la muerte ocurrió en un establecimiento de Salud o CC cuando la muerte ocurrió en la comunidad']);
+        $vacio = $negativa && $negativa['anulada_en'] === null
+            ? 'SIN CASOS: notificación negativa registrada el ' . fechaIsoADmy($negativa['creado_en']) . ' por ' . $negativa['usuario_nombre']
+            : 'Sin casos en la semana';
 
-        fclose($salida);
+        $this->libro(ListadoMuerteFetalNeonatal::NOMBRE)
+            ->membrete([self::MEMBRETE])
+            ->titulo(ListadoMuerteFetalNeonatal::NOMBRE)
+            ->subtitulo(ListadoMuerteFetalNeonatal::SUBSISTEMA)
+            ->datos([
+                'DISA / DIRESA / GERESA' => $encabezado['diresa'], 'Distrito' => $encabezado['distrito'],
+                'Semana epidemiológica' => $this->textoSemana($filtros),
+                'Establecimiento notificante' => $encabezado['establecimiento'] ?: 'Todos', 'Responsable' => (string) (Auth::usuario()['nombre'] ?? ''),
+            ], 3)
+            ->tabla([
+                ['titulo' => 'N.°', 'tipo' => 'centro'],
+                ['titulo' => 'Apellidos y nombres', 'anchoMax' => 32],
+                ['titulo' => 'Sexo (1)', 'tipo' => 'centro'],
+                ['titulo' => 'Edad gestacional (semanas)', 'tipo' => 'entero'],
+                ['titulo' => 'Fecha', 'grupo' => 'Nacimiento', 'tipo' => 'fecha'],
+                ['titulo' => 'Hora', 'grupo' => 'Nacimiento', 'tipo' => 'centro'],
+                ['titulo' => 'Fecha', 'grupo' => 'Muerte', 'tipo' => 'fecha'],
+                ['titulo' => 'Hora', 'grupo' => 'Muerte', 'tipo' => 'centro'],
+                ['titulo' => 'Peso al nacer (gramos)', 'tipo' => 'entero'],
+                ['titulo' => 'Fetal', 'grupo' => 'Tipo de muerte', 'tipo' => 'marca'],
+                ['titulo' => 'Neonatal', 'grupo' => 'Tipo de muerte', 'tipo' => 'marca'],
+                ['titulo' => 'Causa básica de muerte (2)', 'anchoMax' => 32],
+                ['titulo' => 'Diagnóstico CIE-10', 'tipo' => 'centro'],
+                ['titulo' => 'N.° días de estancia hospitalaria *', 'tipo' => 'entero'],
+                ['titulo' => 'Lugar del parto (3)', 'tipo' => 'centro'],
+                ['titulo' => 'Anteparto', 'grupo' => 'Momento', 'tipo' => 'marca'],
+                ['titulo' => 'Intraparto', 'grupo' => 'Momento', 'tipo' => 'marca'],
+                ['titulo' => 'Postparto', 'grupo' => 'Momento', 'tipo' => 'marca'],
+                ['titulo' => 'Lugar de la muerte (4)', 'tipo' => 'centro'],
+                ['titulo' => 'Dpto.', 'grupo' => 'Residencia habitual de la madre'],
+                ['titulo' => 'Prov.', 'grupo' => 'Residencia habitual de la madre'],
+                ['titulo' => 'Distrito', 'grupo' => 'Residencia habitual de la madre'],
+                ['titulo' => 'Establecimiento', 'anchoMax' => 30],
+                ['titulo' => 'Ficha VIGÍA PNP'],
+            ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => $vacio])
+            ->nota('Anexo 1 de la R.M. 279-2009/MINSA.')
+            ->nota('* Número de días de estancia hospitalaria: consignar solo para los casos de muerte neonatal.')
+            ->nota('(1) SEXO: F = femenino, M = masculino.')
+            ->nota('(2) CAUSA BÁSICA DE MUERTE: es la entidad que inicia la cadena de acontecimientos que conducen a la muerte fetal o neonatal (CIE X). Solo se anotará una causa que aparece como causa básica en el certificado de defunción.')
+            ->nota('(3) LUGAR DEL PARTO: colocar PI cuando es parto institucional y PD cuando sea parto domiciliario.')
+            ->nota('(4) LUGAR DE LA MUERTE: consignar ES cuando la muerte ocurrió en un establecimiento de salud o CC cuando la muerte ocurrió en la comunidad.')
+            ->descargar('ficha_notificacion_muerte_fetal_neonatal_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
         exit;
     }
 
@@ -319,41 +337,66 @@ class ReportesController extends Controller
         ]);
     }
 
-    /** El mismo registro en CSV (; y BOM UTF-8, como exportarMuerteFetalNeonatal()). */
+    /**
+     * El mismo registro en .xlsx (2026-10-30; antes CSV), con los encabezados
+     * agrupados del formato del Área de Epidemiología PNP.
+     */
     public function exportarRegistroIndividual(bool $vih): void
     {
         $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
         $casos = FormatoPnp::individual($filtros, $vih);
-        $encabezado = FormatoPnp::encabezado($filtros['establecimiento_id']);
-        $marca = fn(bool $marcado): string => $marcado ? 'X' : '';
+        $titulo = $vih ? FormatoPnp::VIH : FormatoPnp::INDIVIDUAL;
 
-        $salida = $this->abrirCsv(($vih ? 'registro_individual_vih_' : 'registro_individual_') . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
-        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
-        $this->cabeceraCsvPnp($linea, $vih ? FormatoPnp::VIH : FormatoPnp::INDIVIDUAL, $encabezado, $filtros);
-
-        $linea(['N.°', 'Grado', 'ACT/RET', 'F', $vih ? 'Iniciales del paciente' : 'Apellidos y nombres', 'Edad M', 'Edad F', 'N.° CIP', 'N.° DNI',
-            'Lugar probable de infección: provincia', 'Distrito', 'Localidad', 'Dirección de residencia', 'Diagnóstico CIE-10',
-            'Tipo de Dx P', 'C', 'D', 'Protegido SI', 'NO', 'IG', 'Fecha de inicio de síntomas', 'Fecha de difusión', 'Fecha de notificación',
-            'Ficha de investigación SI', 'NO', 'Vigilancia pasiva', 'Búsqueda activa', 'Unidad de origen', 'Situación del paciente',
-            'Descanso médico 1: inicio', 'Término', 'Descanso médico 2: inicio', 'Término', 'Fecha de alta', 'Observaciones', 'Ficha VIGÍA PNP']);
+        $filas = [];
         foreach ($casos as $i => $c) {
-            $linea([
-                $i + 1, $c['grado'], $c['act_ret'], $marca($c['familiar']), $c['nombre'],
+            $filas[] = [
+                $i + 1, $c['grado'], $c['act_ret'], (bool) $c['familiar'], $c['nombre'],
                 $c['sexo'] === 'M' ? $c['edad'] : '', $c['sexo'] === 'F' ? $c['edad'] : '', $c['cip'], $c['dni'],
                 $c['lugar_provincia'], $c['lugar_distrito'], $c['lugar_localidad'], $c['direccion'], $c['cie10'],
-                $marca($c['tipo_dx'] === 'P'), $marca($c['tipo_dx'] === 'C'), $marca($c['tipo_dx'] === 'D'),
-                $marca($c['protegido'] === 'SI'), $marca($c['protegido'] === 'NO'), $marca($c['protegido'] === 'IG'),
-                fechaIsoADmy($c['inicio_sintomas']), fechaIsoADmy($c['difusion']), fechaIsoADmy($c['notificacion']),
-                $marca($c['investigacion'] === 'SI'), $marca($c['investigacion'] === 'NO'),
-                $marca($c['vigilancia'] === 'PAS'), $marca($c['vigilancia'] === 'ACT'),
+                $c['tipo_dx'] === 'P', $c['tipo_dx'] === 'C', $c['tipo_dx'] === 'D',
+                $c['protegido'] === 'SI', $c['protegido'] === 'NO', $c['protegido'] === 'IG',
+                $c['inicio_sintomas'], $c['difusion'], $c['notificacion'],
+                $c['investigacion'] === 'SI', $c['investigacion'] === 'NO',
+                $c['vigilancia'] === 'PAS', $c['vigilancia'] === 'ACT',
                 $c['unidad'], $c['situacion'],
-                fechaIsoADmy($c['descanso1_inicio']), fechaIsoADmy($c['descanso1_fin']), fechaIsoADmy($c['descanso2_inicio']), fechaIsoADmy($c['descanso2_fin']), fechaIsoADmy($c['fecha_alta']),
+                $c['descanso1_inicio'], $c['descanso1_fin'], $c['descanso2_inicio'], $c['descanso2_fin'], $c['fecha_alta'],
                 $c['observaciones'], $c['codigo'],
-            ]);
+            ];
         }
-        $linea([]);
-        $linea(['Tipo de diagnóstico: P: probable · C: confirmado · D: descartado']);
-        fclose($salida);
+        $marca = fn(string $titulo, string $grupo) => ['titulo' => $titulo, 'grupo' => $grupo, 'tipo' => 'marca'];
+        $fecha = fn(string $titulo, ?string $grupo = null) => ['titulo' => $titulo, 'grupo' => $grupo, 'tipo' => 'fecha'];
+
+        $this->cabeceraPnp($this->libro($titulo), $titulo, FormatoPnp::encabezado($filtros['establecimiento_id']), $filtros)
+            ->tabla([
+                ['titulo' => 'N.°', 'tipo' => 'centro'],
+                ['titulo' => 'Grado', 'grupo' => 'Situación'],
+                ['titulo' => 'ACT/RET', 'grupo' => 'Situación', 'tipo' => 'centro'],
+                $marca('F', 'Situación'),
+                ['titulo' => $vih ? 'Iniciales del paciente' : 'Apellidos y nombres', 'anchoMax' => 32],
+                ['titulo' => 'M', 'grupo' => 'Edad', 'tipo' => 'entero'],
+                ['titulo' => 'F', 'grupo' => 'Edad', 'tipo' => 'entero'],
+                ['titulo' => 'N.° CIP'],
+                ['titulo' => 'N.° DNI'],
+                ['titulo' => 'Provincia', 'grupo' => 'Lugar probable de infección'],
+                ['titulo' => 'Distrito', 'grupo' => 'Lugar probable de infección'],
+                ['titulo' => 'Localidad', 'grupo' => 'Lugar probable de infección'],
+                ['titulo' => 'Dirección de residencia', 'anchoMax' => 32],
+                ['titulo' => 'Diagnóstico CIE-10', 'tipo' => 'centro'],
+                $marca('P', 'Tipo de Dx.'), $marca('C', 'Tipo de Dx.'), $marca('D', 'Tipo de Dx.'),
+                $marca('SI', 'Protegido (vacuna)'), $marca('NO', 'Protegido (vacuna)'), $marca('IG', 'Protegido (vacuna)'),
+                $fecha('Inicio de síntomas', 'Fecha de'), $fecha('Difusión', 'Fecha de'), $fecha('Notificación', 'Fecha de'),
+                $marca('SI', 'Ficha de investig.'), $marca('NO', 'Ficha de investig.'),
+                $marca('Vig. pas.', 'Tipo de vigilancia'), $marca('Bús. act.', 'Tipo de vigilancia'),
+                ['titulo' => 'Unidad de origen', 'anchoMax' => 24],
+                ['titulo' => 'Situación del paciente', 'anchoMax' => 24],
+                $fecha('Inicio', 'Descanso médico 1'), $fecha('Término', 'Descanso médico 1'),
+                $fecha('Inicio', 'Descanso médico 2'), $fecha('Término', 'Descanso médico 2'),
+                $fecha('Fecha de alta'),
+                ['titulo' => 'Observaciones', 'anchoMax' => 36],
+                ['titulo' => 'Ficha VIGÍA PNP'],
+            ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => 'Sin casos en la semana'])
+            ->nota('Tipo de diagnóstico: P = probable, C = confirmado, D = descartado. Situación: F = familiar.')
+            ->descargar(($vih ? 'registro_individual_vih_' : 'registro_individual_') . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
         exit;
     }
 
@@ -379,43 +422,53 @@ class ReportesController extends Controller
         ]);
     }
 
-    /** El consolidado en CSV: las tres tablas, una debajo de otra. */
+    /**
+     * El consolidado en .xlsx (2026-10-30; antes CSV): las tres tablas, una
+     * debajo de otra como en el formato, con los encabezados de tres niveles
+     * (grupo, medida y edad) combinados y una fila de totales.
+     */
     public function exportarConsolidadoPnp(): void
     {
         $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
         $datos = ConsolidadoPnp::semana($filtros);
-        $encabezado = FormatoPnp::encabezado($filtros['establecimiento_id']);
-
-        $salida = $this->abrirCsv('registro_consolidado_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
-        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
-        $this->cabeceraCsvPnp($linea, ConsolidadoPnp::NOMBRE, $encabezado, $filtros);
+        $libro = $this->cabeceraPnp($this->libro(ConsolidadoPnp::NOMBRE), ConsolidadoPnp::NOMBRE, FormatoPnp::encabezado($filtros['establecimiento_id']), $filtros);
         $titulos = ['eda' => 'Consolidado semanal de casos de EDA y cólera', 'ira' => 'Consolidado semanal de IRA, asma y SOB', 'neumonia' => 'Neumonía (5 años a más)'];
+
         foreach (ConsolidadoPnp::columnas() as $nombre => $grupos) {
-            $linea([mb_strtoupper($titulos[$nombre])]);
-            // Una columna por clave: "Grupo · subgrupo · edad".
-            $cabecera = ['T', 'F', 'Provincia', 'Distrito'];
+            $columnas = [
+                ['titulo' => 'T', 'grupo' => 'Situación', 'tipo' => 'marca'],
+                ['titulo' => 'F', 'grupo' => 'Situación', 'tipo' => 'marca'],
+                ['titulo' => 'Provincia', 'anchoMax' => 18],
+                ['titulo' => 'Distrito', 'anchoMax' => 18],
+            ];
             foreach ($grupos as $grupo => $contenido) {
                 foreach ($contenido as $etiqueta => $valor) {
-                    if (is_array($valor)) {
-                        foreach (array_keys($valor) as $edad) {
-                            $cabecera[] = "$grupo · $etiqueta · $edad";
-                        }
-                    } else {
-                        $cabecera[] = "$grupo · $etiqueta";
+                    foreach (is_array($valor) ? array_keys($valor) : [null] as $edad) {
+                        $columnas[] = $edad === null
+                            ? ['titulo' => $etiqueta, 'grupo' => $grupo, 'tipo' => 'entero', 'ancho' => 7]
+                            : ['titulo' => $edad, 'grupo' => [$grupo, $etiqueta], 'tipo' => 'entero', 'ancho' => 6];
                     }
                 }
             }
-            $linea($cabecera);
             $claves = ConsolidadoPnp::clavesDe($grupos);
+            $filas = [];
+            $totales = array_fill_keys($claves, 0);
             foreach ($datos[$nombre] as $fila) {
-                $linea(array_merge(
-                    [$fila['situacion'] === 'T' ? 'X' : '', $fila['situacion'] === 'F' ? 'X' : '', $fila['provincia'], $fila['distrito']],
+                $filas[] = array_merge(
+                    [$fila['situacion'] === 'T', $fila['situacion'] === 'F', $fila['provincia'], $fila['distrito']],
                     array_map(fn($clave) => $fila['n'][$clave] ?? '', $claves)
-                ));
+                );
+                foreach ($claves as $clave) {
+                    $totales[$clave] += (int) ($fila['n'][$clave] ?? 0);
+                }
             }
-            $linea([]);
+            $libro->seccion(mb_strtoupper($titulos[$nombre]))
+                ->tabla($columnas, $filas, [
+                    'totales' => $filas ? array_merge(['Total', '', '', ''], array_values($totales)) : null,
+                    'vacio'   => 'Sin casos en la semana',
+                ]);
         }
-        fclose($salida);
+        $libro->descargar('registro_consolidado_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
         exit;
     }
 
@@ -456,23 +509,43 @@ class ReportesController extends Controller
         $dia = $this->diaDeLaSemana(ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']));
         $casos = FormatoPnp::febriles($filtros, $dia);
         $encabezado = FormatoPnp::encabezado($filtros['establecimiento_id']);
-        $marca = fn(bool $marcado): string => $marcado ? 'X' : '';
 
-        $salida = $this->abrirCsv('registro_febriles_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT) . ($dia ? '_' . $dia : ''));
-        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
-        $linea([mb_strtoupper(FormatoPnp::FEBRILES)]);
-        $linea(['Dirección de salud', 'DIRSAPOL', 'Red de salud', $encabezado['red'], 'Establecimiento', $encabezado['establecimiento'] ?: 'Todos']);
-        $linea(['Semana N.°', $filtros['semana'] . ' - ' . $filtros['anio'], 'Día', $dia ? fechaIsoADmy($dia) : 'Toda la semana']);
-        $linea([]);
-        $linea(['N.°', 'Grado', 'ACT/RET', 'F', 'H.CL', 'Fecha', 'Apellidos y nombres', 'DNI', 'Edad M', 'Edad F', 'Dirección', 'Distrito de residencia', 'Temperatura', 'Dx CIE-10', 'Diagnóstico', 'Servicio', 'Registro VIGÍA PNP']);
+        $filas = [];
         foreach ($casos as $i => $c) {
-            $linea([
-                $i + 1, $c['grado'], $c['act_ret'], $marca($c['familiar']), $c['historia'], fechaIsoADmy($c['fecha']), $c['nombre'], $c['dni'],
+            $filas[] = [
+                $i + 1, $c['grado'], $c['act_ret'], (bool) $c['familiar'], $c['historia'], $c['fecha'], $c['nombre'], $c['dni'],
                 $c['sexo'] === 'M' ? $c['edad'] : '', $c['sexo'] === 'F' ? $c['edad'] : '', $c['direccion'], $c['distrito'],
                 $c['temperatura'], $c['cie10'], $c['diagnostico'], $c['servicio'], $c['codigo'],
-            ]);
+            ];
         }
-        fclose($salida);
+
+        $this->libro(FormatoPnp::FEBRILES)
+            ->membrete(self::MEMBRETE_PNP)
+            ->titulo(mb_strtoupper(FormatoPnp::FEBRILES))
+            ->datos([
+                'Dirección de salud' => 'DIRSAPOL', 'Red de salud' => $encabezado['red'], 'Establecimiento' => $encabezado['establecimiento'] ?: 'Todos',
+                'Semana N.°' => $this->textoSemana($filtros), 'Día' => $dia ? fechaIsoADmy($dia) : 'Toda la semana',
+            ], 3)
+            ->tabla([
+                ['titulo' => 'N.°', 'tipo' => 'centro'],
+                ['titulo' => 'Grado', 'grupo' => 'Condición del usuario'],
+                ['titulo' => 'ACT/RET', 'grupo' => 'Condición del usuario', 'tipo' => 'centro'],
+                ['titulo' => 'F', 'grupo' => 'Condición del usuario', 'tipo' => 'marca'],
+                ['titulo' => 'H.CL'],
+                ['titulo' => 'Fecha', 'tipo' => 'fecha'],
+                ['titulo' => 'Apellidos y nombres', 'anchoMax' => 32],
+                ['titulo' => 'DNI'],
+                ['titulo' => 'M', 'grupo' => 'Edad', 'tipo' => 'entero'],
+                ['titulo' => 'F', 'grupo' => 'Edad', 'tipo' => 'entero'],
+                ['titulo' => 'Dirección', 'anchoMax' => 32],
+                ['titulo' => 'Distrito de residencia', 'anchoMax' => 20],
+                ['titulo' => 'Temperatura', 'tipo' => 'decimal'],
+                ['titulo' => 'Dx CIE-10', 'tipo' => 'centro'],
+                ['titulo' => 'Diagnóstico', 'anchoMax' => 32],
+                ['titulo' => 'Servicio', 'anchoMax' => 20],
+                ['titulo' => 'Registro VIGÍA PNP'],
+            ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => $dia ? 'Sin febriles registrados ese día' : 'Sin febriles registrados en la semana'])
+            ->descargar('registro_febriles_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT) . ($dia ? '_' . $dia : ''));
         exit;
     }
 
@@ -484,27 +557,31 @@ class ReportesController extends Controller
         return $dia !== null && $dia >= $rango[0] && $dia <= $rango[1] ? $dia : null;
     }
 
-    /** Respuesta CSV para Excel (BOM UTF-8). */
-    private function abrirCsv(string $nombre)
+    /** Libro .xlsx de un reporte, firmado con el usuario que lo descarga. */
+    private function libro(string $titulo): LibroXlsx
     {
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="' . $nombre . '.csv"');
-        $salida = fopen('php://output', 'w');
-        fwrite($salida, "\xEF\xBB\xBF");
-
-        return $salida;
+        return new LibroXlsx($titulo, (string) (Auth::usuario()['nombre'] ?? ''));
     }
 
-    private function cabeceraCsvPnp(callable $linea, string $titulo, array $encabezado, array $filtros): void
+    /** Cabecera de los formatos del Área de Epidemiología PNP. */
+    private function cabeceraPnp(LibroXlsx $libro, string $titulo, array $encabezado, array $filtros): LibroXlsx
     {
-        $linea(['POLICÍA NACIONAL DEL PERÚ', '', 'ÁREA DE EPIDEMIOLOGÍA']);
-        $linea(['DIRECCIÓN DE SALUD POLICIAL']);
-        $linea([mb_strtoupper($titulo)]);
-        $linea(['Código de establecimiento', $encabezado['codigo'], 'Semana de notificación', $filtros['semana'] . ' - ' . $filtros['anio']]);
-        $linea(['Cabecera de red', $encabezado['red']]);
-        $linea(['Establecimiento', $encabezado['establecimiento'] ?: 'Todos']);
-        $linea(['Tipo de establecimiento', $encabezado['categoria']]);
-        $linea([]);
+        return $libro->membrete(self::MEMBRETE_PNP)
+            ->titulo(mb_strtoupper($titulo))
+            ->datos([
+                'Código de establecimiento' => $encabezado['codigo'],
+                'Semana de notificación'    => $this->textoSemana($filtros),
+                'Cabecera de red'           => $encabezado['red'],
+                'Establecimiento'           => $encabezado['establecimiento'] ?: 'Todos',
+                'Tipo de establecimiento'   => $encabezado['categoria'],
+            ], 3);
+    }
+
+    /** "SE 43 - 2026 (del 25/10 al 31/10)". */
+    private function textoSemana(array $filtros): string
+    {
+        [$desde, $hasta] = ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']);
+        return 'SE ' . $filtros['semana'] . ' - ' . $filtros['anio'] . ' (del ' . date('d/m', strtotime($desde)) . ' al ' . date('d/m', strtotime($hasta)) . ')';
     }
 
     /**

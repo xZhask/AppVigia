@@ -1,4 +1,4 @@
-# Hoja de ruta — estado al 2026-10-29
+# Hoja de ruta — estado al 2026-10-30
 
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
@@ -45,6 +45,18 @@ ADMIN le pone una nueva en Catálogos > Usuarios > Editar.
 - [ ] Servidor de prueba
 
 Al terminar en una, marcarla aquí y commitear.
+
+**En curso (30/10) — descargas en Excel con diseño, SIN PROBAR con datos.**
+Las 7 descargas (listado de fichas, reporte general, búsqueda activa VIH,
+muerte fetal/neonatal, registro individual y VIH, consolidado PNP, febriles)
+pasaron de CSV a `.xlsx` con `App\Core\LibroXlsx` (encabezados agrupados
+como el Excel oficial de `docs/fuentes`, colores del sistema, fechas reales,
+filtros, encabezado fijo, A4 horizontal). El generador se probó solo con un
+libro de ejemplo (válido en openpyxl); las descargas reales quedaron sin
+probar porque MySQL se detuvo. Al retomar: descargar cada una desde la app
+con datos (una semana con casos), abrirlas en Excel y revisar diseño y
+valores contra la pantalla. `XlsxEscritor` sigue solo para la plantilla de
+importación.
 
 ## 1. Base de datos
 

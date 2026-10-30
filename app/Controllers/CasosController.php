@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Flash;
+use App\Core\LibroXlsx;
 use App\Core\RegistroErrores;
 use App\Models\CampoDef;
 use App\Models\Caso;
@@ -87,8 +88,9 @@ class CasosController extends Controller
     }
 
     /**
-     * CSV del listado con los mismos filtros, pestaña y orden que en pantalla
-     * (2026-10-17), sin paginar. Separador ";" y BOM, como los de Reportes.
+     * El listado con los mismos filtros, pestaña y orden que en pantalla
+     * (2026-10-17), sin paginar. En .xlsx con diseño desde el 2026-10-30
+     * (antes CSV), con filtros de Excel y el encabezado fijo.
      */
     public function exportar(): void
     {
@@ -96,17 +98,10 @@ class CasosController extends Controller
         [$filtros] = $this->filtrosListado($usuario);
         $resultado = Caso::listarPaginado($filtros, 1, null);
 
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="fichas_' . date('Y-m-d') . '.csv"');
-        $salida = fopen('php://output', 'w');
-        fwrite($salida, "\xEF\xBB\xBF");
-        $linea = fn(array $celdas) => fputcsv($salida, $celdas, ';', '"', '');
-
-        $linea(['N.° ficha', 'Apellidos y nombres', 'Tipo de documento', 'N.° de documento', 'Sexo', 'Edad', 'Enfermedad', 'CIE-10',
-            'Establecimiento', 'Red', 'Fecha de notificación', 'Año epidemiológico', 'SE', 'Clasificación', 'Estado']);
         $estados = ['ABIERTA' => 'Abierta', 'VALIDACION' => 'En validación', 'CERRADA' => 'Cerrada'];
+        $filas = [];
         foreach ($resultado['filas'] as $fila) {
-            $linea([
+            $filas[] = [
                 $fila['codigo'],
                 Persona::nombreCompletoPnp($fila),
                 $fila['tipo_doc'],
@@ -117,14 +112,40 @@ class CasosController extends Controller
                 $fila['cie10'],
                 $fila['establecimiento_nombre'],
                 $fila['red_nombre'],
-                fechaIsoADmy($fila['fecha_notif']),
-                $fila['anio_epi'],
-                $fila['semana_epi'],
+                $fila['fecha_notif'],
+                (int) $fila['anio_epi'],
+                (int) $fila['semana_epi'],
                 (string) $fila['clasificacion'] !== '' ? datosClasificacion((string) $fila['clasificacion'])['etiqueta'] : '',
                 $fila['anulado'] ? 'Anulada' : ($estados[$fila['estado']] ?? $fila['estado']),
-            ]);
+            ];
         }
-        fclose($salida);
+
+        (new LibroXlsx('Listado de fichas', (string) ($usuario['nombre'] ?? '')))
+            ->membrete(['VIGÍA PNP · ÁREA DE EPIDEMIOLOGÍA · DIRSAPOL'])
+            ->titulo('Listado de fichas')
+            ->datos([
+                'Ámbito' => $usuario['rol'] === 'REGISTRADOR' ? ($usuario['establecimiento_nombre'] ?? '') : 'Nacional',
+                'Fichas' => count($filas),
+                'Filtros' => 'los mismos de la lista en pantalla',
+            ], 3)
+            ->tabla([
+                ['titulo' => 'N.° ficha'],
+                ['titulo' => 'Apellidos y nombres', 'anchoMax' => 34],
+                ['titulo' => 'Tipo', 'grupo' => 'Documento', 'tipo' => 'centro'],
+                ['titulo' => 'Número', 'grupo' => 'Documento'],
+                ['titulo' => 'Sexo', 'tipo' => 'centro'],
+                ['titulo' => 'Edad', 'tipo' => 'centro'],
+                ['titulo' => 'Enfermedad', 'anchoMax' => 34],
+                ['titulo' => 'CIE-10', 'tipo' => 'centro'],
+                ['titulo' => 'Establecimiento', 'anchoMax' => 34],
+                ['titulo' => 'Red', 'anchoMax' => 24],
+                ['titulo' => 'Fecha de notificación', 'tipo' => 'fecha'],
+                ['titulo' => 'Año', 'grupo' => 'Semana epidemiológica', 'tipo' => 'centro'],
+                ['titulo' => 'SE', 'grupo' => 'Semana epidemiológica', 'tipo' => 'centro'],
+                ['titulo' => 'Clasificación', 'anchoMax' => 22],
+                ['titulo' => 'Estado'],
+            ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => 'Ninguna ficha con estos filtros'])
+            ->descargar('fichas_' . date('Y-m-d'));
         exit;
     }
 
