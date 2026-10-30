@@ -35,7 +35,7 @@ $colorColumna = function (string $k, int $i) use ($f): string {
 };
 $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
 ?>
-<div class="page-head">
+<div class="page-head no-imprimir">
   <div>
     <div class="page-title">Reportes</div>
     <div class="page-desc">Consolidados dinámicos para el área, sin redigitar Excel<?= $esRegistrador ? ' · tu establecimiento' : '' ?></div>

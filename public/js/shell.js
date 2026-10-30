@@ -30,6 +30,17 @@ document.addEventListener('DOMContentLoaded', function () {
       document.cookie = 'theme=' + nuevo + '; path=/; max-age=31536000';
     });
   }
+
+  // Al imprimir o guardar como PDF, siempre en tema claro: con el oscuro la
+  // hoja salía con fondo negro. Al cerrar la impresión vuelve el del usuario.
+  var oscuroAntesDeImprimir = false;
+  window.addEventListener('beforeprint', function () {
+    oscuroAntesDeImprimir = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (oscuroAntesDeImprimir) document.documentElement.removeAttribute('data-theme');
+  });
+  window.addEventListener('afterprint', function () {
+    if (oscuroAntesDeImprimir) document.documentElement.setAttribute('data-theme', 'dark');
+  });
 });
 
 var _toastTimeout;
