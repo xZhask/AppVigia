@@ -31,6 +31,20 @@ class Consolidado
         return [
             'se'              => ['etiqueta' => 'Semana epidemiológica', 'sql' => "CONCAT(c.anio_epi, '-', LPAD(c.semana_epi, 2, '0'))", 'columna' => false],
             'enfermedad'      => ['etiqueta' => 'Enfermedad', 'sql' => 'e.nombre', 'columna' => false],
+            // Diagnóstico (2026-10-30): separa lo que una ficha agrupa (A97:
+            // dengue, chikungunya, zika; B05: sarampión, rubéola). El código
+            // sale del diagnóstico propio (registros PNP) o de la opción elegida
+            // que lo trae ("Dengue grave (CIE-10: A97.2)", como en
+            // FormatoPnp::filaIndividual); si no, "FICHA:<cie10>" = la ficha.
+            'diagnostico'     => ['etiqueta' => 'Diagnóstico (CIE-10)', 'columna' => false,
+                'sql' => "COALESCE(NULLIF(c.cie10_dx, ''),
+                           (SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(ci.etiqueta, '(CIE-10: ', -1), ')', 1)
+                              FROM caso_valor cv
+                              JOIN campo_def cdx ON cdx.id = cv.campo_def_id
+                              JOIN catalogo_item ci ON ci.catalogo_id = cdx.catalogo_id AND ci.valor = cv.valor
+                             WHERE cv.caso_id = c.id AND ci.etiqueta LIKE '%(CIE-10: %'
+                          ORDER BY cdx.orden LIMIT 1),
+                           CONCAT('FICHA:', e.cie10))"],
             'red'             => ['etiqueta' => 'Red', 'sql' => "COALESCE(r.nombre, 'Sin red')", 'columna' => false],
             'establecimiento' => ['etiqueta' => 'Establecimiento', 'sql' => 'est.nombre', 'columna' => false],
             'distrito'        => ['etiqueta' => 'Distrito de residencia', 'sql' => "COALESCE(CONCAT(d.nombre, ' (', pr.nombre, ')'), 'Sin dato')", 'columna' => false],
@@ -68,7 +82,47 @@ class Consolidado
         if ($dimension === 'establecimiento') {
             return nombreEnOracion($valor);
         }
+        if ($dimension === 'diagnostico') {
+            return self::etiquetaDiagnostico($valor);
+        }
         return self::dimensiones()[$dimension]['valores'][$valor] ?? $valor;
+    }
+
+    /**
+     * "A92.5 · Chikungunya grave": el texto de la opción de la ficha (el mismo
+     * que eligió quien registró) o, si no viene de una opción, la descripción
+     * del catálogo CIE-10. "FICHA:A97" = la ficha sin diagnóstico específico;
+     * en las que sí lo piden (A97, B05) es la opción genérica ("Otras
+     * arbovirosis"), que se muestra aparte para no sumarla al específico.
+     */
+    private static function etiquetaDiagnostico(string $valor): string
+    {
+        static $opciones = null, $fichas = null, $conOpcion = null;
+        if ($opciones === null) {
+            $opciones = $fichas = $conOpcion = [];
+            $consulta = Database::conexion()->query(
+                "SELECT DISTINCT e.cie10, ci.etiqueta FROM catalogo_item ci
+                   JOIN campo_def cd ON cd.catalogo_id = ci.catalogo_id
+                   JOIN seccion_def s ON s.id = cd.seccion_id
+                   JOIN enfermedad e ON e.id = s.enfermedad_id
+                  WHERE ci.etiqueta LIKE '%(CIE-10: %'"
+            );
+            foreach ($consulta->fetchAll() as $fila) {
+                if (preg_match('/^(.*?)\s*\(CIE-10: ([A-Z0-9.]+)\)/', $fila['etiqueta'], $m)) {
+                    $opciones[$m[2]] ??= $m[1];
+                    $conOpcion[$fila['cie10']] = true;
+                }
+            }
+            foreach (Database::conexion()->query('SELECT cie10, nombre FROM enfermedad')->fetchAll() as $fila) {
+                $fichas[$fila['cie10']] = $fila['nombre'];
+            }
+        }
+
+        if (str_starts_with($valor, 'FICHA:')) {
+            $cie10 = substr($valor, 6);
+            return $cie10 . ' · ' . ($fichas[$cie10] ?? $cie10) . (isset($conOpcion[$cie10]) ? ' (otro, sin código específico)' : '');
+        }
+        return $valor . ' · ' . ($opciones[$valor] ?? descripcionCie10($valor) ?? $fichas[$valor] ?? 'Sin descripción');
     }
 
     /**

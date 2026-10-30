@@ -65,6 +65,16 @@ Falta: (1) **abrirlas en Excel** y revisar el diseño a ojo (colores, anchos,
 impresión); (2) consolidado PNP y febriles con registros PNP reales (la base
 de prueba no tiene ninguno; salen bien vacíos).
 
+**Reportes por diagnóstico (30/10).** Filas → "Diagnóstico (CIE-10)" separa
+lo que una ficha agrupa: A97 en dengue (A97.0/1/2), chikungunya (A92.0/5) y
+zika (U06.9); B05 en sarampión (B05) y rubéola (B06). El código sale de la
+opción elegida en la ficha (las que dicen "(CIE-10: …)") o del diagnóstico
+propio de los registros PNP; las opciones genéricas ("Otras arbovirosis",
+"Otras febriles eruptivas") van en una fila aparte, "(otro, sin código
+específico)"; el resto de fichas, una fila por ficha. Sin migración
+(`Consolidado::dimensiones()`). Probado con los casos de prueba: A97 = 4 + 2
++ 1, B05 = 4 + 2 + 2 otros; pantalla, gráfico y Excel.
+
 ## 1. Base de datos
 
 Servidor: MySQL 8.4.3 de Laragon. La app se conecta según
