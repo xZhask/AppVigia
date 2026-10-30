@@ -40,6 +40,7 @@ olvida la contraseña y no tiene correo (o el envío no está configurado), el
 ADMIN le pone una nueva en Catálogos > Usuarios > Editar.
 
 - [x] Estadistica02 (29/10)
+- [x] DESKTOP-DV253KA (29/10)
 - [ ] Las demás PC
 - [ ] Servidor de prueba
 
