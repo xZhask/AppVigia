@@ -1,8 +1,13 @@
 <section class="auth-brand">
   <div class="auth-brand-top">
     <div class="auth-mark">
-      <svg width="23" height="23" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-        <path d="M1 12.5 4 12.5 6 7 8.5 15 11 4 13 10.5 17 10.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Marca «Caso índice» (public/logo-vigia.svg; PETICION_MARCA_VIGIA.md) -->
+      <svg class="marca-vigia" width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="5.2" cy="7.5" r="2.6" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="18.4" cy="7.2" r="2.6" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="4.8" cy="16.6" r="2.6" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="18.8" cy="16.8" r="2.6" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="12" cy="12" r="3.4" fill="currentColor"/>
       </svg>
     </div>
     <div>

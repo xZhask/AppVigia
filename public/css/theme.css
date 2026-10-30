@@ -1787,3 +1787,8 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
   .grafico-hoja-v{display:none}
   .grafico-hoja-h{display:block}
 }
+
+/* Marca «Caso índice» (2026-10-30, PETICION_MARCA_VIGIA.md): el SVG usa
+   currentColor; el color lo da esta clase, blanco sobre el contenedor verde
+   (.brand-mark y .auth-mark) en modo claro y oscuro. */
+.marca-vigia{display:block;color:#fff}

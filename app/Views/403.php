@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VIGÍA PNP · Sin autorización</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="<?= e(asset('/favicon.svg')) ?>" type="image/svg+xml">
+<link rel="icon" href="<?= e(asset('/favicon-32.png')) ?>" sizes="32x32">
+<link rel="apple-touch-icon" href="<?= e(asset('/apple-touch-icon.png')) ?>">
 <link rel="stylesheet" href="<?= e(asset('/css/theme.css')) ?>">
 </head>
 <body>
