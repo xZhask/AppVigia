@@ -711,6 +711,9 @@ class ReportesController extends Controller
             'hasta'           => $hasta,
             'etiquetaPeriodo' => $etiquetaPeriodo,
             'modo'            => $texto('modo') === 'grafico' ? 'grafico' : 'tabla',
+            // Tipo de gráfico pedido; la vista lo valida contra los que tienen
+            // sentido para la agrupación (barras, líneas, dona, pirámide).
+            'grafico'         => in_array($texto('grafico'), ['barras', 'lineas', 'dona', 'piramide'], true) ? $texto('grafico') : '',
         ];
     }
 }

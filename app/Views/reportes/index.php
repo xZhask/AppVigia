@@ -17,6 +17,7 @@ $consulta = [
     'anio_hasta'    => $f['periodo'] === 'rango' ? $f['hasta'][0] : '',
     'se_hasta'      => $f['periodo'] === 'rango' ? $f['hasta'][1] : '',
     'modo'          => $f['modo'] === 'grafico' ? 'grafico' : '',
+    'grafico'       => $f['grafico'],
 ];
 $url = fn(string $ruta, array $cambios = []) => $ruta . (($q = queryConPagina($consulta, $cambios)) !== '' ? '?' . $q : '');
 $variosAnios = $f['desde'][0] !== $f['hasta'][0];
@@ -34,6 +35,39 @@ $colorColumna = function (string $k, int $i) use ($f): string {
     return $k === 'SIN_DATO' ? 'var(--faint)' : 'var(--cat' . ($i % 8 + 1) . ')';
 };
 $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
+
+// Tipo de gráfico (2026-10-31, pedido del usuario): solo los que tienen
+// sentido para la agrupación. Líneas, por semana; dona, con pocas categorías
+// y sin columnas (cada porción es una fila; con columnas no habría cómo
+// mostrar la división). El primero de la lista es el de siempre.
+$filasConCasos = count(array_filter($c['filas'], fn($fila) => ($c['totalFila'][$fila] ?? 0) > 0));
+$tiposGrafico = $f['filas'] === 'se'
+    ? ['barras' => 'Barras', 'lineas' => 'Líneas']
+    : ($piramide ? ['piramide' => 'Pirámide'] : ['barras' => 'Barras']);
+if ($f['filas'] !== 'se' && !$conColumnas && $filasConCasos >= 2 && $filasConCasos <= 12) {
+    $tiposGrafico['dona'] = 'Dona';
+}
+$tipoGrafico = isset($tiposGrafico[$f['grafico']]) ? $f['grafico'] : array_key_first($tiposGrafico);
+$iconoGrafico = [
+    'barras'   => '<path d="M5 20V10M11 20V4M17 20v-7"/>',
+    'lineas'   => '<path d="M3 17l5-6 4 3 8-9"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="14" r="1"/>',
+    'dona'     => '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 4v4.5"/>',
+    'piramide' => '<path d="M4 6h16M6 12h12M9 18h6"/>',
+];
+// Color propio de cada porción de la dona cuando la categoría lo tiene; el
+// resto lo reparte grafico-reporte.js por orden de tamaño.
+$colorFila = function (string $k) use ($f): ?string {
+    if ($k === 'SIN_DATO') {
+        return 'var(--faint)';
+    }
+    if ($f['filas'] === 'clasificacion') {
+        return datosClasificacion($k)['color'];
+    }
+    if ($f['filas'] === 'sexo') {
+        return $k === 'F' ? 'var(--cat2)' : 'var(--cat1)';
+    }
+    return null;
+};
 ?>
 <div class="page-head no-imprimir">
   <div>
@@ -90,6 +124,7 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
 <?php else: ?>
   <form method="get" action="/reportes" class="card reporte-filtros" id="filtrosReporte">
     <?php if ($f['modo'] === 'grafico'): ?><input type="hidden" name="modo" value="grafico"><?php endif; ?>
+    <?php if ($f['grafico'] !== ''): ?><input type="hidden" name="grafico" value="<?= e($f['grafico']) ?>"><?php endif; ?>
     <button type="submit" class="sr-only" tabindex="-1" aria-hidden="true">Aplicar</button>
     <div class="rf">
       <label for="rfEnf">Enfermedad</label>
@@ -161,6 +196,14 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
           <a href="<?= e($url('/reportes', ['modo' => 'grafico'])) ?>" class="<?= $f['modo'] === 'grafico' ? 'on' : '' ?>">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 20V10M11 20V4M17 20v-7"/></svg>Gráfico</a>
         </nav>
+        <?php if ($f['modo'] === 'grafico' && $c['total'] > 0 && count($tiposGrafico) > 1): ?>
+          <nav class="seg-periodo vista-modo" aria-label="Tipo de gráfico">
+            <?php foreach ($tiposGrafico as $k => $etq): ?>
+              <a href="<?= e($url('/reportes', ['grafico' => $k === array_key_first($tiposGrafico) ? '' : $k])) ?>" class="<?= $k === $tipoGrafico ? 'on' : '' ?>"<?= $k === $tipoGrafico ? ' aria-current="true"' : '' ?>>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><?= $iconoGrafico[$k] ?></svg><?= e($etq) ?></a>
+            <?php endforeach; ?>
+          </nav>
+        <?php endif; ?>
         <a class="btn btn-ghost btn-sm" href="<?= e($url('/reportes/exportar', ['modo' => ''])) ?>">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5v7M4 6.5l3 3 3-3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel</a>
         <button type="button" class="btn btn-ghost btn-sm" onclick="window.print()">
@@ -173,9 +216,10 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
     <?php elseif ($f['modo'] === 'grafico'): ?>
       <?php
       $datosGrafico = [
-          'tipo'     => $piramide ? 'piramide' : ($f['filas'] === 'se' ? 'semanas' : 'barras'),
+          'tipo'     => $tipoGrafico === 'barras' ? ($f['filas'] === 'se' ? 'semanas' : 'barras') : $tipoGrafico,
           'filas'    => array_map(fn($fila) => [
               'etiqueta' => Consolidado::etiqueta($f['filas'], $fila, $variosAnios),
+              'color'    => $colorFila((string) $fila),
               'total'    => $c['totalFila'][$fila] ?? 0,
               'partes'   => $conColumnas ? array_map(fn($k) => $c['celdas'][$fila][$k] ?? 0, $c['columnas']) : [$c['totalFila'][$fila] ?? 0],
           ], $c['filas']),
@@ -188,7 +232,7 @@ $intercambiable = $conColumnas && $dimensiones[$f['filas']]['columna'];
       ?>
       <div class="grafico-reporte" id="graficoReporte" role="img" aria-label="<?= e($titulo) ?>"></div>
       <script type="application/json" id="datosGrafico"><?= json_encode($datosGrafico, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
-      <?php if ($piramide && !$conColumnas): ?><p class="nota-grafico">Por etapa de vida, el gráfico se muestra como pirámide por sexo.</p><?php endif; ?>
+      <?php if ($tipoGrafico === 'piramide' && !$conColumnas): ?><p class="nota-grafico">Por etapa de vida, el gráfico se muestra como pirámide por sexo.</p><?php endif; ?>
       <script src="<?= e(asset('/js/grafico-reporte.js')) ?>"></script>
     <?php else: ?>
       <div class="tabla-cruzada-wrap">
