@@ -6,6 +6,7 @@ use App\Core\ConflictoInteresException;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\EnvioUnico;
 use App\Core\Flash;
 use App\Core\LibroXlsx;
 use App\Core\RegistroErrores;
@@ -380,6 +381,7 @@ class CasosController extends Controller
     {
         Auth::exigirRol(...self::ROLES_REGISTRO);
         $this->exigirCsrf();
+        EnvioUnico::cortarSiRepetido();
 
         $usuario = Auth::usuario();
         $puedeElegirEstablecimiento = $usuario['rol'] === 'ADMIN';
@@ -780,6 +782,7 @@ class CasosController extends Controller
             CasoBitacora::registrar($casoId, (int) $usuario['id'], 'CREACION', 'Ficha registrada.');
 
             $pdo->commit();
+            EnvioUnico::registrado('/casos/' . $casoId, sprintf('F-%05d ya quedó registrada con el primer clic; no se guardó otra vez.', $casoId));
         } catch (ConflictoInteresException $e) {
             $pdo->rollBack();
             error_log('Conflicto de interés bloqueado: el usuario ' . $usuario['id'] . ' intentó registrar una ficha donde él es la persona notificada (persona_id ' . $personaId . ').');

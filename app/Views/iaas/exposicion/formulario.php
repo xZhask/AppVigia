@@ -1,5 +1,6 @@
 <?php
 use App\Core\Csrf;
+use App\Core\EnvioUnico;
 use App\Models\IaasNorma;
 
 // Registro de exposición laboral (Anexo 8). Objeto y profundidad solo para
@@ -28,7 +29,7 @@ require __DIR__ . '/../_cabecera.php';
 <?php endif; ?>
 
 <form method="post" action="<?= $esNuevo ? '/iaas/exposicion' : '/iaas/exposicion/' . (int) $r['id'] ?>" class="iaas-ficha iaas-expo" id="formExposicion">
-  <?= Csrf::campoOculto() ?>
+  <?= Csrf::campoOculto() ?><?php if ($esNuevo): ?><?= EnvioUnico::campoOculto() ?><?php endif; ?>
   <div class="iaas-ficha-cols">
     <div class="iaas-ficha-main">
       <section class="card section">

@@ -1,5 +1,6 @@
 <?php
 use App\Core\Csrf;
+use App\Core\EnvioUnico;
 use App\Models\IaasCaso;
 use App\Models\IaasNorma;
 use App\Models\Persona;
@@ -39,7 +40,7 @@ require __DIR__ . '/../_cabecera.php';
 
 <form method="post" action="<?= $esNueva ? '/iaas/casos' : '/iaas/casos/' . (int) $caso['id'] ?>" class="iaas-ficha" id="fichaIaas"
       data-horas-t="<?= e(json_encode($horasT)) ?>"<?= $anulada ? ' data-solo-lectura' : '' ?>>
-  <?= Csrf::campoOculto() ?>
+  <?= Csrf::campoOculto() ?><?php if ($esNueva): ?><?= EnvioUnico::campoOculto() ?><?php endif; ?>
   <?php if ($esNueva && $internacion): ?><input type="hidden" name="internacion_id" value="<?= (int) $internacion['id'] ?>"><?php endif; ?>
 
   <div class="iaas-ficha-cols">

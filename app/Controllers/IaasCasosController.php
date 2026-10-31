@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\EnvioUnico;
 use App\Models\IaasCaso;
 use App\Models\IaasCatalogo;
 use App\Models\IaasNorma;
@@ -84,6 +85,7 @@ class IaasCasosController extends IaasControlador
     {
         $this->exigirConfiguracion();
         $this->exigirCsrf();
+        EnvioUnico::cortarSiRepetido();
         $this->guardar(null);
     }
 
@@ -152,6 +154,9 @@ class IaasCasosController extends IaasControlador
             'dispositivo_id' => $dispositivoId, 'estado' => $estado, 'creado_por' => (int) $this->usuario['id'],
         ], $cultivos);
         $nueva = IaasCaso::buscar($id);
+        if (!$caso) {
+            EnvioUnico::registrado('/iaas/casos/' . $id, IaasCaso::codigo($nueva) . ' ya quedó registrada con el primer clic; no se guardó otra vez.');
+        }
         $this->responder(true, IaasCaso::codigo($nueva) . ($estado === 'COMPLETO' ? ' guardada y completa.' : ' guardada. Aún le faltan datos: quedó «por completar».'), '/iaas/casos/' . $id);
     }
 

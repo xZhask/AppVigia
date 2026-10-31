@@ -1,5 +1,6 @@
 <?php
 use App\Core\Csrf;
+use App\Core\EnvioUnico;
 use App\Models\Cie10Vigilancia;
 use App\Models\Enfermedad;
 
@@ -99,7 +100,7 @@ ob_start(); ?>
 ?>
 
 <form method="post" action="/casos/nuevo"<?= $esRegistroPnp ? ' data-registro-pnp="' . (($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS ? 'otras' : 'febriles') . '"' : '' ?><?= $abrirSugerenciasCie10 ? ' data-abrir-cie10' : '' ?>>
-  <?= Csrf::campoOculto() ?>
+  <?= Csrf::campoOculto() ?><?= EnvioUnico::campoOculto() ?>
   <script type="application/json" id="mapaCampos"><?= json_encode($mapaClaveNombreCampos, JSON_UNESCAPED_UNICODE) ?></script>
 
   <section class="ctx-head" id="ctxHead">

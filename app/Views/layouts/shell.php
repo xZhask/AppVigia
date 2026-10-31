@@ -145,6 +145,7 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
 </script>
 <meta name="csrf-token" content="<?= e(Csrf::token()) ?>">
 <script src="<?= e(asset('/js/errores.js')) ?>"></script>
+<script src="<?= e(asset('/js/envio-unico.js')) ?>"></script>
 </head>
 <body<?= $mensajeFlash !== null ? ' data-flash="' . e($mensajeFlash) . '"' : '' ?>>
 <div class="app">
@@ -257,7 +258,7 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
     <div class="sidebar-foot">
       <div class="avatar"><?= e(iniciales($usuarioActual['nombre'] ?? '')) ?></div>
       <div class="who"><?= e($usuarioActual['nombre'] ?? '') ?><small><?= e($rolesEtiqueta[$usuarioActual['rol'] ?? ''] ?? '') ?></small></div>
-      <form method="post" action="/logout" style="margin-left:auto">
+      <form method="post" action="/logout" style="margin-left:auto" data-envio-libre>
         <?= Csrf::campoOculto() ?>
         <button class="icon-btn" type="submit" title="Cerrar sesión" style="background:transparent;border-color:var(--sidebar-line);color:var(--sidebar-text)">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2.5H3.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M13 8H6.5M13 8l-2.5-2.3M13 8l-2.5 2.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>

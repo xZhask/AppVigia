@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\EnvioUnico;
 use App\Models\IaasExposicion;
 use App\Models\IaasNorma;
 
@@ -55,6 +56,7 @@ class IaasExposicionController extends IaasControlador
     {
         $this->exigirEstablecimiento();
         $this->exigirCsrf();
+        EnvioUnico::cortarSiRepetido();
         $this->guardar(null);
     }
 
@@ -120,6 +122,7 @@ class IaasExposicionController extends IaasControlador
             $id = (int) $registro['id'];
         } else {
             $id = IaasExposicion::crear($datos + ['establecimiento_id' => $this->estId(), 'creado_por' => (int) $this->usuario['id']]);
+            EnvioUnico::registrado('/iaas/exposicion', 'La exposición laboral N.º ' . $id . ' ya quedó registrada con el primer clic; no se guardó otra vez.');
         }
         $this->responder(true, 'Exposición laboral N.º ' . $id . ' guardada.', '/iaas/exposicion');
     }
