@@ -108,7 +108,8 @@ class RegistroBusquedaActivaVih
                   JOIN persona p ON p.id = c.persona_id
              LEFT JOIN caso_valor cv ON cv.caso_id = c.id
                  WHERE ' . implode(' AND ', $condiciones) . '
-              GROUP BY c.id
+              GROUP BY c.id, c.codigo, c.fecha_notif, c.clasificacion,
+                       p.n_historia_clinica, p.fecha_nac, p.sexo
               ORDER BY c.fecha_notif, c.id';
         $consulta = Database::conexion()->prepare($sql);
         $consulta->execute($parametros);

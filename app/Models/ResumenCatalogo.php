@@ -164,7 +164,7 @@ class ResumenCatalogo
         foreach (Database::conexion()->query(
             'SELECT s.enfermedad_id, s.nombre, COUNT(c.id) AS campos
                FROM seccion_def s LEFT JOIN campo_def c ON c.seccion_id = s.id
-           GROUP BY s.id ORDER BY s.enfermedad_id, s.orden, s.id'
+           GROUP BY s.id, s.enfermedad_id, s.nombre, s.orden ORDER BY s.enfermedad_id, s.orden, s.id'
         )->fetchAll() as $fila) {
             $resultado[(int) $fila['enfermedad_id']][] = ['nombre' => $fila['nombre'], 'campos' => (int) $fila['campos']];
         }
