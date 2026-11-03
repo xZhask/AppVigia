@@ -146,6 +146,7 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
 <meta name="csrf-token" content="<?= e(Csrf::token()) ?>">
 <script src="<?= e(asset('/js/errores.js')) ?>"></script>
 <script src="<?= e(asset('/js/envio-unico.js')) ?>"></script>
+<script src="<?= e(asset('/js/carga-pagina.js')) ?>"></script>
 </head>
 <body<?= $mensajeFlash !== null ? ' data-flash="' . e($mensajeFlash) . '"' : '' ?>>
 <div class="app">

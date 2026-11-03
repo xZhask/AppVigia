@@ -111,7 +111,7 @@ $nombresDia = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     <div><h3>Formato de registro</h3><div class="sub"><?= count($casos) ?> febril(es) · <?= $dia ? e(fechaIsoADmy($dia)) : 'SE ' . (int) $filtros['semana'] . ' · ' . (int) $filtros['anio'] . ' (del ' . e(fechaIsoADmy($rangoSemana[0])) . ' al ' . e(fechaIsoADmy($rangoSemana[1])) . ')' ?></div></div>
     <div class="spacer"></div>
     <div class="reporte-acciones">
-      <a class="btn btn-ghost btn-sm" href="/reportes/febriles/exportar?<?= e($queryFiltros) ?>">
+      <a class="btn btn-ghost btn-sm" data-descarga href="/reportes/febriles/exportar?<?= e($queryFiltros) ?>">
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5v7M4 6.5l3 3 3-3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel</a>
       <button type="button" class="btn btn-ghost btn-sm" onclick="window.print()">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Imprimir / PDF</button>

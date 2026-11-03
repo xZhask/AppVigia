@@ -1807,3 +1807,15 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
 
 /* Botón del formulario en envío (public/js/envio-unico.js). */
 [aria-busy="true"]:is(.btn, button){cursor:progress;opacity:.7}
+
+/* Barra de carga de página (public/js/carga-pagina.js): avanza cada vez más
+   lento y no llega al final; la página nueva la reemplaza. */
+.carga-barra{position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;pointer-events:none;visibility:hidden}
+.carga-barra.activa{visibility:visible}
+.carga-barra i{display:block;height:100%;background:var(--accent);transform:scaleX(0);transform-origin:left}
+.carga-barra.activa i{animation:carga-avance 30s cubic-bezier(.08,.75,.2,1) forwards}
+@keyframes carga-avance{to{transform:scaleX(.95)}}
+@media (prefers-reduced-motion:reduce){
+  .carga-barra.activa i{animation:none;transform:scaleX(1)}
+}
+@media print{.carga-barra{display:none}}

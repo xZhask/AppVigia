@@ -33,7 +33,7 @@ $etiquetasTipo = [
       </div>
     </form>
     <div style="margin-top:16px">
-      <a class="btn btn-primary" href="/casos/importar/plantilla?enfermedad_id=<?= (int) $enfermedad['id'] ?>">
+      <a class="btn btn-primary" data-descarga href="/casos/importar/plantilla?enfermedad_id=<?= (int) $enfermedad['id'] ?>">
         <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.5v7M4 6l3 3 3-3M2 11.5h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Descargar plantilla (.xlsx)
       </a>
