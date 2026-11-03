@@ -8,6 +8,15 @@
     Allow from all
 </IfModule>
 
+# Compresión gzip (red lenta en las IPRESS: el panel baja de 363 KB a 18 KB).
+# Solo tipos de texto: el .xlsx ya es un zip. Requiere mod_deflate y mod_filter;
+# sin ellos este bloque no hace nada (el Apache de Laragon los trae desactivados).
+<IfModule mod_deflate.c>
+    <IfModule mod_filter.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+    </IfModule>
+</IfModule>
+
 RewriteEngine On
 
 RewriteCond %{REQUEST_FILENAME} -f [OR]
