@@ -46,8 +46,12 @@ $pintarCampoA97 = function (array $resuelto): void {
 ?>
 
 <div id="notificacionFechasA97Wrap" <?= ($enfermedad['cie10'] ?? null) === 'A97' ? '' : 'hidden style="display:none;"' ?>>
-  <div class="fields thirds" style="margin-top:14px">
+  <?php // Destacado (2026-11-04, pedido de una IPRESS: "no lo encontraba"); de él dependen las clasificaciones. ?>
+  <div class="campo-destacado">
     <?php $pintarCampoA97($campoEnfEvento); ?>
+    <p class="campo-destacado-ayuda">Elija primero qué enfermedad o evento se notifica: de esto depende la clasificación de la ficha.</p>
+  </div>
+  <div class="fields halves" style="margin-top:14px">
     <?php $pintarCampoA97($campoSubsistema); ?>
     <?php $pintarCampoA97($campoFechaInvest); ?>
   </div>

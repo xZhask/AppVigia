@@ -1819,3 +1819,12 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
   .carga-barra.activa i{animation:none;transform:scaleX(1)}
 }
 @media print{.carga-barra{display:none}}
+
+/* Campo que no se debe pasar por alto (A97, partials/notificacion-fechas-a97.php):
+   resalta mientras está vacío y se atenúa al elegir una opción. */
+.campo-destacado{margin-top:14px;padding:12px 14px;border:1px solid var(--accent);border-left-width:4px;border-radius:10px;background:var(--accent-soft)}
+.campo-destacado label.fl{font-size:13px;font-weight:600;color:var(--ink)}
+.campo-destacado .control{background:var(--surface);max-width:460px}
+.campo-destacado-ayuda{margin:8px 0 0;font-size:12px;color:var(--ink-2)}
+.campo-destacado:not(:has(option[value=""]:checked)){background:transparent;border-color:var(--line);border-left-color:var(--accent)}
+.campo-destacado:not(:has(option[value=""]:checked)) .campo-destacado-ayuda{display:none}
