@@ -139,6 +139,7 @@
               "clave": "a97_enfermedad_evento",
               "etiqueta": "Enfermedad / evento a notificar",
               "tipo": "SELECT",
+              "obligatorio": true,
               "orden": 1,
               "opciones": [
                 "Dengue sin signos de alarma (CIE-10: A97.0)",

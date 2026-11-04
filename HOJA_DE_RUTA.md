@@ -209,6 +209,7 @@ php sql/migraciones/set_o95_categoria_desde_ipress.php
 php sql/migraciones/set_z21_observaciones_ambas_ramas.php
 php sql/migraciones/copiar_nucleo_ajustes.php P96
 php sql/migraciones/set_a97_sin_fiebre_amarilla.php
+php sql/migraciones/set_a97_evento_obligatorio.php
 ```
 
 - La migración agrega `enfermedad.tablas_hijas`. Sin ella, el cargador falla al
@@ -238,6 +239,10 @@ php sql/migraciones/set_a97_sin_fiebre_amarilla.php
   id es el código que ve el usuario (E-00042); el ADMIN los revisa en
   Catálogos > Errores (`/sistema/errores`). No guarda lo escrito en los
   formularios, solo los nombres de los campos. Se puede correr más de una vez.
+- `set_a97_evento_obligatorio.php` (04/11, después del cargador): vuelve
+  obligatorio "Enfermedad / evento a notificar" de A97, en las bases donde el
+  cargador deja A97 bloqueada por tener casos. También hay que correrlo tras
+  instalar desde `01_esquema_actual.sql`, hasta que se regenere ese archivo.
 - `add_personal_en_formacion.php` (04/11, antes del cargador): decisión del
   área, cadetes y alumnos son la condición "Personal en formación", no un
   grado de Efectivo PNP ni titulares de un derechohabiente. Agrega EN_FORMACION
