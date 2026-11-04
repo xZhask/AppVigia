@@ -4,8 +4,8 @@
       <img src="<?= e(asset('/img/logo-vigia-spnp-color.svg')) ?>" alt="" width="60" height="59">
     </div>
     <div>
-      <div class="auth-wordmark">VIGÍA <span class="auth-wordmark-pnp">PNP</span></div>
-      <div class="auth-wordmark-sub">Vigilancia · DIRSAPOL</div>
+      <div class="auth-wordmark">VIGÍA <span class="auth-wordmark-pnp">SPNP</span></div>
+      <div class="auth-wordmark-sub">Red de vigilancia SPNP</div>
     </div>
   </div>
 

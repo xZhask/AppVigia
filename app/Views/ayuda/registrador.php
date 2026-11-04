@@ -1,7 +1,7 @@
 <?php
 // Guía del registrador (2026-11-04). Sin datos reales.
 $guiaTitulo = 'Guía del registrador';
-$guiaDescripcion = 'Cómo registrar y notificar casos en VIGÍA PNP';
+$guiaDescripcion = 'Cómo registrar y notificar casos en VIGÍA SPNP';
 $guiaFecha = '04/11/2026';
 $indice = [
     'empezar'        => ['Antes de empezar', []],
@@ -28,7 +28,7 @@ require __DIR__ . '/_inicio.php';
 
       <section class="guia-seccion" id="empezar" data-bloque>
         <h2>Antes de empezar</h2>
-        <p>Esta guía explica cómo registrar y notificar casos en VIGÍA PNP, el sistema de vigilancia epidemiológica. Está escrita para el personal de las IPRESS que tiene un usuario con rol de registrador.</p>
+        <p>Esta guía explica cómo registrar y notificar casos en VIGÍA SPNP, el sistema de vigilancia epidemiológica. Está escrita para el personal de las IPRESS que tiene un usuario con rol de registrador.</p>
         <p>Como registrador, usted registra las fichas de su establecimiento y solo ve la información de ese establecimiento.</p>
         <p>Para empezar necesita:</p>
         <ul>
@@ -50,7 +50,7 @@ require __DIR__ . '/_inicio.php';
           <li>Escriba su <b>DNI</b> y su <b>Contraseña</b>.</li>
           <li>Pulse <b>Ingresar</b>.</li>
         </ol>
-        <?php $captura('ingreso.jpg', 'Pantalla de inicio de sesión de VIGÍA PNP, con los campos DNI y Contraseña', 'Pantalla de ingreso.', 'guia-figura-media'); ?>
+        <?php $captura('ingreso.jpg', 'Pantalla de inicio de sesión de VIGÍA SPNP, con los campos DNI y Contraseña', 'Pantalla de ingreso.', 'guia-figura-media'); ?>
         <p>Al terminar, cierre la sesión con el ícono de salida, junto a su nombre, abajo en el menú lateral. Hágalo siempre en una computadora compartida.</p>
         <p><b>Si olvidó su contraseña:</b> pida al Área de Epidemiología que le asigne una nueva. Por ahora el sistema no envía el enlace por correo, aunque la pantalla <b>¿Olvidaste tu contraseña?</b> lo mencione.</p>
         <p><b>Si falla varias veces:</b> tras 5 intentos fallidos, el ingreso se bloquea por unos 15 minutos. Espere y vuelva a intentarlo.</p>

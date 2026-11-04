@@ -21,7 +21,7 @@ require __DIR__ . '/_inicio.php';
       <section class="guia-seccion" id="iaas-inicio" data-bloque>
         <h2>Qué es y cómo se organiza</h2>
         <p>El módulo IAAS lleva la vigilancia de las infecciones asociadas a la atención de salud, según la NTS N.° 163-MINSA/2020/CDC. Es independiente de las fichas de notificación: no aparece en <b>Fichas</b>, en la notificación semanal ni en <b>Reportes</b>.</p>
-        <p>Cada IPRESS trabaja solo con sus datos. Los números del mes se transcriben al aplicativo del CDC u otros sistemas: VIGÍA no los reemplaza.</p>
+        <p>Cada IPRESS trabaja solo con sus datos. Los números del mes se transcriben al aplicativo del CDC u otros sistemas: VIGÍA SPNP no los reemplaza.</p>
         <div class="guia-tabla-marco"><table class="guia-tabla">
           <thead><tr><th>Pantalla</th><th>Formato de la norma</th><th>Cuándo se usa</th></tr></thead>
           <tbody>

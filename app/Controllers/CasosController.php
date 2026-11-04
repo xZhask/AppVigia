@@ -122,7 +122,7 @@ class CasosController extends Controller
         }
 
         (new LibroXlsx('Listado de fichas', (string) ($usuario['nombre'] ?? '')))
-            ->membrete(['VIGÍA PNP · ÁREA DE EPIDEMIOLOGÍA · DIRSAPOL'])
+            ->membrete(['VIGÍA SPNP · ÁREA DE EPIDEMIOLOGÍA · DIRSAPOL'])
             ->titulo('Listado de fichas')
             ->datos([
                 'Ámbito' => $usuario['rol'] === 'REGISTRADOR' ? ($usuario['establecimiento_nombre'] ?? '') : 'Nacional',

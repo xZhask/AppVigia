@@ -12,7 +12,7 @@ use ZipArchive;
  *
  * Una hoja se arma de arriba abajo: membrete, título, datos del encabezado
  * ("Etiqueta: valor"), una o más tablas y notas; al final se agrega sola la
- * línea "Generado por VIGÍA PNP". Las tablas aceptan encabezados de varios
+ * línea "Generado por VIGÍA SPNP". Las tablas aceptan encabezados de varios
  * niveles: cada columna declara su "grupo" (uno o varios niveles por encima
  * de su título) y las celdas iguales y contiguas se combinan, como en los
  * formatos en papel.
@@ -372,7 +372,7 @@ class LibroXlsx
 
         // Pie: quién y cuándo.
         $f = $h['fila'] + 1;
-        $pie = 'Generado por VIGÍA PNP el ' . date('d/m/Y H:i') . ($this->autor !== '' ? ' · ' . $this->autor : '');
+        $pie = 'Generado por VIGÍA SPNP el ' . date('d/m/Y H:i') . ($this->autor !== '' ? ' · ' . $this->autor : '');
         $h['celdas'][$f][0] = self::celdaTexto($f, 0, $pie, $this->estilo(['i' => true, 'sz' => 8, 'color' => self::TENUE]));
         $h['combinadas'][] = self::ref($f, 0) . ':' . self::ref($f, $columnas - 1);
 
@@ -409,7 +409,7 @@ class LibroXlsx
             . '<printOptions horizontalCentered="1"/>'
             . '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.6" header="0.3" footer="0.3"/>'
             . '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>'
-            . '<headerFooter><oddFooter>&amp;L&amp;8VIGÍA PNP · ' . $titulo . '&amp;R&amp;8Página &amp;P de &amp;N</oddFooter></headerFooter>'
+            . '<headerFooter><oddFooter>&amp;L&amp;8VIGÍA SPNP · ' . $titulo . '&amp;R&amp;8Página &amp;P de &amp;N</oddFooter></headerFooter>'
             . '</worksheet>';
     }
 
@@ -468,8 +468,8 @@ class LibroXlsx
         $ahora = gmdate('Y-m-d\TH:i:s\Z');
         return self::XML . '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
             . '<dc:title>' . self::xml($this->titulo) . '</dc:title>'
-            . '<dc:creator>' . self::xml($this->autor !== '' ? $this->autor : 'VIGÍA PNP') . '</dc:creator>'
-            . '<cp:keywords>VIGÍA PNP</cp:keywords>'
+            . '<dc:creator>' . self::xml($this->autor !== '' ? $this->autor : 'VIGÍA SPNP') . '</dc:creator>'
+            . '<cp:keywords>VIGÍA SPNP</cp:keywords>'
             . '<dcterms:created xsi:type="dcterms:W3CDTF">' . $ahora . '</dcterms:created>'
             . '<dcterms:modified xsi:type="dcterms:W3CDTF">' . $ahora . '</dcterms:modified>'
             . '</cp:coreProperties>';

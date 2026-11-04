@@ -131,7 +131,7 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VIGÍA PNP · <?= htmlspecialchars($tituloVista) ?></title>
+<title>VIGÍA SPNP · <?= htmlspecialchars($tituloVista) ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -163,8 +163,8 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
         <img src="<?= e(asset('/img/logo-vigia-spnp-color.svg')) ?>" alt="" width="40" height="39">
       </div>
       <div>
-        <div class="brand-name">VIGÍA PNP</div>
-        <div class="brand-sub">Vigilancia · DIRSAPOL</div>
+        <div class="brand-name">VIGÍA SPNP</div>
+        <div class="brand-sub">Red de vigilancia SPNP</div>
       </div>
     </div>
 

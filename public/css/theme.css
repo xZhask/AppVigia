@@ -1840,3 +1840,4 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
 .nav-item.active::before{background:var(--oro)}
 .nav-item.active svg{color:var(--oro)}
 .auth-wordmark-pnp,.auth-statement h1 em{color:var(--oro)}
+.brand-name{letter-spacing:.08em;white-space:nowrap}

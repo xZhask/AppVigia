@@ -14,10 +14,10 @@ $icoInfo = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="
 ?>
 <link rel="stylesheet" href="<?= e(asset('/css/guia.css')) ?>">
 
-<div class="guia" data-guia data-guia-titulo="<?= e($guiaTitulo) ?> - VIGÍA PNP">
+<div class="guia" data-guia data-guia-titulo="<?= e($guiaTitulo) ?> - VIGÍA SPNP">
   <div class="guia-portada">
     <img src="<?= e(asset('/img/logo-vigia-spnp-color.svg')) ?>" alt="" width="110" height="108">
-    <div class="guia-portada-marca">VIGÍA PNP</div>
+    <div class="guia-portada-marca">VIGÍA SPNP</div>
     <h1><?= e($guiaTitulo) ?></h1>
     <p>Vigilancia epidemiológica · Área de Epidemiología · DIRSAPOL</p>
     <p class="guia-portada-fecha">Actualizada el <?= e($guiaFecha) ?></p>

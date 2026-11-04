@@ -686,7 +686,7 @@ No tocar sin una respuesta explícita.
      `config.php` del servidor). `MailService` usa hoy `mail()` de PHP y hay
      que pasarlo a SMTP con TLS (sirve también para "Olvidé mi contraseña" y
      los avisos de la notificación semanal). Remitente con nombre claro
-     ("VIGÍA PNP · Epidemiología DIRSAPOL") y avisar a las IPRESS de
+     ("VIGÍA SPNP · Epidemiología DIRSAPOL") y avisar a las IPRESS de
      antemano, para que no parezca phishing. A futuro: pedir a la entidad
      que administra los correos una cuenta institucional de envío (solo
      cambia la configuración).

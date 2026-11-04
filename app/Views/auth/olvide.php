@@ -8,7 +8,7 @@ use App\Core\Csrf;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recuperar contraseña · VIGÍA PNP</title>
+<title>Recuperar contraseña · VIGÍA SPNP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -46,7 +46,7 @@ use App\Core\Csrf;
       <div class="auth-form">
         <h2>Solicitud recibida</h2>
         <p class="lead">
-          Si ese DNI tiene una cuenta en VIGÍA PNP con correo registrado, te enviamos a ese
+          Si ese DNI tiene una cuenta en VIGÍA SPNP con correo registrado, te enviamos a ese
           correo un enlace para restablecer la contraseña. El enlace vence en 1 hora.
         </p>
 

@@ -19,7 +19,7 @@ use App\Models\RegistroBusquedaActivaVih;
 class ReportesController extends Controller
 {
     /** Membrete de las descargas en Excel (2026-10-30). */
-    private const MEMBRETE = 'VIGÍA PNP · ÁREA DE EPIDEMIOLOGÍA · DIRSAPOL';
+    private const MEMBRETE = 'VIGÍA SPNP · ÁREA DE EPIDEMIOLOGÍA · DIRSAPOL';
     /** Membrete de los formatos del Área de Epidemiología PNP (individual, consolidado, febriles). */
     private const MEMBRETE_PNP = ['POLICÍA NACIONAL DEL PERÚ · DIRECCIÓN DE SALUD POLICIAL', 'ÁREA DE EPIDEMIOLOGÍA'];
 
@@ -202,7 +202,7 @@ class ReportesController extends Controller
                 ['titulo' => 'Fecha de defunción (3)', 'tipo' => 'fecha'],
                 ['titulo' => 'Notificado', 'tipo' => 'centro'],
                 ['titulo' => 'Observaciones', 'anchoMax' => 40],
-                ['titulo' => 'Ficha VIGÍA PNP'],
+                ['titulo' => 'Ficha VIGÍA SPNP'],
             ], $filas, ['vacio' => 'Sin casos en el periodo'])
             ->nota('(1) Tipo de edad: días (d), meses (m), años (a).')
             ->nota('(2) Clasificación de caso: Gestante con VIH (1), Aborto (2), Mortinato (3), Niño nacido expuesto al VIH (4).')
@@ -306,7 +306,7 @@ class ReportesController extends Controller
                 ['titulo' => 'Prov.', 'grupo' => 'Residencia habitual de la madre'],
                 ['titulo' => 'Distrito', 'grupo' => 'Residencia habitual de la madre'],
                 ['titulo' => 'Establecimiento', 'anchoMax' => 30],
-                ['titulo' => 'Ficha VIGÍA PNP'],
+                ['titulo' => 'Ficha VIGÍA SPNP'],
             ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => $vacio])
             ->nota('Anexo 1 de la R.M. 279-2009/MINSA.')
             ->nota('* Número de días de estancia hospitalaria: consignar solo para los casos de muerte neonatal.')
@@ -397,7 +397,7 @@ class ReportesController extends Controller
                 $fecha('Inicio', 'Descanso médico 2'), $fecha('Término', 'Descanso médico 2'),
                 $fecha('Fecha de alta'),
                 ['titulo' => 'Observaciones', 'anchoMax' => 36],
-                ['titulo' => 'Ficha VIGÍA PNP'],
+                ['titulo' => 'Ficha VIGÍA SPNP'],
             ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => 'Sin casos en la semana'])
             ->nota('Tipo de diagnóstico: P = probable, C = confirmado, D = descartado. Situación: F = familiar.')
             ->descargar(($vih ? 'registro_individual_vih_' : 'registro_individual_') . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
@@ -547,7 +547,7 @@ class ReportesController extends Controller
                 ['titulo' => 'Dx CIE-10', 'tipo' => 'centro'],
                 ['titulo' => 'Diagnóstico', 'anchoMax' => 32],
                 ['titulo' => 'Servicio', 'anchoMax' => 20],
-                ['titulo' => 'Registro VIGÍA PNP'],
+                ['titulo' => 'Registro VIGÍA SPNP'],
             ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => $dia ? 'Sin febriles registrados ese día' : 'Sin febriles registrados en la semana'])
             ->descargar('registro_febriles_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT) . ($dia ? '_' . $dia : ''));
         exit;
