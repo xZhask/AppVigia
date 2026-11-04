@@ -83,7 +83,8 @@ class NotificacionSemanalController extends Controller
     {
         ['anio' => $anio, 'semana' => $semana, 'ahora' => $ahora] = $datos;
         $texto = fn(string $clave): string => is_string($_GET[$clave] ?? null) ? trim($_GET[$clave]) : '';
-        $redId = ctype_digit($texto('red')) ? (int) $texto('red') : null;
+        $redDelJefe = \App\Models\Caso::redDelJefe(Auth::usuario());
+        $redId = $redDelJefe ?? (ctype_digit($texto('red')) ? (int) $texto('red') : null);
         $filtroEstado = in_array($texto('estado'), ['T', 'L', 'P'], true) ? $texto('estado') : '';
         $busqueda = $texto('q');
 
@@ -127,7 +128,7 @@ class NotificacionSemanalController extends Controller
             'total'        => $total,
             'conteo'       => $conteo,
             'previas'      => $previas,
-            'redes'        => RedSalud::todos('nombre'),
+            'redes'        => $redDelJefe === null ? RedSalud::todos('nombre') : [],
             'redId'        => $redId,
             'filtroEstado' => $filtroEstado,
             'busqueda'     => $busqueda,
@@ -216,7 +217,7 @@ class NotificacionSemanalController extends Controller
     public function recordar(): void
     {
         [$anio, $semana, $volver] = $this->entradaPost();
-        Auth::exigirRol('ADMIN');
+        Auth::exigirRol('ADMIN', 'JEFE_RED');
         $soloId = (int) ($_POST['establecimiento_id'] ?? 0);
         $cierres = NotificacionSemanal::delRango($soloId ?: null, [$anio, $semana], [$anio, $semana]);
         $registradores = NotificacionSemanal::registradores();
@@ -225,7 +226,8 @@ class NotificacionSemanalController extends Controller
         $establecimientos = 0;
         $sinCorreo = 0;
         $enviados = 0;
-        foreach (NotificacionSemanal::establecimientos() as $establecimiento) {
+        // El jefe de red solo recorre su red: otro establecimiento_id no encuentra nada.
+        foreach (NotificacionSemanal::establecimientos(\App\Models\Caso::redDelJefe(Auth::usuario())) as $establecimiento) {
             $id = (int) $establecimiento['id'];
             if (($soloId && $id !== $soloId) || in_array(NotificacionSemanal::estado($cierres[$id . '|' . $anio . '-' . $semana] ?? null, $anio, $semana), ['T', 'L'], true)) {
                 continue;

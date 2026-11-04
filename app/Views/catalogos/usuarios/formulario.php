@@ -69,11 +69,25 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
           <div class="control <?= isset($errores['rol']) ? 'err' : '' ?>">
             <select name="rol">
               <option value="REGISTRADOR" <?= seleccionado($usuario['rol'], 'REGISTRADOR') ?>>Registrador/a</option>
+              <option value="JEFE_RED" <?= seleccionado($usuario['rol'], 'JEFE_RED') ?>>Jefe/a de red</option>
               <option value="ADMIN" <?= seleccionado($usuario['rol'], 'ADMIN') ?>>Administrador</option>
             </select>
           </div>
         </div>
-        <div class="field">
+        <div class="field" data-solo-jefe-red <?= $usuario['rol'] === 'JEFE_RED' ? '' : 'hidden' ?>>
+          <label class="fl">Red <span class="req">*</span></label>
+          <div class="control <?= isset($errores['red_id']) ? 'err' : '' ?>">
+            <select name="red_id">
+              <option value="">Sin asignar</option>
+              <?php foreach (\App\Models\RedSalud::todos('nombre') as $red): ?>
+                <option value="<?= (int) $red['id'] ?>" <?= seleccionado($usuario['red_id'] ?? '', $red['id']) ?>><?= e($red['nombre']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <span class="hint">Verá las cifras y el cumplimiento de esa red, sin abrir fichas.</span>
+          <?php if (isset($errores['red_id'])): ?><span class="hint err"><?= e($errores['red_id']) ?></span><?php endif; ?>
+        </div>
+        <div class="field" data-no-jefe-red <?= $usuario['rol'] === 'JEFE_RED' ? 'hidden' : '' ?>>
           <label class="fl">Establecimiento</label>
           <div class="control <?= isset($errores['establecimiento_id']) ? 'err' : '' ?>">
             <select name="establecimiento_id">
@@ -105,3 +119,4 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
     </form>
   </div>
 </div>
+<script src="<?= e(asset('/js/usuario-rol.js')) ?>"></script>

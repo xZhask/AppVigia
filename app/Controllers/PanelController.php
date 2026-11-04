@@ -87,7 +87,8 @@ class PanelController extends Controller
 
         // Mapa de cumplimiento: las semanas del periodo (al menos 8, a lo más 26).
         $semanasMapa = array_slice($semanasSeries, -max(8, min(self::SEMANAS_MAX_MAPA, $periodo['n'])));
-        $redId = $usuario['rol'] !== 'REGISTRADOR' && ctype_digit((string) ($_GET['red'] ?? '')) ? (int) $_GET['red'] : null;
+        $redId = Caso::redDelJefe($usuario)
+            ?? ($usuario['rol'] !== 'REGISTRADOR' && ctype_digit((string) ($_GET['red'] ?? '')) ? (int) $_GET['red'] : null);
         $cumplimiento = Tablero::cumplimiento($usuario, $semanasMapa, $redId);
         // Cuántos ya cerraron la SE que toca cerrar (la anterior hasta su plazo).
         $objetivo = NotificacionSemanal::semanaObjetivo();
@@ -114,7 +115,7 @@ class PanelController extends Controller
             'notificaronActual' => $notificaronActual,
             'semanaObjetivo' => $objetivo,
             'filasMapa'     => self::FILAS_MAPA,
-            'redes'         => $usuario['rol'] === 'REGISTRADOR' ? [] : RedSalud::todos('nombre'),
+            'redes'         => $usuario['rol'] === 'ADMIN' ? RedSalud::todos('nombre') : [],
             'redId'         => $redId,
             'clasificacion' => Tablero::clasificacion($usuario, $periodo),
             'dias'          => Tablero::diasHastaNotificar($usuario, $periodo),

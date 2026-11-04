@@ -39,7 +39,7 @@ class ReportesController extends Controller
             'tituloVista'  => 'Reportes',
             'rutaActual'   => 'reportes',
             'vistaAncha'   => true,
-            'pestana'      => ($_GET['vista'] ?? '') === 'formatos' ? 'formatos' : 'consolidado',
+            'pestana'      => ($_GET['vista'] ?? '') === 'formatos' && $usuario['rol'] !== 'JEFE_RED' ? 'formatos' : 'consolidado',
             'enfermedades' => Enfermedad::todos('nombre'),
             'enfermedad'   => $enfermedad,
             'filtros'      => $f,
@@ -93,7 +93,11 @@ class ReportesController extends Controller
             ->datos([
                 'Enfermedad' => $enfermedad ? $enfermedad['nombre'] : 'Todas',
                 'Periodo'    => $f['etiquetaPeriodo'],
-                'Ámbito'     => $usuario['rol'] === 'REGISTRADOR' ? ($usuario['establecimiento_nombre'] ?? '') : 'Nacional',
+                'Ámbito'     => match ($usuario['rol']) {
+                    'REGISTRADOR' => $usuario['establecimiento_nombre'] ?? '',
+                    'JEFE_RED'    => $usuario['red_nombre'] ?? '',
+                    default       => 'Nacional',
+                },
                 'Casos'      => $total,
             ], 4)
             ->tabla($columnas, $filas, ['totales' => array_merge($pie, [$total, $total ? 1 : 0]), 'congelar' => true, 'vacio' => 'Sin casos en el periodo'])

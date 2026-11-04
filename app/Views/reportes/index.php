@@ -1,4 +1,7 @@
 <?php
+// El jefe de red ve solo el consolidado de su red: los formatos traen datos individuales.
+$esJefeRed = \App\Core\Auth::tieneRol('JEFE_RED');
+$ambitoRed = $esJefeRed ? ' · ' . (\App\Core\Auth::usuario()['red_nombre'] ?? '') : '';
 use App\Models\Consolidado;
 use App\Models\ListadoMuerteFetalNeonatal;
 use App\Models\RegistroBusquedaActivaVih;
@@ -72,13 +75,13 @@ $colorFila = function (string $k) use ($f): ?string {
 <div class="page-head no-imprimir">
   <div>
     <div class="page-title">Reportes</div>
-    <div class="page-desc">Consolidados dinámicos para el área, sin redigitar Excel<?= $esRegistrador ? ' · tu establecimiento' : '' ?></div>
+    <div class="page-desc">Consolidados dinámicos para el área, sin redigitar Excel<?= $esRegistrador ? ' · tu establecimiento' : e($ambitoRed) ?></div>
   </div>
 </div>
 
 <nav class="pestanas reporte-pestanas" aria-label="Tipo de reporte">
   <a class="pestana<?= $pestana === 'consolidado' ? ' on' : '' ?>" href="<?= e($url('/reportes')) ?>">Consolidado</a>
-  <a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono">6</span></a>
+  <?php if (!$esJefeRed): ?><a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono">6</span></a><?php endif; ?>
 </nav>
 
 <?php if ($pestana === 'formatos'): ?>
@@ -186,7 +189,7 @@ $colorFila = function (string $k) use ($f): ?string {
     <div class="reporte-cab">
       <div>
         <h2><?= e($titulo) ?></h2>
-        <p><?= number_format($c['total'], 0, ',', ' ') ?> ficha<?= $c['total'] === 1 ? '' : 's' ?> · excluye fichas anuladas<?= $esRegistrador ? ' · solo tu establecimiento' : '' ?></p>
+        <p><?= number_format($c['total'], 0, ',', ' ') ?> ficha<?= $c['total'] === 1 ? '' : 's' ?> · excluye fichas anuladas<?= $esRegistrador ? ' · solo tu establecimiento' : e($ambitoRed) ?></p>
       </div>
       <div class="spacer"></div>
       <div class="reporte-acciones">

@@ -1,5 +1,9 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Editado a mano el 2026-11-04 (sin regenerar), segundo cambio del dia:
+--   - Rol JEFE_RED: usuario.rol lo admite y usuario.red_id guarda su red.
+--     Solo ese CREATE TABLE. Migracion: sql/migraciones/add_rol_jefe_red.php.
+--
 -- Editado a mano el 2026-11-04 (sin regenerar). Cambio de ESQUEMA:
 --   - persona.condicion admite EN_FORMACION (personal en formacion: cadetes
 --     y alumnos). Solo ese CREATE TABLE (la tabla no lleva INSERT aqui).
@@ -1908,8 +1912,9 @@ CREATE TABLE `usuario` (
   `nombre` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `rol` enum('ADMIN','REGISTRADOR') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'REGISTRADOR',
+  `rol` enum('ADMIN','REGISTRADOR','JEFE_RED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'REGISTRADOR',
   `establecimiento_id` int DEFAULT NULL,
+  `red_id` int DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT '1',
   `ultimo_acceso` timestamp NULL DEFAULT NULL,
   `motivo_inactivo` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -1918,7 +1923,9 @@ CREATE TABLE `usuario` (
   UNIQUE KEY `uq_user_email` (`email`),
   UNIQUE KEY `uq_user_persona` (`persona_id`),
   KEY `ix_user_est` (`establecimiento_id`),
+  KEY `ix_user_red` (`red_id`),
   CONSTRAINT `fk_user_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_user_red` FOREIGN KEY (`red_id`) REFERENCES `red_salud` (`id`),
   CONSTRAINT `fk_user_persona` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

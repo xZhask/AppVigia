@@ -115,8 +115,9 @@ class Caso extends Model
     /**
      * Alcance de un usuario para panel y reportes (2026-10-17), con las
      * mismas reglas que el listado: el REGISTRADOR ve su establecimiento y no
-     * ve las fichas privadas de otros. Condiciones sobre los alias de
-     * FROM_LISTADO (c, p, e, est, r); no excluye anuladas.
+     * ve las fichas privadas de otros. El jefe de red ve su red, y las privadas
+     * solo le suman en las cifras: no tiene acceso a las fichas (Auth::rutaPermitida).
+     * Condiciones sobre los alias de FROM_LISTADO (c, p, e, est, r); no excluye anuladas.
      *
      * @return array{0: string[], 1: array}
      */
@@ -128,7 +129,25 @@ class Caso extends Model
             $filtros['red_id'] = '';
             $filtros['establecimiento_id'] = $usuario['establecimiento_id'];
         }
+        $red = self::redDelJefe($usuario);
+        if ($red !== null) {
+            $filtros['red_id'] = $red;
+            $filtros['establecimiento_id'] = '';
+        }
         return self::condicionesListado($filtros);
+    }
+
+    /**
+     * Red fija del jefe de red; null para los demás roles. Un jefe sin red no
+     * debe caer en alcance nacional: -1 es una red que no existe, no ve nada.
+     */
+    public static function redDelJefe(array $usuario): ?int
+    {
+        if (($usuario['rol'] ?? '') !== 'JEFE_RED') {
+            return null;
+        }
+
+        return (int) ($usuario['red_id'] ?? 0) ?: -1;
     }
 
     private static function condicionPestana(string $pestana): string

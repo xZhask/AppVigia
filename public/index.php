@@ -64,12 +64,17 @@ if (!in_array($rutaSolicitada, $rutasPublicas, true) && !Auth::estaAutenticado()
 
 if (Auth::estaAutenticado()) {
     if (!Auth::sesionVigente()) {
-        Auth::expulsar('Tu contraseña cambió. Vuelve a ingresar con la nueva.');
+        Auth::expulsar('Tu cuenta cambió (contraseña, rol o estado). Vuelve a ingresar.');
     }
     $usuario = Auth::usuario();
     $esRutaPermitidaIncompleto = in_array($rutaSolicitada, ['perfil/completar', 'logout']);
     if ($usuario['perfil_incompleto'] && !$esRutaPermitidaIncompleto) {
         header('Location: /perfil/completar');
+        exit;
+    }
+    if (!Auth::rutaPermitida($rutaSolicitada)) {
+        http_response_code(403);
+        require __DIR__ . '/../app/Views/403.php';
         exit;
     }
 }

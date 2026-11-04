@@ -12,6 +12,7 @@ $pestanas = [
 $roles = [
     'ADMIN'       => ['Administrador', 'Alcance nacional: catálogos, usuarios, reportes y seguimiento de la notificación semanal.'],
     'REGISTRADOR' => ['Registrador/a', 'Registra fichas y cierra la notificación semanal de su establecimiento.'],
+    'JEFE_RED'    => ['Jefe/a de red', 'Ve las cifras y el cumplimiento de su red, y recuerda a sus IPRESS que cierren la semana. No abre fichas.'],
 ];
 $miId = (int) Auth::usuario()['id'];
 $ico = [
@@ -95,11 +96,11 @@ $plantillas = '';
           <tr data-fila="<?= $id ?>" class="<?= $activo ? '' : 'inactiva' ?>" data-estado="<?= $activo ? 'A' : 'I' ?>" data-flags="<?= implode(' ', $flags) ?>"
               data-buscar="<?= e($u['nombre'] . ' ' . $u['email'] . ' ' . ($u['persona_num_doc'] ?? '') . ' ' . ($u['establecimiento_nombre'] ?? '')) ?>"
               data-f-rol="<?= e($u['rol']) ?>" data-f-red="<?= (int) ($u['red_id'] ?? 0) ?>"
-              data-o-nombre="<?= e($u['nombre']) ?>" data-o-rol="<?= e($roles[$u['rol']][0] ?? $u['rol']) ?>" data-o-alc="<?= e($estVisible ?? 'Nacional') ?>"
+              data-o-nombre="<?= e($u['nombre']) ?>" data-o-rol="<?= e($roles[$u['rol']][0] ?? $u['rol']) ?>" data-o-alc="<?= e($u['rol'] === 'JEFE_RED' ? ($u['red_nombre'] ?? '') : ($estVisible ?? 'Nacional')) ?>"
               data-o-acc="<?= $dias === null ? 99999 : $dias ?>" data-o-fichas="<?= $esReg ? $n : '' ?>">
             <td><div class="pt-name"><?= e($nombre) ?><?= $soyYo ? ' <span class="cell-sub" style="display:inline">(tú)</span>' : '' ?></div><div class="cell-sub cat-mono"><?= e($documento ?: 'Sin documento: entra con su correo') ?></div></td>
             <td><span class="cat-rol <?= e($u['rol']) ?>"><?= e($roles[$u['rol']][0] ?? $u['rol']) ?></span></td>
-            <td><?php if ($esReg): ?><?= e($estVisible ?? '—') ?><div class="cell-sub"><?= e($u['red_nombre'] ?? '') ?><?= $u['establecimiento_id'] && !$u['establecimiento_activo'] ? ' · <span class="cat-viejo">establecimiento inactivo</span>' : '' ?></div><?php else: ?>Nacional<div class="cell-sub">Todas las redes</div><?php endif; ?></td>
+            <td><?php if ($esReg): ?><?= e($estVisible ?? '—') ?><div class="cell-sub"><?= e($u['red_nombre'] ?? '') ?><?= $u['establecimiento_id'] && !$u['establecimiento_activo'] ? ' · <span class="cat-viejo">establecimiento inactivo</span>' : '' ?></div><?php elseif ($u['rol'] === 'JEFE_RED'): ?><?= e($u['red_nombre'] ?? 'Sin red') ?><div class="cell-sub">Toda la red</div><?php else: ?>Nacional<div class="cell-sub">Todas las redes</div><?php endif; ?></td>
             <td class="<?= $activo && ($dias === null || $dias > ResumenCatalogo::DIAS_SIN_ACCESO) ? 'cat-viejo' : '' ?>"><?= e(ResumenCatalogo::textoAcceso($u['ultimo_acceso'])) ?></td>
             <td class="n cat-mono cat-ocultar-s"><?= $esReg ? $n : '—' ?></td>
             <td><button type="button" class="cat-acc" data-menu="<?= $id ?>" aria-haspopup="menu" aria-expanded="false" aria-label="Acciones de <?= e($nombre) ?>"><?= $ico['puntos'] ?></button></td>
@@ -125,7 +126,7 @@ $plantillas = '';
                 <div class="cat-kv">
                   <span>Rol</span><b><?= e($roles[$u['rol']][0] ?? $u['rol']) ?></b>
                   <span>Puede</span><span><?= e($roles[$u['rol']][1] ?? '') ?></span>
-                  <span>Establecimiento</span><span><?= $esReg ? e(($estVisible ?? '—') . ($u['red_nombre'] ? ' · ' . $u['red_nombre'] : '')) : 'Nacional' ?></span>
+                  <span>Establecimiento</span><span><?= $esReg ? e(($estVisible ?? '—') . ($u['red_nombre'] ? ' · ' . $u['red_nombre'] : '')) : ($u['rol'] === 'JEFE_RED' ? e($u['red_nombre'] ?? 'Sin red') : 'Nacional') ?></span>
                 </div>
               </div>
               <div class="cat-sec"><h3>Datos de la persona</h3>

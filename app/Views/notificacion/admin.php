@@ -3,6 +3,7 @@ use App\Core\Csrf;
 use App\Models\NotificacionSemanal;
 
 // Notificación semanal del ADMIN: cumplimiento nacional (2026-10-17). Ver NotificacionSemanalController.
+$esJefeRed = \App\Core\Auth::tieneRol('JEFE_RED');
 $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 $textoPlazo = $dias[(int) $plazo->format('w')] . ' ' . $plazo->format('d/m') . ', ' . $plazo->format('H:i');
 $plazoVencido = $ahora > $plazo;
@@ -75,10 +76,12 @@ $tile = function (string $clave, string $etiqueta, ?string $color, int $valor) u
     <input type="hidden" name="anio" value="<?= $anio ?>"><input type="hidden" name="semana" value="<?= $semana ?>">
     <?php if ($filtroEstado !== ''): ?><input type="hidden" name="estado" value="<?= e($filtroEstado) ?>"><?php endif; ?>
     <div class="filtro-caja ns-buscar"><input type="search" name="q" value="<?= e($busqueda) ?>" placeholder="Buscar establecimiento o red" aria-label="Buscar establecimiento"></div>
+    <?php if ($redes): ?>
     <div class="filtro-caja"><select name="red" aria-label="Red" onchange="this.form.submit()">
       <option value="">Todas las redes</option>
       <?php foreach ($redes as $red): ?><option value="<?= (int) $red['id'] ?>" <?= seleccionado((string) $redId, $red['id']) ?>><?= e($red['nombre']) ?></option><?php endforeach; ?>
     </select></div>
+    <?php endif; ?>
     <span class="spacer"></span>
     <span class="ns-nota"><?= count($filas) ?> de <?= $total ?></span>
   </form>
@@ -109,7 +112,7 @@ $tile = function (string $clave, string $etiqueta, ?string $color, int $valor) u
                 <input type="hidden" name="establecimiento_id" value="<?= (int) $fila['id'] ?>">
                 <button type="submit" class="btn btn-ghost ns-btn-sm"<?= $fila['registradores'] ? '' : ' disabled title="Sin registrador activo"' ?>><?= $icoEnviar ?>Recordar</button>
               </form>
-            <?php else: ?>
+            <?php elseif (!$esJefeRed): ?>
               <button type="button" class="btn btn-ghost ns-btn-sm" data-reabrir="<?= (int) $fila['id'] ?>" data-nombre="<?= e(nombreEnOracion($fila['nombre'])) ?>">Reabrir</button>
             <?php endif; ?>
           </td>

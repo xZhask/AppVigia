@@ -2,6 +2,9 @@
 use App\Models\Tablero;
 
 // Panel de vigilancia (rediseño 2026-10-17). Ver PanelController.
+// El jefe de red ve cifras de su red: sin enlaces a fichas (no tiene acceso).
+$esJefeRed = \App\Core\Auth::tieneRol('JEFE_RED');
+$ambitoRed = $esJefeRed ? ' · ' . (\App\Core\Auth::usuario()['red_nombre'] ?? '') : '';
 ?>
 <?php if ($totalFichas === 0): ?>
   <div class="page-head">
@@ -14,7 +17,7 @@ use App\Models\Tablero;
   $icono = '<svg width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M2 9.5 5 9.5 7 5 9.5 13 12 3 14 8.5 15.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   $mensaje = 'Aún no hay fichas registradas. En cuanto se notifique el primer caso, aquí verás la curva epidemiológica y los indicadores del área.';
   $accionTexto = 'Registrar ficha';
-  $accionHref = '/casos/nuevo';
+  $accionHref = $esJefeRed ? '' : '/casos/nuevo';
   require __DIR__ . '/../partials/estado-vacio.php';
   ?>
 <?php else:
@@ -31,7 +34,7 @@ use App\Models\Tablero;
   [$claseConf, $textoConf] = $delta($m['confirmados'], $m['confirmados_ant']);
   // El listado de fichas entiende SE actual, últimas 4 y el año.
   $periodoListado = ['actual' => 'actual', '4' => 'ultimas4', 'anio' => ''][$periodo['clave']] ?? null;
-  $urlFichasPeriodo = $periodoListado === null ? null : '/casos?pestana=TODAS' . ($periodoListado !== '' ? '&periodo=' . $periodoListado : '');
+  $urlFichasPeriodo = $periodoListado === null || $esJefeRed ? null : '/casos?pestana=TODAS' . ($periodoListado !== '' ? '&periodo=' . $periodoListado : '');
   $etiquetaSituacion = [
       'sobre'        => ['crit', 'Sobre umbral'],
       'esperado'     => ['ok', 'Esperado'],
@@ -43,7 +46,7 @@ use App\Models\Tablero;
   <div class="page-head">
     <div>
       <div class="page-title">Panel de vigilancia</div>
-      <div class="page-desc">Consolidado de notificaciones de las IPRESS PNP<?= $esRegistrador ? ' · tu establecimiento' : '' ?></div>
+      <div class="page-desc">Consolidado de notificaciones de las IPRESS PNP<?= $esRegistrador ? ' · tu establecimiento' : e($ambitoRed) ?></div>
     </div>
     <div class="spacer"></div>
     <div class="periodo-panel">
@@ -63,7 +66,7 @@ use App\Models\Tablero;
       <div class="metric-val"><?= number_format($m['fichas'], 0, ',', ' ') ?></div>
       <div class="metric-meta"><span class="delta <?= $claseFichas ?>"><?= $textoFichas ?></span> vs. <?= e($textoAnterior) ?> (<?= $m['fichas_ant'] ?>)</div>
     </a>
-    <a class="card metric metric-enlace" href="/casos">
+    <a class="card metric metric-enlace"<?= $esJefeRed ? '' : ' href="/casos"' ?>>
       <div class="eyebrow">En investigación</div>
       <div class="metric-val"><?= number_format($m['abiertas'], 0, ',', ' ') ?></div>
       <div class="metric-meta">
@@ -79,12 +82,12 @@ use App\Models\Tablero;
       <div class="metric-val"><?= number_format($m['confirmados'], 0, ',', ' ') ?></div>
       <div class="metric-meta"><span class="delta <?= $claseConf ?>"><?= $textoConf ?></span> vs. <?= e($textoAnterior) ?> (<?= $m['confirmados_ant'] ?>)</div>
     </div>
-    <a class="card metric metric-enlace" href="/casos?pestana=VALIDACION">
+    <a class="card metric metric-enlace"<?= $esJefeRed ? '' : ' href="/casos?pestana=VALIDACION"' ?>>
       <div class="eyebrow">Pend. de validación</div>
       <div class="metric-val"><?= number_format($m['en_validacion'], 0, ',', ' ') ?></div>
       <div class="metric-meta">
         <?php if ($m['en_validacion'] > 0): ?>
-          de <?= $m['en_validacion_est'] ?> establecimiento<?= $m['en_validacion_est'] === 1 ? '' : 's' ?> · <span class="enlace-txt">revisar →</span>
+          de <?= $m['en_validacion_est'] ?> establecimiento<?= $m['en_validacion_est'] === 1 ? '' : 's' ?><?= $esJefeRed ? '' : ' · <span class="enlace-txt">revisar →</span>' ?>
         <?php else: ?>
           <span class="st ok"><?= $icoOk ?>Nada pendiente</span>
         <?php endif; ?>
@@ -220,14 +223,18 @@ use App\Models\Tablero;
       </div>
 
       <div class="card tarjeta">
-        <div class="tarjeta-cab"><div><h3>Notificaciones inmediatas recientes</h3></div><div class="spacer"></div><a class="enlace-cab" href="/casos?pestana=TODAS&amp;periodo=todo">Ver fichas →</a></div>
+        <div class="tarjeta-cab"><div><h3>Notificaciones inmediatas recientes</h3></div><div class="spacer"></div><?php if (!$esJefeRed): ?><a class="enlace-cab" href="/casos?pestana=TODAS&amp;periodo=todo">Ver fichas →</a><?php endif; ?></div>
         <?php if (!$inmediatas): ?>
           <p class="vacio-tarjeta">Sin fichas de enfermedades de notificación inmediata.</p>
         <?php else: ?>
           <ul class="lista-inm">
             <?php foreach ($inmediatas as $f): $dc = datosClasificacion((string) $f['clasificacion']); ?>
               <li>
-                <a href="/casos/<?= (int) $f['id'] ?>"><?= e($f['enfermedad_nombre']) ?> <span class="cell-sub mono"><?= e($f['cie10']) ?> · <?= e($f['codigo']) ?></span></a>
+                <?php if ($esJefeRed): ?>
+                  <span><?= e($f['enfermedad_nombre']) ?> <span class="cell-sub mono"><?= e($f['cie10']) ?></span></span>
+                <?php else: ?>
+                  <a href="/casos/<?= (int) $f['id'] ?>"><?= e($f['enfermedad_nombre']) ?> <span class="cell-sub mono"><?= e($f['cie10']) ?> · <?= e($f['codigo']) ?></span></a>
+                <?php endif; ?>
                 <span class="badge-clas" style="--c:<?= $dc['color'] ?>"><span class="dot"></span><?= e($dc['etiqueta']) ?></span>
                 <span class="cell-sub"><?= e(nombreEnOracion($f['establecimiento_nombre'])) ?></span>
                 <span class="cell-sub mono"><?= e(fechaIsoADmy($f['fecha_notif'])) ?></span>

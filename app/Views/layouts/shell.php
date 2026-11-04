@@ -11,7 +11,8 @@ $usuarioActual = Auth::usuario();
 
 // Badge de Fichas (2026-10-17): las abiertas sin clasificación final, no el
 // total, para que el número indique algo pendiente.
-$fichasPendientes = $usuarioActual ? \App\Models\Caso::contarPendientes($usuarioActual) : 0;
+$esJefeRed = ($usuarioActual['rol'] ?? '') === 'JEFE_RED';
+$fichasPendientes = $usuarioActual && !$esJefeRed ? \App\Models\Caso::contarPendientes($usuarioActual) : 0;
 
 // Notificación semanal (2026-10-17): estado de la SE que toca cerrar. El
 // REGISTRADOR ve si la suya está pendiente o cerrada; el ADMIN, cuántos
@@ -25,8 +26,9 @@ if ($usuarioActual && !$usuarioActual['perfil_incompleto']) {
         $notifSemanal = ['cerrada' => in_array($estadoSe, ['T', 'L'], true), 'semana' => $objetivoSe['semana']];
     } else {
         $cierresSe = NotificacionSemanal::delRango(null, [$objetivoSe['anio'], $objetivoSe['semana']], [$objetivoSe['anio'], $objetivoSe['semana']]);
-        $cerradasSe = count(array_filter($cierresSe, fn($c) => $c['anulada_en'] === null));
-        $notifSemanal = ['pendientes' => max(0, count(NotificacionSemanal::establecimientos()) - $cerradasSe), 'semana' => $objetivoSe['semana']];
+        $establecimientosSe = array_column(NotificacionSemanal::establecimientos(\App\Models\Caso::redDelJefe($usuarioActual)), 'id');
+        $cerradasSe = count(array_filter($cierresSe, fn($c) => $c['anulada_en'] === null && in_array($c['establecimiento_id'], $establecimientosSe)));
+        $notifSemanal = ['pendientes' => max(0, count($establecimientosSe) - $cerradasSe), 'semana' => $objetivoSe['semana']];
     }
 }
 
@@ -37,6 +39,7 @@ if ($usuarioActual && !$usuarioActual['perfil_incompleto']) {
 $rolesEtiqueta = [
     'ADMIN'       => 'Administrador',
     'REGISTRADOR' => 'Registrador/a',
+    'JEFE_RED'    => 'Jefe/a de red',
 ];
 
 // Registro diario de febriles (registro PNP, 2026-10-21): acceso directo, se
@@ -178,6 +181,7 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M2 9.5 5 9.5 7 5 9.5 13 12 3 14 8.5 15.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Panel
       </a>
+      <?php if (!$esJefeRed): ?>
       <a class="nav-item<?= $rutaActual === 'casos' ? ' active' : '' ?>" href="/casos">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="2" width="12" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 6h6M5.5 9h6M5.5 12h3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         Fichas
@@ -193,6 +197,7 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
         Registro de febriles
       </a>
       <?php endif; ?>
+      <?php endif; ?>
       <a class="nav-item<?= $rutaActual === 'notificacion-semanal' ? ' active' : '' ?>" href="/notificacion-semanal">
         <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="2.5" y="3.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 7h12M6 2v3M11 2v3M6.5 10.5l1.5 1.5 2.7-2.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Notificación semanal
@@ -207,6 +212,7 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
         Reportes
       </a>
 
+      <?php if (!$esJefeRed): ?>
       <div class="nav-label" title="Infecciones asociadas a la atención de salud">IAAS</div>
       <?php if (!$iaasMenu['sin_hosp']): ?>
       <a class="nav-item<?= $enIaas('ronda') || $enIaas('servicios') ? ' active' : '' ?>" href="/iaas/ronda">
@@ -229,6 +235,8 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
         Indicadores
         <?php if ($iaasMenu['mes'] > 0): ?><span class="estado-se" title="Salas sin cerrar el mes anterior">Mes pendiente</span><?php endif; ?>
       </a>
+
+      <?php endif; ?>
 
       <?php if ($puedeVerCatalogos): ?>
       <div class="nav-label">Catálogos</div>
@@ -292,6 +300,9 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
             <svg width="14" height="14" viewBox="0 0 14 14" style="margin-right:4px;vertical-align:-2px"><path d="M7 1.5 2 4v7h10V4L7 1.5Z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
             <?= e(mb_strlen($usuarioActual['establecimiento_nombre']) > 28 ? mb_substr($usuarioActual['establecimiento_nombre'], 0, 27) . '…' : $usuarioActual['establecimiento_nombre']) ?>
           </div>
+        <?php endif; ?>
+        <?php if ($esJefeRed && !empty($usuarioActual['red_nombre'])): ?>
+          <div class="se-badge" title="Tu red"><span class="se-dot"></span><?= e($usuarioActual['red_nombre']) ?></div>
         <?php endif; ?>
         <div class="se-badge" title="Semana epidemiológica de hoy"><span class="se-dot"></span> Semana actual <b class="mono">SE&nbsp;<?= $semanaEpi ?></b> · <?= $anioEpi ?></div>
         <button class="icon-btn" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema">

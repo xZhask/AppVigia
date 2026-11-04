@@ -5,6 +5,15 @@ use App\Models\Usuario;
 
 class Auth
 {
+    // Jefe de red: lista cerrada. Lo que no esté aquí queda prohibido, también
+    // las rutas que se agreguen más adelante (ver rutaPermitida).
+    private const RUTAS_JEFE_RED = [
+        '', 'reportes', 'reportes/exportar',
+        'notificacion-semanal', 'notificacion-semanal/recordar',
+        'perfil/contrasena', 'perfil/completar',
+        'login', 'login/olvide', 'login/restablecer', 'logout',
+    ];
+
     // Hash bcrypt señuelo: sin esto, un correo inexistente devuelve false
     // antes de llamar a password_verify(), y esa diferencia de tiempo deja
     // adivinar por cronometraje qué correos sí están registrados. Se compara
@@ -49,38 +58,46 @@ class Auth
             'rol'                    => $fila['rol'],
             'establecimiento_id'     => $fila['establecimiento_id'] !== null ? (int) $fila['establecimiento_id'] : null,
             'establecimiento_nombre' => $fila['establecimiento_nombre'],
+            'red_id'                 => $fila['red_id'] !== null ? (int) $fila['red_id'] : null,
+            'red_nombre'             => $fila['red_nombre'],
             'persona_id'             => $fila['persona_id'] !== null ? (int) $fila['persona_id'] : null,
             'perfil_incompleto'      => (int) ($fila['perfil_incompleto'] ?? 0),
         ];
-        $_SESSION['_huella_clave'] = self::huella((string) $fila['password_hash']);
+        $_SESSION['_huella_clave'] = self::huella($fila);
 
         return true;
     }
 
     /**
-     * Una sesión vale mientras la contraseña sea la misma con que se abrió:
-     * al cambiarla (o al asignarla el ADMIN, o restablecerla), las sesiones
-     * abiertas en otros equipos dejan de valer. Sin columna nueva: se compara
-     * una huella del hash guardado. Las sesiones abiertas antes de este cambio
-     * no traen huella y la toman en su siguiente petición.
+     * Una sesión vale mientras la cuenta siga activa y con la misma contraseña,
+     * rol y alcance con que se abrió: si cambian, las sesiones abiertas dejan
+     * de valer y el permiso nuevo rige desde ya. Sin columna nueva: se compara
+     * una huella de esos datos. Las sesiones abiertas antes de este cambio no
+     * traen huella y la toman en su siguiente petición.
      */
     public static function sesionVigente(): bool
     {
-        $hash = self::hashActual();
-        if ($hash === null) {
+        $fila = self::filaActual();
+        if ($fila === null || !(int) $fila['activo']) {
             return false;
         }
         if (!isset($_SESSION['_huella_clave'])) {
-            $_SESSION['_huella_clave'] = self::huella($hash);
+            $_SESSION['_huella_clave'] = self::huella($fila);
         }
 
-        return hash_equals($_SESSION['_huella_clave'], self::huella($hash));
+        return hash_equals($_SESSION['_huella_clave'], self::huella($fila));
     }
 
-    /** Tras cambiar la contraseña propia: esta sesión sigue, las demás no. */
+    /** Tras cambiar los datos propios: esta sesión sigue, las demás no. */
     public static function renovarHuella(): void
     {
-        $_SESSION['_huella_clave'] = self::huella((string) self::hashActual());
+        $_SESSION['_huella_clave'] = self::huella((array) self::filaActual());
+    }
+
+    /** ¿Este rol puede abrir la ruta? Hoy solo el jefe de red tiene lista cerrada. */
+    public static function rutaPermitida(string $ruta): bool
+    {
+        return !self::tieneRol('JEFE_RED') || in_array($ruta, self::RUTAS_JEFE_RED, true);
     }
 
     /** Cierra la sesión y lleva al ingreso con un aviso. */
@@ -93,16 +110,16 @@ class Auth
         exit;
     }
 
-    private static function hashActual(): ?string
+    private static function filaActual(): ?array
     {
-        $fila = Usuario::buscar((int) (self::usuario()['id'] ?? 0));
-
-        return $fila ? (string) $fila['password_hash'] : null;
+        return Usuario::buscar((int) (self::usuario()['id'] ?? 0));
     }
 
-    private static function huella(string $hash): string
+    private static function huella(array $fila): string
     {
-        return hash('sha256', $hash);
+        return hash('sha256', implode('|', [
+            $fila['password_hash'] ?? '', $fila['rol'] ?? '', $fila['red_id'] ?? '', $fila['establecimiento_id'] ?? '',
+        ]));
     }
 
     public static function cerrarSesion(): void

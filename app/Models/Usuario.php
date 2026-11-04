@@ -32,7 +32,7 @@ class Usuario extends Model
     private static function buscarParaSesion(string $condicion, string $valor): array
     {
         $consulta = Database::conexion()->prepare('
-            SELECT u.*, e.nombre AS establecimiento_nombre,
+            SELECT u.*, e.nombre AS establecimiento_nombre, rj.nombre AS red_nombre,
                    p.tipo_doc AS persona_tipo_doc, p.num_doc AS persona_num_doc,
                    p.apellido_paterno, p.apellido_materno,
                    p.nombres AS persona_nombres, p.condicion,
@@ -41,6 +41,7 @@ class Usuario extends Model
                    g.abreviatura AS grado_abreviatura, g.nombre AS grado_nombre
               FROM usuario u
          LEFT JOIN establecimiento e ON e.id = u.establecimiento_id
+         LEFT JOIN red_salud rj ON rj.id = u.red_id
          LEFT JOIN persona p ON p.id = u.persona_id
          LEFT JOIN grado_pnp g ON g.id = p.grado_id
              WHERE ' . $condicion . '
@@ -111,7 +112,7 @@ class Usuario extends Model
     public static function conEstablecimiento(): array
     {
         $sql = 'SELECT u.*, e.nombre AS establecimiento_nombre, e.nombre_corto AS establecimiento_corto, e.activo AS establecimiento_activo,
-                       e.red_id, r.nombre AS red_nombre,
+                       COALESCE(e.red_id, u.red_id) AS red_id, r.nombre AS red_nombre,
                        p.tipo_doc AS persona_tipo_doc, p.num_doc AS persona_num_doc,
                        p.apellido_paterno, p.apellido_materno,
                        p.nombres AS persona_nombres, p.condicion,
@@ -120,7 +121,7 @@ class Usuario extends Model
                        g.abreviatura AS grado_abreviatura, g.nombre AS grado_nombre
                   FROM usuario u
              LEFT JOIN establecimiento e ON e.id = u.establecimiento_id
-             LEFT JOIN red_salud r ON r.id = e.red_id
+             LEFT JOIN red_salud r ON r.id = COALESCE(e.red_id, u.red_id)
              LEFT JOIN persona p ON p.id = u.persona_id
              LEFT JOIN grado_pnp g ON g.id = p.grado_id
               ORDER BY p.apellido_paterno, p.apellido_materno, p.nombres';

@@ -193,6 +193,7 @@ php sql/migraciones/add_registro_pnp.php
 php sql/migraciones/add_modulo_iaas.php
 php sql/migraciones/add_registro_errores.php
 php sql/migraciones/add_personal_en_formacion.php
+php sql/migraciones/add_rol_jefe_red.php
 php sql/migraciones/add_reniec_resultado.php
 php sql/migraciones/login_por_documento.php
 php cargar_fichas.php --apply --confirmo-apply
@@ -243,6 +244,9 @@ php sql/migraciones/set_a97_evento_obligatorio.php
   obligatorio "Enfermedad / evento a notificar" de A97, en las bases donde el
   cargador deja A97 bloqueada por tener casos. También hay que correrlo tras
   instalar desde `01_esquema_actual.sql`, hasta que se regenere ese archivo.
+- `add_rol_jefe_red.php` (04/11, antes del cargador): rol JEFE_RED y
+  `usuario.red_id`. El jefe de red ve cifras y cumplimiento de su red, sin
+  fichas: sus rutas son una lista cerrada en `Auth::RUTAS_JEFE_RED`.
 - `add_personal_en_formacion.php` (04/11, antes del cargador): decisión del
   área, cadetes y alumnos son la condición "Personal en formación", no un
   grado de Efectivo PNP ni titulares de un derechohabiente. Agrega EN_FORMACION

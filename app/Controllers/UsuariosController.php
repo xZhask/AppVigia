@@ -11,7 +11,7 @@ use App\Models\Usuario;
 
 class UsuariosController extends Controller
 {
-    private const ROLES = ['ADMIN', 'REGISTRADOR'];
+    private const ROLES = ['ADMIN', 'REGISTRADOR', 'JEFE_RED'];
     private const RUTA = 'catalogos/usuarios';
 
     public function index(): void
@@ -49,7 +49,7 @@ class UsuariosController extends Controller
             'tituloVista' => 'Nuevo usuario',
             'rutaActual'  => self::RUTA,
             // ?establecimiento_id= llega de "Asignar registrador" en Establecimientos.
-            'usuario'     => ['id' => null, 'nombre' => '', 'email' => '', 'rol' => 'REGISTRADOR', 'establecimiento_id' => ctype_digit((string) ($_GET['establecimiento_id'] ?? '')) ? (int) $_GET['establecimiento_id'] : '', 'activo' => 1],
+            'usuario'     => ['id' => null, 'nombre' => '', 'email' => '', 'rol' => 'REGISTRADOR', 'establecimiento_id' => ctype_digit((string) ($_GET['establecimiento_id'] ?? '')) ? (int) $_GET['establecimiento_id'] : '', 'red_id' => '', 'activo' => 1],
             'establecimientos' => Establecimiento::todos('nombre'),
             'errores'     => [],
         ]);
@@ -130,7 +130,8 @@ class UsuariosController extends Controller
         unset($datos['clave'], $datos['tipo_doc'], $datos['num_doc'], $datos['apellido_paterno'], $datos['apellido_materno'], $datos['nombres'], $datos['mostrar_manual']);
 
         Usuario::actualizar((int) $id, $datos);
-        if ((int) $id === (int) Auth::usuario()['id']) {
+        // Quien se cambia su propio rol vuelve a ingresar para tomar el permiso nuevo.
+        if ((int) $id === (int) Auth::usuario()['id'] && $datos['rol'] === Auth::usuario()['rol']) {
             Auth::renovarHuella();
         }
         Flash::set('Usuario actualizado.');
@@ -197,7 +198,8 @@ class UsuariosController extends Controller
             'num_doc'            => trim($entrada['num_doc'] ?? ''),
             'email'              => trim($entrada['email'] ?? ''),
             'rol'                => $entrada['rol'] ?? '',
-            'establecimiento_id' => $entrada['establecimiento_id'] !== '' ? (int) $entrada['establecimiento_id'] : null,
+            'establecimiento_id' => ($entrada['establecimiento_id'] ?? '') !== '' ? (int) $entrada['establecimiento_id'] : null,
+            'red_id'             => ($entrada['red_id'] ?? '') !== '' ? (int) $entrada['red_id'] : null,
             'clave'              => (string) ($entrada['clave'] ?? ''),
         ];
 
@@ -254,6 +256,16 @@ class UsuariosController extends Controller
 
         if ($datos['rol'] === 'REGISTRADOR' && $datos['establecimiento_id'] === null) {
             $errores['establecimiento_id'] = 'El rol Registrador debe tener un establecimiento asignado.';
+        }
+
+        // El jefe de red responde por una red, no por un establecimiento.
+        if ($datos['rol'] === 'JEFE_RED') {
+            $datos['establecimiento_id'] = null;
+            if ($datos['red_id'] === null || !\App\Models\RedSalud::buscar($datos['red_id'])) {
+                $errores['red_id'] = 'El rol Jefe/a de red debe tener una red asignada.';
+            }
+        } else {
+            $datos['red_id'] = null;
         }
 
         if ($idActual === null && strlen($datos['clave']) < 8) {
