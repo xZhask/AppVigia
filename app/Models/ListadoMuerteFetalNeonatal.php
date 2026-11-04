@@ -107,7 +107,9 @@ class ListadoMuerteFetalNeonatal
              LEFT JOIN departamento dep   ON dep.id = d.departamento_id
              LEFT JOIN caso_valor cv      ON cv.caso_id = c.id
                  WHERE ' . implode(' AND ', $condiciones) . '
-              GROUP BY c.id
+              GROUP BY c.id, c.codigo, c.fecha_notif, es.nombre,
+                       p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
+                       d.nombre, pr.nombre, dep.nombre
               ORDER BY c.fecha_notif, c.id';
         $consulta = Database::conexion()->prepare($sql);
         $consulta->execute($parametros);
