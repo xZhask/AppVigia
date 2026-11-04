@@ -23,6 +23,10 @@ $nombreEst = $establecimiento ? Establecimiento::nombreVisible($establecimiento)
       <?php else: ?>
         <?= e($nombreEst) ?>
       <?php endif; ?>
+      <?php
+      $anclaGuiaIaas = ['iaas/servicios' => 'servicios', 'iaas/ronda' => 'ronda', 'iaas/casos' => 'casos-iaas', 'iaas/exposicion' => 'exposicion', 'iaas/indicadores' => 'indicadores'][$rutaActual] ?? 'iaas-inicio';
+      ?>
+      <a class="enlace-txt" href="/ayuda/iaas#<?= e($anclaGuiaIaas) ?>" target="_blank" rel="noopener" title="Se abre en otra pestaña">¿Cómo se usa?</a>
     </div>
   </div>
   <div class="spacer"></div>

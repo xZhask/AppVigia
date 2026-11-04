@@ -19,7 +19,7 @@ require __DIR__ . '/_inicio.php';
         <h2>Qué puede hacer</h2>
         <p>Como administrador, usted trabaja con alcance nacional: ve las fichas y los reportes de todas las IPRESS, gestiona los usuarios y los catálogos, y supervisa la notificación semanal.</p>
         <p>También puede registrar fichas, siguiendo los pasos de la <a href="/ayuda">Guía del registrador</a>. La diferencia es que debe elegir el <b>Establecimiento</b> al que pertenece la ficha o la importación.</p>
-        <div class="guia-nota"><?= $icoInfo ?><div>Esta versión no cubre el módulo IAAS ni <b>Parámetros IAAS</b>, que tendrán su propia guía.</div></div>
+        <div class="guia-nota"><?= $icoInfo ?><div>El módulo IAAS y sus <b>Parámetros IAAS</b> se explican en la <a href="/ayuda/iaas">Guía de IAAS</a>.</div></div>
         <div class="guia-sub" id="roles" data-bloque>
           <h3>Roles del sistema</h3>
           <div class="guia-tabla-marco"><table class="guia-tabla">

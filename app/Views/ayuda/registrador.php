@@ -39,7 +39,7 @@ require __DIR__ . '/_inicio.php';
           <?= $icoInfo ?>
           <div>Si la ficha que va a registrar es de gestante con VIH, sífilis, muerte materna, muerte fetal o neonatal, ESAVI, violencia familiar, accidente de tránsito o VIH/SIDA, lea también <a href="#especiales">Casos especiales</a>: esas fichas tienen un orden de registro propio.</div>
         </div>
-        <p class="guia-tenue">Esta versión no cubre el módulo IAAS (Ronda diaria, Casos IAAS, Exposición laboral e Indicadores), que tendrá su propia guía.</p>
+        <p class="guia-tenue">El módulo IAAS (Ronda diaria, Casos IAAS, Exposición laboral e Indicadores) tiene su propia <a href="/ayuda/iaas">Guía de IAAS</a>.</p>
       </section>
 
       <section class="guia-seccion" id="ingresar" data-bloque>

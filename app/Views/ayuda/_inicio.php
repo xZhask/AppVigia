@@ -44,10 +44,17 @@ $icoInfo = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="
       </button>
     </div>
   </header>
-  <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
+  <?php
+  $guiasDisponibles = [
+      'ADMIN'       => ['administrador' => ['Administrador', '/ayuda/administrador'], 'registrador' => ['Registrador', '/ayuda'], 'jefe-red' => ['Jefe de red', '/ayuda/jefe-red'], 'iaas' => ['IAAS', '/ayuda/iaas']],
+      'REGISTRADOR' => ['registrador' => ['Registrador', '/ayuda'], 'iaas' => ['IAAS', '/ayuda/iaas']],
+  ][\App\Core\Auth::usuario()['rol']] ?? [];
+  ?>
+  <?php if ($guiasDisponibles): ?>
     <nav class="pestanas guia-pestanas" aria-label="Guías">
-      <a class="pestana<?= $guiaActual === 'administrador' ? ' on' : '' ?>" href="/ayuda/administrador">Administrador</a>
-      <a class="pestana<?= $guiaActual === 'registrador' ? ' on' : '' ?>" href="/ayuda">Registrador</a>
+      <?php foreach ($guiasDisponibles as $clave => [$etiqueta, $ruta]): ?>
+        <a class="pestana<?= $guiaActual === $clave ? ' on' : '' ?>" href="<?= e($ruta) ?>"><?= e($etiqueta) ?></a>
+      <?php endforeach; ?>
     </nav>
   <?php endif; ?>
   <p class="guia-ayuda-pdf" data-guia-resultado aria-live="polite" hidden></p>

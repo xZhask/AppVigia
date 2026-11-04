@@ -30,4 +30,28 @@ class AyudaController extends Controller
             'guiaActual'  => 'administrador',
         ]);
     }
+
+    public function jefeRed(): void
+    {
+        Auth::exigirRol('ADMIN', 'JEFE_RED');
+
+        $this->vista('ayuda/jefe-red', [
+            'tituloVista' => 'Guía del jefe de red',
+            'rutaActual'  => 'ayuda',
+            'vistaAncha'  => true,
+            'guiaActual'  => 'jefe-red',
+        ]);
+    }
+
+    public function iaas(): void
+    {
+        Auth::exigirRol('ADMIN', 'REGISTRADOR');
+
+        $this->vista('ayuda/iaas', [
+            'tituloVista' => 'Guía de IAAS',
+            'rutaActual'  => 'ayuda',
+            'vistaAncha'  => true,
+            'guiaActual'  => 'iaas',
+        ]);
+    }
 }

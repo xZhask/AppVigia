@@ -116,6 +116,12 @@ $router->get('/ayuda', function () {
 $router->get('/ayuda/administrador', function () {
     (new \App\Controllers\AyudaController())->administrador();
 });
+$router->get('/ayuda/jefe-red', function () {
+    (new \App\Controllers\AyudaController())->jefeRed();
+});
+$router->get('/ayuda/iaas', function () {
+    (new \App\Controllers\AyudaController())->iaas();
+});
 $router->get('/perfil/contrasena', function () {
     (new \App\Controllers\PerfilController())->mostrarContrasena();
 });
