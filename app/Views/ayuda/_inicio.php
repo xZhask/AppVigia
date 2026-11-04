@@ -1,0 +1,72 @@
+<?php
+// Marco común de las guías. Espera $guiaTitulo, $guiaDescripcion, $guiaFecha,
+// $guiaActual e $indice. Las capturas se toman con datos de prueba.
+$captura = function (string $archivo, string $alt, string $pie, string $clase = ''): void {
+    $ruta = asset('/img/guia/' . $archivo); ?>
+  <figure class="guia-figura <?= e($clase) ?>">
+    <a href="<?= e($ruta) ?>" target="_blank" rel="noopener" title="Abrir la imagen en otra pestaña"><img src="<?= e($ruta) ?>" alt="<?= e($alt) ?>"></a>
+    <figcaption><?= e($pie) ?></figcaption>
+  </figure>
+<?php };
+$ir = fn(string $ruta, string $texto): string => '<a class="guia-ir" href="' . e($ruta) . '">' . e($texto) . ' →</a>';
+$icoAviso = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>';
+$icoInfo = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>';
+?>
+<link rel="stylesheet" href="<?= e(asset('/css/guia.css')) ?>">
+
+<div class="guia" data-guia data-guia-titulo="<?= e($guiaTitulo) ?> - VIGÍA PNP">
+  <div class="guia-portada">
+    <img src="<?= e(asset('/logo-vigia.svg')) ?>" alt="" width="56" height="56">
+    <div class="guia-portada-marca">VIGÍA PNP</div>
+    <h1><?= e($guiaTitulo) ?></h1>
+    <p>Vigilancia epidemiológica · Área de Epidemiología · DIRSAPOL</p>
+    <p class="guia-portada-fecha">Actualizada el <?= e($guiaFecha) ?></p>
+    <div class="guia-portada-indice">
+      <div class="eyebrow">Contenido</div>
+      <ol>
+        <?php foreach ($indice as $ancla => [$titulo]): ?><li><a href="#<?= e($ancla) ?>"><?= e($titulo) ?></a></li><?php endforeach; ?>
+      </ol>
+    </div>
+  </div>
+
+  <header class="guia-cab">
+    <div>
+      <div class="page-title"><?= e($guiaTitulo) ?></div>
+      <div class="page-desc"><?= e($guiaDescripcion) ?> · actualizada el <?= e($guiaFecha) ?></div>
+    </div>
+    <div class="guia-acciones">
+      <div class="filtro-caja guia-busca">
+        <input type="search" data-guia-buscar placeholder="Buscar en la guía, por ejemplo Z21" aria-label="Buscar en la guía">
+      </div>
+      <button type="button" class="btn btn-primary" data-guia-pdf>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5M4 20h16"/></svg>
+        Guardar como PDF
+      </button>
+    </div>
+  </header>
+  <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
+    <nav class="pestanas guia-pestanas" aria-label="Guías">
+      <a class="pestana<?= $guiaActual === 'administrador' ? ' on' : '' ?>" href="/ayuda/administrador">Administrador</a>
+      <a class="pestana<?= $guiaActual === 'registrador' ? ' on' : '' ?>" href="/ayuda">Registrador</a>
+    </nav>
+  <?php endif; ?>
+  <p class="guia-ayuda-pdf" data-guia-resultado aria-live="polite" hidden></p>
+
+  <div class="guia-cuerpo">
+    <nav class="guia-indice" aria-label="Contenido de la guía" data-guia-indice>
+      <div class="eyebrow">Contenido</div>
+      <ul>
+        <?php foreach ($indice as $ancla => [$titulo, $subs]): ?>
+          <li>
+            <a href="#<?= e($ancla) ?>" data-seccion="<?= e($ancla) ?>"><?= e($titulo) ?></a>
+            <?php if ($subs): ?>
+              <ul>
+                <?php foreach ($subs as $subAncla => $subTitulo): ?><li><a href="#<?= e($subAncla) ?>" data-seccion="<?= e($subAncla) ?>"><?= e($subTitulo) ?></a></li><?php endforeach; ?>
+              </ul>
+            <?php endif; ?>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </nav>
+
+    <article class="guia-contenido">

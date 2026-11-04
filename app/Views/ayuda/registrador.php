@@ -1,14 +1,8 @@
 <?php
-// Guía del registrador (2026-11-04). Texto de ayuda en HTML, sin datos reales:
-// las capturas de public/img/guia se toman con datos de prueba.
-$captura = function (string $archivo, string $alt, string $pie, string $clase = ''): void {
-    $ruta = asset('/img/guia/' . $archivo); ?>
-  <figure class="guia-figura <?= e($clase) ?>">
-    <a href="<?= e($ruta) ?>" target="_blank" rel="noopener" title="Abrir la imagen en otra pestaña"><img src="<?= e($ruta) ?>" alt="<?= e($alt) ?>"></a>
-    <figcaption><?= e($pie) ?></figcaption>
-  </figure>
-<?php };
-$ir = fn(string $ruta, string $texto): string => '<a class="guia-ir" href="' . e($ruta) . '">' . e($texto) . ' →</a>';
+// Guía del registrador (2026-11-04). Sin datos reales.
+$guiaTitulo = 'Guía del registrador';
+$guiaDescripcion = 'Cómo registrar y notificar casos en VIGÍA PNP';
+$guiaFecha = '04/11/2026';
 $indice = [
     'empezar'        => ['Antes de empezar', []],
     'ingresar'       => ['Ingresar al sistema', ['contrasena' => 'Contraseña']],
@@ -29,61 +23,8 @@ $indice = [
     'reportes'       => ['Reportes y descargas', []],
     'problemas'      => ['Problemas frecuentes', []],
 ];
-$icoAviso = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>';
-$icoInfo = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>';
+require __DIR__ . '/_inicio.php';
 ?>
-<link rel="stylesheet" href="<?= e(asset('/css/guia.css')) ?>">
-
-<div class="guia" data-guia>
-  <div class="guia-portada">
-    <img src="<?= e(asset('/logo-vigia.svg')) ?>" alt="" width="56" height="56">
-    <div class="guia-portada-marca">VIGÍA PNP</div>
-    <h1>Guía del registrador</h1>
-    <p>Vigilancia epidemiológica · Área de Epidemiología · DIRSAPOL</p>
-    <p class="guia-portada-fecha">Actualizada el 04/11/2026</p>
-    <div class="guia-portada-indice">
-      <div class="eyebrow">Contenido</div>
-      <ol>
-        <?php foreach ($indice as $ancla => [$titulo]): ?><li><a href="#<?= e($ancla) ?>"><?= e($titulo) ?></a></li><?php endforeach; ?>
-      </ol>
-    </div>
-  </div>
-
-  <header class="guia-cab">
-    <div>
-      <div class="page-title">Guía del registrador</div>
-      <div class="page-desc">Cómo registrar y notificar casos en VIGÍA PNP · actualizada el 04/11/2026</div>
-    </div>
-    <div class="guia-acciones">
-      <div class="filtro-caja guia-busca">
-        <input type="search" data-guia-buscar placeholder="Buscar en la guía, por ejemplo Z21" aria-label="Buscar en la guía">
-      </div>
-      <button type="button" class="btn btn-primary" data-guia-pdf>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5M4 20h16"/></svg>
-        Guardar como PDF
-      </button>
-    </div>
-  </header>
-  <p class="guia-ayuda-pdf" data-guia-resultado aria-live="polite" hidden></p>
-
-  <div class="guia-cuerpo">
-    <nav class="guia-indice" aria-label="Contenido de la guía" data-guia-indice>
-      <div class="eyebrow">Contenido</div>
-      <ul>
-        <?php foreach ($indice as $ancla => [$titulo, $subs]): ?>
-          <li>
-            <a href="#<?= e($ancla) ?>" data-seccion="<?= e($ancla) ?>"><?= e($titulo) ?></a>
-            <?php if ($subs): ?>
-              <ul>
-                <?php foreach ($subs as $subAncla => $subTitulo): ?><li><a href="#<?= e($subAncla) ?>" data-seccion="<?= e($subAncla) ?>"><?= e($subTitulo) ?></a></li><?php endforeach; ?>
-              </ul>
-            <?php endif; ?>
-          </li>
-        <?php endforeach; ?>
-      </ul>
-    </nav>
-
-    <article class="guia-contenido">
 
       <section class="guia-seccion" id="empezar" data-bloque>
         <h2>Antes de empezar</h2>
@@ -427,8 +368,4 @@ $icoInfo = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="
         <div class="guia-alerta"><?= $icoAviso ?><div><b>Si aparece un error del sistema</b>, anote el <b>código</b> que muestra, por ejemplo E-00042, y envíelo al Área de Epidemiología junto con lo que estaba haciendo. No envíe datos de pacientes por correo ni por mensajes: con el código de la ficha basta.</div></div>
       </section>
 
-      <p class="guia-sin-resultados" data-guia-vacio hidden>No encontramos eso en la guía. Pruebe con otra palabra o con el código CIE-10.</p>
-    </article>
-  </div>
-</div>
-<script src="<?= e(asset('/js/guia.js')) ?>"></script>
+<?php require __DIR__ . '/_fin.php'; ?>

@@ -85,7 +85,7 @@
   var tituloOriginal = document.title;
   window.addEventListener('beforeprint', function () {
     if (buscador.value !== '') { buscador.value = ''; filtrar(); }
-    document.title = 'Guía del registrador - VIGÍA PNP';
+    document.title = guia.dataset.guiaTitulo;
   });
   window.addEventListener('afterprint', function () { document.title = tituloOriginal; });
   guia.querySelector('[data-guia-pdf]').addEventListener('click', function () { window.print(); });

@@ -4,6 +4,7 @@
 .guia-acciones{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .guia-busca{width:290px;max-width:100%}
 .guia-busca input{width:100%;border:0;background:none;color:var(--ink);font:inherit;font-size:13px;outline:none}
+.guia-pestanas{margin:0 0 16px}
 .guia-ayuda-pdf{margin:-6px 0 14px;font-size:13px;color:var(--muted)}
 .guia-cuerpo{display:grid;grid-template-columns:232px minmax(0,1fr);gap:28px;align-items:start}
 
@@ -85,7 +86,7 @@
     --line:#D8DFE4;--line-2:#E5EAEE;--accent:#0E7A6E;--accent-soft:#E3F1EE;--accent-deep:#0A5A51;--s-probable:#C2622D;
     color:#243441;
   }
-  .toast,.guia-cab,.guia-indice,.guia-ir,.guia-ayuda-pdf,.guia-sin-resultados{display:none!important}
+  .toast,.guia-cab,.guia-pestanas,.guia-indice,.guia-ir,.guia-ayuda-pdf,.guia-sin-resultados{display:none!important}
   .guia-cuerpo{display:block}
   .guia-contenido{max-width:none;font-size:10.5pt;line-height:1.5}
   [data-bloque][hidden]{display:block!important}
