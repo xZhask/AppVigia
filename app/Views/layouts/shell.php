@@ -159,15 +159,8 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
   <!-- ============ SIDEBAR ============ -->
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="brand-mark">
-        <!-- Marca «Caso índice» (public/logo-vigia.svg; PETICION_MARCA_VIGIA.md) -->
-        <svg class="marca-vigia" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="5.2" cy="7.5" r="2.6" stroke="currentColor" stroke-width="1.7"/>
-          <circle cx="18.4" cy="7.2" r="2.6" stroke="currentColor" stroke-width="1.7"/>
-          <circle cx="4.8" cy="16.6" r="2.6" stroke="currentColor" stroke-width="1.7"/>
-          <circle cx="18.8" cy="16.8" r="2.6" stroke="currentColor" stroke-width="1.7"/>
-          <circle cx="12" cy="12" r="3.4" fill="currentColor"/>
-        </svg>
+      <div class="marca-azulejo">
+        <img src="<?= e(asset('/img/logo-vigia-spnp-color.svg')) ?>" alt="" width="40" height="39">
       </div>
       <div>
         <div class="brand-name">VIGÍA PNP</div>

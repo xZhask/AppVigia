@@ -1,5 +1,8 @@
 # Petición · Identidad visual de VIGÍA PNP
 
+> Reemplazada el 2026-11-04 por el logo del búho (`public/img/logo-vigia-spnp.svg` y
+> su versión a color). Se conserva como historia de la marca «Caso índice».
+
 Reemplazar la marca actual (pulso de electrocardiograma) por la marca **Caso índice**.
 
 Es un cambio acotado y visual. No toca el motor de fichas, el manifiesto, la base de

@@ -91,7 +91,8 @@
   .guia-contenido{max-width:none;font-size:10.5pt;line-height:1.5}
   [data-bloque][hidden]{display:block!important}
 
-  .guia-portada{display:block;break-after:page;padding-top:42mm}
+  .guia-portada{display:block;break-after:page;padding-top:12mm}
+  .guia-portada::before{content:"";display:block;height:4px;margin-bottom:26mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#E5A002}
   .guia-portada-marca{margin-top:14px;font-size:12pt;font-weight:700;letter-spacing:.14em;color:var(--accent-deep)}
   .guia-portada h1{font-family:"IBM Plex Serif",serif;font-size:30pt;font-weight:500;color:#14202B;margin:6px 0 8px}
   .guia-portada p{margin:0;font-size:11pt;color:var(--muted)}

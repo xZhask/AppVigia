@@ -16,7 +16,7 @@ $icoInfo = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="
 
 <div class="guia" data-guia data-guia-titulo="<?= e($guiaTitulo) ?> - VIGÍA PNP">
   <div class="guia-portada">
-    <img src="<?= e(asset('/logo-vigia.svg')) ?>" alt="" width="56" height="56">
+    <img src="<?= e(asset('/img/logo-vigia-spnp-color.svg')) ?>" alt="" width="110" height="108">
     <div class="guia-portada-marca">VIGÍA PNP</div>
     <h1><?= e($guiaTitulo) ?></h1>
     <p>Vigilancia epidemiológica · Área de Epidemiología · DIRSAPOL</p>

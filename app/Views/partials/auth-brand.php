@@ -1,14 +1,7 @@
 <section class="auth-brand">
   <div class="auth-brand-top">
-    <div class="auth-mark">
-      <!-- Marca «Caso índice» (public/logo-vigia.svg; PETICION_MARCA_VIGIA.md) -->
-      <svg class="marca-vigia" width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="5.2" cy="7.5" r="2.6" stroke="currentColor" stroke-width="1.7"/>
-        <circle cx="18.4" cy="7.2" r="2.6" stroke="currentColor" stroke-width="1.7"/>
-        <circle cx="4.8" cy="16.6" r="2.6" stroke="currentColor" stroke-width="1.7"/>
-        <circle cx="18.8" cy="16.8" r="2.6" stroke="currentColor" stroke-width="1.7"/>
-        <circle cx="12" cy="12" r="3.4" fill="currentColor"/>
-      </svg>
+    <div class="marca-azulejo marca-azulejo-grande">
+      <img src="<?= e(asset('/img/logo-vigia-spnp-color.svg')) ?>" alt="" width="60" height="59">
     </div>
     <div>
       <div class="auth-wordmark">VIGÍA <span class="auth-wordmark-pnp">PNP</span></div>

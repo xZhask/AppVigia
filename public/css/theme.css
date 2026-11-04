@@ -1798,15 +1798,6 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
   .grafico-hoja-h{display:block}
 }
 
-/* Marca «Caso índice» (2026-10-30, PETICION_MARCA_VIGIA.md): el SVG usa
-   currentColor; el color lo da esta clase, blanco sobre el contenedor verde
-   (.brand-mark y .auth-mark) en modo claro y oscuro. */
-.marca-vigia{display:block;color:#fff}
-
-/* Login (2026-10-30, pedido del usuario): «PNP» del wordmark en el verde del
-   panel (el mismo de .auth-statement h1 em); el resto del lockup no cambia. */
-.auth-wordmark-pnp{color:#6FCBB9}
-
 /* Botón del formulario en envío (public/js/envio-unico.js). */
 [aria-busy="true"]:is(.btn, button){cursor:progress;opacity:.7}
 
@@ -1830,3 +1821,22 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
 .campo-destacado-ayuda{margin:8px 0 0;font-size:12px;color:var(--ink-2)}
 .campo-destacado:not(:has(option[value=""]:checked)){background:transparent;border-color:var(--line);border-left-color:var(--accent)}
 .campo-destacado:not(:has(option[value=""]:checked)) .campo-destacado-ayuda{display:none}
+
+/* Logo del búho (2026-11-04). Los colores base no cambian: el oro de los laureles
+   y el rojo de la bandera son solo detalles de marca. No usar el oro como texto
+   sobre fondo claro ni el rojo para otra cosa: en este sistema el rojo es alerta. */
+:root{--oro:#F4B103;--rojo-peru:#D91023}
+.marca-azulejo{
+  width:46px;height:46px;border-radius:11px;flex-shrink:0;background:#fff;
+  display:grid;place-items:center;box-shadow:0 0 0 1px rgba(255,255,255,.08);
+}
+.marca-azulejo img{display:block}
+.marca-azulejo-grande{width:68px;height:68px;border-radius:15px}
+.sidebar::before,.auth-brand::before{
+  content:"";display:block;height:3px;flex-shrink:0;
+  background:linear-gradient(90deg,var(--rojo-peru) 33.33%,#fff 33.33% 66.66%,var(--rojo-peru) 66.66%);
+}
+.auth-brand::before{position:absolute;top:0;left:0;right:0;height:4px;z-index:3}
+.nav-item.active::before{background:var(--oro)}
+.nav-item.active svg{color:var(--oro)}
+.auth-wordmark-pnp,.auth-statement h1 em{color:var(--oro)}
