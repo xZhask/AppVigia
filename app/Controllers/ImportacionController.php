@@ -29,7 +29,9 @@ class ImportacionController extends Controller
 {
     private const ROLES_REGISTRO = ['ADMIN', 'REGISTRADOR'];
 
-    /** Encabezados fijos de la plantilla, en orden. */
+    /** Encabezados fijos de la plantilla, en orden. */
+    private const TIPOS_NO_IMPORTABLES = ['MATRIZ', 'GRUPO_SI_NO', 'SI_NO_FECHA', 'SI_NO', 'CRONOLOGIA'];
+
     private const COLUMNAS_FIJAS = [
         'fecha_notif', 'tipo_doc', 'num_doc', 'apellido_paterno', 'apellido_materno', 'nombres', 'sexo', 'fecha_nac',
         'ubigeo', 'fecha_inicio_sintomas', 'condicion', 'grado', 'situacion_pnp', 'categoria_pnp', 'cip',
@@ -153,7 +155,7 @@ class ImportacionController extends Controller
             $indiceColumna[trim(mb_strtolower($celda['valor']))] = $i;
         }
 
-        $camposDef = CampoDef::porEnfermedad($enfermedadId);
+        $camposDef = $this->camposImportables($enfermedadId);
         $filasDatos = array_slice($filasCrudas, 2);
 
         $filasValidas = [];
@@ -595,7 +597,20 @@ class ImportacionController extends Controller
 
     private function camposConCatalogo(int $enfermedadId): array
     {
-        return array_values(CampoDef::porEnfermedad($enfermedadId));
+        return array_values($this->camposImportables($enfermedadId));
+    }
+
+    /**
+     * Sin los campos compuestos: se guardan como varias respuestas, no caben en
+     * una celda y se completan editando la ficha (2026-11-04: la pantalla daba
+     * un aviso con cada uno y la plantilla los guardaba como texto suelto).
+     */
+    private function camposImportables(int $enfermedadId): array
+    {
+        return array_filter(
+            CampoDef::porEnfermedad($enfermedadId),
+            fn(array $campo): bool => !in_array($campo['tipo'], self::TIPOS_NO_IMPORTABLES, true)
+        );
     }
 
     private function ejemploParaCampo(array $campo): string

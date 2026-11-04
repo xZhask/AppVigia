@@ -76,7 +76,7 @@ $etiquetasTipo = [
         </tbody>
       </table>
     </div>
-    <p class="hint" style="margin-top:10px">La fila 2 de la plantilla es un ejemplo: se ignora siempre al importar, sin importar lo que contenga. Tus datos empiezan en la fila 3.</p>
+    <p class="hint" style="margin-top:10px">La fila 2 de la plantilla es un ejemplo: se ignora siempre al importar, sin importar lo que contenga. Tus datos empiezan en la fila 3. Las tablas y los grupos de preguntas Sí/No de la ficha no están en la plantilla: se completan después, editando cada ficha.</p>
   </div>
 </div>
 

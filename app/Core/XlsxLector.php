@@ -124,7 +124,10 @@ class XlsxLector
         $rels = self::cargarXml($relsXml);
         foreach ($rels->Relationship as $rel) {
             if ((string) $rel['Id'] === $rId) {
-                return 'xl/' . ltrim((string) $rel['Target'], '/');
+                // Relativa a xl/ o absoluta desde la raíz del zip (/xl/...): las dos son
+                // válidas; Excel suele escribir la primera y otras herramientas, la segunda.
+                $destino = (string) $rel['Target'];
+                return str_starts_with($destino, '/') ? ltrim($destino, '/') : 'xl/' . $destino;
             }
         }
 
