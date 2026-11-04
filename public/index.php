@@ -63,6 +63,9 @@ if (!in_array($rutaSolicitada, $rutasPublicas, true) && !Auth::estaAutenticado()
 }
 
 if (Auth::estaAutenticado()) {
+    if (!Auth::sesionVigente()) {
+        Auth::expulsar('Tu contraseña cambió. Vuelve a ingresar con la nueva.');
+    }
     $usuario = Auth::usuario();
     $esRutaPermitidaIncompleto = in_array($rutaSolicitada, ['perfil/completar', 'logout']);
     if ($usuario['perfil_incompleto'] && !$esRutaPermitidaIncompleto) {
@@ -101,6 +104,12 @@ $router->get('/perfil/completar', function () {
 });
 $router->post('/perfil/completar', function () {
     (new \App\Controllers\PerfilController())->procesarCompletar();
+});
+$router->get('/perfil/contrasena', function () {
+    (new \App\Controllers\PerfilController())->mostrarContrasena();
+});
+$router->post('/perfil/contrasena', function () {
+    (new \App\Controllers\PerfilController())->procesarContrasena();
 });
 
 // ---------- Operación ----------

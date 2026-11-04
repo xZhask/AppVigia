@@ -65,6 +65,7 @@ $navItems = [
     ['ruta' => 'catalogos/enfermedades',     'etiqueta' => 'Enfermedades',     'crumb' => 'Enfermedades'],
     ['ruta' => 'catalogos/usuarios',         'etiqueta' => 'Usuarios',         'crumb' => 'Usuarios'],
     ['ruta' => 'sistema/errores',            'etiqueta' => 'Errores',          'crumb' => 'Errores del sistema'],
+    ['ruta' => 'perfil/contrasena',          'etiqueta' => 'Cambiar contraseña', 'crumb' => 'Cambiar contraseña'],
 ];
 
 $crumbActual = 'Panel';
@@ -259,7 +260,10 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
     <div class="sidebar-foot">
       <div class="avatar"><?= e(iniciales($usuarioActual['nombre'] ?? '')) ?></div>
       <div class="who"><?= e($usuarioActual['nombre'] ?? '') ?><small><?= e($rolesEtiqueta[$usuarioActual['rol'] ?? ''] ?? '') ?></small></div>
-      <form method="post" action="/logout" style="margin-left:auto" data-envio-libre>
+      <a class="icon-btn" href="/perfil/contrasena" title="Cambiar contraseña" aria-label="Cambiar contraseña" style="margin-left:auto;flex-shrink:0;background:transparent;border-color:var(--sidebar-line);color:var(--sidebar-text)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="5.5" cy="10.5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M7.7 8.3 13.5 2.5M11 5l2 2M9.5 6.5l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </a>
+      <form method="post" action="/logout" style="flex-shrink:0" data-envio-libre>
         <?= Csrf::campoOculto() ?>
         <button class="icon-btn" type="submit" title="Cerrar sesión" style="background:transparent;border-color:var(--sidebar-line);color:var(--sidebar-text)">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2.5H3.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M13 8H6.5M13 8l-2.5-2.3M13 8l-2.5 2.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>

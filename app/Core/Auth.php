@@ -52,8 +52,57 @@ class Auth
             'persona_id'             => $fila['persona_id'] !== null ? (int) $fila['persona_id'] : null,
             'perfil_incompleto'      => (int) ($fila['perfil_incompleto'] ?? 0),
         ];
+        $_SESSION['_huella_clave'] = self::huella((string) $fila['password_hash']);
 
         return true;
+    }
+
+    /**
+     * Una sesión vale mientras la contraseña sea la misma con que se abrió:
+     * al cambiarla (o al asignarla el ADMIN, o restablecerla), las sesiones
+     * abiertas en otros equipos dejan de valer. Sin columna nueva: se compara
+     * una huella del hash guardado. Las sesiones abiertas antes de este cambio
+     * no traen huella y la toman en su siguiente petición.
+     */
+    public static function sesionVigente(): bool
+    {
+        $hash = self::hashActual();
+        if ($hash === null) {
+            return false;
+        }
+        if (!isset($_SESSION['_huella_clave'])) {
+            $_SESSION['_huella_clave'] = self::huella($hash);
+        }
+
+        return hash_equals($_SESSION['_huella_clave'], self::huella($hash));
+    }
+
+    /** Tras cambiar la contraseña propia: esta sesión sigue, las demás no. */
+    public static function renovarHuella(): void
+    {
+        $_SESSION['_huella_clave'] = self::huella((string) self::hashActual());
+    }
+
+    /** Cierra la sesión y lleva al ingreso con un aviso. */
+    public static function expulsar(string $aviso): void
+    {
+        self::cerrarSesion();
+        Session::iniciar();
+        $_SESSION['_error_login'] = $aviso;
+        header('Location: /login');
+        exit;
+    }
+
+    private static function hashActual(): ?string
+    {
+        $fila = Usuario::buscar((int) (self::usuario()['id'] ?? 0));
+
+        return $fila ? (string) $fila['password_hash'] : null;
+    }
+
+    private static function huella(string $hash): string
+    {
+        return hash('sha256', $hash);
     }
 
     public static function cerrarSesion(): void

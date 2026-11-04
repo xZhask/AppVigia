@@ -130,6 +130,9 @@ class UsuariosController extends Controller
         unset($datos['clave'], $datos['tipo_doc'], $datos['num_doc'], $datos['apellido_paterno'], $datos['apellido_materno'], $datos['nombres'], $datos['mostrar_manual']);
 
         Usuario::actualizar((int) $id, $datos);
+        if ((int) $id === (int) Auth::usuario()['id']) {
+            Auth::renovarHuella();
+        }
         Flash::set('Usuario actualizado.');
         header('Location: /catalogos/usuarios');
         exit;
