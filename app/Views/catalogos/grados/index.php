@@ -5,7 +5,7 @@ $pestanas = [
 ];
 $etiquetasCategoria = [
     'OFICIAL_GENERAL' => 'Oficial general', 'OFICIAL_SUPERIOR' => 'Oficial superior',
-    'OFICIAL_SUBALTERNO' => 'Oficial subalterno', 'SUBOFICIAL' => 'Suboficial', 'EMPLEADO_CIVIL' => 'Empleado civil',
+    'OFICIAL_SUBALTERNO' => 'Oficial subalterno', 'SUBOFICIAL' => 'Suboficial',
 ];
 ?>
 <div class="page-head">
@@ -31,7 +31,7 @@ $etiquetasCategoria = [
   </div>
   <div style="overflow-x:auto">
   <table id="tabla-grados">
-    <thead><tr><th>Jerarquía</th><th>Abreviatura</th><th>Nombre</th><th>Categoría</th><th></th></tr></thead>
+    <thead><tr><th>Jerarquía</th><th>Abreviatura</th><th>Nombre</th><th>Nivel</th><th></th></tr></thead>
     <tbody>
       <?php if (empty($grados)): ?>
         <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px 16px">No hay grados registrados todavía.</td></tr>
@@ -41,7 +41,7 @@ $etiquetasCategoria = [
           <td class="mono"><?= (int) $grado['jerarquia'] ?></td>
           <td class="mono"><?= e($grado['abreviatura']) ?></td>
           <td class="pt-name"><?= e($grado['nombre']) ?></td>
-          <td><?= e($etiquetasCategoria[$grado['categoria']] ?? $grado['categoria']) ?></td>
+          <td><?= e($etiquetasCategoria[$grado['nivel']] ?? $grado['nivel']) ?></td>
           <td>
             <div class="row-actions">
               <a class="ra" title="Editar" href="/catalogos/grados/<?= (int) $grado['id'] ?>/editar">

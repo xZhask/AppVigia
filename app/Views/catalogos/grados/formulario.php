@@ -38,14 +38,13 @@ $accion = $esEdicion ? '/catalogos/grados/' . (int) $grado['id'] : '/catalogos/g
           <?php if (isset($errores['jerarquia'])): ?><span class="hint err"><?= e($errores['jerarquia']) ?></span><?php endif; ?>
         </div>
         <div class="field wide">
-          <label class="fl">Categoría <span class="req">*</span></label>
-          <div class="control <?= isset($errores['categoria']) ? 'err' : '' ?>">
-            <select name="categoria">
-              <option value="OFICIAL_GENERAL" <?= seleccionado($grado['categoria'], 'OFICIAL_GENERAL') ?>>Oficial general</option>
-              <option value="OFICIAL_SUPERIOR" <?= seleccionado($grado['categoria'], 'OFICIAL_SUPERIOR') ?>>Oficial superior</option>
-              <option value="OFICIAL_SUBALTERNO" <?= seleccionado($grado['categoria'], 'OFICIAL_SUBALTERNO') ?>>Oficial subalterno</option>
-              <option value="SUBOFICIAL" <?= seleccionado($grado['categoria'], 'SUBOFICIAL') ?>>Suboficial</option>
-              <option value="EMPLEADO_CIVIL" <?= seleccionado($grado['categoria'], 'EMPLEADO_CIVIL') ?>>Empleado civil</option>
+          <label class="fl">Nivel <span class="req">*</span></label>
+          <div class="control <?= isset($errores['nivel']) ? 'err' : '' ?>">
+            <select name="nivel">
+              <option value="OFICIAL_GENERAL" <?= seleccionado($grado['nivel'], 'OFICIAL_GENERAL') ?>>Oficial general</option>
+              <option value="OFICIAL_SUPERIOR" <?= seleccionado($grado['nivel'], 'OFICIAL_SUPERIOR') ?>>Oficial superior</option>
+              <option value="OFICIAL_SUBALTERNO" <?= seleccionado($grado['nivel'], 'OFICIAL_SUBALTERNO') ?>>Oficial subalterno</option>
+              <option value="SUBOFICIAL" <?= seleccionado($grado['nivel'], 'SUBOFICIAL') ?>>Suboficial</option>
             </select>
           </div>
         </div>

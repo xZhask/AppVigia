@@ -59,7 +59,10 @@ $nombresNiveles = [
     'EMPLEADO_CIVIL' => 'Empleados civiles',
 ];
 $tiposFormacion = array_filter($grados, [\App\Models\GradoPnp::class, 'esDeFormacion']);
-$gradosEscalafon = array_filter($grados, fn(array $grado): bool => !\App\Models\GradoPnp::esDeFormacion($grado));
+// Un grado que ya no se ofrece sigue en la lista de quien ya lo tiene, para que
+// editar su ficha no se lo borre.
+$gradosEscalafon = array_filter($grados, fn(array $grado): bool => \App\Models\GradoPnp::esDelEscalafon($grado)
+    || (!\App\Models\GradoPnp::esDeFormacion($grado) && (int) $grado['id'] === (int) $valoresPnp['grado_id']));
 ?>
 <div class="eyebrow" style="margin-bottom:11px">Condición del paciente</div>
 

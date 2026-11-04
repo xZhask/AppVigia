@@ -62,7 +62,7 @@ class Consolidado
                 'valores' => ['ARMAS' => 'Armas', 'SERVICIOS' => 'Servicios', 'ASIMILADO' => 'Asimilado']],
             'nivel'           => ['etiqueta' => 'Nivel de grado PNP', 'sql' => "COALESCE(g.nivel, 'SIN_DATO')", 'columna' => true,
                 'valores' => ['OFICIAL_GENERAL' => 'Oficial general', 'OFICIAL_SUPERIOR' => 'Oficial superior', 'OFICIAL_SUBALTERNO' => 'Oficial subalterno',
-                              'SUBOFICIAL' => 'Suboficial', 'EMPLEADO_CIVIL' => 'Empleado civil', 'CADETE' => 'Cadete', 'ALUMNO' => 'Alumno']],
+                              'SUBOFICIAL' => 'Suboficial', 'CADETE' => 'Cadete', 'ALUMNO' => 'Alumno']],
         ];
     }
 

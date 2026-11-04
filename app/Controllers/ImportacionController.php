@@ -391,6 +391,8 @@ class ImportacionController extends Controller
                 $errores[] = 'grado: con condicion EN_FORMACION debe ser Cad. o Al.';
             } elseif ($esEfectivo && GradoPnp::esDeFormacion($grado)) {
                 $errores[] = 'grado: Cad. y Al. van con condicion EN_FORMACION.';
+            } elseif ($esEfectivo && !GradoPnp::esDelEscalafon($grado)) {
+                $errores[] = 'grado: abreviatura no reconocida.';
             }
         }
 

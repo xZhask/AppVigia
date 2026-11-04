@@ -10,7 +10,7 @@ use PDOException;
 
 class GradosController extends Controller
 {
-    private const CATEGORIAS = ['OFICIAL_GENERAL', 'OFICIAL_SUPERIOR', 'OFICIAL_SUBALTERNO', 'SUBOFICIAL', 'EMPLEADO_CIVIL'];
+    private const CATEGORIAS = ['OFICIAL_GENERAL', 'OFICIAL_SUPERIOR', 'OFICIAL_SUBALTERNO', 'SUBOFICIAL'];
     private const RUTA = 'catalogos/grados';
 
     public function index(): void
@@ -20,7 +20,7 @@ class GradosController extends Controller
         $this->vista('catalogos/grados/index', [
             'tituloVista' => 'Grados PNP',
             'rutaActual'  => self::RUTA,
-            'grados'      => array_filter(GradoPnp::todos('jerarquia'), fn(array $grado): bool => !GradoPnp::esDeFormacion($grado)),
+            'grados'      => array_filter(GradoPnp::todos('jerarquia'), [GradoPnp::class, 'esDelEscalafon']),
         ]);
     }
 
@@ -31,7 +31,7 @@ class GradosController extends Controller
         $this->vista('catalogos/grados/formulario', [
             'tituloVista' => 'Nuevo grado PNP',
             'rutaActual'  => self::RUTA,
-            'grado'       => ['id' => null, 'abreviatura' => '', 'nombre' => '', 'categoria' => 'SUBOFICIAL', 'jerarquia' => ''],
+            'grado'       => ['id' => null, 'abreviatura' => '', 'nombre' => '', 'nivel' => 'SUBOFICIAL', 'jerarquia' => ''],
             'errores'     => [],
         ]);
     }
@@ -122,7 +122,7 @@ class GradosController extends Controller
         $datos = [
             'abreviatura' => trim($entrada['abreviatura'] ?? ''),
             'nombre'      => trim($entrada['nombre'] ?? ''),
-            'categoria'   => $entrada['categoria'] ?? '',
+            'nivel'       => $entrada['nivel'] ?? '',
             'jerarquia'   => (int) ($entrada['jerarquia'] ?? 0),
         ];
 
@@ -133,8 +133,8 @@ class GradosController extends Controller
         if ($datos['nombre'] === '') {
             $errores['nombre'] = 'El nombre es obligatorio.';
         }
-        if (!in_array($datos['categoria'], self::CATEGORIAS, true)) {
-            $errores['categoria'] = 'Selecciona una categoría válida.';
+        if (!in_array($datos['nivel'], self::CATEGORIAS, true)) {
+            $errores['nivel'] = 'Selecciona un nivel válido.';
         }
         if ($datos['jerarquia'] < 1) {
             $errores['jerarquia'] = 'La jerarquía debe ser un número mayor a 0 (1 = mayor rango).';

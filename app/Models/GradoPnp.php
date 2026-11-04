@@ -17,6 +17,15 @@ class GradoPnp extends Model
         return in_array($grado['nivel'] ?? '', ['CADETE', 'ALUMNO'], true);
     }
 
+    /**
+     * Grados que se ofrecen a un efectivo. Empleado civil salió de la lista el
+     * 2026-11-04 (pedido del usuario); su fila sigue por quien ya lo tuviera.
+     */
+    public static function esDelEscalafon(array $grado): bool
+    {
+        return !self::esDeFormacion($grado) && ($grado['nivel'] ?? '') !== 'EMPLEADO_CIVIL';
+    }
+
     public static function buscarPorAbreviatura(string $abreviatura): ?array
     {
         $consulta = Database::conexion()->prepare('SELECT * FROM grado_pnp WHERE abreviatura = :abrev');
