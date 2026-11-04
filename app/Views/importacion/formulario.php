@@ -54,11 +54,11 @@ $etiquetasTipo = [
           <tr><td class="mono">fecha_nac</td><td>Fecha dd/mm/aaaa</td><td>No</td></tr>
           <tr><td class="mono">ubigeo</td><td>Código INEI de distrito, 6 dígitos</td><td>Sí</td></tr>
           <tr><td class="mono">fecha_inicio_sintomas</td><td>Fecha dd/mm/aaaa</td><td>Sí</td></tr>
-          <tr><td class="mono">condicion</td><td>EFECTIVO, DERECHOHABIENTE o PARTICULAR</td><td>No (por defecto PARTICULAR)</td></tr>
-          <tr><td class="mono">grado</td><td>Abreviatura exacta (Cap., SO1, Cmdte...) — solo si condicion es EFECTIVO</td><td>No</td></tr>
+          <tr><td class="mono">condicion</td><td>EFECTIVO, EN_FORMACION, DERECHOHABIENTE o PARTICULAR</td><td>No (por defecto PARTICULAR)</td></tr>
+          <tr><td class="mono">grado</td><td>Abreviatura exacta (Cap., SO1, Cmdte...) si condicion es EFECTIVO; Cad. o Al. si es EN_FORMACION</td><td>No</td></tr>
           <tr><td class="mono">situacion_pnp</td><td>ACTIVIDAD, RETIRO o DISPONIBILIDAD — solo si condicion es EFECTIVO</td><td>No</td></tr>
           <tr><td class="mono">categoria_pnp</td><td>ARMAS, SERVICIOS o ASIMILADO — solo si condicion es EFECTIVO</td><td>No</td></tr>
-          <tr><td class="mono">cip</td><td>Texto libre — solo si condicion es EFECTIVO</td><td>No</td></tr>
+          <tr><td class="mono">cip</td><td>Texto libre — solo si condicion es EFECTIVO o EN_FORMACION</td><td>No</td></tr>
           <tr><td class="mono">vinculo_titular</td><td>CONYUGE, CONVIVIENTE, HIJO, PADRE, MADRE u OTRO — solo si condicion es DERECHOHABIENTE</td><td>No</td></tr>
           <tr><td class="mono">doc_titular</td><td>DNI del efectivo del que depende — solo si condicion es DERECHOHABIENTE. Si no se encuentra, se deja sin vincular</td><td>No</td></tr>
           <?php foreach ($camposDinamicos as $campo): ?>

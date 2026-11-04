@@ -32,6 +32,9 @@ class FormatoPnp
 
     private const SITUACION_PNP = ['ACTIVIDAD' => 'ACT', 'RETIRO' => 'RET', 'DISPONIBILIDAD' => 'DISP'];
 
+    /** Personal en formación (2026-11-04): sin grado ni situación, su tipo va en ACT/RET. */
+    private const TIPO_FORMACION = ['CADETE' => 'CAD', 'ALUMNO' => 'AL'];
+
     private const SERVICIOS = ['CONSULTA_EXTERNA' => 'Cons. externa', 'EMERGENCIA' => 'Emergencia', 'HOSPITALIZACION' => 'Hospitalización'];
 
     /**
@@ -145,7 +148,7 @@ class FormatoPnp
                     e.cie10 AS enfermedad_cie10, e.modalidad, e.nombre AS enfermedad,
                     p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                     p.condicion, p.cip, p.situacion_pnp, p.direccion, p.n_historia_clinica,
-                    g.abreviatura AS grado, un.nombre AS unidad, d.nombre AS distrito_residencia, prr.nombre AS provincia_residencia,
+                    g.abreviatura AS grado, g.nivel AS grado_nivel, un.nombre AS unidad, d.nombre AS distrito_residencia, prr.nombre AS provincia_residencia,
                     lcd.nombre AS lugar_distrito, lcp.nombre AS lugar_provincia, es.nombre AS establecimiento
                FROM caso c
                JOIN enfermedad e       ON e.id = c.enfermedad_id
@@ -268,7 +271,9 @@ class FormatoPnp
 
         return [
             'grado'    => $efectivo ? (string) $fila['grado'] : '',
-            'act_ret'  => $efectivo ? (self::SITUACION_PNP[$fila['situacion_pnp'] ?? ''] ?? '') : '',
+            'act_ret'  => $fila['condicion'] === 'EN_FORMACION'
+                ? (self::TIPO_FORMACION[$fila['grado_nivel'] ?? ''] ?? '')
+                : ($efectivo ? (self::SITUACION_PNP[$fila['situacion_pnp'] ?? ''] ?? '') : ''),
             'familiar' => $fila['condicion'] === 'DERECHOHABIENTE',
         ];
     }

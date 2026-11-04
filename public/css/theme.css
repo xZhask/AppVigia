@@ -928,9 +928,9 @@
    Condición del paciente (CAMBIOS_CONDICION_PACIENTE.md)
    ============================================================ */
 .field.half{grid-column:span 2}
-/* --cond-opciones: fichas que no admiten las tres condiciones (P96 no admite
+/* --cond-opciones: fichas que no admiten todas las condiciones (P96 no admite
    efectivo PNP, nucleo_ajustes.condiciones_paciente). */
-.cond-pick{display:grid;grid-template-columns:repeat(var(--cond-opciones,3),1fr);gap:10px;margin-bottom:4px}
+.cond-pick{display:grid;grid-template-columns:repeat(var(--cond-opciones,4),1fr);gap:10px;margin-bottom:4px}
 .cond-opt{position:relative}
 .cond-opt input{position:absolute;opacity:0;width:0;height:0}
 .cond-opt label{
@@ -951,8 +951,8 @@
 }
 .cond-opt input:checked + label .cond-radio{border-color:var(--accent);border-width:5px}
 .cond-txt{min-width:0}
-.cond-name{font-size:13.5px;font-weight:500;color:var(--ink);line-height:1.3}
-.cond-desc{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.cond-name{display:block;font-size:13.5px;font-weight:500;color:var(--ink);line-height:1.3}
+.cond-desc{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
 .cond-opt input:checked + label .cond-desc{color:var(--accent-deep)}
 
 .cond-panel{margin-top:18px}

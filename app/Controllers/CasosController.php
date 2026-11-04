@@ -2197,7 +2197,7 @@ class CasosController extends Controller
 
             return $iso ?: null;
         };
-        $efectivo = $condicion === 'EFECTIVO';
+        $efectivo = in_array($condicion, ['EFECTIVO', 'EN_FORMACION'], true);
         foreach ([1, 2] as $n) {
             // El fin de un descanso puede ser futuro (va hasta la próxima semana).
             $inicio = $efectivo ? $fecha("descanso{$n}_inicio", false) : null;
@@ -3100,9 +3100,9 @@ class CasosController extends Controller
     /**
      * Lee del POST la condición del paciente y sus campos dependientes.
      * Sanea del lado servidor: solo persiste grado/situación/categoría/CIP
-     * cuando la condición es EFECTIVO, y solo vínculo/titular cuando es
-     * DERECHOHABIENTE — cualquier combinación imposible se descarta en vez
-     * de guardarse.
+     * cuando la condición es EFECTIVO, solo tipo (cadete o alumno) y CIP cuando
+     * es EN_FORMACION, y solo vínculo/titular cuando es DERECHOHABIENTE —
+     * cualquier combinación imposible se descarta en vez de guardarse.
      *
      * nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): una condición que
      * la ficha no admite (un fallecido fetal o neonatal como efectivo PNP) no
@@ -3125,9 +3125,12 @@ class CasosController extends Controller
             : 'En esta ficha la condición del paciente solo puede ser '
                 . implode(' o ', array_map(fn(string $c): string => CONDICIONES_PACIENTE[$c], $condicionesPermitidas)) . '.';
 
-        $gradoId = $_POST['grado_id'] ?? '';
+        // Personal en formación tiene su propio panel; por dentro, su tipo
+        // (Cadete, Alumno) también es una fila de grado_pnp.
+        $enFormacion = $condicion === 'EN_FORMACION';
+        $gradoId = $_POST[$enFormacion ? 'grado_formacion_id' : 'grado_id'] ?? '';
         $situacion = $_POST['situacion_pnp'] ?? '';
-        $cip = trim($_POST['cip'] ?? '');
+        $cip = trim($_POST[$enFormacion ? 'cip_formacion' : 'cip'] ?? '');
         $categoriaPnp = $_POST['categoria_pnp'] ?? '';
         $vinculoTitular = $_POST['vinculo_titular'] ?? '';
         $titularId = $_POST['titular_id'] ?? '';
@@ -3144,18 +3147,24 @@ class CasosController extends Controller
             'vinculo_titular' => null,
         ];
 
-        if ($condicion === 'EFECTIVO' && $gradoId !== '') {
-            $datos['grado_id'] = (int) $gradoId;
-
+        if ($enFormacion) {
+            $datos['cip'] = $cip !== '' ? $cip : null;
+            foreach ($grados as $g) {
+                if ((int) $g['id'] === (int) $gradoId && GradoPnp::esDeFormacion($g)) {
+                    $datos['grado_id'] = (int) $g['id'];
+                }
+            }
+        } elseif ($condicion === 'EFECTIVO' && $gradoId !== '') {
             $gradoActual = null;
             foreach ($grados as $g) {
-                if ((int) $g['id'] === $datos['grado_id']) {
+                if ((int) $g['id'] === (int) $gradoId && !GradoPnp::esDeFormacion($g)) {
                     $gradoActual = $g;
                     break;
                 }
             }
 
             if ($gradoActual) {
+                $datos['grado_id'] = (int) $gradoActual['id'];
                 if (in_array($situacion, ['ACTIVIDAD', 'RETIRO', 'DISPONIBILIDAD'], true)) {
                     $datos['situacion_pnp'] = $situacion;
                 }
@@ -3166,8 +3175,6 @@ class CasosController extends Controller
                     if (in_array($categoriaPnp, ['ARMAS', 'SERVICIOS', 'ASIMILADO'], true)) {
                         $datos['categoria_pnp'] = $categoriaPnp;
                     }
-                } elseif ($nivel === 'CADETE' || $nivel === 'ALUMNO') {
-                    $datos['cip'] = $cip !== '' ? $cip : null;
                 }
                 // EMPLEADO_CIVIL: sin categoría ni CIP.
             }

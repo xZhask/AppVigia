@@ -294,8 +294,8 @@ $accionEtiquetas = [
         <?php if (($caso['condicion'] ?? 'PARTICULAR') !== 'PARTICULAR'): ?>
           <div class="eyebrow" style="margin:18px 0 10px">Condición del paciente</div>
           <div class="fields thirds">
-            <div class="field"><label class="fl">Condición</label><div class="control" style="background:var(--paper)"><?= $caso['condicion'] === 'EFECTIVO' ? 'Efectivo PNP' : 'Derechohabiente' ?></div></div>
-            <div class="field wide"><label class="fl"><?= $caso['condicion'] === 'EFECTIVO' ? 'Detalle' : 'Vínculo' ?></label><div class="control" style="background:var(--paper)"><?= e(\App\Models\Persona::descripcionPnp($caso) ?: '—') ?></div></div>
+            <div class="field"><label class="fl">Condición</label><div class="control" style="background:var(--paper)"><?= e(CONDICIONES_PACIENTE[$caso['condicion']] ?? '') ?></div></div>
+            <div class="field wide"><label class="fl"><?= $caso['condicion'] === 'DERECHOHABIENTE' ? 'Vínculo' : 'Detalle' ?></label><div class="control" style="background:var(--paper)"><?= e(\App\Models\Persona::descripcionPnp($caso) ?: '—') ?></div></div>
           </div>
         <?php endif; ?>
       </div>

@@ -371,21 +371,26 @@ class ImportacionController extends Controller
         $condicionCelda = trim(mb_strtoupper($obtener('condicion')['valor']));
         $condicion = 'PARTICULAR';
         if ($condicionCelda !== '') {
-            if (!in_array($condicionCelda, ['EFECTIVO', 'DERECHOHABIENTE', 'PARTICULAR'], true)) {
-                $errores[] = 'condicion: debe ser EFECTIVO, DERECHOHABIENTE o PARTICULAR.';
+            if (!in_array($condicionCelda, array_keys(CONDICIONES_PACIENTE), true)) {
+                $errores[] = 'condicion: debe ser EFECTIVO, EN_FORMACION, DERECHOHABIENTE o PARTICULAR.';
             } else {
                 $condicion = $condicionCelda;
             }
         }
         $esEfectivo = $condicion === 'EFECTIVO';
         $esDerechohabiente = $condicion === 'DERECHOHABIENTE';
+        $enFormacion = $condicion === 'EN_FORMACION';
 
         $grado = null;
         $gradoCelda = trim($obtener('grado')['valor']);
-        if ($esEfectivo && $gradoCelda !== '') {
+        if (($esEfectivo || $enFormacion) && $gradoCelda !== '') {
             $grado = GradoPnp::buscarPorAbreviatura($gradoCelda);
             if (!$grado) {
                 $errores[] = 'grado: abreviatura no reconocida.';
+            } elseif ($enFormacion && !GradoPnp::esDeFormacion($grado)) {
+                $errores[] = 'grado: con condicion EN_FORMACION debe ser Cad. o Al.';
+            } elseif ($esEfectivo && GradoPnp::esDeFormacion($grado)) {
+                $errores[] = 'grado: Cad. y Al. van con condicion EN_FORMACION.';
             }
         }
 
@@ -409,7 +414,7 @@ class ImportacionController extends Controller
             }
         }
 
-        $cip = $esEfectivo ? (trim($obtener('cip')['valor']) ?: null) : null;
+        $cip = ($esEfectivo || $enFormacion) ? (trim($obtener('cip')['valor']) ?: null) : null;
 
         $vinculoTitular = null;
         $titularId = null;

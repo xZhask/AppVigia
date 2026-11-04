@@ -1,21 +1,23 @@
 <?php
 /**
  * Condición del paciente (CAMBIOS_CONDICION_PACIENTE.md): tarjetas de radio
- * EFECTIVO / DERECHOHABIENTE / PARTICULAR + campos propios de cada una.
+ * EFECTIVO / EN_FORMACION / DERECHOHABIENTE / PARTICULAR + campos propios de cada una.
  * Compartido por "Nueva ficha" y "Editar ficha" para que no diverjan.
  *
  * Variables esperadas:
- *   $condicionPaciente  'EFECTIVO'|'DERECHOHABIENTE'|'PARTICULAR'
+ *   $condicionPaciente  'EFECTIVO'|'EN_FORMACION'|'DERECHOHABIENTE'|'PARTICULAR'
  *   $valoresPnp          ['cip','situacion_pnp','grado_id','categoria_pnp',
  *                         'vinculo_titular','doc_titular','titular_id','titular_nombre']
- *   $grados              filas de grado_pnp (GradoPnp::todos('jerarquia'))
+ *   $grados              filas de grado_pnp (GradoPnp::todos('jerarquia')). Cadete y
+ *                        Alumno se ofrecen en el panel de personal en formación,
+ *                        no en la lista de grados.
  *   $enfermedad          la ficha, por nucleo_ajustes.condiciones_paciente
  *   $erroresFijos        ['condicion' => mensaje], si la condición no se admite
  *
  * nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): solo se pintan la
  * tarjeta y el panel de las condiciones que la ficha admite (un fallecido fetal
  * o neonatal no puede ser efectivo PNP). Los if van en la columna 0 para que
- * el HTML de las fichas que admiten las tres quede idéntico.
+ * el HTML de las fichas que admiten todas quede idéntico.
  *
  * Los radios se marcan con marcado() ("checked"), no con seleccionado()
  * ("selected", que solo sirve en <option>): hasta el 2026-09-14 ningún radio
@@ -54,10 +56,10 @@ $nombresNiveles = [
     'OFICIAL_SUPERIOR' => 'Oficiales superiores',
     'OFICIAL_SUBALTERNO' => 'Oficiales subalternos',
     'SUBOFICIAL' => 'Suboficiales',
-    'CADETE' => 'Personal en formación',
-    'ALUMNO' => 'Personal en formación',
     'EMPLEADO_CIVIL' => 'Empleados civiles',
 ];
+$tiposFormacion = array_filter($grados, [\App\Models\GradoPnp::class, 'esDeFormacion']);
+$gradosEscalafon = array_filter($grados, fn(array $grado): bool => !\App\Models\GradoPnp::esDeFormacion($grado));
 ?>
 <div class="eyebrow" style="margin-bottom:11px">Condición del paciente</div>
 
@@ -70,6 +72,18 @@ $nombresNiveles = [
       <span class="cond-txt">
         <span class="cond-name">Efectivo PNP</span>
         <span class="cond-desc">Titular de la Sanidad PNP</span>
+      </span>
+    </label>
+  </div>
+<?php endif; ?>
+<?php if ($admiteCondicion('EN_FORMACION')): ?>
+  <div class="cond-opt"<?= $atributosCondicionRama('EN_FORMACION') ?>>
+    <input type="radio" name="condicion" id="c-formacion" value="EN_FORMACION" <?= marcado($condicionPaciente === 'EN_FORMACION') ?>>
+    <label for="c-formacion">
+      <span class="cond-radio"></span>
+      <span class="cond-txt">
+        <span class="cond-name">Personal en formación</span>
+        <span class="cond-desc">Cadete o alumno</span>
       </span>
     </label>
   </div>
@@ -115,7 +129,7 @@ $nombresNiveles = [
           <option value="">Seleccionar…</option>
           <?php
           $grupoActual = '';
-          foreach ($grados as $grado):
+          foreach ($gradosEscalafon as $grado):
               $nombreGrupo = $nombresNiveles[$grado['nivel']] ?? $grado['nivel'];
               if ($nombreGrupo !== $grupoActual):
                   if ($grupoActual !== '') echo '</optgroup>';
@@ -155,7 +169,32 @@ $nombresNiveles = [
     </div>
     <div class="field half" id="campoCip">
       <label class="fl">CIP</label>
-      <div class="control mono"><input type="text" id="cip" name="cip" value="<?= e($valoresPnp['cip']) ?>" maxlength="12"></div>
+      <div class="control mono"><input type="text" id="cip" name="cip" value="<?= e($condicionPaciente === 'EN_FORMACION' ? '' : $valoresPnp['cip']) ?>" maxlength="12"></div>
+      <span class="hint">Carné de Identidad Personal</span>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
+<?php if ($admiteCondicion('EN_FORMACION')): ?>
+<!-- Panel: personal en formación -->
+<div class="cond-panel" id="p-formacion" <?= $condicionPaciente === 'EN_FORMACION' ? '' : 'hidden' ?>>
+  <div class="cond-title"><span class="eyebrow">Datos del personal en formación</span><span class="rule"></span></div>
+  <div class="fields thirds">
+    <div class="field">
+      <label class="fl">Tipo</label>
+      <div class="control">
+        <select id="gradoFormacion" name="grado_formacion_id" data-nosearch="true">
+          <option value="">Seleccionar…</option>
+          <?php foreach ($tiposFormacion as $tipoFormacion): ?>
+            <option value="<?= (int) $tipoFormacion['id'] ?>" <?= seleccionado($valoresPnp['grado_id'], $tipoFormacion['id']) ?>><?= e($tipoFormacion['nombre']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+    </div>
+    <div class="field half">
+      <label class="fl">CIP</label>
+      <div class="control mono"><input type="text" id="cipFormacion" name="cip_formacion" value="<?= e($condicionPaciente === 'EN_FORMACION' ? $valoresPnp['cip'] : '') ?>" maxlength="12"></div>
       <span class="hint">Carné de Identidad Personal</span>
     </div>
   </div>

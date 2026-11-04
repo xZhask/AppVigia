@@ -58,6 +58,7 @@ class Persona extends Model
     /**
      * Línea secundaria bajo el nombre según la condición del paciente:
      * - EFECTIVO: "Capitán de servicios · Situación: Actividad · CIP 12345678"
+     * - EN_FORMACION: "Cadete · CIP 12345678"
      * - DERECHOHABIENTE: "Derechohabiente (hijo) de Cap. Pérez Sosa, Luis"
      * - PARTICULAR: cadena vacía (sin línea institucional)
      *
@@ -91,6 +92,13 @@ class Persona extends Model
             }
 
             return implode(' · ', $partes);
+        }
+
+        if ($condicion === 'EN_FORMACION') {
+            return implode(' · ', array_filter([
+                trim($datos['grado_nombre'] ?? ''),
+                !empty($datos['cip']) ? 'CIP ' . $datos['cip'] : '',
+            ]));
         }
 
         if ($condicion === 'DERECHOHABIENTE') {

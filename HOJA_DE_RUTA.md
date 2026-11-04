@@ -192,6 +192,7 @@ php sql/migraciones/add_catalogos_rediseno.php
 php sql/migraciones/add_registro_pnp.php
 php sql/migraciones/add_modulo_iaas.php
 php sql/migraciones/add_registro_errores.php
+php sql/migraciones/add_personal_en_formacion.php
 php sql/migraciones/add_reniec_resultado.php
 php sql/migraciones/login_por_documento.php
 php cargar_fichas.php --apply --confirmo-apply
@@ -237,6 +238,12 @@ php sql/migraciones/set_a97_sin_fiebre_amarilla.php
   id es el código que ve el usuario (E-00042); el ADMIN los revisa en
   Catálogos > Errores (`/sistema/errores`). No guarda lo escrito en los
   formularios, solo los nombres de los campos. Se puede correr más de una vez.
+- `add_personal_en_formacion.php` (04/11, antes del cargador): decisión del
+  área, cadetes y alumnos son la condición "Personal en formación", no un
+  grado de Efectivo PNP ni titulares de un derechohabiente. Agrega EN_FORMACION
+  a `persona.condicion`, pasa a esa condición a quienes ya estaban como efectivo
+  con grado Cadete o Alumno (sin situación ni categoría) y desvincula a sus
+  derechohabientes. Se puede correr más de una vez.
 - `set_a97_sin_fiebre_amarilla.php` (30/10, después del cargador y de
   `set_clasificacion_propia.php`): decisión del usuario, "si tiene su ficha
   propia, esa es la que manda". Quita de A97 la opción "Fiebre amarilla

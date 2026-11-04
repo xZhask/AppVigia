@@ -1609,7 +1609,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   calcularEdad();
 
-  // ---------- Condición del paciente: EFECTIVO / DERECHOHABIENTE / PARTICULAR ----------
+  // ---------- Condición del paciente: EFECTIVO / EN_FORMACION / DERECHOHABIENTE / PARTICULAR ----------
   var radiosCondicion = document.querySelectorAll('input[name="condicion"]');
   var gradoId = document.getElementById('gradoId');
   var cCategoria = document.getElementById('campoCategoria');
@@ -1617,11 +1617,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var panelesCondicion = {
     EFECTIVO: document.getElementById('p-efectivo'),
+    EN_FORMACION: document.getElementById('p-formacion'),
     DERECHOHABIENTE: document.getElementById('p-derecho'),
     PARTICULAR: document.getElementById('p-particular'),
   };
   var etiquetasCondicion = {
-    EFECTIVO: 'efectivo', DERECHOHABIENTE: 'derechohabiente', PARTICULAR: 'particular',
+    EFECTIVO: 'efectivo', EN_FORMACION: 'personal en formación', DERECHOHABIENTE: 'derechohabiente', PARTICULAR: 'particular',
   };
 
   function limpiarPanel(panel) {
@@ -1648,10 +1649,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var selectedOption = gradoId.options[gradoId.selectedIndex];
     var nivel = selectedOption && selectedOption.value ? selectedOption.getAttribute('data-nivel') : '';
 
-    if (nivel === 'CADETE' || nivel === 'ALUMNO') {
-      cCategoria.hidden = true;
-      cCip.hidden = false;
-    } else if (nivel === 'EMPLEADO_CIVIL') {
+    if (nivel === 'EMPLEADO_CIVIL') {
       cCategoria.hidden = true;
       cCip.hidden = true;
     } else {
@@ -1697,7 +1695,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var visibles = opciones.filter(function (opcion) { return !opcion.hidden; });
     var selector = document.querySelector('.cond-pick');
     if (selector) {
-      if (visibles.length < 3) selector.style.setProperty('--cond-opciones', String(visibles.length));
+      if (visibles.length < opciones.length) selector.style.setProperty('--cond-opciones', String(visibles.length));
       else selector.style.removeProperty('--cond-opciones');
     }
     var marcada = document.querySelector('input[name="condicion"]:checked');
@@ -1979,16 +1977,22 @@ document.addEventListener('DOMContentLoaded', function () {
     var situacionPnp = document.getElementById('situacionPnp');
     var categoriaPnp = document.getElementById('categoriaPnp');
     var gradoId = document.getElementById('gradoId');
-    if (cipInput) cipInput.value = p.cip || '';
+    if (cipInput) cipInput.value = condicion === 'EN_FORMACION' ? '' : (p.cip || '');
     if (situacionPnp) situacionPnp.value = p.situacion_pnp || '';
     if (categoriaPnp) categoriaPnp.value = p.categoria_pnp || '';
     if (gradoId) gradoId.value = p.grado_id || '';
+    // Cadete o alumno: su tipo está en grado_id, pero con panel y CIP propios.
+    var gradoFormacion = document.getElementById('gradoFormacion');
+    var cipFormacion = document.getElementById('cipFormacion');
+    if (gradoFormacion) gradoFormacion.value = p.grado_id || '';
+    if (cipFormacion) cipFormacion.value = condicion === 'EN_FORMACION' ? (p.cip || '') : '';
     var vinculoTitular = document.getElementById('vinculoTitular');
     if (vinculoTitular) vinculoTitular.value = p.vinculo_titular || '';
     var titularId = document.getElementById('titularId');
     if (titularId) titularId.value = p.titular_id || '';
     if (window.SelectorBusqueda) {
       if (gradoId) window.SelectorBusqueda.actualizar(gradoId);
+      if (gradoFormacion) window.SelectorBusqueda.actualizar(gradoFormacion);
       if (categoriaPnp) window.SelectorBusqueda.actualizar(categoriaPnp);
       if (situacionPnp) window.SelectorBusqueda.actualizar(situacionPnp);
       if (vinculoTitular) window.SelectorBusqueda.actualizar(vinculoTitular);
@@ -4849,7 +4853,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var nota = document.querySelector('[data-solo-no-efectivo]');
   function actualizar() {
     var elegida = document.querySelector('input[name="condicion"]:checked');
-    var efectivo = !!elegida && elegida.value === 'EFECTIVO';
+    var efectivo = !!elegida && (elegida.value === 'EFECTIVO' || elegida.value === 'EN_FORMACION');
     bloque.hidden = !efectivo;
     if (nota) nota.hidden = efectivo;
   }

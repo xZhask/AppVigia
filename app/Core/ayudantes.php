@@ -950,6 +950,7 @@ function tituloInvestigador(array $enfermedad): string
  */
 const CONDICIONES_PACIENTE = [
     'EFECTIVO'        => 'Efectivo PNP',
+    'EN_FORMACION'    => 'Personal en formación',
     'DERECHOHABIENTE' => 'Derechohabiente',
     'PARTICULAR'      => 'Particular',
 ];
@@ -957,7 +958,7 @@ const CONDICIONES_PACIENTE = [
 /**
  * nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): condiciones que la
  * ficha admite, siempre en el orden de CONDICIONES_PACIENTE. Un fallecido
- * fetal o neonatal no puede ser efectivo PNP. Sin el ajuste, las tres. Con
+ * fetal o neonatal no puede ser efectivo PNP. Sin el ajuste, todas. Con
  * $valoresCampos, las de la rama elegida (ver nucleoAjuste()).
  */
 function condicionesPacientePermitidas(array $enfermedad, ?array $valoresCampos = null): array

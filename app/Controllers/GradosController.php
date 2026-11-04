@@ -20,7 +20,7 @@ class GradosController extends Controller
         $this->vista('catalogos/grados/index', [
             'tituloVista' => 'Grados PNP',
             'rutaActual'  => self::RUTA,
-            'grados'      => GradoPnp::todos('jerarquia'),
+            'grados'      => array_filter(GradoPnp::todos('jerarquia'), fn(array $grado): bool => !GradoPnp::esDeFormacion($grado)),
         ]);
     }
 

@@ -8,6 +8,15 @@ class GradoPnp extends Model
 {
     protected static string $tabla = 'grado_pnp';
 
+    /**
+     * Cadete y Alumno (2026-11-04): no son grados sino el tipo de la condición
+     * "Personal en formación". Siguen en esta tabla por su abreviatura y nivel.
+     */
+    public static function esDeFormacion(array $grado): bool
+    {
+        return in_array($grado['nivel'] ?? '', ['CADETE', 'ALUMNO'], true);
+    }
+
     public static function buscarPorAbreviatura(string $abreviatura): ?array
     {
         $consulta = Database::conexion()->prepare('SELECT * FROM grado_pnp WHERE abreviatura = :abrev');

@@ -55,7 +55,7 @@ class Consolidado
             'sexo'            => ['etiqueta' => 'Sexo', 'sql' => "COALESCE(p.sexo, 'SIN_DATO')", 'columna' => true,
                 'valores' => ['M' => 'Masculino', 'F' => 'Femenino']],
             'condicion'       => ['etiqueta' => 'Condición del paciente', 'sql' => 'p.condicion', 'columna' => true,
-                'valores' => ['EFECTIVO' => 'Efectivo PNP', 'DERECHOHABIENTE' => 'Derechohabiente', 'PARTICULAR' => 'Particular']],
+                'valores' => ['EFECTIVO' => 'Efectivo PNP', 'EN_FORMACION' => 'Personal en formación', 'DERECHOHABIENTE' => 'Derechohabiente', 'PARTICULAR' => 'Particular']],
             'clasificacion'   => ['etiqueta' => 'Clasificación', 'sql' => 'c.clasificacion', 'columna' => true,
                 'valores' => ['SOSPECHOSO' => 'Sospechoso', 'PROBABLE' => 'Probable', 'CONFIRMADO' => 'Confirmado', 'DESCARTADO' => 'Descartado']],
             'categoria_pnp'   => ['etiqueta' => 'Categoría PNP', 'sql' => "COALESCE(p.categoria_pnp, 'SIN_DATO')", 'columna' => true,

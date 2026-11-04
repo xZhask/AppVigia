@@ -1,5 +1,11 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Editado a mano el 2026-11-04 (sin regenerar). Cambio de ESQUEMA:
+--   - persona.condicion admite EN_FORMACION (personal en formacion: cadetes
+--     y alumnos). Solo ese CREATE TABLE (la tabla no lleva INSERT aqui).
+--     La proxima regeneracion desde la estacion de referencia lo incluye.
+--     Migracion: sql/migraciones/add_personal_en_formacion.php.
+--
 -- Editado a mano el 2026-10-29 (sin regenerar), segundo cambio del dia:
 --   - Ingreso con DNI y contrasena: usuario.email pasa a ser opcional (NULL)
 --     y login_intento.email se llama identificador (indice
@@ -1759,7 +1765,7 @@ CREATE TABLE `persona` (
   `fur` date DEFAULT NULL,
   `semanas_gestacion` smallint DEFAULT NULL,
   `trimestre_gestacion` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `condicion` enum('EFECTIVO','DERECHOHABIENTE','PARTICULAR') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PARTICULAR',
+  `condicion` enum('EFECTIVO','DERECHOHABIENTE','PARTICULAR','EN_FORMACION') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PARTICULAR',
   `titular_id` int DEFAULT NULL,
   `vinculo_titular` enum('CONYUGE','CONVIVIENTE','HIJO','PADRE','MADRE','OTRO') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `cip` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
