@@ -110,6 +110,9 @@ $router->get('/perfil/completar', function () {
 $router->post('/perfil/completar', function () {
     (new \App\Controllers\PerfilController())->procesarCompletar();
 });
+$router->get('/ayuda', function () {
+    (new \App\Controllers\AyudaController())->index();
+});
 $router->get('/perfil/contrasena', function () {
     (new \App\Controllers\PerfilController())->mostrarContrasena();
 });

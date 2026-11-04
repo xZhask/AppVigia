@@ -69,6 +69,7 @@ $navItems = [
     ['ruta' => 'catalogos/usuarios',         'etiqueta' => 'Usuarios',         'crumb' => 'Usuarios'],
     ['ruta' => 'sistema/errores',            'etiqueta' => 'Errores',          'crumb' => 'Errores del sistema'],
     ['ruta' => 'perfil/contrasena',          'etiqueta' => 'Cambiar contraseña', 'crumb' => 'Cambiar contraseña'],
+    ['ruta' => 'ayuda',                      'etiqueta' => 'Ayuda',            'crumb' => 'Ayuda'],
 ];
 
 $crumbActual = 'Panel';
@@ -213,6 +214,11 @@ $enIaas = fn(string $seccion) => $rutaActual === 'iaas/' . $seccion || str_start
       </a>
 
       <?php if (!$esJefeRed): ?>
+      <a class="nav-item<?= $rutaActual === 'ayuda' ? ' active' : '' ?>" href="/ayuda">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M6.7 6.8a1.9 1.9 0 1 1 2.9 1.6c-.7.4-1.1.9-1.1 1.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 12.2h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        Ayuda
+      </a>
+
       <div class="nav-label" title="Infecciones asociadas a la atención de salud">IAAS</div>
       <?php if (!$iaasMenu['sin_hosp']): ?>
       <a class="nav-item<?= $enIaas('ronda') || $enIaas('servicios') ? ' active' : '' ?>" href="/iaas/ronda">

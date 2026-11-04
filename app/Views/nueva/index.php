@@ -114,7 +114,14 @@ ob_start(); ?>
       </div>
       <p class="ctx-desc"><?= $esRegistroPnp
         ? 'Formato del Área de Epidemiología de la Dirección de Salud Policial. Si el diagnóstico tiene ficha MINSA, se notifica en esa ficha.'
-        : 'El formulario sigue la ficha modelo MINSA de esta enfermedad.' ?></p>
+        : 'El formulario sigue la ficha modelo MINSA de esta enfermedad.' ?>
+        <?php
+        $anclaGuia = $esRegistroPnp ? 'registros-pnp' : ([
+            'Z21' => 'z21', 'A50' => 'a50', 'O95' => 'o95', 'Y59.0' => 'y59', 'P96' => 'p96',
+            'Y07' => 'y07-v99', 'V99' => 'y07-v99', 'B24' => 'b24', 'A97' => 'dengue',
+        ][$enfermedad['cie10'] ?? ''] ?? 'registrar');
+        ?>
+        <a class="enlace-txt" href="/ayuda#<?= e($anclaGuia) ?>" target="_blank" rel="noopener" title="Se abre en otra pestaña: lo que escribió aquí no se pierde">¿Cómo se registra?</a></p>
     </div>
     <button type="button" class="btn btn-ghost ctx-cambiar" data-abrir-enfermedad>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg>
