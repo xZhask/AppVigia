@@ -697,6 +697,26 @@ No tocar sin una respuesta explícita.
      nueva a 2-3 correos institucionales (¿llegan a la bandeja o a spam?);
      (3) ¿se pide algún respaldo (memorando del jefe de la IPRESS) o basta
      con los datos y la llamada del ADMIN cuando dude?
+8. **"Guardar borrador" en Nueva ficha (05/11).** El botón estaba desactivado y
+   sin nada detrás, así que se ocultó (`app/Views/nueva/index.php`) hasta que
+   funcione. Se retoma después de la capacitación a las IPRESS, según lo que
+   pidan los registradores.
+   - Plan: tabla aparte `ficha_borrador`, con lo enviado por el formulario en
+     JSON y visible solo para quien lo creó; pantalla "Mis borradores"; reabrir
+     por el camino que ya repinta el formulario cuando hay errores
+     (`CasosController::crear()`), sin mostrar errores; borrar el borrador al
+     registrar la ficha. Estimación: 3 a 5 días con pruebas de las 26 fichas.
+   - Descartado: un estado más en `caso` (exige `persona_id` y `fecha_notif`, y
+     un borrador podría colarse en reportes y en el cierre semanal) y guardarlo
+     solo en el navegador (deja datos de pacientes en equipos compartidos).
+   - A cuidar: el formulario usa `campo_<id>`, y el cargador regenera esos ids
+     en REG-PNP y REG-FEB (guardar por clave o no ofrecer borrador ahí); conservar
+     los vínculos (`caso_vinculado_id`, `caso_origen_id`).
+   - **Falta decidir con Epidemiología:** (1) si los borradores pendientes solo
+     avisan o impiden cerrar la semana (propuesta: aviso); (2) advertencia visible
+     para los casos de notificación inmediata (propuesta: sí); (3) días de
+     conservación (propuesta: 7).
+   - Al activarlo: quitar el aviso de `app/Views/ayuda/registrador.php`.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 

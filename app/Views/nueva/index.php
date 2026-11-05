@@ -706,7 +706,7 @@ if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra')): ?>
           Registrar y agregar otra
         </button>
 <?php endif; ?>
-        <button class="btn btn-ghost" type="button" disabled title="Disponible en una próxima fase">Guardar borrador</button>
+<?php // "Guardar borrador" oculto hasta que funcione (2026-11-05): ver HOJA_DE_RUTA.md §3. ?>
       </div>
       <?php // Antes una tarjeta fija encima del botón principal; ahora una ayuda a pedido. ?>
       <div class="ayuda-rail">
