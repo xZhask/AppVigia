@@ -25,3 +25,8 @@ Thumbs.db
 # Archivos para subir al servidor (config con claves, SQL con el admin):
 # se generan en la estacion y se llevan a mano. Nunca a git.
 /despliegue/
+
+# Documentos Word de trabajo (informes, oficios): suelen llevar DNI, CIP y
+# otros datos personales, y el repositorio es público. Nunca a git.
+*.docx
+*.doc
