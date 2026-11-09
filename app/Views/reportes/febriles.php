@@ -5,6 +5,8 @@
  * de febriles (App\Models\FormatoPnp::febriles); se puede ver un día o toda
  * la semana.
  */
+use App\Core\Auth;
+use App\Core\Csrf;
 use App\Models\FormatoPnp;
 
 $queryFiltros = http_build_query([
@@ -23,6 +25,16 @@ for ($d = new DateTimeImmutable($rangoSemana[0]); $d->format('Y-m-d') <= $rangoS
     $dias[] = $d->format('Y-m-d');
 }
 $nombresDia = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+// Negativa diaria (2026-11-09): estado de cada día con un establecimiento elegido.
+$estadoDias = $estadoDias ?? [];
+$textoEstado = ['CON' => 'con febriles', 'SIN' => 'notificado sin febriles', 'PEND' => 'sin registro ni negativa', 'FUT' => 'aún no llega'];
+$pendientes = array_keys(array_filter($estadoDias, fn($e) => $e['estado'] === 'PEND'));
+$negativaActiva = $negativaDia && $negativaDia['anulada_en'] === null ? $negativaDia : null;
+$puedeAnularNegativa = $negativaActiva && (Auth::tieneRol('ADMIN') || (int) $negativaActiva['usuario_id'] === (int) Auth::usuario()['id']);
+$camposDia = fn(): string => Csrf::campoOculto()
+    . '<input type="hidden" name="anio" value="' . (int) $filtros['anio'] . '"><input type="hidden" name="semana" value="' . (int) $filtros['semana'] . '">'
+    . '<input type="hidden" name="establecimiento_id" value="' . (int) $filtros['establecimiento_id'] . '"><input type="hidden" name="dia" value="' . e((string) $dia) . '">'
+    . '<input type="hidden" name="base" value="' . e($base) . '">';
 ?>
 <style>
   .feb-hoja{padding:22px 24px 26px;color:var(--ink)}
@@ -40,6 +52,17 @@ $nombresDia = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   .feb-dias{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 16px}
   .feb-dias a{padding:5px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--ink-2);text-decoration:none}
   .feb-dias a.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep);font-weight:600}
+  .feb-dias a{display:inline-flex;align-items:center;gap:6px}
+  .feb-punto{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--line)}
+  .feb-punto.CON{background:var(--accent)}
+  .feb-punto.SIN{background:var(--muted)}
+  .feb-punto.PEND{background:var(--ns-warn)}
+  .feb-leyenda{display:flex;flex-wrap:wrap;gap:6px 16px;padding:0 18px 16px;font-size:11.5px;color:var(--muted)}
+  .feb-leyenda span{display:inline-flex;align-items:center;gap:6px}
+  .feb-negativa{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:0 18px 18px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);font-size:13px}
+  .feb-negativa.pend{border-color:var(--ns-warn-line);background:var(--ns-warn-bg)}
+  .feb-negativa > div{flex:1 1 260px;min-width:0}
+  .feb-negativa form{margin:0}
   .feb-firmas{display:flex;justify-content:space-around;gap:24px;margin-top:48px;font-size:11px;color:var(--ink-2)}
   .feb-firmas span{border-top:1px solid var(--ink-2);padding-top:6px;min-width:220px;text-align:center}
   @media (max-width:640px){.feb-encabezado{grid-template-columns:minmax(0,auto) minmax(0,1fr)}.feb-encabezado > .feb-rotulo{white-space:normal}.feb-encabezado > span:nth-last-child(-n+4){border-bottom:1px solid var(--line)}.feb-firmas{flex-direction:column;align-items:center}}
@@ -101,9 +124,32 @@ $nombresDia = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     <?php $enlace = fn(?string $d): string => $base . '?' . http_build_query(['anio' => $filtros['anio'], 'semana' => $filtros['semana'], 'establecimiento_id' => $filtros['establecimiento_id'] ?? '', 'dia' => $d ?? '']); ?>
     <a class="<?= $dia === null ? 'on' : '' ?>" href="<?= e($enlace(null)) ?>">Toda la semana</a>
     <?php foreach ($dias as $d): ?>
-      <a class="<?= $dia === $d ? 'on' : '' ?>" href="<?= e($enlace($d)) ?>"><?= $nombresDia[(int) date('w', strtotime($d))] ?> <?= e(date('d/m', strtotime($d))) ?></a>
+      <?php $est = $estadoDias[$d]['estado'] ?? null; ?>
+      <a class="<?= $dia === $d ? 'on' : '' ?>" href="<?= e($enlace($d)) ?>"<?= $est ? ' title="' . e($textoEstado[$est]) . '" aria-label="' . e($nombresDia[(int) date('w', strtotime($d))] . ' ' . date('d/m', strtotime($d)) . ', ' . $textoEstado[$est]) . '"' : '' ?>><?php if ($est && $est !== 'FUT'): ?><i class="feb-punto <?= $est ?>" aria-hidden="true"></i><?php endif; ?><?= $nombresDia[(int) date('w', strtotime($d))] ?> <?= e(date('d/m', strtotime($d))) ?></a>
     <?php endforeach; ?>
   </nav>
+  <?php if ($estadoDias): ?>
+    <div class="feb-leyenda"><span><i class="feb-punto CON"></i>Con febriles</span><span><i class="feb-punto SIN"></i>Sin febriles (notificado)</span><span><i class="feb-punto PEND"></i>Pendiente</span></div>
+    <?php if ($dia !== null && $dia <= date('Y-m-d') && !$casos): ?>
+      <?php if ($negativaActiva): ?>
+        <div class="feb-negativa">
+          <div><b>Día notificado sin febriles</b> el <?= e(date('d/m/Y H:i', strtotime($negativaActiva['creado_en']))) ?> por <?= e($negativaActiva['usuario_nombre']) ?>. Si registra un febril con esta fecha, la notificación se anula sola.</div>
+          <?php if ($puedeAnularNegativa): ?>
+            <form method="post" action="/febriles/sin-casos/anular"><?= $camposDia() ?><button type="submit" class="btn btn-ghost btn-sm">Anular</button></form>
+          <?php endif; ?>
+        </div>
+      <?php elseif ($puedeNotificarSinFebriles): ?>
+        <div class="feb-negativa pend">
+          <div><b><?= $dia === date('Y-m-d') ? '¿Hoy no hubo febriles?' : '¿El ' . e(fechaIsoADmy($dia)) . ' no hubo febriles?' ?></b> Notifíquelo para que el día no figure como pendiente.</div>
+          <form method="post" action="/febriles/sin-casos"><?= $camposDia() ?><button type="submit" class="btn btn-primary btn-sm"><?= $dia === date('Y-m-d') ? 'Hoy no hubo febriles' : 'Notificar día sin febriles' ?></button></form>
+        </div>
+      <?php endif; ?>
+    <?php elseif ($dia === null && $pendientes): ?>
+      <div class="feb-negativa pend"><div><b><?= count($pendientes) ?> día<?= count($pendientes) === 1 ? '' : 's' ?> pendiente<?= count($pendientes) === 1 ? '' : 's' ?></b> en esta semana: <?= e(implode(', ', array_map(fn($f) => $nombresDia[(int) date('w', strtotime($f))] . ' ' . date('d/m', strtotime($f)), $pendientes))) ?>. Abra cada día para registrar sus febriles o notificarlo sin febriles.</div></div>
+    <?php endif; ?>
+  <?php elseif ($sinEstablecimiento && $puedeNotificarSinFebriles): ?>
+    <div class="feb-leyenda">Elija un establecimiento para ver qué días faltan y notificar los días sin febriles.</div>
+  <?php endif; ?>
 </div>
 
 <div class="card listado-feb">
@@ -148,7 +194,7 @@ $nombresDia = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
         </thead>
         <tbody>
           <?php if (!$casos): ?>
-            <tr><td colspan="16" style="color:var(--muted);padding:18px">No hay febriles registrados para este filtro.</td></tr>
+            <tr><td colspan="16" style="color:var(--muted);padding:18px"><?= $negativaActiva ? 'SIN FEBRILES: notificado el ' . e(fechaIsoADmy(substr((string) $negativaActiva['creado_en'], 0, 10))) . ' por ' . e($negativaActiva['usuario_nombre']) . '.' : 'No hay febriles registrados para este filtro.' ?></td></tr>
           <?php endif; ?>
           <?php foreach ($casos as $indice => $caso): ?>
             <tr>

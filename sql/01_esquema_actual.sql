@@ -1,5 +1,11 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Editado a mano el 2026-11-09 (sin regenerar). Cambio de ESQUEMA:
+--   - Tabla nueva febriles_sin_casos: notificacion negativa DIARIA del
+--     registro de febriles ("este dia no hubo febriles"), una fila por
+--     establecimiento + fecha, se anula sin borrarse.
+--     Migracion: sql/migraciones/add_febriles_sin_casos.php.
+--
 -- Editado a mano el 2026-11-04 (sin regenerar), segundo cambio del dia:
 --   - Rol JEFE_RED: usuario.rol lo admite y usuario.red_id guarda su red.
 --     Solo ese CREATE TABLE. Migracion: sql/migraciones/add_rol_jefe_red.php.
@@ -1175,6 +1181,31 @@ CREATE TABLE `establecimiento` (
   CONSTRAINT `fk_est_dist` FOREIGN KEY (`distrito_id`) REFERENCES `distrito` (`id`),
   CONSTRAINT `fk_est_red` FOREIGN KEY (`red_id`) REFERENCES `red_salud` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=83 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `febriles_sin_casos`
+--
+
+DROP TABLE IF EXISTS `febriles_sin_casos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `febriles_sin_casos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `establecimiento_id` int NOT NULL,
+  `fecha` date NOT NULL,
+  `usuario_id` int NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `anulada_por` int DEFAULT NULL,
+  `anulada_en` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_febriles_sin_casos` (`establecimiento_id`,`fecha`),
+  KEY `fk_febriles_sin_casos_usuario` (`usuario_id`),
+  KEY `fk_febriles_sin_casos_anulada_por` (`anulada_por`),
+  CONSTRAINT `fk_febriles_sin_casos_anulada_por` FOREIGN KEY (`anulada_por`) REFERENCES `usuario` (`id`),
+  CONSTRAINT `fk_febriles_sin_casos_est` FOREIGN KEY (`establecimiento_id`) REFERENCES `establecimiento` (`id`),
+  CONSTRAINT `fk_febriles_sin_casos_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

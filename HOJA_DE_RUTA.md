@@ -196,6 +196,7 @@ php sql/migraciones/add_personal_en_formacion.php
 php sql/migraciones/add_rol_jefe_red.php
 php sql/migraciones/add_reniec_resultado.php
 php sql/migraciones/login_por_documento.php
+php sql/migraciones/add_febriles_sin_casos.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -717,6 +718,18 @@ No tocar sin una respuesta explícita.
      para los casos de notificación inmediata (propuesta: sí); (3) días de
      conservación (propuesta: 7).
    - Al activarlo: quitar el aviso de `app/Views/ayuda/registrador.php`.
+9. **Día sin febriles (09/11).** El registro de febriles admite una negativa
+   diaria: botón «Hoy no hubo febriles» en la hoja del día (`/febriles`), tabla
+   `febriles_sin_casos` (establecimiento + fecha, se anula sin borrarse), punto
+   de estado en cada día y aviso no bloqueante en «Cerrar la semana» con los
+   días pendientes. Registrar o mover un febril a ese día anula la negativa
+   sola (`CasosController::anularDiaSinFebriles()`).
+   - **Falta decidir con Epidemiología:** (1) si es obligatoria; hoy es
+     opcional y el cierre solo avisa; (2) qué pasa con domingos y feriados
+     sin atención (propuesta: una marca «sin atención» distinta de «sin
+     febriles»); (3) plazo para notificar un día (propuesta: hasta el día
+     siguiente; después, tardía); (4) si el ADMIN necesita un cuadro de
+     cumplimiento diario por establecimiento.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 

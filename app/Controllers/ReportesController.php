@@ -11,6 +11,7 @@ use App\Models\Consolidado;
 use App\Models\ConsolidadoPnp;
 use App\Models\Enfermedad;
 use App\Models\Establecimiento;
+use App\Models\FebrilesSinCasos;
 use App\Models\FormatoPnp;
 use App\Models\ListadoMuerteFetalNeonatal;
 use App\Models\NotificacionNegativa;
@@ -504,7 +505,77 @@ class ReportesController extends Controller
             'rangoSemana'      => $rango,
             'casos'            => FormatoPnp::febriles($filtros, $dia),
             'febrilesId'       => $febriles ? (int) $febriles['id'] : null,
+            // Negativa diaria (2026-11-09): solo con un establecimiento elegido.
+            'estadoDias'       => $filtros['establecimiento_id'] ? FebrilesSinCasos::estadoDias($filtros['establecimiento_id'], $rango[0], $rango[1]) : [],
+            'negativaDia'      => $filtros['establecimiento_id'] && $dia ? FebrilesSinCasos::buscar($filtros['establecimiento_id'], $dia) : null,
+            'puedeNotificarSinFebriles' => Auth::tieneRol('ADMIN', 'REGISTRADOR'),
         ]);
+    }
+
+    /**
+     * "Hoy no hubo febriles" (POST, 2026-11-09): negativa diaria del registro
+     * de febriles. Solo con un establecimiento, un día de la semana elegida
+     * que no sea futuro y sin febriles registrados: se vuelve a contar acá,
+     * no se confía en lo que mostraba la pantalla.
+     */
+    public function notificarSinFebriles(): void
+    {
+        Auth::exigirRol('ADMIN', 'REGISTRADOR');
+        [$filtros, $dia, $volver] = $this->leerDiaFebriles();
+
+        if (!$filtros['establecimiento_id'] || !Establecimiento::buscar($filtros['establecimiento_id'])) {
+            Flash::set('Elige un establecimiento para notificar el día sin febriles.');
+        } elseif ($dia === null || $dia > date('Y-m-d')) {
+            Flash::set('Elige un día de la semana que no sea futuro.');
+        } elseif (FormatoPnp::febriles(array_merge($filtros, ['usuario' => ['rol' => 'ADMIN']]), $dia)) {
+            Flash::set('Ese día ya tiene febriles registrados: no puede notificarse sin febriles.');
+        } else {
+            FebrilesSinCasos::registrar($filtros['establecimiento_id'], $dia, (int) Auth::usuario()['id']);
+            Flash::set('Día ' . fechaIsoADmy($dia) . ' notificado sin febriles.');
+        }
+        header('Location: ' . $volver);
+        exit;
+    }
+
+    /** Deja sin efecto la negativa del día (POST): su autor o un ADMIN. */
+    public function anularSinFebriles(): void
+    {
+        Auth::exigirRol('ADMIN', 'REGISTRADOR');
+        [$filtros, $dia, $volver] = $this->leerDiaFebriles();
+
+        $negativa = $filtros['establecimiento_id'] && $dia ? FebrilesSinCasos::buscar($filtros['establecimiento_id'], $dia) : null;
+        $usuario = Auth::usuario();
+        if (!$negativa || $negativa['anulada_en'] !== null) {
+            Flash::set('No hay una notificación sin febriles activa para ese día.');
+        } elseif (!Auth::tieneRol('ADMIN') && (int) $negativa['usuario_id'] !== (int) $usuario['id']) {
+            Flash::set('Solo quien notificó el día sin febriles, o un administrador, puede anularlo.');
+        } else {
+            FebrilesSinCasos::anular((int) $negativa['id'], (int) $usuario['id']);
+            Flash::set('Notificación sin febriles del ' . fechaIsoADmy($dia) . ' anulada.');
+        }
+        header('Location: ' . $volver);
+        exit;
+    }
+
+    /**
+     * Filtros, día y URL de regreso de los POST del día sin febriles. Con el
+     * CSRF vencido redirige ahí y termina.
+     *
+     * @return array{0: array, 1: ?string, 2: string}
+     */
+    private function leerDiaFebriles(): array
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_POST, Auth::usuario());
+        $dia = $this->diaDeLaSemana(ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']), $_POST);
+        $base = ($_POST['base'] ?? '') === '/reportes/febriles' ? '/reportes/febriles' : '/febriles';
+        $volver = $base . '?' . http_build_query(['anio' => $filtros['anio'], 'semana' => $filtros['semana'], 'establecimiento_id' => $filtros['establecimiento_id'] ?? '', 'dia' => $dia ?? '']);
+        if (!Csrf::valido($_POST['csrf_token'] ?? null)) {
+            Flash::set('La sesión del formulario expiró. Vuelve a intentarlo.');
+            header('Location: ' . $volver);
+            exit;
+        }
+
+        return [$filtros, $dia, $volver];
     }
 
     public function exportarFebriles(): void
@@ -513,6 +584,10 @@ class ReportesController extends Controller
         $dia = $this->diaDeLaSemana(ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']));
         $casos = FormatoPnp::febriles($filtros, $dia);
         $encabezado = FormatoPnp::encabezado($filtros['establecimiento_id']);
+        $negativa = $filtros['establecimiento_id'] && $dia ? FebrilesSinCasos::buscar($filtros['establecimiento_id'], $dia) : null;
+        $vacio = $negativa && $negativa['anulada_en'] === null
+            ? 'SIN FEBRILES: notificado el ' . fechaIsoADmy(substr((string) $negativa['creado_en'], 0, 10)) . ' por ' . $negativa['usuario_nombre']
+            : ($dia ? 'Sin febriles registrados ese día' : 'Sin febriles registrados en la semana');
 
         $filas = [];
         foreach ($casos as $i => $c) {
@@ -548,15 +623,15 @@ class ReportesController extends Controller
                 ['titulo' => 'Diagnóstico', 'anchoMax' => 32],
                 ['titulo' => 'Servicio', 'anchoMax' => 20],
                 ['titulo' => 'Registro VIGÍA SPNP'],
-            ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => $dia ? 'Sin febriles registrados ese día' : 'Sin febriles registrados en la semana'])
+            ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => $vacio])
             ->descargar('registro_febriles_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT) . ($dia ? '_' . $dia : ''));
         exit;
     }
 
     /** ?dia= dentro de la semana elegida, o null (toda la semana). */
-    private function diaDeLaSemana(array $rango): ?string
+    private function diaDeLaSemana(array $rango, ?array $origen = null): ?string
     {
-        $dia = fechaIsoValida((string) ($_GET['dia'] ?? ''));
+        $dia = fechaIsoValida((string) (($origen ?? $_GET)['dia'] ?? ''));
 
         return $dia !== null && $dia >= $rango[0] && $dia <= $rango[1] ? $dia : null;
     }

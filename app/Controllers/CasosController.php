@@ -801,6 +801,7 @@ class CasosController extends Controller
         // "Ficha registrada"; "ver" lo sigue mostrando mientras siga activa.
         $avisoSinCasos = $this->avisoSemanaSinCasos($enfermedadId, (int) $establecimiento['id'], $semana['anio'], $semana['semana']);
         $sufijoSinCasos = $avisoSinCasos ? ' — Aviso: ' . $avisoSinCasos['texto'] : '';
+        $sufijoSinCasos .= $this->anularDiaSinFebriles($enfermedad, (int) $establecimiento['id'], $fechaNotifIso, (int) Auth::usuario()['id']);
 
         // vinculo_caso.encadenar (pedido del usuario, 2026-09-11): al guardar
         // la ficha de una gestante que declara nacidos vivos, se abre su
@@ -1554,7 +1555,7 @@ class CasosController extends Controller
             exit;
         }
 
-        Flash::set('Ficha actualizada: ' . $caso['codigo']);
+        Flash::set('Ficha actualizada: ' . $caso['codigo'] . $this->anularDiaSinFebriles($enfermedad, (int) $caso['establecimiento_id'], $fechaNotifIso, (int) $usuario['id']));
         header('Location: /casos/' . $id);
         exit;
     }
@@ -4664,6 +4665,21 @@ class CasosController extends Controller
             'seleccionado'      => $seleccionado,
             'error'             => $error,
         ]];
+    }
+
+    /**
+     * Día notificado sin febriles (2026-11-09): un febril registrado (o
+     * movido) a esa fecha lo contradice, así que la negativa se anula sola a
+     * nombre de quien guardó. Devuelve el texto para sumar al mensaje, o ''.
+     */
+    private function anularDiaSinFebriles(?array $enfermedad, int $establecimientoId, string $fecha, int $usuarioId): string
+    {
+        if (($enfermedad['cie10'] ?? '') !== Cie10Vigilancia::REGISTRO_FEBRILES
+            || !\App\Models\FebrilesSinCasos::anularPorFebril($establecimientoId, $fecha, $usuarioId)) {
+            return '';
+        }
+
+        return ' — El día ' . fechaIsoADmy($fecha) . ' estaba notificado sin febriles: esa notificación quedó anulada.';
     }
 
     /**

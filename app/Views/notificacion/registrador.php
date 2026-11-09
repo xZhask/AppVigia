@@ -116,6 +116,9 @@ $ico = [
         <?php if ($enCurso): ?>
           <div class="ns-aviso"><?= $ico['info'] ?><div>La SE <?= $semana ?> todavía no termina (cierra el sábado). Si la cierras ahora, lo que registres hasta el sábado contará como tardío.</div></div>
         <?php endif; ?>
+        <?php if ($diasFebrilesPendientes): $diasCortos = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']; ?>
+          <div class="ns-aviso"><?= $ico['info'] ?><div><b>Registro de febriles:</b> <?= count($diasFebrilesPendientes) ?> día<?= count($diasFebrilesPendientes) === 1 ? '' : 's' ?> sin febriles registrados ni notificado<?= count($diasFebrilesPendientes) === 1 ? '' : 's' ?> sin febriles (<?= e(implode(', ', array_map(fn($f) => $diasCortos[(int) date('w', strtotime($f))] . ' ' . date('d/m', strtotime($f)), $diasFebrilesPendientes))) ?>). <a href="<?= e('/febriles?' . http_build_query(['anio' => $anio, 'semana' => $semana])) ?>">Revisar el registro de febriles</a>. Puede cerrar igual.</div></div>
+        <?php endif; ?>
         <?php if ($vencida): ?>
           <div class="ns-campo"><label for="motivoTardio">Motivo del cierre tardío <em>*</em></label>
             <textarea id="motivoTardio" name="motivo_tardio" maxlength="255" required placeholder="Ej.: falta de conectividad del 05/10 al 08/10"></textarea></div>

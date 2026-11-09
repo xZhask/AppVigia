@@ -275,6 +275,12 @@ require __DIR__ . '/_inicio.php';
           <li>Pulse <b>Registrar febril</b>, llene el paciente, el servicio, la temperatura y el diagnóstico CIE-10.</li>
           <li>Pulse <b>Registrar ficha</b>. Vuelve a la hoja del día, donde aparece el registro.</li>
         </ol>
+        <p><b>Día sin febriles.</b> Si un día no hubo febriles, abra ese día en la hoja y pulse <b>Hoy no hubo febriles</b> (o <b>Notificar día sin febriles</b>, si es un día anterior). Los días de la semana muestran un punto: verde con febriles, gris sin febriles notificado y naranja pendiente.</p>
+        <ul>
+          <li>Si luego registra un febril en ese día, la notificación sin febriles se anula sola.</li>
+          <li>Para anularla a mano, pulse <b>Anular</b> en el mismo recuadro. Solo puede hacerlo quien la notificó o un administrador.</li>
+          <li>Al cerrar la semana, <b>Notificación semanal</b> avisa qué días quedaron pendientes. Es un aviso: puede cerrar igual.</li>
+        </ul>
         <p><b>Otras enfermedades:</b> en <b>Nueva ficha</b>, pulse <b>Cambiar enfermedad</b> y elija <b>Otras enfermedades</b> en el grupo «Registro PNP».</p>
         <p><b>Pasar a ficha MINSA.</b> Si el diagnóstico tiene ficha MINSA (por ejemplo, un febril con dengue), al guardar se abre el registro con un aviso. Pulse <b>Pasar a ficha MINSA</b> y llene la ficha; ambos quedan relacionados.</p>
       </section>

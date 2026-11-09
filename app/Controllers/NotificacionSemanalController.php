@@ -9,6 +9,7 @@ use App\Core\Flash;
 use App\Core\MailService;
 use App\Models\Enfermedad;
 use App\Models\Establecimiento;
+use App\Models\FebrilesSinCasos;
 use App\Models\NotificacionSemanal;
 use App\Models\RedSalud;
 use DateTimeImmutable;
@@ -76,6 +77,12 @@ class NotificacionSemanalController extends Controller
             'fichas'          => $fichas,
             'tardias'         => $resumen['tardias'],
             'historial'       => $semanas,
+            // Registro de febriles (2026-11-09): días de la SE ya transcurridos
+            // sin febriles ni "día sin febriles". Solo avisa; no bloquea el cierre.
+            'diasFebrilesPendientes' => array_keys(array_filter(
+                FebrilesSinCasos::estadoDias($establecimientoId, inicioSemanaEpidemiologica($anio, $semana)->format('Y-m-d'), inicioSemanaEpidemiologica($anio, $semana)->modify('+6 days')->format('Y-m-d')),
+                fn($d) => $d['estado'] === 'PEND'
+            )),
         ]);
     }
 

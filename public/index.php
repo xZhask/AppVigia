@@ -266,6 +266,12 @@ $router->get('/reportes/registro-individual-vih/exportar', function () {
 $router->get('/febriles', function () {
     (new ReportesController())->febriles(true);
 });
+$router->post('/febriles/sin-casos', function () {
+    (new ReportesController())->notificarSinFebriles();
+});
+$router->post('/febriles/sin-casos/anular', function () {
+    (new ReportesController())->anularSinFebriles();
+});
 
 $router->get('/reportes/consolidado-pnp', function () {
     (new ReportesController())->consolidadoPnp();
