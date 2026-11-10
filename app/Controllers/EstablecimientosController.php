@@ -44,7 +44,7 @@ class EstablecimientosController extends Controller
             'rutaActual'    => self::RUTA,
             'establecimiento' => [
                 'id' => null, 'cod_renipress' => '', 'nombre' => '', 'red_id' => '',
-                'institucion' => 'FFAA_SANIDAD', 'categoria' => null, 'distrito_id' => null, 'activo' => 1,
+                'institucion' => 'FFAA_SANIDAD', 'categoria' => null, 'distrito_id' => null, 'correo' => null, 'activo' => 1,
             ],
             'redes'    => RedSalud::todos('nombre'),
             'errores'  => [],
@@ -148,6 +148,8 @@ class EstablecimientosController extends Controller
             'institucion'   => $entrada['institucion'] ?? '',
             'categoria'     => ($entrada['categoria'] ?? '') !== '' ? $entrada['categoria'] : null,
             'distrito_id'   => $entrada['distrito_id'] !== '' ? $entrada['distrito_id'] : null,
+            // Correo del área o de la IPRESS (2026-11-09): puede compartirse.
+            'correo'        => mb_strtolower(trim((string) ($entrada['correo'] ?? ''))) ?: null,
         ];
 
         $errores = [];
@@ -159,6 +161,9 @@ class EstablecimientosController extends Controller
         }
         if ($datos['categoria'] !== null && !array_key_exists($datos['categoria'], CATEGORIAS_ESTABLECIMIENTO)) {
             $errores['categoria'] = 'Selecciona una categoría válida.';
+        }
+        if ($datos['correo'] !== null && (strlen($datos['correo']) > 150 || !filter_var($datos['correo'], FILTER_VALIDATE_EMAIL))) {
+            $errores['correo'] = 'Ingresa un correo electrónico válido o déjalo vacío.';
         }
 
         return [$datos, $errores];

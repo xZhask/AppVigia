@@ -214,7 +214,7 @@ class NotificacionSemanal extends Model
     /** Establecimientos activos con su red (para el seguimiento del ADMIN). */
     public static function establecimientos(?int $redId = null): array
     {
-        $sql = 'SELECT es.id, es.nombre, es.red_id, r.nombre AS red_nombre
+        $sql = 'SELECT es.id, es.nombre, es.correo, es.red_id, r.nombre AS red_nombre
                   FROM establecimiento es LEFT JOIN red_salud r ON r.id = es.red_id
                  WHERE es.activo = 1' . ($redId ? ' AND es.red_id = :red' : '') . ' ORDER BY es.nombre';
         $consulta = Database::conexion()->prepare($sql);

@@ -32,6 +32,14 @@ $prefijoUbigeo = 'est-ubigeo';
           <span class="hint">Así aparece en los listados del catálogo. Opcional.</span>
         </div>
         <div class="field">
+          <label class="fl">Correo de la IPRESS</label>
+          <div class="control mono <?= isset($errores['correo']) ? 'err' : '' ?>">
+            <input type="email" name="correo" maxlength="150" value="<?= e($establecimiento['correo'] ?? '') ?>" placeholder="Ej.: epidemiologia@ejemplo.gob.pe">
+          </div>
+          <?php if (isset($errores['correo'])): ?><span class="hint err"><?= e($errores['correo']) ?></span>
+          <?php else: ?><span class="hint">Opcional. Correo del área o del establecimiento, aunque lo usen varias personas: recibe los recordatorios de la notificación semanal. No sirve para recuperar contraseñas.</span><?php endif; ?>
+        </div>
+        <div class="field">
           <label class="fl">Código RENIPRESS</label>
           <div class="control mono">
             <input type="text" name="cod_renipress" value="<?= e($establecimiento['cod_renipress']) ?>">

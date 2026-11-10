@@ -69,7 +69,7 @@ $nombrePersona = !$manual ? trim((string) ($usuario['nombre_persona'] ?? $usuari
             <input type="email" name="email" value="<?= e($usuario['email']) ?>">
           </div>
           <?php if (isset($errores['email'])): ?><span class="hint err"><?= e($errores['email']) ?></span>
-          <?php else: ?><span class="hint">Opcional. Se entra con el documento; el correo sirve para avisos y para recuperar la contraseña.</span><?php endif; ?>
+          <?php else: ?><span class="hint">Opcional y personal: no puede repetirse, porque sirve para recuperar la contraseña. El correo del área va en el establecimiento (Correo de la IPRESS).</span><?php endif; ?>
         </div>
         <div class="field">
           <label class="fl">Rol <span class="req">*</span></label>

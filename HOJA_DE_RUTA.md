@@ -197,6 +197,7 @@ php sql/migraciones/add_rol_jefe_red.php
 php sql/migraciones/add_reniec_resultado.php
 php sql/migraciones/login_por_documento.php
 php sql/migraciones/add_febriles_sin_casos.php
+php sql/migraciones/add_correo_establecimiento.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php

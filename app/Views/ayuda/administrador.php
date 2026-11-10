@@ -52,7 +52,7 @@ require __DIR__ . '/_inicio.php';
             <li>Pulse <b>Nuevo usuario</b>. También puede usar <b>Asignar registrador</b> en Establecimientos, que deja elegido el establecimiento.</li>
             <li>Elija el <b>Tipo de documento</b> y escriba el <b>N.º de documento</b>. Ese número es con el que la persona ingresará. Debajo aparecen sus <b>Apellidos y nombres</b>: compruebe que sea la persona correcta antes de seguir.</li>
             <li>Elija el <b>Rol</b>. Para <b>Registrador/a</b>, elija su <b>Establecimiento</b>. Para <b>Jefe/a de red</b>, elija su <b>Red</b>.</li>
-            <li>Escriba una <b>Contraseña</b> de al menos 8 caracteres. El <b>Correo electrónico</b> es opcional.</li>
+            <li>Escriba una <b>Contraseña</b> de al menos 8 caracteres. El <b>Correo electrónico</b> es opcional y personal: no puede repetirse entre usuarios. El correo que comparte el área va en el establecimiento (ver abajo).</li>
             <li>Si el documento no aparece en RENIEC ni en el padrón, el formulario abre los campos para escribir los apellidos y nombres.</li>
             <li>Pulse <b>Registrar usuario</b>.</li>
             <li>Entregue la contraseña de forma privada y pida a la persona que la cambie al primer ingreso, con el ícono de la llave.</li>
@@ -114,7 +114,7 @@ require __DIR__ . '/_inicio.php';
         <div class="guia-sub" id="recordatorios" data-bloque>
           <h3>Recordatorios</h3>
           <p><b>Recordar a…</b> avisa a todas las IPRESS que faltan, y <b>Recordar</b>, en una fila, solo a esa.</p>
-          <div class="guia-alerta"><?= $icoAviso ?><div>Por ahora los recordatorios no se envían, porque falta configurar la cuenta de correo del sistema: la pantalla mostrará ese aviso. Mientras tanto, contacte a las IPRESS por otra vía. Cuando funcione, también hará falta que cada registrador tenga su correo registrado.</div></div>
+          <div class="guia-alerta"><?= $icoAviso ?><div>Por ahora los recordatorios no se envían, porque falta configurar la cuenta de correo del sistema: la pantalla mostrará ese aviso. Mientras tanto, contacte a las IPRESS por otra vía. Cuando funcione, el recordatorio llegará al <b>Correo de la IPRESS</b> (en Establecimientos) y al correo personal de cada registrador que lo tenga registrado.</div></div>
         </div>
       </section>
 
@@ -155,7 +155,7 @@ require __DIR__ . '/_inicio.php';
         <div class="guia-tabla-marco"><table class="guia-tabla">
           <thead><tr><th>Catálogo</th><th>Para qué sirve</th><th>Tenga en cuenta</th></tr></thead>
           <tbody>
-            <tr><td><a href="/catalogos/establecimientos"><b>Establecimientos</b></a></td><td>Las IPRESS, con su red, código RENIPRESS y categoría. Sus avisos señalan las que no tienen registrador, las de cumplimiento menor a 60 % y aquellas cuyo registrador nunca ingresó</td><td>Al desactivar uno, con motivo, deja de contar en la notificación semanal y en el cumplimiento. Sus fichas se conservan</td></tr>
+            <tr><td><a href="/catalogos/establecimientos"><b>Establecimientos</b></a></td><td>Las IPRESS, con su red, código RENIPRESS, categoría y <b>Correo de la IPRESS</b> (el del área, aunque lo usen varias personas; recibe los recordatorios). Sus avisos señalan las que no tienen registrador, las de cumplimiento menor a 60 % y aquellas cuyo registrador nunca ingresó</td><td>Al desactivar uno, con motivo, deja de contar en la notificación semanal y en el cumplimiento. Sus fichas se conservan</td></tr>
             <tr><td><a href="/catalogos/redes"><b>Redes de salud</b></a></td><td>Agrupan los establecimientos y definen qué ve cada jefe de red</td><td>No se puede eliminar una red que tenga establecimientos. Cambiar la red de un establecimiento cambia lo que ven los jefes de ambas redes</td></tr>
             <tr><td><a href="/catalogos/enfermedades"><b>Enfermedades</b></a></td><td>Las enfermedades bajo vigilancia: nombre, CIE-10, tipo de notificación y grupo</td><td>Aquí no se cambian las preguntas de cada ficha: pídalo a soporte. Desactivar una enfermedad la quita de las opciones para registrar</td></tr>
             <tr><td><a href="/catalogos/grados"><b>Grados PNP</b></a></td><td>Los grados que se eligen en la condición Efectivo PNP</td><td>No se puede eliminar un grado que tenga personas registradas</td></tr>

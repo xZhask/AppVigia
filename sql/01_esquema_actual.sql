@@ -1,5 +1,10 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Editado a mano el 2026-11-09 (sin regenerar), segundo cambio del dia:
+--   - establecimiento.correo: correo del area o de la IPRESS (puede
+--     compartirse), recibe los recordatorios de la notificacion semanal.
+--     Solo ese CREATE TABLE. Migracion: sql/migraciones/add_correo_establecimiento.php.
+--
 -- Editado a mano el 2026-11-09 (sin regenerar). Cambio de ESQUEMA:
 --   - Tabla nueva febriles_sin_casos: notificacion negativa DIARIA del
 --     registro de febriles ("este dia no hubo febriles"), una fila por
@@ -1171,6 +1176,7 @@ CREATE TABLE `establecimiento` (
   `red_id` int DEFAULT NULL,
   `institucion` enum('MINSA','ESSALUD','FFAA_SANIDAD','PRIVADO') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'FFAA_SANIDAD',
   `categoria` enum('I-1','I-2','I-3','I-4','II-1','II-2','II-E','III-1','III-2','III-E') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `correo` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `distrito_id` char(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT '1',
   `motivo_inactivo` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,

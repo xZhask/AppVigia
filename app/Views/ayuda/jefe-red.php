@@ -75,7 +75,7 @@ require __DIR__ . '/_inicio.php';
         <div class="guia-sub" id="recordatorios-red" data-bloque>
           <h3>Recordatorios</h3>
           <p><b>Recordar a…</b> avisa a todas las IPRESS de su red que faltan, y <b>Recordar</b>, en una fila, solo a esa.</p>
-          <div class="guia-alerta"><?= $icoAviso ?><div>Por ahora los recordatorios no se envían, porque falta configurar la cuenta de correo del sistema: la pantalla mostrará ese aviso. Mientras tanto, contacte a sus IPRESS por otra vía.</div></div>
+          <div class="guia-alerta"><?= $icoAviso ?><div>Por ahora los recordatorios no se envían, porque falta configurar la cuenta de correo del sistema: la pantalla mostrará ese aviso. Mientras tanto, contacte a sus IPRESS por otra vía. Cuando funcione, el recordatorio llegará al correo de la IPRESS y al de cada registrador que lo tenga registrado.</div></div>
         </div>
       </section>
 

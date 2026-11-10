@@ -240,13 +240,24 @@ class NotificacionSemanalController extends Controller
                 continue;
             }
             $establecimientos++;
-            if (empty($registradores[$id])) {
+            // Destinatarios (2026-11-09): el correo de la IPRESS (puede ser
+            // compartido) y el de cada registrador activo, sin repetir.
+            $destinos = [];
+            if (!empty($establecimiento['correo'])) {
+                $destinos[mb_strtolower($establecimiento['correo'])] = 'equipo de ' . nombreEnOracion($establecimiento['nombre']);
+            }
+            foreach ($registradores[$id] ?? [] as $registrador) {
+                if (!empty($registrador['email']) && !isset($destinos[mb_strtolower($registrador['email'])])) {
+                    $destinos[mb_strtolower($registrador['email'])] = $registrador['nombre'];
+                }
+            }
+            if (!$destinos) {
                 $sinCorreo++;
                 continue;
             }
-            foreach ($registradores[$id] as $registrador) {
-                $enviados += MailService::enviar($registrador['email'], "VIGÍA SPNP: falta cerrar la SE $semana",
-                    "Hola, {$registrador['nombre']}:\n\n" . nombreEnOracion($establecimiento['nombre']) . " todavía no cerró la SE $semana · $anio"
+            foreach ($destinos as $correo => $nombre) {
+                $enviados += MailService::enviar($correo, "VIGÍA SPNP: falta cerrar la SE $semana",
+                    "Hola, {$nombre}:\n\n" . nombreEnOracion($establecimiento['nombre']) . " todavía no cerró la SE $semana · $anio"
                     . ' (plazo: ' . $plazo->format('d/m/Y H:i') . ").\n\nCerrar la semana es obligatorio aunque no haya casos: entra a VIGÍA SPNP, Notificación semanal.") ? 1 : 0;
             }
         }
@@ -254,9 +265,9 @@ class NotificacionSemanalController extends Controller
         if ($establecimientos === 0) {
             Flash::set('No hay establecimientos pendientes en esa semana.');
         } elseif ($enviados === 0) {
-            Flash::set('No se envió ningún recordatorio: ' . ($sinCorreo === $establecimientos ? 'los establecimientos pendientes no tienen registradores activos.' : 'el correo no está configurado (config: mail.desde).'));
+            Flash::set('No se envió ningún recordatorio: ' . ($sinCorreo === $establecimientos ? 'los establecimientos pendientes no tienen correo de la IPRESS ni registradores con correo.' : 'el correo no está configurado (config: mail.desde).'));
         } else {
-            Flash::set("Recordatorio enviado a $enviados registrador" . ($enviados === 1 ? '' : 'es') . ($sinCorreo ? " · $sinCorreo establecimiento(s) sin registrador activo." : '.'));
+            Flash::set("Recordatorio enviado a $enviados correo" . ($enviados === 1 ? '' : 's') . ($sinCorreo ? " · $sinCorreo establecimiento(s) sin correo de la IPRESS ni registradores con correo." : '.'));
         }
         header('Location: ' . $volver);
         exit;
