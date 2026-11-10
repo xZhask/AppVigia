@@ -471,6 +471,9 @@ $router->get('/catalogos/usuarios', function () {
 $router->get('/catalogos/usuarios/nuevo', function () {
     (new UsuariosController())->nuevo();
 });
+$router->get('/catalogos/usuarios/buscar-persona', function () {
+    (new UsuariosController())->buscarPersona();
+});
 $router->post('/catalogos/usuarios', function () {
     (new UsuariosController())->crear();
 });

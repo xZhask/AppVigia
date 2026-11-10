@@ -3,6 +3,9 @@ use App\Core\Csrf;
 
 $esEdicion = !empty($usuario['id']);
 $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalogos/usuarios';
+$manual = !empty($usuario['mostrar_manual']);
+// Nombre ya resuelto (edición, o el formulario devuelto con errores).
+$nombrePersona = !$manual ? trim((string) ($usuario['nombre_persona'] ?? $usuario['nombre'] ?? '')) : '';
 ?>
 <div class="page-head">
   <div>
@@ -18,7 +21,7 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
         <div class="field">
           <label class="fl">Tipo de documento <span class="req">*</span></label>
           <div class="control <?= isset($errores['documento']) ? 'err' : '' ?>">
-            <select name="tipo_doc">
+            <select name="tipo_doc" id="usuarioTipoDoc">
               <option value="DNI" <?= seleccionado($usuario['tipo_doc'] ?? '', 'DNI') ?>>DNI (RENIEC)</option>
               <option value="CE" <?= seleccionado($usuario['tipo_doc'] ?? '', 'CE') ?>>Carnet de Extranjería</option>
               <option value="PAS" <?= seleccionado($usuario['tipo_doc'] ?? '', 'PAS') ?>>Pasaporte</option>
@@ -29,33 +32,37 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
         <div class="field">
           <label class="fl">N.° de documento <span class="req">*</span></label>
           <div class="control <?= isset($errores['documento']) ? 'err' : '' ?>">
-            <input type="text" name="num_doc" value="<?= e($usuario['num_doc'] ?? '') ?>" required>
+            <input type="text" name="num_doc" id="usuarioNumDoc" value="<?= e($usuario['num_doc'] ?? '') ?>" required autocomplete="off">
           </div>
           <?php if (isset($errores['documento'])): ?><span class="hint err"><?= e($errores['documento']) ?></span><?php endif; ?>
         </div>
-        <?php if (!empty($usuario['mostrar_manual'])): ?>
-        <div class="field" style="flex-basis:100%;">
-          <p class="hint">No se encontró este documento en RENIEC ni en el padrón local. Completa los datos para registrarlo manualmente.</p>
-        </div>
-        <div class="field">
-          <label class="fl">Apellido paterno <span class="req">*</span></label>
-          <div class="control">
-            <input type="text" name="apellido_paterno" value="<?= e($usuario['apellido_paterno'] ?? '') ?>" required>
+        <?php // Apellidos y nombres del documento (2026-11-09): se ven antes de guardar, para confirmar que es la persona. ?>
+        <div class="field usuario-persona-campo">
+          <label class="fl">Apellidos y nombres</label>
+          <div class="usuario-persona <?= $nombrePersona !== '' ? 'ok' : '' ?>" id="usuarioPersona" aria-live="polite"
+               data-excluir="<?= $esEdicion ? (int) $usuario['id'] : '' ?>" data-inicial="<?= e($nombrePersona) ?>"
+               data-doc-inicial="<?= e(($usuario['tipo_doc'] ?? '') . '|' . ($usuario['num_doc'] ?? '')) ?>">
+            <?= $nombrePersona !== '' ? '<b>' . e($nombrePersona) . '</b>' : ($manual ? 'No se encontró en RENIEC ni en el padrón local. Completa los apellidos y nombres abajo.' : 'Ingresa el documento para ver a quién corresponde.') ?>
           </div>
         </div>
-        <div class="field">
+        <div class="field" data-manual <?= $manual ? '' : 'hidden' ?>>
+          <label class="fl">Apellido paterno <span class="req">*</span></label>
+          <div class="control">
+            <input type="text" name="apellido_paterno" value="<?= e($usuario['apellido_paterno'] ?? '') ?>" data-requerido <?= $manual ? 'required' : '' ?>>
+          </div>
+        </div>
+        <div class="field" data-manual <?= $manual ? '' : 'hidden' ?>>
           <label class="fl">Apellido materno</label>
           <div class="control">
             <input type="text" name="apellido_materno" value="<?= e($usuario['apellido_materno'] ?? '') ?>">
           </div>
         </div>
-        <div class="field">
+        <div class="field" data-manual <?= $manual ? '' : 'hidden' ?>>
           <label class="fl">Nombres <span class="req">*</span></label>
           <div class="control">
-            <input type="text" name="nombres" value="<?= e($usuario['nombres'] ?? '') ?>" required>
+            <input type="text" name="nombres" value="<?= e($usuario['nombres'] ?? '') ?>" data-requerido <?= $manual ? 'required' : '' ?>>
           </div>
         </div>
-        <?php endif; ?>
         <div class="field">
           <label class="fl">Correo electrónico</label>
           <div class="control mono <?= isset($errores['email']) ? 'err' : '' ?>">
@@ -120,3 +127,4 @@ $accion = $esEdicion ? '/catalogos/usuarios/' . (int) $usuario['id'] : '/catalog
   </div>
 </div>
 <script src="<?= e(asset('/js/usuario-rol.js')) ?>"></script>
+<script src="<?= e(asset('/js/usuario-documento.js')) ?>"></script>

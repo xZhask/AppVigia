@@ -96,6 +96,9 @@ class UsuariosController extends Controller
         $persona = \App\Models\Persona::buscar((int)$usuario['persona_id']);
         $usuario['tipo_doc'] = $persona['tipo_doc'] ?? '';
         $usuario['num_doc'] = $persona['num_doc'] ?? '';
+        // El recuadro "Apellidos y nombres" muestra la persona del documento,
+        // no el nombre de la cuenta.
+        $usuario['nombre_persona'] = $persona ? \App\Models\Persona::nombreCompleto($persona) : '';
 
         $this->vista('catalogos/usuarios/formulario', [
             'tituloVista' => 'Editar usuario',
@@ -189,6 +192,49 @@ class UsuariosController extends Controller
 
         header('Location: /catalogos/usuarios');
         exit;
+    }
+
+    /**
+     * AJAX (ADMIN, 2026-11-09): apellidos y nombres del documento, para que
+     * el administrador confirme que es la persona correcta antes de crear el
+     * usuario. Misma búsqueda que al guardar (padrón local y luego RENIEC,
+     * PersonaService::buscarOCrear), así lo que se ve es lo que se guarda.
+     * ?excluir= es el usuario que se edita (no cuenta como duplicado).
+     */
+    public function buscarPersona(): void
+    {
+        Auth::exigirRol('ADMIN');
+        header('Content-Type: application/json; charset=utf-8');
+
+        $tipoDoc = trim((string) ($_GET['tipo_doc'] ?? ''));
+        $numDoc = trim((string) ($_GET['num_doc'] ?? ''));
+        $excluir = ctype_digit((string) ($_GET['excluir'] ?? '')) ? (int) $_GET['excluir'] : null;
+        if (!in_array($tipoDoc, ['DNI', 'CE', 'PAS', 'PTP'], true) || $numDoc === '' || strlen($numDoc) > 20) {
+            echo json_encode(['estado' => 'INVALIDO', 'mensaje' => 'Ingresa el tipo y el número de documento.'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        if ($tipoDoc === 'DNI' && !preg_match('/^\d{8}$/', $numDoc)) {
+            echo json_encode(['estado' => 'INVALIDO', 'mensaje' => 'El DNI tiene 8 dígitos.'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $persona = \App\Services\PersonaService::buscarOCrear($tipoDoc, $numDoc);
+        if (!$persona) {
+            echo json_encode(['estado' => 'NO_ENCONTRADA'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $aviso = null;
+        if (Usuario::existePersona((int) $persona['id'], $excluir)) {
+            $aviso = 'Esta persona ya tiene un usuario.';
+        } elseif (Usuario::existeDocumento($numDoc, $excluir)) {
+            $aviso = 'Ya existe un usuario con este número de documento.';
+        }
+        echo json_encode([
+            'estado' => 'ENCONTRADA',
+            'nombre' => \App\Models\Persona::nombreCompleto($persona),
+            'aviso'  => $aviso,
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     private function validar(array $entrada, ?int $idActual): array

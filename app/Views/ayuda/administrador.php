@@ -50,13 +50,14 @@ require __DIR__ . '/_inicio.php';
           <h3>Crear un usuario <?= $ir('/catalogos/usuarios/nuevo', 'Abrir') ?></h3>
           <ol class="guia-pasos">
             <li>Pulse <b>Nuevo usuario</b>. También puede usar <b>Asignar registrador</b> en Establecimientos, que deja elegido el establecimiento.</li>
-            <li>Elija el <b>Tipo de documento</b> y escriba el <b>N.º de documento</b>. Ese número es con el que la persona ingresará.</li>
+            <li>Elija el <b>Tipo de documento</b> y escriba el <b>N.º de documento</b>. Ese número es con el que la persona ingresará. Debajo aparecen sus <b>Apellidos y nombres</b>: compruebe que sea la persona correcta antes de seguir.</li>
             <li>Elija el <b>Rol</b>. Para <b>Registrador/a</b>, elija su <b>Establecimiento</b>. Para <b>Jefe/a de red</b>, elija su <b>Red</b>.</li>
             <li>Escriba una <b>Contraseña</b> de al menos 8 caracteres. El <b>Correo electrónico</b> es opcional.</li>
-            <li>Pulse <b>Registrar usuario</b>. Si el documento no aparece en RENIEC ni en el padrón, el sistema le pedirá también los apellidos y nombres.</li>
+            <li>Si el documento no aparece en RENIEC ni en el padrón, el formulario abre los campos para escribir los apellidos y nombres.</li>
+            <li>Pulse <b>Registrar usuario</b>.</li>
             <li>Entregue la contraseña de forma privada y pida a la persona que la cambie al primer ingreso, con el ícono de la llave.</li>
           </ol>
-          <?php $captura('admin-usuario-nuevo.jpg', 'Formulario Nuevo usuario con el rol Jefe/a de red elegido y el campo Red', 'Con Jefe/a de red, el formulario pide la red en lugar del establecimiento.'); ?>
+          <?php $captura('admin-usuario-nuevo.jpg', 'Formulario Nuevo usuario: tras el documento, el recuadro Apellidos y nombres con la persona encontrada; el rol Jefe/a de red y el campo Red', 'Al escribir el documento aparecen los apellidos y nombres. Con Jefe/a de red, el formulario pide la red en lugar del establecimiento.'); ?>
         </div>
 
         <div class="guia-sub" id="clave-usuario" data-bloque>

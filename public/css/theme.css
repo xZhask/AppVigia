@@ -1841,3 +1841,13 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
 .nav-item.active svg{color:var(--oro)}
 .auth-wordmark-pnp,.auth-statement h1 em{color:var(--oro)}
 .brand-name{letter-spacing:.08em;white-space:nowrap}
+
+/* Formulario de usuario (2026-11-09): apellidos y nombres del documento, para confirmar la persona. */
+.usuario-persona-campo{grid-column:1/-1}
+.usuario-persona{min-height:42px;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:9px 12px;border:1px dashed var(--line);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--muted);font-size:13px}
+.usuario-persona b{color:var(--ink);font-size:14px;letter-spacing:.01em}
+.usuario-persona small{font-size:11.5px;color:var(--muted)}
+.usuario-persona.ok{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+.usuario-persona.aviso{border-style:solid;border-color:var(--ns-warn-line);background:var(--ns-warn-bg);color:var(--ink-2)}
+.usuario-persona.aviso small{color:var(--ink-2)}
+.usuario-persona.buscando{font-style:italic}
