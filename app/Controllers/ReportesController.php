@@ -509,6 +509,8 @@ class ReportesController extends Controller
             'estadoDias'       => $filtros['establecimiento_id'] ? FebrilesSinCasos::estadoDias($filtros['establecimiento_id'], $rango[0], $rango[1]) : [],
             'negativaDia'      => $filtros['establecimiento_id'] && $dia ? FebrilesSinCasos::buscar($filtros['establecimiento_id'], $dia) : null,
             'puedeNotificarSinFebriles' => Auth::tieneRol('ADMIN', 'REGISTRADOR'),
+            // Sin atención (2026-11-11): solo IPRESS de nivel I.
+            'puedeSinAtencion' => $filtros['establecimiento_id'] && FebrilesSinCasos::esNivelI(Establecimiento::buscar((int) $filtros['establecimiento_id'])['categoria'] ?? null),
         ]);
     }
 
@@ -516,22 +518,29 @@ class ReportesController extends Controller
      * "Hoy no hubo febriles" (POST, 2026-11-09): negativa diaria del registro
      * de febriles. Solo con un establecimiento, un día de la semana elegida
      * que no sea futuro y sin febriles registrados: se vuelve a contar acá,
-     * no se confía en lo que mostraba la pantalla.
+     * no se confía en lo que mostraba la pantalla. tipo=SIN_ATENCION (día
+     * sin atención, 2026-11-11) solo para IPRESS de nivel I. Pasado el día
+     * siguiente se acepta igual, como tardía.
      */
     public function notificarSinFebriles(): void
     {
         Auth::exigirRol('ADMIN', 'REGISTRADOR');
         [$filtros, $dia, $volver] = $this->leerDiaFebriles();
+        $tipo = ($_POST['tipo'] ?? '') === 'SIN_ATENCION' ? 'SIN_ATENCION' : 'SIN_FEBRILES';
+        $establecimiento = $filtros['establecimiento_id'] ? Establecimiento::buscar($filtros['establecimiento_id']) : null;
 
-        if (!$filtros['establecimiento_id'] || !Establecimiento::buscar($filtros['establecimiento_id'])) {
+        if (!$establecimiento) {
             Flash::set('Elige un establecimiento para notificar el día sin febriles.');
         } elseif ($dia === null || $dia > date('Y-m-d')) {
             Flash::set('Elige un día de la semana que no sea futuro.');
+        } elseif ($tipo === 'SIN_ATENCION' && !FebrilesSinCasos::esNivelI($establecimiento['categoria'] ?? null)) {
+            Flash::set('Solo las IPRESS de nivel I notifican días sin atención: las de nivel II y III reportan todos los días.');
         } elseif (FormatoPnp::febriles(array_merge($filtros, ['usuario' => ['rol' => 'ADMIN']]), $dia)) {
-            Flash::set('Ese día ya tiene febriles registrados: no puede notificarse sin febriles.');
+            Flash::set('Ese día ya tiene febriles registrados: no puede notificarse ' . FebrilesSinCasos::TIPOS[$tipo] . '.');
         } else {
-            FebrilesSinCasos::registrar($filtros['establecimiento_id'], $dia, (int) Auth::usuario()['id']);
-            Flash::set('Día ' . fechaIsoADmy($dia) . ' notificado sin febriles.');
+            FebrilesSinCasos::registrar($filtros['establecimiento_id'], $dia, (int) Auth::usuario()['id'], $tipo);
+            Flash::set('Día ' . fechaIsoADmy($dia) . ' notificado ' . FebrilesSinCasos::TIPOS[$tipo]
+                . (FebrilesSinCasos::esTardia($dia, date('Y-m-d H:i:s')) ? ', fuera de plazo (vencía el ' . fechaIsoADmy(FebrilesSinCasos::plazo($dia)) . ').' : '.'));
         }
         header('Location: ' . $volver);
         exit;
@@ -551,7 +560,7 @@ class ReportesController extends Controller
             Flash::set('Solo quien notificó el día sin febriles, o un administrador, puede anularlo.');
         } else {
             FebrilesSinCasos::anular((int) $negativa['id'], (int) $usuario['id']);
-            Flash::set('Notificación sin febriles del ' . fechaIsoADmy($dia) . ' anulada.');
+            Flash::set('Notificación ' . (FebrilesSinCasos::TIPOS[$negativa['tipo']] ?? 'sin febriles') . ' del ' . fechaIsoADmy($dia) . ' anulada.');
         }
         header('Location: ' . $volver);
         exit;
@@ -584,10 +593,15 @@ class ReportesController extends Controller
         $dia = $this->diaDeLaSemana(ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']));
         $casos = FormatoPnp::febriles($filtros, $dia);
         $encabezado = FormatoPnp::encabezado($filtros['establecimiento_id']);
-        $negativa = $filtros['establecimiento_id'] && $dia ? FebrilesSinCasos::buscar($filtros['establecimiento_id'], $dia) : null;
-        $vacio = $negativa && $negativa['anulada_en'] === null
-            ? 'SIN FEBRILES: notificado el ' . fechaIsoADmy(substr((string) $negativa['creado_en'], 0, 10)) . ' por ' . $negativa['usuario_nombre']
-            : ($dia ? 'Sin febriles registrados ese día' : 'Sin febriles registrados en la semana');
+        $estadoDia = $filtros['establecimiento_id'] && $dia ? (FebrilesSinCasos::estadoDias($filtros['establecimiento_id'], $dia, $dia)[$dia] ?? null) : null;
+        $vacio = $dia ? 'Sin febriles registrados ese día' : 'Sin febriles registrados en la semana';
+        if ($estadoDia && $estadoDia['negativa']) {
+            $negativa = $estadoDia['negativa'];
+            $vacio = mb_strtoupper(FebrilesSinCasos::TIPOS[$negativa['tipo']]) . ': notificado el ' . fechaIsoADmy(substr((string) $negativa['creado_en'], 0, 10))
+                . ' por ' . $negativa['usuario_nombre'] . ($estadoDia['tardia'] ? ' (fuera de plazo)' : '');
+        } elseif ($estadoDia && $estadoDia['auto']) {
+            $vacio = 'SIN ATENCIÓN: ' . $estadoDia['auto'];
+        }
 
         $filas = [];
         foreach ($casos as $i => $c) {

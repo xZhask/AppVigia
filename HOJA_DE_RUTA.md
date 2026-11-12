@@ -198,6 +198,7 @@ php sql/migraciones/add_reniec_resultado.php
 php sql/migraciones/login_por_documento.php
 php sql/migraciones/add_febriles_sin_casos.php
 php sql/migraciones/add_correo_establecimiento.php
+php sql/migraciones/add_febriles_sin_atencion.php
 php cargar_fichas.php --apply --confirmo-apply
 php sql/migraciones/set_o95_anexo2_campos_condicionados.php
 php sql/migraciones/set_o95_ubigeo_formatos.php
@@ -725,12 +726,16 @@ No tocar sin una respuesta explícita.
    de estado en cada día y aviso no bloqueante en «Cerrar la semana» con los
    días pendientes. Registrar o mover un febril a ese día anula la negativa
    sola (`CasosController::anularDiaSinFebriles()`).
-   - **Falta decidir con Epidemiología:** (1) si es obligatoria; hoy es
-     opcional y el cierre solo avisa; (2) qué pasa con domingos y feriados
-     sin atención (propuesta: una marca «sin atención» distinta de «sin
-     febriles»); (3) plazo para notificar un día (propuesta: hasta el día
-     siguiente; después, tardía); (4) si el ADMIN necesita un cuadro de
-     cumplimiento diario por establecimiento.
+   - **Decidido con Epidemiología (11/11), implementado:** (1) es obligatoria
+     desde el 15/11/2026 (SE 46, `FebrilesSinCasos::OBLIGATORIA_DESDE`): la
+     SE no se cierra con un día pendiente, ni antes del sábado; (2) IPRESS de
+     nivel I (categoría I-1 a I-4): domingos y feriados nacionales figuran
+     «sin atención» solos, y otro día se notifica con «No hubo atención»
+     (`febriles_sin_casos.tipo`); nivel II y III reportan todos los días;
+     (3) plazo hasta el día siguiente, después «fuera de plazo»; (4) cuadro
+     «Febriles por día» en Notificación semanal (ADMIN y JEFE_RED), con Excel.
+   - Los feriados están en `FebrilesSinCasos::feriado()` (fijos + Jueves y
+     Viernes Santo). Si una ley agrega uno, se corrige ahí.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 

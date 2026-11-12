@@ -116,8 +116,12 @@ $ico = [
         <?php if ($enCurso): ?>
           <div class="ns-aviso"><?= $ico['info'] ?><div>La SE <?= $semana ?> todavía no termina (cierra el sábado). Si la cierras ahora, lo que registres hasta el sábado contará como tardío.</div></div>
         <?php endif; ?>
-        <?php if ($diasFebrilesPendientes): $diasCortos = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']; ?>
-          <div class="ns-aviso"><?= $ico['info'] ?><div><b>Registro de febriles:</b> <?= count($diasFebrilesPendientes) ?> día<?= count($diasFebrilesPendientes) === 1 ? '' : 's' ?> sin febriles registrados ni notificado<?= count($diasFebrilesPendientes) === 1 ? '' : 's' ?> sin febriles (<?= e(implode(', ', array_map(fn($f) => $diasCortos[(int) date('w', strtotime($f))] . ' ' . date('d/m', strtotime($f)), $diasFebrilesPendientes))) ?>). <a href="<?= e('/febriles?' . http_build_query(['anio' => $anio, 'semana' => $semana])) ?>">Revisar el registro de febriles</a>. Puede cerrar igual.</div></div>
+        <?php $diasCortos = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']; $textoDias = fn(array $fechas) => implode(', ', array_map(fn($f) => $diasCortos[(int) date('w', strtotime($f))] . ' ' . date('d/m', strtotime($f)), $fechas)); ?>
+        <?php if ($diasFebrilesBloquean): ?>
+          <div class="ns-aviso ns-bloquea"><?= str_replace('width="22" height="22"', 'width="16" height="16"', $ico['alerta']) ?><div><b>Registro de febriles:</b> falta notificar <?= count($diasFebrilesBloquean) ?> día<?= count($diasFebrilesBloquean) === 1 ? '' : 's' ?> (<?= e($textoDias($diasFebrilesBloquean)) ?>). Es obligatorio: registre sus febriles o notifíquelos sin febriles<?= \App\Models\FebrilesSinCasos::esNivelI($establecimiento['categoria'] ?? null) ? ' o sin atención' : '' ?>. <?= array_filter($diasFebrilesBloquean, fn($f) => $f > date('Y-m-d')) ? 'Los días que aún no llegan se notifican en su fecha, así que la semana se cierra desde el sábado. ' : '' ?><a href="<?= e('/febriles?' . http_build_query(['anio' => $anio, 'semana' => $semana])) ?>">Ir al registro de febriles</a>.</div></div>
+        <?php endif; ?>
+        <?php if ($diasFebrilesPendientes): ?>
+          <div class="ns-aviso"><?= $ico['info'] ?><div><b>Registro de febriles:</b> <?= count($diasFebrilesPendientes) ?> día<?= count($diasFebrilesPendientes) === 1 ? '' : 's' ?> sin febriles registrados ni notificado<?= count($diasFebrilesPendientes) === 1 ? '' : 's' ?> sin febriles (<?= e($textoDias($diasFebrilesPendientes)) ?>). <a href="<?= e('/febriles?' . http_build_query(['anio' => $anio, 'semana' => $semana])) ?>">Revisar el registro de febriles</a>. Puede cerrar igual.</div></div>
         <?php endif; ?>
         <?php if ($vencida): ?>
           <div class="ns-campo"><label for="motivoTardio">Motivo del cierre tardío <em>*</em></label>
@@ -125,7 +129,7 @@ $ico = [
         <?php endif; ?>
         <label class="ns-confirma"><input type="checkbox" name="confirmo" value="1" id="confirmoCierre" required>
           <span>Confirmo que <b>no hay más casos</b> por notificar en la SE <?= $semana ?> en <?= e($nombreEst) ?>.</span></label>
-        <button type="submit" class="btn btn-primary ns-cerrar" id="btnCerrar" disabled><?= $ico['candado'] ?>Cerrar SE <?= $semana ?></button>
+        <button type="submit" class="btn btn-primary ns-cerrar" id="btnCerrar" disabled<?= $diasFebrilesBloquean ? ' data-bloqueado="1" title="Falta notificar días del registro de febriles"' : '' ?>><?= $ico['candado'] ?>Cerrar SE <?= $semana ?></button>
       </form>
     <?php else: ?>
       <div class="card tarjeta ns-cierre">

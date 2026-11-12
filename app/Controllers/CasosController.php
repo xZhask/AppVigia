@@ -4674,12 +4674,14 @@ class CasosController extends Controller
      */
     private function anularDiaSinFebriles(?array $enfermedad, int $establecimientoId, string $fecha, int $usuarioId): string
     {
-        if (($enfermedad['cie10'] ?? '') !== Cie10Vigilancia::REGISTRO_FEBRILES
-            || !\App\Models\FebrilesSinCasos::anularPorFebril($establecimientoId, $fecha, $usuarioId)) {
+        $tipo = ($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_FEBRILES
+            ? \App\Models\FebrilesSinCasos::anularPorFebril($establecimientoId, $fecha, $usuarioId)
+            : null;
+        if ($tipo === null) {
             return '';
         }
 
-        return ' — El día ' . fechaIsoADmy($fecha) . ' estaba notificado sin febriles: esa notificación quedó anulada.';
+        return ' — El día ' . fechaIsoADmy($fecha) . ' estaba notificado ' . \App\Models\FebrilesSinCasos::TIPOS[$tipo] . ': esa notificación quedó anulada.';
     }
 
     /**

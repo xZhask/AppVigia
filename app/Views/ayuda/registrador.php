@@ -275,11 +275,14 @@ require __DIR__ . '/_inicio.php';
           <li>Pulse <b>Registrar febril</b>, llene el paciente, el servicio, la temperatura y el diagnóstico CIE-10.</li>
           <li>Pulse <b>Registrar ficha</b>. Vuelve a la hoja del día, donde aparece el registro.</li>
         </ol>
-        <p><b>Día sin febriles.</b> Si un día no hubo febriles, abra ese día en la hoja y pulse <b>Hoy no hubo febriles</b> (o <b>Notificar día sin febriles</b>, si es un día anterior). Los días de la semana muestran un punto: verde con febriles, gris sin febriles notificado y naranja pendiente.</p>
+        <p><b>Cada día se notifica.</b> Desde el 15/11/2026 es obligatorio: cada día debe tener sus febriles registrados o notificarse sin febriles. Si un día no hubo febriles, abra ese día en la hoja y pulse <b>Hoy no hubo febriles</b> (o <b>Notificar día sin febriles</b>, si es un día anterior).</p>
         <ul>
-          <li>Si luego registra un febril en ese día, la notificación sin febriles se anula sola.</li>
+          <li><b>Plazo:</b> hasta el día siguiente. Después se acepta igual, pero queda como <b>fuera de plazo</b>.</li>
+          <li><b>Días sin atención (solo IPRESS de nivel I):</b> los domingos y feriados nacionales figuran «sin atención» solos, sin notificar nada. Si el establecimiento no atendió otro día (por ejemplo, un día no laborable decretado), pulse <b>No hubo atención</b>. Los hospitales y las IPRESS de nivel II y III reportan todos los días.</li>
+          <li>Los días de la semana muestran un punto: verde con febriles, gris sin febriles, círculo vacío sin atención y naranja pendiente. Un anillo naranja indica que se notificó fuera de plazo.</li>
+          <li>Si luego registra un febril en ese día, la notificación se anula sola.</li>
           <li>Para anularla a mano, pulse <b>Anular</b> en el mismo recuadro. Solo puede hacerlo quien la notificó o un administrador.</li>
-          <li>Al cerrar la semana, <b>Notificación semanal</b> avisa qué días quedaron pendientes. Es un aviso: puede cerrar igual.</li>
+          <li>Mientras quede un día pendiente, <b>Notificación semanal</b> no deja cerrar la semana y muestra cuáles faltan.</li>
         </ul>
         <p><b>Otras enfermedades:</b> en <b>Nueva ficha</b>, pulse <b>Cambiar enfermedad</b> y elija <b>Otras enfermedades</b> en el grupo «Registro PNP».</p>
         <p><b>Pasar a ficha MINSA.</b> Si el diagnóstico tiene ficha MINSA (por ejemplo, un febril con dengue), al guardar se abre el registro con un aviso. Pulse <b>Pasar a ficha MINSA</b> y llene la ficha; ambos quedan relacionados.</p>
@@ -295,7 +298,7 @@ require __DIR__ . '/_inicio.php';
           <li>Pulse el botón <b>Cerrar SE</b> con el número de la semana.</li>
         </ol>
         <?php $captura('notificacion.jpg', 'Notificación semanal: aviso del plazo, resumen por enfermedad y, a la derecha, el recuadro Cerrar la semana con su confirmación', 'A la derecha, el recuadro Cerrar la semana.'); ?>
-        <p>Si cierra antes del sábado, lo que registre hasta ese día contará como tardío.</p>
+        <p>Si cierra antes del sábado, lo que registre hasta ese día contará como tardío. Como el registro de febriles se notifica día a día, en la práctica la semana se cierra desde el sábado.</p>
         <p>Al cerrar, las enfermedades sin fichas quedan notificadas como <b>sin casos</b>.</p>
         <div class="guia-tabla-marco"><table class="guia-tabla">
           <thead><tr><th>Situación</th><th>Qué pasa</th><th>Qué hacer</th></tr></thead>

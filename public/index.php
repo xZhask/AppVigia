@@ -147,6 +147,13 @@ $router->post('/notificacion-semanal/solicitar-reapertura', function () {
 $router->post('/notificacion-semanal/reabrir', function () {
     (new NotificacionSemanalController())->reabrir();
 });
+// Cumplimiento del registro de febriles por IPRESS y día (2026-11-11).
+$router->get('/notificacion-semanal/febriles', function () {
+    (new NotificacionSemanalController())->febriles();
+});
+$router->get('/notificacion-semanal/febriles/exportar', function () {
+    (new NotificacionSemanalController())->exportarFebriles();
+});
 $router->post('/notificacion-semanal/recordar', function () {
     (new NotificacionSemanalController())->recordar();
 });

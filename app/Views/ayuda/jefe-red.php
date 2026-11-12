@@ -6,7 +6,7 @@ $guiaFecha = '04/11/2026';
 $indice = [
     'alcance-red'     => ['Qué puede hacer', []],
     'ingreso-red'     => ['Ingresar al sistema', []],
-    'seguimiento-red' => ['Seguimiento semanal', ['recordatorios-red' => 'Recordatorios']],
+    'seguimiento-red' => ['Seguimiento semanal', ['recordatorios-red' => 'Recordatorios', 'febriles-red' => 'Febriles por día']],
     'panel-red'       => ['Panel', []],
     'reportes-red'    => ['Reportes', []],
     'problemas-red'   => ['Problemas frecuentes', []],
@@ -76,6 +76,11 @@ require __DIR__ . '/_inicio.php';
           <h3>Recordatorios</h3>
           <p><b>Recordar a…</b> avisa a todas las IPRESS de su red que faltan, y <b>Recordar</b>, en una fila, solo a esa.</p>
           <div class="guia-alerta"><?= $icoAviso ?><div>Por ahora los recordatorios no se envían, porque falta configurar la cuenta de correo del sistema: la pantalla mostrará ese aviso. Mientras tanto, contacte a sus IPRESS por otra vía. Cuando funcione, el recordatorio llegará al correo de la IPRESS y al de cada registrador que lo tenga registrado.</div></div>
+        </div>
+        <div class="guia-sub" id="febriles-red" data-bloque>
+          <h3>Febriles por día</h3>
+          <p>Desde el 15/11/2026, cada IPRESS notifica el registro de febriles todos los días, con plazo hasta el día siguiente. La pestaña <b>Febriles por día</b> muestra una fila por IPRESS de su red y una columna por día: un número es la cantidad de febriles, <b>0</b> notificado sin febriles, <b>—</b> sin atención (solo nivel I, domingos y feriados), <b>!</b> pendiente, y un borde naranja indica que se notificó fuera de plazo.</p>
+          <p>Una IPRESS no puede cerrar la semana mientras le falte un día. El botón <b>Excel</b> descarga el cuadro.</p>
         </div>
       </section>
 

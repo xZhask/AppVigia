@@ -6,7 +6,7 @@ $guiaFecha = '04/11/2026';
 $indice = [
     'alcance'      => ['Qué puede hacer', ['roles' => 'Roles del sistema']],
     'usuarios'     => ['Usuarios', ['usuario-nuevo' => 'Crear un usuario', 'clave-usuario' => 'Contraseña olvidada', 'cambios-usuario' => 'Cambiar o dar de baja']],
-    'seguimiento'  => ['Seguimiento semanal', ['reabrir' => 'Reabrir una semana', 'recordatorios' => 'Recordatorios']],
+    'seguimiento'  => ['Seguimiento semanal', ['reabrir' => 'Reabrir una semana', 'recordatorios' => 'Recordatorios', 'febriles-dia' => 'Febriles por día']],
     'validar'      => ['Validar y anular fichas', ['fichas-privadas' => 'Fichas privadas']],
     'panel-reportes' => ['Panel y reportes', []],
     'catalogos'    => ['Catálogos', []],
@@ -115,6 +115,23 @@ require __DIR__ . '/_inicio.php';
           <h3>Recordatorios</h3>
           <p><b>Recordar a…</b> avisa a todas las IPRESS que faltan, y <b>Recordar</b>, en una fila, solo a esa.</p>
           <div class="guia-alerta"><?= $icoAviso ?><div>Por ahora los recordatorios no se envían, porque falta configurar la cuenta de correo del sistema: la pantalla mostrará ese aviso. Mientras tanto, contacte a las IPRESS por otra vía. Cuando funcione, el recordatorio llegará al <b>Correo de la IPRESS</b> (en Establecimientos) y al correo personal de cada registrador que lo tenga registrado.</div></div>
+        </div>
+
+        <div class="guia-sub" id="febriles-dia" data-bloque>
+          <h3>Febriles por día</h3>
+          <p>Desde el 15/11/2026, cada IPRESS debe notificar el registro de febriles todos los días: registra sus febriles o lo notifica sin febriles, con plazo hasta el día siguiente. Una IPRESS no puede cerrar la semana mientras le falte un día.</p>
+          <p>En <b>Notificación semanal</b>, la pestaña <b>Febriles por día</b> muestra una fila por IPRESS y una columna por día de la SE. Las que deben días aparecen primero.</p>
+          <div class="guia-tabla-marco"><table class="guia-tabla">
+            <thead><tr><th>Celda</th><th>Qué significa</th></tr></thead>
+            <tbody>
+              <tr><td><b>Número</b></td><td>Febriles registrados ese día</td></tr>
+              <tr><td><b>0</b></td><td>Notificado sin febriles</td></tr>
+              <tr><td><b>—</b></td><td>Sin atención. Solo IPRESS de nivel I: domingos y feriados nacionales salen solos; otro día lo notifica la IPRESS</td></tr>
+              <tr><td><b>!</b></td><td>Pendiente: el día ya llegó y no tiene nada</td></tr>
+              <tr><td><b>Borde naranja</b></td><td>Notificado fuera de plazo</td></tr>
+            </tbody>
+          </table></div>
+          <p>Pulse una celda para abrir ese día en el registro de febriles de la IPRESS. El botón <b>Excel</b> descarga el cuadro con el filtro aplicado.</p>
         </div>
       </section>
 

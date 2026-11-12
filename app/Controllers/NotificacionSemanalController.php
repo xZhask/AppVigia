@@ -77,12 +77,14 @@ class NotificacionSemanalController extends Controller
             'fichas'          => $fichas,
             'tardias'         => $resumen['tardias'],
             'historial'       => $semanas,
-            // Registro de febriles (2026-11-09): días de la SE ya transcurridos
-            // sin febriles ni "día sin febriles". Solo avisa; no bloquea el cierre.
-            'diasFebrilesPendientes' => array_keys(array_filter(
+            // Registro de febriles: desde FebrilesSinCasos::OBLIGATORIA_DESDE
+            // (2026-11-11) un día sin febriles, negativa ni "sin atención"
+            // impide cerrar; los días anteriores solo avisan.
+            'diasFebrilesBloquean' => $bloquean = FebrilesSinCasos::pendientesParaCierre($establecimientoId, $anio, $semana),
+            'diasFebrilesPendientes' => array_values(array_diff(array_keys(array_filter(
                 FebrilesSinCasos::estadoDias($establecimientoId, inicioSemanaEpidemiologica($anio, $semana)->format('Y-m-d'), inicioSemanaEpidemiologica($anio, $semana)->modify('+6 days')->format('Y-m-d')),
                 fn($d) => $d['estado'] === 'PEND'
-            )),
+            )), $bloquean)),
         ]);
     }
 
@@ -157,6 +159,9 @@ class NotificacionSemanalController extends Controller
 
         if ($cierre && $cierre['anulada_en'] === null) {
             Flash::set("La SE $semana ya estaba cerrada.");
+        } elseif ($faltan = FebrilesSinCasos::pendientesParaCierre($establecimientoId, $anio, $semana)) {
+            Flash::set('Registro de febriles: falta notificar ' . count($faltan) . ' día' . (count($faltan) === 1 ? '' : 's') . ' de la SE ' . $semana
+                . ' (' . implode(', ', array_map(fn($f) => date('d/m', strtotime($f)), $faltan)) . '). Registra sus febriles o notifícalos sin febriles antes de cerrar.');
         } elseif (($_POST['confirmo'] ?? '') !== '1') {
             Flash::set('Marca la confirmación de que no hay más casos por notificar.');
         } elseif ($tardia && $motivo === '') {
@@ -271,6 +276,115 @@ class NotificacionSemanalController extends Controller
         }
         header('Location: ' . $volver);
         exit;
+    }
+
+    /**
+     * Cumplimiento del registro de febriles (2026-11-11), ADMIN y JEFE_RED
+     * (solo su red): una fila por IPRESS y una columna por día de la SE, con
+     * el estado de FebrilesSinCasos::estadoVarios().
+     */
+    public function febriles(): void
+    {
+        Auth::exigirRol('ADMIN', 'JEFE_RED');
+        $this->vista('notificacion/febriles', $this->datosFebriles($_GET) + [
+            'tituloVista' => 'Cumplimiento de febriles',
+            'rutaActual'  => 'notificacion-semanal',
+            'vistaAncha'  => true,
+        ]);
+    }
+
+    public function exportarFebriles(): void
+    {
+        Auth::exigirRol('ADMIN', 'JEFE_RED');
+        $datos = $this->datosFebriles($_GET);
+        $nombresDia = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        $columnas = [['titulo' => 'Red', 'anchoMax' => 24], ['titulo' => 'Establecimiento', 'anchoMax' => 40], ['titulo' => 'Categoría', 'tipo' => 'centro']];
+        foreach ($datos['dias'] as $d) {
+            $columnas[] = ['titulo' => $nombresDia[(int) date('w', strtotime($d))] . ' ' . date('d/m', strtotime($d)), 'grupo' => 'Día', 'tipo' => 'centro', 'ancho' => 14];
+        }
+        $columnas[] = ['titulo' => 'Pendientes', 'tipo' => 'entero'];
+        $columnas[] = ['titulo' => 'Fuera de plazo', 'tipo' => 'entero'];
+        $filas = [];
+        foreach ($datos['filas'] as $fila) {
+            $celdas = [];
+            foreach ($datos['dias'] as $d) {
+                $e = $fila['dias'][$d];
+                $celdas[] = match ($e['estado']) {
+                    'CON'   => $e['febriles'] . ' febril' . ($e['febriles'] === 1 ? '' : 'es'),
+                    'SIN'   => 'Sin febriles' . ($e['tardia'] ? ' (tarde)' : ''),
+                    'ATN'   => 'Sin atención' . ($e['auto'] ? ' (' . mb_strtolower($e['auto']) . ')' : '') . ($e['tardia'] ? ' (tarde)' : ''),
+                    'PEND'  => 'PENDIENTE',
+                    default => '',
+                };
+            }
+            $filas[] = array_merge([$fila['red_nombre'] ?? '', nombreEnOracion($fila['nombre']), $fila['categoria'] ?? ''], $celdas, [$fila['pendientes'], $fila['tardias']]);
+        }
+        $inicio = inicioSemanaEpidemiologica($datos['anio'], $datos['semana']);
+        (new \App\Core\LibroXlsx('Cumplimiento del registro de febriles', (string) (Auth::usuario()['nombre'] ?? '')))
+            ->titulo('CUMPLIMIENTO DEL REGISTRO DIARIO DE FEBRILES')
+            ->datos([
+                'Semana' => 'SE ' . $datos['semana'] . ' - ' . $datos['anio'] . ' (del ' . $inicio->format('d/m') . ' al ' . $inicio->modify('+6 days')->format('d/m/Y') . ')',
+                'Red'    => $datos['redNombre'] ?? 'Todas',
+                'IPRESS al día' => $datos['conteo']['D'] . ' de ' . $datos['total'],
+            ], 3)
+            ->nota('Nivel I: domingos y feriados nacionales figuran sin atención sin notificarse. Plazo de cada día: hasta el día siguiente.')
+            ->tabla($columnas, $filas, ['congelar' => true, 'filtro' => true, 'vacio' => 'Sin establecimientos con este filtro'])
+            ->descargar('cumplimiento_febriles_' . $datos['anio'] . '_SE' . str_pad((string) $datos['semana'], 2, '0', STR_PAD_LEFT));
+        exit;
+    }
+
+    /** Filas del cuadro de febriles para ?anio=&semana=&red=&estado=&q= (la SE en curso si no viene). */
+    private function datosFebriles(array $get): array
+    {
+        $actual = semanaEpidemiologica(date('Y-m-d'));
+        [$anio, $semana] = isset($get['semana']) ? $this->semanaPedida($get, $actual) : [$actual['anio'], $actual['semana']];
+        $texto = fn(string $clave): string => is_string($get[$clave] ?? null) ? trim($get[$clave]) : '';
+        $redDelJefe = \App\Models\Caso::redDelJefe(Auth::usuario());
+        $redId = $redDelJefe ?? (ctype_digit($texto('red')) ? (int) $texto('red') : null);
+        $filtroEstado = in_array($texto('estado'), ['D', 'P'], true) ? $texto('estado') : '';
+        $busqueda = $texto('q');
+
+        $inicio = inicioSemanaEpidemiologica($anio, $semana);
+        $dias = [];
+        for ($i = 0; $i < 7; $i++) {
+            $dias[] = $inicio->modify("+$i days")->format('Y-m-d');
+        }
+        $establecimientos = NotificacionSemanal::establecimientos($redId);
+        $categorias = $establecimientos ? Database::conexion()->query('SELECT id, categoria FROM establecimiento WHERE id IN (' . implode(',', array_map(fn($e) => (int) $e['id'], $establecimientos)) . ')')->fetchAll(\PDO::FETCH_KEY_PAIR) : [];
+        $estados = FebrilesSinCasos::estadoVarios(array_column($establecimientos, 'id'), $dias[0], $dias[6]);
+
+        $filas = [];
+        $conteo = ['D' => 0, 'P' => 0, 'dias' => 0, 'tardias' => 0];
+        foreach ($establecimientos as $establecimiento) {
+            $id = (int) $establecimiento['id'];
+            $deEste = $estados[$id] ?? [];
+            $pendientes = count(array_filter($deEste, fn($e) => $e['estado'] === 'PEND'));
+            $tardias = count(array_filter($deEste, fn($e) => $e['tardia']));
+            $conteo[$pendientes ? 'P' : 'D']++;
+            $conteo['dias'] += $pendientes;
+            $conteo['tardias'] += $tardias;
+            $filas[] = $establecimiento + ['categoria' => $categorias[$id] ?? null, 'dias' => $deEste, 'pendientes' => $pendientes, 'tardias' => $tardias];
+        }
+        $total = count($filas);
+        $visibles = array_values(array_filter($filas, function (array $fila) use ($filtroEstado, $busqueda): bool {
+            if ($filtroEstado !== '' && ($fila['pendientes'] ? 'P' : 'D') !== $filtroEstado) {
+                return false;
+            }
+            return $busqueda === '' || mb_stripos($fila['nombre'], $busqueda) !== false || mb_stripos((string) $fila['red_nombre'], $busqueda) !== false;
+        }));
+        // Las que deben días, arriba.
+        usort($visibles, fn($a, $b) => [-$a['pendientes'], $a['nombre']] <=> [-$b['pendientes'], $b['nombre']]);
+        $todasRedes = RedSalud::todos('nombre');
+        $redes = $redDelJefe === null ? $todasRedes : [];
+        $redNombre = $redId !== null ? (array_column($todasRedes, 'nombre', 'id')[$redId] ?? null) : null;
+
+        return [
+            'anio' => $anio, 'semana' => $semana, 'actual' => $actual, 'dias' => $dias,
+            'filas' => $visibles, 'total' => $total, 'conteo' => $conteo,
+            'redes' => $redes, 'redId' => $redId, 'redNombre' => $redNombre,
+            'filtroEstado' => $filtroEstado, 'busqueda' => $busqueda,
+            'esJefeRed' => $redDelJefe !== null,
+        ];
     }
 
     /** CSRF, SE válida y no futura, y la URL de vuelta (siempre esta pantalla). */

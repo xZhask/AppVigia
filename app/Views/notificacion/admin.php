@@ -45,6 +45,11 @@ $tile = function (string $clave, string $etiqueta, ?string $color, int $valor) u
   </nav>
 </div>
 
+<div class="ns-tabs">
+  <a class="on" aria-current="page" href="<?= e($url()) ?>">Cierre semanal</a>
+  <a href="<?= e('/notificacion-semanal/febriles?' . http_build_query(array_filter(['anio' => $anio, 'semana' => $semana, 'red' => $esJefeRed ? '' : ($redId ?? '')], fn($v) => $v !== '' && $v !== null))) ?>">Febriles por día</a>
+</div>
+
 <div class="ns-kpis">
   <?= $tile('', 'Establecimientos', null, $total) ?>
   <?= $tile('T', 'Cerradas a tiempo', 'var(--accent)', $conteo['T']) ?>

@@ -29,7 +29,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var confirmo = document.getElementById('confirmoCierre');
     var motivo = document.getElementById('motivoTardio');
     var boton = document.getElementById('btnCerrar');
-    var listo = function () { return confirmo.checked && (!motivo || motivo.value.trim() !== ''); };
+    // data-bloqueado: faltan días del registro de febriles (obligatorio desde 2026-11-15).
+    var listo = function () { return !boton.dataset.bloqueado && confirmo.checked && (!motivo || motivo.value.trim() !== ''); };
     var actualizar = function () { boton.disabled = !listo(); };
     confirmo.addEventListener('change', actualizar);
     if (motivo) motivo.addEventListener('input', actualizar);

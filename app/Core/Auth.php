@@ -10,6 +10,7 @@ class Auth
     private const RUTAS_JEFE_RED = [
         '', 'reportes', 'reportes/exportar',
         'notificacion-semanal', 'notificacion-semanal/recordar',
+        'notificacion-semanal/febriles', 'notificacion-semanal/febriles/exportar',
         'perfil/contrasena', 'perfil/completar', 'ayuda/jefe-red',
         'login', 'login/olvide', 'login/restablecer', 'logout',
     ];

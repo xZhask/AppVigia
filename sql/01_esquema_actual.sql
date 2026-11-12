@@ -1,5 +1,10 @@
 -- ============================================================================
 -- VIGIA -- Esquema consolidado de la base de datos "vigia"
+-- Editado a mano el 2026-11-11 (sin regenerar):
+--   - febriles_sin_casos.tipo: SIN_FEBRILES o SIN_ATENCION (dia sin atencion
+--     de una IPRESS de nivel I). Solo ese CREATE TABLE.
+--     Migracion: sql/migraciones/add_febriles_sin_atencion.php.
+--
 -- Editado a mano el 2026-11-09 (sin regenerar), segundo cambio del dia:
 --   - establecimiento.correo: correo del area o de la IPRESS (puede
 --     compartirse), recibe los recordatorios de la notificacion semanal.
@@ -1200,6 +1205,7 @@ CREATE TABLE `febriles_sin_casos` (
   `id` int NOT NULL AUTO_INCREMENT,
   `establecimiento_id` int NOT NULL,
   `fecha` date NOT NULL,
+  `tipo` enum('SIN_FEBRILES','SIN_ATENCION') NOT NULL DEFAULT 'SIN_FEBRILES',
   `usuario_id` int NOT NULL,
   `creado_en` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `anulada_por` int DEFAULT NULL,
