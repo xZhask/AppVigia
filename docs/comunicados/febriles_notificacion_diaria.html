@@ -18,6 +18,13 @@
   table { border-collapse: collapse; width: 100%; margin: 4px 0 6px; font-size: 9.5pt; }
   td { border: 1px solid #c9d3e0; padding: 3px 7px; vertical-align: top; }
   td:first-child { width: 22%; font-weight: 600; white-space: nowrap; }
+  figure { margin: 6px 0 8px; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid #c9d3e0; display: block; }
+  figure.angosta img { width: 78%; margin: 0 auto; }
+  figcaption { font-size: 9pt; color: #5a6578; margin-top: 4px; }
+  h2 { break-after: avoid; }
+  .nueva-pagina { break-before: page; margin-top: 0; }
+  figure.angosta img { width: 92%; }
   footer { margin-top: 14px; font-size: 8.5pt; color: #5a6578; border-top: 1px solid #c9d3e0; padding-top: 5px; }
 </style>
 </head>
@@ -47,23 +54,17 @@
 <p><b>Plazo:</b> hasta el día siguiente. Después se acepta igual, pero queda como <b>fuera de plazo</b>.</p>
 <p><b>Correcciones:</b> si registra un febril en un día notificado «sin febriles», esa notificación se anula sola. Para anularla manualmente, use <b>Anular</b>.</p>
 <p><b>Cierre semanal:</b> no se puede cerrar la semana mientras falte un día, y el sistema indica cuáles faltan. En la práctica, la semana se cierra desde el sábado.</p>
-<table>
-  <tr><td><span style="color:#2e8b57">●</span> Verde</td><td>Día con febriles</td></tr>
-  <tr><td><span style="color:#8a94a6">●</span> Gris</td><td>Notificado sin febriles</td></tr>
-  <tr><td>○ Círculo vacío</td><td>Sin atención</td></tr>
-  <tr><td><span style="color:#e07b00">●</span> Naranja</td><td>Pendiente</td></tr>
-  <tr><td><span style="color:#e07b00">◯</span> Anillo naranja</td><td>Notificado fuera de plazo</td></tr>
-</table>
+<figure>
+  <img src="img/febriles_registrador.png" alt="Días de la semana con su indicador y recuadro con los botones Notificar día sin febriles y No hubo atención">
+  <figcaption>Hoja de febriles de la IPRESS. Cada día muestra un indicador de color, explicado en la leyenda. En un día pendiente aparecen los botones <b>«Notificar día sin febriles»</b> y <b>«No hubo atención»</b>; este último, solo en el nivel I.</figcaption>
+</figure>
 
-<h2>Para administradores y jefes de red</h2>
+<h2 class="nueva-pagina">Para administradores y jefes de red</h2>
 <p>En <b>Notificación semanal → pestaña «Febriles por día»</b> hay un cuadro con una fila por IPRESS y una columna por cada día de la semana epidemiológica. Las IPRESS con días pendientes aparecen primero.</p>
-<table>
-  <tr><td>Número</td><td>Febriles registrados ese día</td></tr>
-  <tr><td>0</td><td>Notificado sin febriles</td></tr>
-  <tr><td>—</td><td>Sin atención (solo nivel I)</td></tr>
-  <tr><td>!</td><td>Pendiente</td></tr>
-  <tr><td>Borde naranja</td><td>Notificado fuera de plazo</td></tr>
-</table>
+<figure class="angosta">
+  <img src="img/febriles_administrador.png" alt="Cuadro Febriles por día con indicadores, filtros y una fila por IPRESS">
+  <figcaption>Cuadro «Febriles por día». En cada celda, un <b>número</b> es la cantidad de febriles, <b>0</b> es sin febriles, <b>—</b> es sin atención y <b>!</b> es pendiente. Un <b>borde naranja</b> indica que se notificó fuera de plazo.</figcaption>
+</figure>
 <ul>
   <li>Se puede filtrar por red, por estado y por nombre de IPRESS, y descargar en <b>Excel</b>.</li>
   <li>El jefe de red ve solo las IPRESS de su red.</li>
@@ -71,6 +72,7 @@
 </ul>
 
 <footer>
+  Las capturas usan datos de prueba.
   Feriados considerados: 1 ene, Jueves y Viernes Santo, 1 may, 7 y 29 jun, 23, 28 y 29 jul, 6 y 30 ago, 8 oct, 1 nov, 8, 9 y 25 dic.
   Más detalle en el menú <b>Ayuda</b> del sistema.
 </footer>
