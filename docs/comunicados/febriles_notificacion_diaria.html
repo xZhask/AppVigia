@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Notificación diaria de febriles</title>
+<style>
+  @page { size: A4; margin: 16mm 18mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.42; color: #1d2433; margin: 0; }
+  header { border-bottom: 2px solid #1f3a5f; padding-bottom: 6px; margin-bottom: 12px; }
+  .sistema { font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #5a6578; }
+  h1 { font-size: 16pt; margin: 2px 0 0; color: #1f3a5f; }
+  h2 { font-size: 11.5pt; margin: 14px 0 6px; padding: 4px 8px; background: #e9eef5; color: #1f3a5f; border-left: 4px solid #1f3a5f; }
+  p { margin: 0 0 6px; }
+  ul { margin: 0 0 6px; padding-left: 18px; }
+  li { margin-bottom: 3px; }
+  .aviso { border: 1px solid #c9d3e0; background: #f6f8fb; padding: 7px 10px; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 4px 0 6px; font-size: 9.5pt; }
+  td { border: 1px solid #c9d3e0; padding: 3px 7px; vertical-align: top; }
+  td:first-child { width: 22%; font-weight: 600; white-space: nowrap; }
+  footer { margin-top: 14px; font-size: 8.5pt; color: #5a6578; border-top: 1px solid #c9d3e0; padding-top: 5px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="sistema">VIGÍA SPNP · Registro de febriles</div>
+  <h1>Notificación diaria del registro de febriles</h1>
+</header>
+
+<div class="aviso">
+  <p><b>Desde el domingo 15 de noviembre de 2026 (SE 46)</b>, cada IPRESS debe dar cuenta de <b>todos los días</b> en el registro de febriles. Antes se había indicado que bastaba con el cierre semanal. Ahora debe quedar constancia diaria para distinguir un día <b>sin febriles</b> de un día en que <b>no se registró</b>.</p>
+</div>
+
+<h2>Para las IPRESS (registradores)</h2>
+<p>Cada día debe quedar en una de estas situaciones:</p>
+<ul>
+  <li><b>Hubo febriles:</b> se registran como siempre. No hay que hacer nada más.</li>
+  <li><b>No hubo febriles:</b> en la hoja de ese día, pulse <b>«Hoy no hubo febriles»</b>, o <b>«Notificar día sin febriles»</b> si es un día anterior.</li>
+  <li><b>No hubo atención (solo IPRESS de nivel I):</b>
+    <ul>
+      <li>Los domingos y feriados nacionales quedan marcados automáticamente.</li>
+      <li>Si otro día el establecimiento no atendió, pulse <b>«No hubo atención»</b>.</li>
+      <li>Los hospitales y las IPRESS de nivel II y III reportan todos los días.</li>
+    </ul>
+  </li>
+</ul>
+<p><b>Plazo:</b> hasta el día siguiente. Después se acepta igual, pero queda como <b>fuera de plazo</b>.</p>
+<p><b>Correcciones:</b> si registra un febril en un día notificado «sin febriles», esa notificación se anula sola. Para anularla manualmente, use <b>Anular</b>.</p>
+<p><b>Cierre semanal:</b> no se puede cerrar la semana mientras falte un día, y el sistema indica cuáles faltan. En la práctica, la semana se cierra desde el sábado.</p>
+<table>
+  <tr><td><span style="color:#2e8b57">●</span> Verde</td><td>Día con febriles</td></tr>
+  <tr><td><span style="color:#8a94a6">●</span> Gris</td><td>Notificado sin febriles</td></tr>
+  <tr><td>○ Círculo vacío</td><td>Sin atención</td></tr>
+  <tr><td><span style="color:#e07b00">●</span> Naranja</td><td>Pendiente</td></tr>
+  <tr><td><span style="color:#e07b00">◯</span> Anillo naranja</td><td>Notificado fuera de plazo</td></tr>
+</table>
+
+<h2>Para administradores y jefes de red</h2>
+<p>En <b>Notificación semanal → pestaña «Febriles por día»</b> hay un cuadro con una fila por IPRESS y una columna por cada día de la semana epidemiológica. Las IPRESS con días pendientes aparecen primero.</p>
+<table>
+  <tr><td>Número</td><td>Febriles registrados ese día</td></tr>
+  <tr><td>0</td><td>Notificado sin febriles</td></tr>
+  <tr><td>—</td><td>Sin atención (solo nivel I)</td></tr>
+  <tr><td>!</td><td>Pendiente</td></tr>
+  <tr><td>Borde naranja</td><td>Notificado fuera de plazo</td></tr>
+</table>
+<ul>
+  <li>Se puede filtrar por red, por estado y por nombre de IPRESS, y descargar en <b>Excel</b>.</li>
+  <li>El jefe de red ve solo las IPRESS de su red.</li>
+  <li>El administrador puede abrir el día de una IPRESS haciendo clic en la celda, y anular notificaciones si hace falta.</li>
+</ul>
+
+<footer>
+  Feriados considerados: 1 ene, Jueves y Viernes Santo, 1 may, 7 y 29 jun, 23, 28 y 29 jul, 6 y 30 ago, 8 oct, 1 nov, 8, 9 y 25 dic.
+  Más detalle en el menú <b>Ayuda</b> del sistema.
+</footer>
+</body>
