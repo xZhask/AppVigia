@@ -1480,6 +1480,67 @@ function enmascararDocumento(string $numDoc): string
 }
 
 /**
+ * Una línea por fila llenada de un campo MATRIZ, para la vista Ver:
+ * "ELISA NS1-Dengue — Positivo · Fecha de resultado: 10/11/2026". Lee los
+ * tres formatos de partials/campos/matriz.php: fila = "COLUMNA" (todas las
+ * columnas radio), fila = [índice => texto] (libres) y fila con '_radio' o
+ * '_radio_<grupo>' (mezcla). Las filas vacías, o solo con «No realizado», no
+ * aparecen.
+ */
+function textoFilasMatriz(array $config, array $valores): array
+{
+    $filas = $config['filas'] ?? [];
+    $columnas = $config['columnas'] ?? [];
+    $opcion = function (string $valor): string {
+        $abreviaturas = ['SI' => 'Sí', 'SÍ' => 'Sí', 'NO' => 'No', 'IGN' => 'Ignorado', 'DIM' => 'Disminuido',
+                         'AUS' => 'Ausente', 'NORM' => 'Normal', 'PRES' => 'Presente'];
+        $mayus = mb_strtoupper(trim($valor));
+        if (isset($abreviaturas[$mayus])) {
+            return $abreviaturas[$mayus];
+        }
+        // "NO REALIZADO" -> "No realizado"; lo que no está en mayúsculas queda igual.
+        return $mayus === trim($valor) ? mb_strtoupper(mb_substr($mayus, 0, 1)) . mb_strtolower(mb_substr($mayus, 1)) : trim($valor);
+    };
+    $grupos = [];
+    foreach (array_keys($config['grupos_columnas'] ?? []) as $nombreGrupo) {
+        $slug = trim(preg_replace('/[^a-z0-9]+/', '_', strtr(mb_strtolower(trim((string) $nombreGrupo), 'UTF-8'),
+            ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n'])), '_');
+        $grupos['_radio_' . $slug] = (string) $nombreGrupo;
+    }
+    $lineas = [];
+    foreach ($valores as $indiceFila => $fila) {
+        $partes = [];
+        if (is_array($fila)) {
+            if (trim((string) ($fila['_radio'] ?? '')) !== '') {
+                $partes[] = $opcion((string) $fila['_radio']);
+            }
+            foreach ($fila as $clave => $valor) {
+                $valor = is_scalar($valor) ? trim((string) $valor) : '';
+                if ($valor === '') {
+                    continue;
+                }
+                if (isset($grupos[$clave])) {
+                    $partes[] = $grupos[$clave] . ': ' . $opcion($valor);
+                } elseif (ctype_digit((string) $clave)) {
+                    $columna = trim((string) ($columnas[(int) $clave] ?? ''));
+                    $texto = str_contains(mb_strtoupper($columna), 'FECHA') ? (fechaIsoADmy($valor) ?: $valor) : $valor;
+                    $partes[] = $columna !== '' ? $columna . ': ' . $texto : $texto;
+                }
+            }
+        } elseif (is_scalar($fila) && trim((string) $fila) !== '') {
+            $partes[] = $opcion((string) $fila);
+        }
+        // "No realizado" sola (A97: el formulario la marca por defecto en
+        // todas las filas) no aporta: solo se listan las pruebas hechas.
+        if ($partes && $partes !== ['No realizado']) {
+            $etiquetaFila = trim((string) ($filas[$indiceFila] ?? ''));
+            $lineas[] = ($etiquetaFila !== '' ? $etiquetaFila : '#' . ((int) $indiceFila + 1)) . ' — ' . implode(' · ', $partes);
+        }
+    }
+    return $lineas;
+}
+
+/**
  * Texto legible de un valor guardado en caso_valor, para la vista de solo
  * lectura de la ficha (Ver). $campo es una fila de campo_def.
  */
@@ -1558,14 +1619,16 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
             // usuario): una línea por lugar en vez de "Registrado (n ítems)".
             if (str_ends_with((string) ($campo['clave'] ?? ''), '_contactos_por_lugar') && array_is_list($decoded)) {
                 $lineasLugar = array_values(array_filter(array_map('textoContactoPorLugar', $decoded)));
-                return $lineasLugar ? implode(' | ', $lineasLugar) : '—';
+                return $lineasLugar ? implode("
+", $lineasLugar) : '—';
             }
             if (($campo['clave'] ?? '') === 'b55_lesiones') {
                 $items = [];
                 foreach ($decoded as $idx => $les) {
                     $items[] = textoLesionB55($les, $idx + 1);
                 }
-                return implode(' | ', $items) ?: '—';
+                return implode("
+", $items) ?: '—';
             }
             if (($campo['clave'] ?? '') === 'b55_compromiso_de_estructuras') {
                 // Mismo diccionario clave->etiqueta que
@@ -1627,9 +1690,18 @@ function campoValorTexto(array $campo, ?string $valorCrudo): string
                             . ': ' . implode(', ', $partesFila);
                     }
                 }
-                return $lineasMatrizTexto ? implode(' | ', $lineasMatrizTexto) : '—';
+                return $lineasMatrizTexto ? implode("
+", $lineasMatrizTexto) : '—';
             }
-            return is_array($decoded) ? 'Registrado (' . count($decoded) . ' ítems)' : $valorCrudo;
+            // Resto de matrices (A97 laboratorio, A80, P35.0, Y59.0...;
+            // 2026-11-12): una línea por fila llenada en vez de
+            // "Registrado (n ítems)", que no decía qué se registró.
+            $lineasMatriz = textoFilasMatriz($configMatrizTexto, $decoded);
+            if (!$lineasMatriz) {
+                return str_contains($valorCrudo, '"NO REALIZADO"') ? 'Ninguna prueba realizada' : '—';
+            }
+            return implode("
+", $lineasMatriz);
         default:
             // TEXTO "formato": "distrito" (V99, 2026-10-08): se guarda el id
             // del distrito; se lee "Distrito, Provincia, Departamento".

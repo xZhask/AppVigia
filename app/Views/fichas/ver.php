@@ -395,12 +395,13 @@ $accionEtiquetas = [
               <div class="field wide">
                 <label class="fl"><?= e($campo['etiqueta']) ?></label>
                 <?php if ($lesionesSilueta) require __DIR__ . '/../partials/campos/leishmaniasis-siluetas.php'; ?>
-                <div class="control" style="background:var(--paper)"><?= e(campoValorTexto($campo, $valoresCampos[$campo['id']] ?? null)) ?></div>
+                <div class="control" style="background:var(--paper);white-space:pre-line;height:auto;line-height:1.6"><?= e(campoValorTexto($campo, $valoresCampos[$campo['id']] ?? null)) ?></div>
               </div>
               <?php continue; endif; ?>
-              <div class="field">
+              <?php $esMatrizVer = $campo['tipo'] === 'MATRIZ'; // una línea por fila: ancho completo ?>
+              <div class="field<?= $esMatrizVer ? ' wide' : '' ?>">
                 <label class="fl"><?= e($campo['etiqueta']) ?></label>
-                <div class="control" style="background:var(--paper)"><?= e(campoValorTexto($campo, $valoresCampos[$campo['id']] ?? null)) ?></div>
+                <div class="control" style="background:var(--paper)<?= $esMatrizVer ? ';white-space:pre-line;height:auto;line-height:1.6' : '' ?>"><?= e(campoValorTexto($campo, $valoresCampos[$campo['id']] ?? null)) ?></div>
               </div>
             <?php endforeach; ?>
           </div>
