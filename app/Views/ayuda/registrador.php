@@ -74,7 +74,7 @@ require __DIR__ . '/_inicio.php';
           <li>En el menú, pulse <b>Nueva ficha</b>.</li>
           <li>Si la enfermedad no es la correcta, pulse <b>Cambiar enfermedad</b> y búsquela por nombre o CIE-10. Hacerlo recarga el formulario: elija la enfermedad antes de escribir.</li>
           <li>Revise la <b>Fecha de notificación</b>. De ella sale la semana epidemiológica (SE) de la ficha.</li>
-          <li>Escriba el <b>documento de identidad</b> del paciente. Con DNI, los apellidos y nombres se completan del padrón o de RENIEC; si la persona ya está registrada, se cargan sus datos.</li>
+          <li>Escriba el <b>documento de identidad</b> del paciente. Con DNI, los apellidos y nombres se completan del padrón o de RENIEC; si la persona ya está registrada, se cargan sus datos. Si no se encuentra, como ocurre con los menores de edad (RENIEC no entrega sus datos), escriba los apellidos y nombres a mano.</li>
           <li>Elija la <a href="#condicion">condición del paciente</a> y complete sus datos.</li>
           <li>Llene las demás secciones. Los campos con asterisco (*) son obligatorios. El recuadro <b>Avance de la ficha</b>, a la derecha, muestra qué secciones faltan.</li>
           <li>Pulse <b>Registrar ficha</b> una sola vez. El botón cambia a «Guardando…» mientras se guarda: con la red lenta, espere.</li>

@@ -256,7 +256,7 @@ ob_start(); ?>
                 </div>
               </div>
               <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span>
-              <?php else: ?><span class="hint" id="ayudaDocumento">Con DNI, apellidos y nombres se completan del padrón o RENIEC.</span><?php endif; ?>
+              <?php else: ?><span class="hint" id="ayudaDocumento">Con DNI, apellidos y nombres se completan del padrón o RENIEC. Los menores de edad se registran a mano.</span><?php endif; ?>
             </div>
             <?php // campos_persona (Z21, 2026-09-12): campo_def que la ficha declara
             // para esta tarjeta, junto al documento -- ver

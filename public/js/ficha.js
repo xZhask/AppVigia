@@ -1770,10 +1770,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     fetch('/casos/nuevo/paciente?' + parametros.toString())
-      .then(function (resp) { return resp.json(); })
+      .then(function (resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.json();
+      })
       .then(function (datos) { pintarBusquedaPaciente(datos, manual); })
       .catch(function () {
-        if (buscandoHint) buscandoHint.hidden = true;
+        // Si la consulta falla, los nombres no pueden quedar bloqueados (antes
+        // seguían de solo lectura con DNI y, en la búsqueda automática, sin
+        // aviso: no había cómo registrar a quien RENIEC no devuelve, p. ej. un
+        // menor de edad; 2026-11-16).
+        liberarNombresPaciente('No se pudo consultar el padrón ni RENIEC. Registre los datos manualmente.');
         if (manual) toast('No se pudo consultar el padrón ni RENIEC. Completa los datos manualmente.');
       })
       .then(function () {
@@ -1879,6 +1886,19 @@ document.addEventListener('DOMContentLoaded', function () {
     return (palabras[0].charAt(0) + palabras[palabras.length - 1].charAt(0)).toUpperCase();
   }
 
+  // Apellidos y nombres editables, con el aviso en rojo bajo el documento.
+  function liberarNombresPaciente(mensaje) {
+    ['apellidoPaterno', 'apellidoMaterno', 'nombres'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.readOnly = false;
+    });
+    if (buscandoHint) {
+      buscandoHint.textContent = mensaje;
+      buscandoHint.style.color = 'var(--s-confirmado, #B23B3B)';
+      buscandoHint.hidden = false;
+    }
+  }
+
   function pintarBusquedaPaciente(datos, manual) {
     var dupeSlot = document.getElementById('dupeSlot');
     if (dupeSlot) {
@@ -1915,23 +1935,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     var found = document.getElementById('found');
-    if (!datos.paciente) {
+    if (!datos.paciente || datos.error) {
       if (found) found.style.display = 'none';
-
-      var apPaterno = document.getElementById('apellidoPaterno');
-      var apMaterno = document.getElementById('apellidoMaterno');
-      var nom = document.getElementById('nombres');
-      if (apPaterno && apMaterno && nom) {
-        apPaterno.readOnly = false;
-        apMaterno.readOnly = false;
-        nom.readOnly = false;
-      }
-
-      if (buscandoHint) {
-        buscandoHint.textContent = 'No se encontraron datos de paciente, registre manualmente.';
-        buscandoHint.style.color = 'var(--s-confirmado, #B23B3B)';
-        buscandoHint.hidden = false;
-      }
+      liberarNombresPaciente('No se encontraron datos del paciente: regístrelos manualmente. RENIEC no entrega los datos de menores de edad.');
       return;
     }
 
@@ -2019,9 +2025,15 @@ document.addEventListener('DOMContentLoaded', function () {
     var apMaterno2 = document.getElementById('apellidoMaterno');
     var nom2 = document.getElementById('nombres');
     if (apPaterno2 && apMaterno2 && nom2 && document.getElementById('tipoDoc').value === 'DNI') {
-      apPaterno2.readOnly = true;
-      apMaterno2.readOnly = true;
-      nom2.readOnly = true;
+      // Solo se bloquea lo que llegó con valor: si RENIEC devolvió datos
+      // parciales (menores de edad), lo vacío se escribe a mano (2026-11-16).
+      apPaterno2.readOnly = !!apPaterno2.value;
+      apMaterno2.readOnly = !!apMaterno2.value;
+      nom2.readOnly = !!nom2.value;
+      if ((!apPaterno2.value || !nom2.value) && buscandoHint && !etiquetaCondicionNoAdmitida) {
+        buscandoHint.textContent = 'Datos incompletos: complete a mano los que faltan.';
+        buscandoHint.style.color = 'var(--s-confirmado, #B23B3B)';
+      }
     }
   }
 
