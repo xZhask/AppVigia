@@ -1878,3 +1878,12 @@ html[data-theme="dark"] .iaas-sala:hover,html[data-theme="dark"] .iaas-opcion:ho
 .fc.tarde{box-shadow:inset 0 -3px 0 var(--ns-warn)}
 a.fc:hover{filter:brightness(.95)}
 @media (max-width:760px){.ns-tabs a{flex:1;text-align:center}}
+
+/* Nueva ficha, documento del paciente (2026-11-16): campos alineados arriba y
+   un solo mensaje a lo ancho (ayuda o resultado de la búsqueda). */
+.lookup:has(#numDoc){align-items:flex-start}
+.doc-mensajes{margin-top:8px}
+.doc-mensajes .hint{display:block;margin:0}
+.doc-mensajes .hint[hidden]{display:none}
+.doc-mensajes:has(#buscandoPacienteHint:not([hidden])) #ayudaDocumento{display:none}
+#buscandoPacienteHint{padding:7px 11px;border-radius:8px;background:color-mix(in srgb,currentColor 9%,transparent);border:1px solid color-mix(in srgb,currentColor 22%,transparent)}

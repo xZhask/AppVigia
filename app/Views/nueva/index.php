@@ -255,8 +255,7 @@ ob_start(); ?>
                   <input type="text" id="numDoc" name="num_doc" value="<?= e($valoresFijos['num_doc']) ?>" placeholder="8 dígitos" inputmode="numeric" autocomplete="off">
                 </div>
               </div>
-              <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span>
-              <?php else: ?><span class="hint" id="ayudaDocumento">Con DNI, apellidos y nombres se completan del padrón o RENIEC. Los menores de edad se registran a mano.</span><?php endif; ?>
+              <?php if (isset($erroresFijos['num_doc'])): ?><span class="hint err"><?= e($erroresFijos['num_doc']) ?></span><?php endif; ?>
             </div>
             <?php // campos_persona (Z21, 2026-09-12): campo_def que la ficha declara
             // para esta tarjeta, junto al documento -- ver
@@ -276,7 +275,13 @@ ob_start(); ?>
               </div>
             </div>
           </div>
-          <span class="hint" id="buscandoPacienteHint" hidden>Consultando padrón y RENIEC…</span>
+          <?php // Ayuda y resultado de la búsqueda en una sola línea a lo ancho,
+          // bajo la fila (2026-11-16): dentro de la columna del DNI ocupaba 3
+          // líneas y desalineaba "N.° de historia clínica". Se ve uno a la vez. ?>
+          <div class="doc-mensajes">
+            <?php if (!isset($erroresFijos['num_doc'])): ?><span class="hint" id="ayudaDocumento">Con DNI, apellidos y nombres se completan del padrón o RENIEC. Los menores de edad se registran a mano.</span><?php endif; ?>
+            <span class="hint" id="buscandoPacienteHint" hidden>Consultando padrón y RENIEC…</span>
+          </div>
           <div class="found" id="found" style="display:none">
             <div class="pa" id="foundIniciales"></div>
             <div><div class="pn" id="foundNombre"></div><div class="pd" id="foundDetalle"></div></div>
