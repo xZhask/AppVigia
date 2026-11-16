@@ -111,6 +111,7 @@ $es = $estados[$caso['estado']];
       echo $tarjetaPersona['aviso']; ?><div class="card section"<?= $tarjetaPersona['atributos'] ?>>
         <div class="section-head"><span class="section-num">2</span><h3><?= $tarjetaPersona['titulo'] ?></h3></div>
         <div class="section-body">
+          <div class="eyebrow persona-sub">Identificación</div>
           <div class="fields thirds">
             <?php if ($caso['tipo_doc'] === 'SIN_DOCUMENTO'): ?>
             <?php // 2026-10-16: una persona registrada sin documento puede
@@ -148,7 +149,7 @@ $es = $estados[$caso['estado']];
             <div class="field" data-nucleo-incluido="n_historia_clinica" <?= $nucleoIncluye('n_historia_clinica') ? '' : 'hidden style="display:none;"' ?>>
               <label class="fl">N.° de historia clínica</label>
               <div class="control mono">
-                <input type="text" name="n_historia_clinica" value="<?= e($valoresFijos['n_historia_clinica'] ?? '') ?>" placeholder="N.° H.C.…">
+                <input type="text" name="n_historia_clinica" value="<?= e($valoresFijos['n_historia_clinica'] ?? '') ?>" placeholder="Ej.: 004512">
               </div>
             </div>
           </div>
@@ -174,6 +175,9 @@ $es = $estados[$caso['estado']];
               <?php if (isset($erroresFijos['nombres'])): ?><span class="hint err"><?= e($erroresFijos['nombres']) ?></span><?php endif; ?>
             </div>
           </div>
+          <?php // Edad con unidad junto a la fecha (rediseño 2026-11-16): solo fichas con unidades_edad.
+          $unidadesEdadPersona = json_decode((string) ($enfermedad['unidades_edad'] ?? ''), true);
+          $unidadesEdadPersona = is_array($unidadesEdadPersona) ? $unidadesEdadPersona : []; ?>
           <div class="fields thirds" style="margin-top:14px">
             <?php $esO95Edit = (($enfermedad['cie10'] ?? null) === 'O95'); ?>
             <?php // nucleo_condicional 'sexo': ver nueva/index.php.
@@ -201,10 +205,11 @@ $es = $estados[$caso['estado']];
 <?= casillaFechaNacDesconocida($enfermedad, $valoresCampos, ($valoresFijos['fecha_nac_desconocida'] ?? '') === '1') ?>
               <?php if (isset($erroresFijos['fecha_nac'])): ?><span class="hint err"><?= e($erroresFijos['fecha_nac']) ?></span><?php endif; ?>
             </div>
+            <?php if ($unidadesEdadPersona) require __DIR__ . '/../partials/edad-con-unidad.php'; ?>
           <?php // campos_persona.nacimiento: ver nueva/index.php.
           $filaCamposPersona = 'nacimiento'; require __DIR__ . '/../partials/persona-campos-declarados.php'; unset($filaCamposPersona); ?></div>
-          <div data-nucleo-incluido="nacimiento_distrito_id" <?= $nucleoIncluye('nacimiento_distrito_id') ? '' : 'hidden style="display:none;"' ?> style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
-            <div class="eyebrow" style="margin-bottom:10px">Lugar de nacimiento</div>
+          <div data-nucleo-incluido="nacimiento_distrito_id" <?= $nucleoIncluye('nacimiento_distrito_id') ? '' : 'hidden style="display:none;"' ?>>
+            <div class="eyebrow persona-sub">Lugar de nacimiento</div>
             <?php
             (function (array $valoresFijos): void {
                 $prefijo = 'nacimiento-ubigeo';
@@ -226,8 +231,8 @@ $es = $estados[$caso['estado']];
           // no queden intercalados entre los campos de residencia. Ver
           // datos-paciente-nucleo-residencia.php (requerido más abajo) para
           // el resto del núcleo.
-          require __DIR__ . '/../partials/datos-paciente-nucleo.php';
-          ?>
+          ?><div class="persona-bloque"><div class="eyebrow persona-sub">Otros datos</div>
+          <?php require __DIR__ . '/../partials/datos-paciente-nucleo.php'; ?></div>
 
           <?php
           // nucleo_condicional -- ver el comentario largo en nueva/index.php
@@ -235,15 +240,9 @@ $es = $estados[$caso['estado']];
           [$abreResidenciaCondicional, $cierraResidenciaCondicional] = envolturaNucleoCondicional($enfermedad, 'residencia', $valoresCampos);
           ?>
           <?= $abreResidenciaCondicional ?>
-          <div <?= $nucleoIncluye('nacimiento_distrito_id') ? 'style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"' : 'style="margin-top:14px"' ?>>
-            <?php // nucleo_ajustes.titulo_residencia (P96): ver nueva/index.php.
-            if ($nucleoIncluye('nacimiento_distrito_id') || nucleoAjuste($enfermedad, 'titulo_residencia')): ?>
-              <!-- Distingue este bloque de "Lugar de nacimiento" (justo arriba, mismo
-                   patrón de 3 selects) -- sin esto quedan visualmente indistinguibles.
-                   Solo se pinta cuando ambos coexisten (opt-in), para no cambiar la
-                   apariencia de las 23 fichas que no piden lugar de nacimiento. -->
-              <div class="eyebrow" style="margin-bottom:10px"><?= e(nucleoAjuste($enfermedad, 'titulo_residencia') ?? 'Residencia habitual') ?></div>
-            <?php endif; ?>
+          <div>
+            <?php // nucleo_ajustes.titulo_residencia (P96): ver nueva/index.php. ?>
+            <div class="eyebrow persona-sub"><?= e(nucleoAjuste($enfermedad, 'titulo_residencia') ?? 'Residencia habitual') ?></div>
             <?php
             $prefijo = 'pac-ubigeo';
             $errorDistrito = $erroresFijos['distrito_id'] ?? null;

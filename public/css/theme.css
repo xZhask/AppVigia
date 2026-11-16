@@ -1887,3 +1887,33 @@ a.fc:hover{filter:brightness(.95)}
 .doc-mensajes .hint[hidden]{display:none}
 .doc-mensajes:has(#buscandoPacienteHint:not([hidden])) #ayudaDocumento{display:none}
 #buscandoPacienteHint{padding:7px 11px;border-radius:8px;background:color-mix(in srgb,currentColor 9%,transparent);border:1px solid color-mix(in srgb,currentColor 22%,transparent)}
+
+/* Datos de la persona, rediseño (2026-11-16): subtítulos, identificación en la
+   grilla de 3 columnas, edad en un solo control y mensajes del DNI con icono. */
+.persona-sub{display:block;margin:22px 0 12px;padding-top:16px;border-top:1px dashed var(--line)}
+.section-body > .persona-sub:first-child{margin-top:0;padding-top:0;border-top:0}
+.persona-bloque:not(:has(.field:not([hidden]))) > .persona-sub{display:none}
+.persona-bloque > .persona-sub + .fields{margin-top:0 !important}
+.lookup.fields{display:grid;align-items:start}
+.lookup.fields > .field{min-width:0}
+.edad-combo{display:flex}
+.edad-combo > .control:first-child{flex:0 0 42%;border-radius:9px 0 0 9px}
+.edad-combo > .control:last-child{flex:1;min-width:0;border-radius:0 9px 9px 0;margin-left:-1px}
+.edad-combo > .control:focus-within{position:relative;z-index:1}
+.control.autocompletado:has(> input[readonly]){background:var(--accent-soft);border-style:solid;border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.control.autocompletado > input[readonly]{color:var(--ink)}
+#buscandoPacienteHint[data-estado]{display:flex;align-items:center;gap:8px}
+#buscandoPacienteHint[data-estado=buscando]{color:var(--muted)}
+#buscandoPacienteHint[data-estado=ok]{color:var(--accent)}
+#buscandoPacienteHint[data-estado=falta]{color:#A6460B}
+#buscandoPacienteHint[data-estado=error]{color:var(--s-confirmado,#B23B3B)}
+html[data-theme="dark"] #buscandoPacienteHint[data-estado=falta]{color:#F2A766}
+#buscandoPacienteHint[data-estado]::before{content:'';flex:none;width:15px;height:15px;background:currentColor;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+#buscandoPacienteHint[data-estado=ok]{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E")}
+#buscandoPacienteHint[data-estado=falta],#buscandoPacienteHint[data-estado=error]{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4l9 16H3z'/%3E%3Cpath d='M12 10v4M12 17h.01'/%3E%3C/svg%3E")}
+#buscandoPacienteHint[data-estado=buscando]::before{background:none;-webkit-mask:none;mask:none;width:11px;height:11px;border:2px solid color-mix(in srgb,var(--accent) 30%,transparent);border-top-color:var(--accent);border-radius:50%;animation:giro-doc .7s linear infinite}
+@keyframes giro-doc{to{transform:rotate(360deg)}}
+#ayudaDocumento{display:flex;align-items:center;gap:7px}
+#ayudaDocumento::before{content:'';flex:none;width:13px;height:13px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 8h.01'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 8h.01'/%3E%3C/svg%3E") center/contain no-repeat}
+#ayudaDocumento[hidden]{display:none}
+#buscandoPacienteHint[hidden]{display:none}

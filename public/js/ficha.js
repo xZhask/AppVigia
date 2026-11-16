@@ -1758,6 +1758,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (buscandoHint) {
       buscandoHint.textContent = 'Consultando padrón y RENIEC…';
       buscandoHint.style.color = '';
+      buscandoHint.dataset.estado = 'buscando';
       buscandoHint.hidden = false;
     }
     if (btnBuscar) btnBuscar.disabled = true;
@@ -1780,7 +1781,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // seguían de solo lectura con DNI y, en la búsqueda automática, sin
         // aviso: no había cómo registrar a quien RENIEC no devuelve, p. ej. un
         // menor de edad; 2026-11-16).
-        liberarNombresPaciente('No se pudo consultar el padrón ni RENIEC. Registre los datos manualmente.');
+        liberarNombresPaciente('No se pudo consultar el padrón ni RENIEC: escriba los datos a mano.', 'error');
         if (manual) toast('No se pudo consultar el padrón ni RENIEC. Completa los datos manualmente.');
       })
       .then(function () {
@@ -1816,9 +1817,12 @@ document.addEventListener('DOMContentLoaded', function () {
       var nom = document.getElementById('nombres');
       if (apPaterno && apMaterno && nom) {
         var esDni = (tipo === 'DNI');
-        apPaterno.readOnly = esDni;
-        apMaterno.readOnly = esDni;
-        nom.readOnly = esDni;
+        [apPaterno, apMaterno, nom].forEach(function (el) {
+          el.readOnly = esDni;
+          // Con DNI se completan solos: lo dice el placeholder (2026-11-16).
+          el.placeholder = esDni ? 'Se completa con el DNI' : '';
+          el.closest('.control').classList.remove('autocompletado');
+        });
       }
     }
 
@@ -1887,14 +1891,18 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Apellidos y nombres editables, con el aviso en rojo bajo el documento.
-  function liberarNombresPaciente(mensaje) {
+  function liberarNombresPaciente(mensaje, estado) {
     ['apellidoPaterno', 'apellidoMaterno', 'nombres'].forEach(function (id) {
       var el = document.getElementById(id);
-      if (el) el.readOnly = false;
+      if (!el) return;
+      el.readOnly = false;
+      el.placeholder = '';
+      el.closest('.control').classList.remove('autocompletado');
     });
     if (buscandoHint) {
       buscandoHint.textContent = mensaje;
-      buscandoHint.style.color = 'var(--s-confirmado, #B23B3B)';
+      buscandoHint.style.color = '';
+      buscandoHint.dataset.estado = estado || 'falta';
       buscandoHint.hidden = false;
     }
   }
@@ -1937,7 +1945,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var found = document.getElementById('found');
     if (!datos.paciente || datos.error) {
       if (found) found.style.display = 'none';
-      liberarNombresPaciente('No se encontraron datos del paciente: regístrelos manualmente. RENIEC no entrega los datos de menores de edad.');
+      liberarNombresPaciente('No figura en el padrón ni en RENIEC (los menores de edad no aparecen): escriba los datos a mano.', 'falta');
       return;
     }
 
@@ -1949,7 +1957,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('apellidoPaterno').value = p.apellido_paterno || '';
     document.getElementById('apellidoMaterno').value = p.apellido_materno || '';
     document.getElementById('nombres').value = p.nombres || '';
-    document.getElementById('sexo').value = p.sexo || '';
+    var selectSexo = document.getElementById('sexo');
+    selectSexo.value = p.sexo || '';
+    // El selector visible no se entera solo del cambio (2026-11-16: el sexo del
+    // padrón quedaba en el select oculto y en pantalla seguía "Seleccionar…").
+    if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selectSexo);
     if (fechaNac) {
       // fecha_nac_desconocida (A50): si el padrón trae la fecha, deja de ser
       // desconocida (el change rehabilita el input, ver aplicarDesconocidos()).
@@ -2016,8 +2028,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (buscandoHint) {
       buscandoHint.textContent = etiquetaCondicionNoAdmitida
         ? 'Este documento ya está registrado con la condición «' + etiquetaCondicionNoAdmitida + '», que esta ficha no admite. Revisa el número: con él la ficha no se podrá registrar.'
-        : '✓ Datos obtenidos correctamente.';
-      buscandoHint.style.color = etiquetaCondicionNoAdmitida ? 'var(--s-confirmado, #B23B3B)' : 'var(--accent, #0E7A6E)';
+        : 'Datos obtenidos del padrón o de RENIEC.';
+      buscandoHint.style.color = '';
+      buscandoHint.dataset.estado = etiquetaCondicionNoAdmitida ? 'error' : 'ok';
       buscandoHint.hidden = false;
     }
 
@@ -2027,12 +2040,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (apPaterno2 && apMaterno2 && nom2 && document.getElementById('tipoDoc').value === 'DNI') {
       // Solo se bloquea lo que llegó con valor: si RENIEC devolvió datos
       // parciales (menores de edad), lo vacío se escribe a mano (2026-11-16).
-      apPaterno2.readOnly = !!apPaterno2.value;
-      apMaterno2.readOnly = !!apMaterno2.value;
-      nom2.readOnly = !!nom2.value;
+      [apPaterno2, apMaterno2, nom2].forEach(function (el) {
+        el.readOnly = !!el.value;
+        el.placeholder = '';
+        // Tinte de "autocompletado" en lo que trajo el padrón o RENIEC (2026-11-16).
+        el.closest('.control').classList.toggle('autocompletado', !!el.value);
+      });
       if ((!apPaterno2.value || !nom2.value) && buscandoHint && !etiquetaCondicionNoAdmitida) {
         buscandoHint.textContent = 'Datos incompletos: complete a mano los que faltan.';
-        buscandoHint.style.color = 'var(--s-confirmado, #B23B3B)';
+        buscandoHint.dataset.estado = 'falta';
       }
     }
   }
@@ -4398,7 +4414,7 @@ document.addEventListener('DOMContentLoaded', function () {
       inputEdad.disabled = false;
       selectUnidad.disabled = false;
       if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selectUnidad);
-      if (hint) hint.hidden = true;
+      if (hint) hint.textContent = 'Sin fecha de nacimiento, escríbala a mano.';
       return;
     }
 
@@ -4423,7 +4439,7 @@ document.addEventListener('DOMContentLoaded', function () {
     inputEdad.disabled = true;
     selectUnidad.disabled = true;
     if (window.SelectorBusqueda) window.SelectorBusqueda.actualizar(selectUnidad);
-    if (hint) hint.hidden = false;
+    if (hint) hint.textContent = 'Calculada desde la fecha de nacimiento.';
   }
 
   document.addEventListener('input', function(e) {
