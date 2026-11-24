@@ -50,6 +50,7 @@ class ReportesController extends Controller
                 ? Consolidado::piramide($usuario, $f['enfermedad_id'], $f['desde'], $f['hasta']) : null,
             'titulo'       => $this->tituloReporte($f, $enfermedad),
             'esRegistrador' => $usuario['rol'] === 'REGISTRADOR',
+            'registrosPnp' => Caso::registrosPnpExcluidos(['enfermedad_id' => $f['enfermedad_id'] ?: '', 'se_desde' => $f['desde'], 'se_hasta' => $f['hasta']], $usuario),
         ]);
     }
 

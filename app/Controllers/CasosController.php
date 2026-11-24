@@ -85,6 +85,7 @@ class CasosController extends Controller
             'establecimientos' => $establecimientos,
             'esRegistrador'    => $usuario['rol'] === 'REGISTRADOR',
             'puedeAnular'      => in_array($usuario['rol'], self::ROLES_CIERRE, true),
+            'registrosPnp'     => Caso::registrosPnpExcluidos($filtros),
         ]);
     }
 

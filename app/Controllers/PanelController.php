@@ -121,6 +121,7 @@ class PanelController extends Controller
             'dias'          => Tablero::diasHastaNotificar($usuario, $periodo),
             'inmediatas'    => Tablero::inmediatasRecientes($usuario),
             'esRegistrador' => $usuario['rol'] === 'REGISTRADOR',
+            'registrosPnp'  => Caso::registrosPnpExcluidos(['se_desde' => $periodo['desde'], 'se_hasta' => $periodo['hasta']], $usuario),
         ]);
     }
 

@@ -60,6 +60,21 @@ $ambitoRed = $esJefeRed ? ' · ' . (\App\Core\Auth::usuario()['red_nombre'] ?? '
     </div>
   </div>
 
+  <?php if ($registrosPnp): ?>
+    <div class="panel-aviso">
+      <?php
+      // Los enlaces van a Reportes (el jefe de red no entra a Fichas), con el mismo periodo.
+      $periodoReporte = match ($periodo['clave']) {
+          'actual' => ['periodo' => 'rango', 'anio_desde' => $actual['anio'], 'se_desde' => $actual['semana'], 'anio_hasta' => $actual['anio'], 'se_hasta' => $actual['semana']],
+          'anio'   => [],
+          default  => ['periodo' => $periodo['clave']],
+      };
+      $registrosPnp = array_map(fn(array $r) => $r + ['href' => '/reportes?' . http_build_query(['enfermedad_id' => $r['id']] + $periodoReporte)], $registrosPnp);
+      require __DIR__ . '/../partials/aviso-registros-pnp.php';
+      ?>
+    </div>
+  <?php endif; ?>
+
   <div class="grid metrics" style="margin-bottom:16px">
     <a class="card metric metric-enlace"<?= $urlFichasPeriodo ? ' href="' . e($urlFichasPeriodo) . '"' : '' ?>>
       <div class="eyebrow">Fichas · <?= e($periodo['corta']) ?></div>
@@ -293,7 +308,8 @@ $ambitoRed = $esJefeRed ? ' · ' . (\App\Core\Auth::usuario()['red_nombre'] ?? '
                   <?php foreach ($fila['celdas'] as $celda):
                     $s = $celda['semana'];
                     $texto = nombreEnOracion($fila['nombre']) . ' · SE ' . $s['semana'] . ' · ' . $s['anio'] . ': ' . $etiquetas[$celda['estado']]
-                        . ' · ' . ($celda['fichas'] ? $celda['fichas'] . ' ficha' . ($celda['fichas'] === 1 ? '' : 's') : 'sin fichas');
+                        . ' · ' . ($celda['fichas'] ? $celda['fichas'] . ' ficha' . ($celda['fichas'] === 1 ? '' : 's') : 'sin fichas')
+                        . ($celda['registros'] ? ' · ' . $celda['registros'] . ' atenci' . ($celda['registros'] === 1 ? 'ón' : 'ones') . ' de registros PNP' : '');
                     $enlace = '/notificacion-semanal?' . http_build_query(['anio' => $s['anio'], 'semana' => $s['semana']] + ($esRegistrador ? [] : ['q' => $fila['nombre']]));
                     ?>
                     <td><a class="celda <?= $celda['estado'] ?>" href="<?= e($enlace) ?>" title="<?= e($texto) ?>" aria-label="<?= e($texto) ?>"></a></td>

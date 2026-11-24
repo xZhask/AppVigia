@@ -190,6 +190,15 @@ $colorFila = function (string $k) use ($f): ?string {
       <div>
         <h2><?= e($titulo) ?></h2>
         <p><?= number_format($c['total'], 0, ',', ' ') ?> ficha<?= $c['total'] === 1 ? '' : 's' ?> · excluye fichas anuladas<?= $esRegistrador ? ' · solo tu establecimiento' : e($ambitoRed) ?></p>
+        <?php if ($registrosPnp): ?>
+          <div class="reporte-aviso">
+            <?php
+            // Cada enlace elige ese registro como enfermedad, con el mismo periodo y cruce.
+            $registrosPnp = array_map(fn(array $r) => $r + ['href' => $url('/reportes', ['enfermedad_id' => $r['id']])], $registrosPnp);
+            require __DIR__ . '/../partials/aviso-registros-pnp.php';
+            ?>
+          </div>
+        <?php endif; ?>
       </div>
       <div class="spacer"></div>
       <div class="reporte-acciones">

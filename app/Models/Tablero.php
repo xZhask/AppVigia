@@ -251,9 +251,16 @@ class Tablero
 
         $parametros = [];
         $rango = self::rango([$primera['anio'], $primera['semana']], [$ultima['anio'], $ultima['semana']], $parametros, 'h');
+        // Fichas y, aparte, atenciones de registros PNP (2026-11-24): antes
+        // solo se contaban las fichas y la celda decía "sin fichas" aunque
+        // la IPRESS hubiera registrado atenciones.
         $fichas = [];
-        foreach (self::consultar("SELECT c.establecimiento_id, c.anio_epi, c.semana_epi, COUNT(*) AS n FROM caso c JOIN enfermedad e ON e.id = c.enfermedad_id WHERE c.anulado = 0 AND e.modalidad = 'FICHA' AND $rango GROUP BY 1, 2, 3", $parametros) as $fila) {
-            $fichas[$fila['establecimiento_id'] . '|' . $fila['anio_epi'] . '-' . $fila['semana_epi']] = (int) $fila['n'];
+        $registros = [];
+        foreach (self::consultar("SELECT c.establecimiento_id, c.anio_epi, c.semana_epi, SUM(e.modalidad = 'FICHA') AS n, SUM(e.modalidad = 'REGISTRO') AS r
+                                    FROM caso c JOIN enfermedad e ON e.id = c.enfermedad_id WHERE c.anulado = 0 AND $rango GROUP BY 1, 2, 3", $parametros) as $fila) {
+            $clave = $fila['establecimiento_id'] . '|' . $fila['anio_epi'] . '-' . $fila['semana_epi'];
+            $fichas[$clave] = (int) $fila['n'];
+            $registros[$clave] = (int) $fila['r'];
         }
         $cierres = NotificacionSemanal::delRango($usuario['rol'] === 'REGISTRADOR' ? (int) $usuario['establecimiento_id'] : null, [$primera['anio'], $primera['semana']], [$ultima['anio'], $ultima['semana']]);
 
@@ -270,7 +277,7 @@ class Tablero
                     $evaluadas++;
                     $cumplidas += $estado === 'X' ? 0 : 1;
                 }
-                $celdas[] = ['semana' => $semana, 'estado' => $estado, 'fichas' => $fichas[$clave] ?? 0];
+                $celdas[] = ['semana' => $semana, 'estado' => $estado, 'fichas' => $fichas[$clave] ?? 0, 'registros' => $registros[$clave] ?? 0];
             }
             $filas[] = $establecimiento + [
                 'celdas'     => $celdas,

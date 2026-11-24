@@ -1,7 +1,15 @@
-# Hoja de ruta — estado al 2026-10-30
+# Hoja de ruta — estado al 2026-11-24
 
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
+
+> **Al 24/11/2026 hay dos pendientes:**
+> - **Subir al servidor de prueba y producción** el aviso de registros PNP
+>   excluidos (§3, punto 10). Son 10 archivos, sin migración, y hay que
+>   subirlos sin usuarios conectados. **El próximo ZIP debe incluir todos
+>   los archivos cambiados el 24/11** más lo que se cambie después.
+> - **Decidir con Epidemiología** las sábanas DIRSAPOL (§3, punto 11 y
+>   `docs/propuesta-sabanas-dirsapol.md`).
 
 ## 0. Al llegar a una estación (lista corta)
 
@@ -736,6 +744,71 @@ No tocar sin una respuesta explícita.
      «Febriles por día» en Notificación semanal (ADMIN y JEFE_RED), con Excel.
    - Los feriados están en `FebrilesSinCasos::feriado()` (fijos + Jueves y
      Viernes Santo). Si una ley agrega uno, se corrige ahí.
+10. **Aviso de registros PNP excluidos (24/11) — hecho, FALTA SUBIRLO AL
+    SERVIDOR.** Con «Enfermedad: todas», Fichas, el Panel y Reportes ›
+    Consolidado dejan fuera los registros PNP (REG-PNP, REG-FEB). Esa regla
+    viene del 21/10 (`Caso::condicionesListado()`) y no se cambió. Un
+    administrador no encontraba las 7 atenciones de DIRAVPOL de la SE 46
+    (eran IRA y EDA de REG-PNP).
+    - **Aviso:** ahora un aviso dice «No incluye N atenciones de registros
+      PNP», con un enlace por registro que aplica ese filtro.
+      - Funciones: `Caso::registrosPnpExcluidos()` y el parcial
+        `app/Views/partials/aviso-registros-pnp.php`.
+      - Respeta búsqueda, red, establecimiento, periodo y alcance del rol, y
+        no cuenta anuladas.
+      - En el Panel, el enlace lleva a Reportes, porque el JEFE_RED no entra
+        a Fichas.
+    - **Mapa de cumplimiento del Panel:** la ventanita de cada celda decía
+      «sin fichas» aunque hubiera atenciones de registros PNP. Ahora agrega
+      «· N atenciones de registros PNP» (`Tablero::cumplimiento()`). El color
+      y el porcentaje no cambian: miden el **cierre de la SE** en
+      Notificación semanal, no las fichas.
+    - **Sin efecto en Notificación semanal:** ya contaba los registros PNP
+      (fila propia por registro activo) y sigue igual.
+    - **Archivos para el servidor:** 10 en total, ninguno de base de datos,
+      **sin migración**.
+      - `app/Controllers/CasosController.php`
+      - `app/Controllers/PanelController.php`
+      - `app/Controllers/ReportesController.php`
+      - `app/Models/Caso.php`
+      - `app/Models/Tablero.php`
+      - `app/Views/fichas/index.php`
+      - `app/Views/panel/index.php`
+      - `app/Views/reportes/index.php`
+      - `app/Views/partials/aviso-registros-pnp.php` (nuevo)
+      - `public/css/theme.css`
+    - **Cómo subirlo:**
+      - **Cuándo:** subirlo **cuando no haya registradores conectados**
+        (fuera del horario de atención). Reemplazar `CasosController.php`
+        mientras alguien guarda una ficha puede cortar ese registro.
+      - **ZIP:** en la estación del 24/11 quedó
+        `despliegue/actualizacion_2026-11-24.zip` (`despliegue/` no va a
+        git). En otra estación, armarlo de nuevo con esos archivos y sus
+        rutas, o con los que muestre `git diff --name-only 5ff140e HEAD -- app public`.
+        **El próximo ZIP debe llevar todos los archivos cambiados el 24/11
+        (estos 10), aunque se armen junto con cambios posteriores.** Si
+        antes de subir se hacen más cambios, se suman al mismo ZIP; no se
+        reemplaza esta lista. Para no omitir nada:
+        `git diff --name-only 5ff140e HEAD -- app public sql config`, es decir,
+        todo lo cambiado desde la última versión subida al servidor (16/11).
+        Si hay migraciones `sql/add_*.sql`, aplicarlas en el servidor.
+      - **Después de subir:** entrar como ADMIN y revisar el aviso en Fichas,
+        Panel y Reportes, y la ventanita del mapa (p. ej. DIRAVPOL, SE 46).
+11. **Sábanas de Epidemiología DIRSAPOL (24/11): viabilidad analizada,
+    esperando decisiones.** Generar desde VIGÍA el consolidado de EDA/IRA y el
+    individual que el Área arma a mano en Excel.
+    - El detalle completo (hojas, las 65 columnas con su origen en VIGÍA,
+      volúmenes, tabla de equivalencias de unidades y macrorregiones, fases y
+      estimación) está en `docs/propuesta-sabanas-dirsapol.md`.
+    - **Antes de implementar falta decidir (§5 de ese documento):**
+      1. Si las IPRESS registran cada atención de EDA/IRA o envían conteos.
+         Son unas 1 470 por SE en todo el país; solo el LNS, unas 254.
+      2. Quién valida la lista de 144 unidades del Área frente a los 82
+         establecimientos de VIGÍA.
+      3. Si la sábana debe salir idéntica al Excel actual.
+    - Los Excel originales se borraron del proyecto porque tienen datos
+      personales. Pedirlos de nuevo para probar y guardarlos fuera del
+      proyecto.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 

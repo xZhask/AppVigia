@@ -80,8 +80,9 @@ class Caso extends Model
         } else {
             // Registros PNP (2026-10-21): no son casos de una enfermedad con
             // ficha y no suman en el listado, el panel ni el consolidado salvo
-            // que se elija ese registro como enfermedad.
-            $condiciones[] = "e.modalidad = 'FICHA'";
+            // que se elija ese registro como enfermedad. solo_registros invierte
+            // la condición para contar lo que se deja fuera (registrosPnpExcluidos).
+            $condiciones[] = !empty($filtros['solo_registros']) ? "e.modalidad = 'REGISTRO'" : "e.modalidad = 'FICHA'";
         }
         if (!empty($filtros['red_id'])) {
             $condiciones[] = 'est.red_id = :red_id';
@@ -135,6 +136,33 @@ class Caso extends Model
             $filtros['establecimiento_id'] = '';
         }
         return self::condicionesListado($filtros);
+    }
+
+    /**
+     * Aviso de "Enfermedad: todas" (2026-11-24): los registros PNP que esa
+     * opción deja fuera, con los mismos filtros (búsqueda, red,
+     * establecimiento, periodo y alcance), sin anuladas. Con $usuario se
+     * aplica Caso::alcance (Panel, Reportes); sin él, los filtros ya traen la
+     * privacidad (listado de Fichas). Vacío si ya se eligió una enfermedad.
+     *
+     * @return list<array{id: int, nombre: string, n: int}>
+     */
+    public static function registrosPnpExcluidos(array $filtros, ?array $usuario = null): array
+    {
+        if (!empty($filtros['enfermedad_id'])) {
+            return [];
+        }
+        $filtros['solo_registros'] = true;
+        [$condiciones, $parametros] = $usuario !== null ? self::alcance($usuario, $filtros) : self::condicionesListado($filtros);
+        $condiciones[] = 'c.anulado = 0';
+        $consulta = Database::conexion()->prepare(
+            'SELECT e.id, e.nombre, COUNT(*) AS n ' . self::FROM_LISTADO . '
+              WHERE ' . implode(' AND ', $condiciones) . '
+           GROUP BY e.id, e.nombre ORDER BY n DESC, e.nombre'
+        );
+        $consulta->execute($parametros);
+
+        return array_map(fn(array $fila) => ['id' => (int) $fila['id'], 'nombre' => (string) $fila['nombre'], 'n' => (int) $fila['n']], $consulta->fetchAll());
     }
 
     /**
