@@ -1,22 +1,17 @@
-# Hoja de ruta — estado al 2026-11-24
+# Hoja de ruta — estado al 2026-11-25
 
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 
-> **Al 25/11/2026 hay dos pendientes:**
-> - **Subir al servidor de prueba y producción `despliegue/parche_a4bdf6d.zip`**
->   (armado el 25/11 en esta estación). Tiene los 26 archivos de `app` y
->   `public` cambiados desde `5ff140e`, la última versión subida: el aviso de
->   registros PNP, las sábanas DIRSAPOL, el CIE-10 específico, la separación
->   en el Panel, los registros PNP en Fichas y el buscador de Notificación
->   semanal (§3, puntos 10 y 11). **Sin migración ni SQL.** Hay que subirlo
->   sin usuarios conectados, descomprimiéndolo sobre la raíz de la app. En
->   otra estación se arma igual:
->   `git archive -o despliegue/parche_a4bdf6d.zip a4bdf6d $(git diff --name-only 5ff140e a4bdf6d -- app public)`.
->   Después de subirlo, la base para el siguiente parche es `a4bdf6d`.
+> **Servidor al día hasta `a4bdf6d` (25/11/2026).** El usuario subió
+> `despliegue/parche_a4bdf6d.zip` (26 archivos desde `5ff140e`, sin SQL), con
+> todo lo de los puntos 10 y 11 de §3. El siguiente parche se arma desde ahí:
+> `git archive -o despliegue/parche_<commit>.zip HEAD $(git diff --name-only a4bdf6d HEAD -- app public sql config)`.
+>
+> **Pendiente:**
 > - **Sábanas DIRSAPOL, fase 3:** para la tabla de equivalencias de
->   macrorregiones falta **decidir con Epidemiología** quién valida la
->   lista de unidades.
+>   macrorregiones falta **decidir con Epidemiología** quién valida la lista
+>   de unidades.
 
 ## 0. Al llegar a una estación (lista corta)
 
@@ -751,8 +746,8 @@ No tocar sin una respuesta explícita.
      «Febriles por día» en Notificación semanal (ADMIN y JEFE_RED), con Excel.
    - Los feriados están en `FebrilesSinCasos::feriado()` (fijos + Jueves y
      Viernes Santo). Si una ley agrega uno, se corrige ahí.
-10. **Aviso de registros PNP excluidos (24/11) — hecho, FALTA SUBIRLO AL
-    SERVIDOR.** Con «Enfermedad: todas», Fichas, el Panel y Reportes ›
+10. **Aviso de registros PNP excluidos (24/11) — hecho y SUBIDO al
+    servidor el 25/11 (parche_a4bdf6d).** Con «Enfermedad: todas», Fichas, el Panel y Reportes ›
     Consolidado dejan fuera los registros PNP (REG-PNP, REG-FEB). Esa regla
     viene del 21/10 (`Caso::condicionesListado()`) y no se cambió. Un
     administrador no encontraba las 7 atenciones de DIRAVPOL de la SE 46
@@ -825,8 +820,8 @@ No tocar sin una respuesta explícita.
     - El detalle completo (hojas, las 65 columnas con su origen en VIGÍA,
       volúmenes, tabla de equivalencias de unidades y macrorregiones, fases y
       estimación) está en `docs/propuesta-sabanas-dirsapol.md`.
-    - **Fase 1, sábana individual: HECHA el 24/11, FALTA SUBIRLA AL
-      SERVIDOR.** Está en Reportes › Formatos › «Sábana individual», solo
+    - **Fase 1, sábana individual: HECHA el 24/11, SUBIDA al
+      servidor el 25/11.** Está en Reportes › Formatos › «Sábana individual», solo
       para ADMIN (`/reportes/sabana-individual`, `FormatoPnp::sabana()`).
       Sale por año o por rango de SE (puede cruzar de año), con filtro
       opcional de red o establecimiento. Muestra un resumen y una vista
@@ -851,8 +846,8 @@ No tocar sin una respuesta explícita.
         - `app/Views/reportes/index.php` (ya estaba en la lista)
         - `app/Views/ayuda/administrador.php`
         - `public/index.php` (dos rutas nuevas)
-    - **Fase 2, sábana consolidada de EDA/IRA: HECHA el 25/11, FALTA
-      SUBIRLA AL SERVIDOR.** Está en Reportes › Formatos › «Sábana
+    - **Fase 2, sábana consolidada de EDA/IRA: HECHA el 25/11, SUBIDA
+      al servidor el 25/11.** Está en Reportes › Formatos › «Sábana
       consolidada», solo para ADMIN (`/reportes/sabana-consolidada`,
       `ConsolidadoPnp::sabana()`), con los mismos filtros que la individual.
       - **Decisión del usuario (25/11):** sale de los registros de VIGÍA. Las
@@ -880,7 +875,7 @@ No tocar sin una respuesta explícita.
         - Además, de nuevo: `FormatoPnp.php`, `ReportesController.php`,
           `sabana-individual.php`, `reportes/index.php`,
           `ayuda/administrador.php` y `public/index.php`.
-    - **CIE-10 específico en listados (25/11), también por subir.** Las
+    - **CIE-10 específico en listados (25/11), subido el 25/11.** Las
       fichas que eligen el diagnóstico en una opción (A97: A97.0/.1/.2,
       A92.0/.5 y U06.9; B05: B05/B06) mostraban solo el código de la ficha.
       `Caso::SQL_OPCION_CIE10` lee esa opción, y `diagnosticoDelCaso()` /
