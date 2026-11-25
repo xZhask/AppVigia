@@ -767,6 +767,17 @@ No tocar sin una respuesta explícita.
       Notificación semanal, no las fichas.
     - **Sin efecto en Notificación semanal:** ya contaba los registros PNP
       (fila propia por registro activo) y sigue igual.
+    - **Cambio del 25/11 (pedido del usuario):** en **Fichas registradas**
+      (pantalla y Excel), «Todas las enfermedades» incluye los registros PNP
+      junto con las fichas MINSA (filtro `incluir_registros` de
+      `Caso::condicionesListado()`), y ahí ya no se muestra el aviso. **El
+      Panel y Reportes › Consolidado siguen dejándolos fuera, con el aviso**
+      (las curvas y el corredor son de casos de fichas). También se quitó la
+      regla `.listado-aviso` de `theme.css`, que ya no se usa, y se agregó una
+      línea en la guía del registrador. Archivos adicionales:
+      `app/Models/Caso.php`, `app/Controllers/CasosController.php`,
+      `app/Views/fichas/index.php`, `public/css/theme.css` y
+      `app/Views/ayuda/registrador.php`.
     - **Archivos para el servidor:** 10 en total, ninguno de base de datos,
       **sin migración**.
       - `app/Controllers/CasosController.php`

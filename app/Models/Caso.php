@@ -77,12 +77,15 @@ class Caso extends Model
         if (!empty($filtros['enfermedad_id'])) {
             $condiciones[] = 'c.enfermedad_id = :enfermedad_id';
             $parametros['enfermedad_id'] = (int) $filtros['enfermedad_id'];
-        } else {
+        } elseif (!empty($filtros['solo_registros'])) {
+            // Para contar lo que se deja fuera (registrosPnpExcluidos).
+            $condiciones[] = "e.modalidad = 'REGISTRO'";
+        } elseif (empty($filtros['incluir_registros'])) {
             // Registros PNP (2026-10-21): no son casos de una enfermedad con
-            // ficha y no suman en el listado, el panel ni el consolidado salvo
-            // que se elija ese registro como enfermedad. solo_registros invierte
-            // la condición para contar lo que se deja fuera (registrosPnpExcluidos).
-            $condiciones[] = !empty($filtros['solo_registros']) ? "e.modalidad = 'REGISTRO'" : "e.modalidad = 'FICHA'";
+            // ficha y no suman en el panel ni en el consolidado salvo que se
+            // elija ese registro como enfermedad. El listado de Fichas sí los
+            // muestra con «Todas» (incluir_registros, decisión del 25/11).
+            $condiciones[] = "e.modalidad = 'FICHA'";
         }
         if (!empty($filtros['red_id'])) {
             $condiciones[] = 'est.red_id = :red_id';

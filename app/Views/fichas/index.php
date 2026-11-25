@@ -213,15 +213,6 @@ $encabezadoOrden = function (string $clave, string $etiqueta) use ($filtros, $ur
       </div>
     </form>
 
-    <?php if ($registrosPnp): ?>
-      <div class="listado-aviso">
-        <?php
-        // Cada enlace elige ese registro como enfermedad, en la pestaña Todas.
-        $registrosPnp = array_map(fn(array $r) => $r + ['href' => $url(['enfermedad_id' => $r['id'], 'pestana' => 'TODAS', 'clas' => [], 'page' => ''])], $registrosPnp);
-        require __DIR__ . '/../partials/aviso-registros-pnp.php';
-        ?>
-      </div>
-    <?php endif; ?>
 
     <?php if ($codigosConteo || $chips): ?>
       <div class="listado-conteos">

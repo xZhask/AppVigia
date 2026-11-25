@@ -285,6 +285,7 @@ require __DIR__ . '/_inicio.php';
           <li>Mientras quede un día pendiente, <b>Notificación semanal</b> no deja cerrar la semana y muestra cuáles faltan.</li>
         </ul>
         <p><b>Otras enfermedades:</b> en <b>Nueva ficha</b>, pulse <b>Cambiar enfermedad</b> y elija <b>Otras enfermedades</b> en el grupo «Registro PNP».</p>
+        <p><b>Dónde verlos.</b> En <b>Fichas</b>, con «Todas las enfermedades», aparecen junto con las fichas MINSA; para ver solo un registro, elíjalo en el filtro de enfermedad. En el Panel y en Reportes no suman con «Todas»: un aviso indica cuántas atenciones quedan fuera.</p>
         <p><b>Pasar a ficha MINSA.</b> Si el diagnóstico tiene ficha MINSA (por ejemplo, un febril con dengue), al guardar se abre el registro con un aviso. Pulse <b>Pasar a ficha MINSA</b> y llene la ficha; ambos quedan relacionados.</p>
       </section>
 

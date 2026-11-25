@@ -85,7 +85,6 @@ class CasosController extends Controller
             'establecimientos' => $establecimientos,
             'esRegistrador'    => $usuario['rol'] === 'REGISTRADOR',
             'puedeAnular'      => in_array($usuario['rol'], self::ROLES_CIERRE, true),
-            'registrosPnp'     => Caso::registrosPnpExcluidos($filtros),
         ]);
     }
 
@@ -190,6 +189,8 @@ class CasosController extends Controller
         $pestana = in_array($texto('pestana'), Caso::PESTANAS_LISTADO, true) ? $texto('pestana') : 'ABIERTA';
 
         $filtros = [
+            // «Todas las enfermedades» incluye los registros PNP (25/11).
+            'incluir_registros'     => true,
             'q'                     => $texto('q'),
             'enfermedad_id'         => ctype_digit($texto('enfermedad_id')) ? $texto('enfermedad_id') : '',
             'red_id'                => ctype_digit($texto('red_id')) ? $texto('red_id') : '',

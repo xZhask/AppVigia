@@ -1922,6 +1922,5 @@ html[data-theme="dark"] #buscandoPacienteHint[data-estado=falta]{color:#F2A766}
 .aviso-registros{display:flex;gap:9px;align-items:flex-start;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:9px 12px;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
 .aviso-registros svg{flex:none;color:var(--accent);margin-top:2px}
 .aviso-registros a{color:var(--accent);font-weight:500;text-decoration:underline;text-underline-offset:2px}
-.listado-aviso{padding:12px 16px 0}
 .panel-aviso{margin-bottom:16px}
 .reporte-aviso{margin-top:10px;max-width:760px}
