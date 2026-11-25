@@ -111,7 +111,9 @@ class CasosController extends Controller
                 $fila['sexo'],
                 edadLegible($fila['fecha_nac'], $fila['edad_fecha_referencia'] ?? null, true) ?? '',
                 $fila['enfermedad_nombre'],
-                $fila['cie10'],
+                // El CIE-10 específico (A97.0) y su nombre, si la ficha o el registro lo trae (2026-11-25).
+                cie10DelCaso($fila),
+                ($dx = diagnosticoDelCaso($fila)) !== null ? (string) substr($dx, strpos($dx, ' · ') + strlen(' · ')) : '',
                 $fila['establecimiento_nombre'],
                 $fila['red_nombre'],
                 $fila['fecha_notif'],
@@ -139,6 +141,7 @@ class CasosController extends Controller
                 ['titulo' => 'Edad', 'tipo' => 'centro'],
                 ['titulo' => 'Enfermedad', 'anchoMax' => 34],
                 ['titulo' => 'CIE-10', 'tipo' => 'centro'],
+                ['titulo' => 'Diagnóstico', 'anchoMax' => 34],
                 ['titulo' => 'Establecimiento', 'anchoMax' => 34],
                 ['titulo' => 'Red', 'anchoMax' => 24],
                 ['titulo' => 'Fecha de notificación', 'tipo' => 'fecha'],

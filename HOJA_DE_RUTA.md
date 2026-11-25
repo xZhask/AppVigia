@@ -856,6 +856,21 @@ No tocar sin una respuesta explícita.
         - Además, de nuevo: `FormatoPnp.php`, `ReportesController.php`,
           `sabana-individual.php`, `reportes/index.php`,
           `ayuda/administrador.php` y `public/index.php`.
+    - **CIE-10 específico en listados (25/11), también por subir.** Las
+      fichas que eligen el diagnóstico en una opción (A97: A97.0/.1/.2,
+      A92.0/.5 y U06.9; B05: B05/B06) mostraban solo el código de la ficha.
+      `Caso::SQL_OPCION_CIE10` lee esa opción, y `diagnosticoDelCaso()` /
+      `cie10DelCaso()` (antes `diagnosticoRegistroPnp()`) la usan en:
+      - el listado de Fichas (pantalla y Excel, que suma la columna
+        «Diagnóstico»);
+      - el encabezado de ver y editar ficha;
+      - la lista de inmediatas del Panel;
+      - la dimensión «Diagnóstico (CIE-10)» del Consolidado.
+      «Otras arbovirosis» y «Otras febriles eruptivas» siguen como A97 o B05.
+      Archivos: `app/Core/ayudantes.php`, `app/Models/Caso.php`,
+      `app/Models/Tablero.php`, `app/Models/Consolidado.php`,
+      `app/Controllers/CasosController.php`, `app/Views/panel/index.php`,
+      `app/Views/fichas/index.php`, `ver.php` y `editar.php`.
     - **Antes de la fase 3 falta decidir (§5 de ese documento):** quién
       valida la lista de 144 unidades del Área frente a los 82
       establecimientos de VIGÍA (tabla de equivalencias de macrorregiones).

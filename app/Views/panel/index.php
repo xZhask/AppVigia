@@ -246,9 +246,9 @@ $ambitoRed = $esJefeRed ? ' · ' . (\App\Core\Auth::usuario()['red_nombre'] ?? '
             <?php foreach ($inmediatas as $f): $dc = datosClasificacion((string) $f['clasificacion']); ?>
               <li>
                 <?php if ($esJefeRed): ?>
-                  <span><?= e($f['enfermedad_nombre']) ?> <span class="cell-sub mono"><?= e($f['cie10']) ?></span></span>
+                  <span><?= e($f['enfermedad_nombre']) ?> <span class="cell-sub mono"><?= e(cie10DelCaso($f)) ?></span></span>
                 <?php else: ?>
-                  <a href="/casos/<?= (int) $f['id'] ?>"><?= e($f['enfermedad_nombre']) ?> <span class="cell-sub mono"><?= e($f['cie10']) ?> · <?= e($f['codigo']) ?></span></a>
+                  <a href="/casos/<?= (int) $f['id'] ?>"><?= e($f['enfermedad_nombre']) ?> <span class="cell-sub mono"><?= e(cie10DelCaso($f)) ?> · <?= e($f['codigo']) ?></span></a>
                 <?php endif; ?>
                 <span class="badge-clas" style="--c:<?= $dc['color'] ?>"><span class="dot"></span><?= e($dc['etiqueta']) ?></span>
                 <span class="cell-sub"><?= e(nombreEnOracion($f['establecimiento_nombre'])) ?></span>

@@ -107,6 +107,18 @@ class Caso extends Model
         return [$condiciones, $parametros];
     }
 
+    /**
+     * Opción elegida que trae el CIE-10 específico, sobre el alias c
+     * (2026-11-25): "Dengue grave (CIE-10: A97.2)" en A97, "Rubéola (CIE-10:
+     * B06)" en B05. NULL si la ficha no la tiene o eligió la opción genérica
+     * ("Otras arbovirosis"). La leen diagnosticoDelCaso() y el Consolidado.
+     */
+    public const SQL_OPCION_CIE10 = "(SELECT ci_dx.etiqueta FROM caso_valor cv_dx
+                  JOIN campo_def cd_dx ON cd_dx.id = cv_dx.campo_def_id
+                  JOIN catalogo_item ci_dx ON ci_dx.catalogo_id = cd_dx.catalogo_id AND ci_dx.valor = cv_dx.valor
+                 WHERE cv_dx.caso_id = c.id AND ci_dx.etiqueta LIKE '%(CIE-10: %'
+              ORDER BY cd_dx.orden LIMIT 1)";
+
     public const FROM_LISTADO = 'FROM caso c
                   JOIN persona p         ON p.id = c.persona_id
                   JOIN enfermedad e      ON e.id = c.enfermedad_id
@@ -262,6 +274,7 @@ class Caso extends Model
 
         $sql = "SELECT c.*, p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                        e.nombre AS enfermedad_nombre, e.cie10, e.unidades_edad AS enfermedad_unidades_edad,
+                       " . self::SQL_OPCION_CIE10 . " AS opcion_cie10,
                        -- nucleo_ajustes.edad_a_la_fecha (P96, 2026-10-16): la edad se cuenta hasta esa fecha.
                        (SELECT cv_edad.valor FROM caso_valor cv_edad JOIN campo_def cd_edad ON cd_edad.id = cv_edad.campo_def_id
                          WHERE cv_edad.caso_id = c.id AND cd_edad.clave = JSON_UNQUOTE(JSON_EXTRACT(e.nucleo_ajustes, '$.edad_a_la_fecha'))) AS edad_fecha_referencia,
@@ -320,6 +333,7 @@ class Caso extends Model
                        p.tiempo_reside_anios, p.tiempo_reside_meses, p.anterior_distrito_id, p.anterior_tipo_zona, p.anterior_tipo_asentamiento, p.anterior_nombre_zona, p.anterior_tipo_via, p.anterior_nombre_via, p.anterior_numero, p.anterior_mz_lote,
                        p.nacimiento_distrito_id,
                        e.nombre AS enfermedad_nombre, e.cie10, e.tipo_notif, e.modalidad AS enfermedad_modalidad,
+                       ' . self::SQL_OPCION_CIE10 . ' AS opcion_cie10,
                        e.multi_sujeto AS enfermedad_multi_sujeto, e.roles_sujeto AS enfermedad_roles_sujeto,
                        e.columnas_sujeto AS enfermedad_columnas_sujeto, e.titulo_sujeto AS enfermedad_titulo_sujeto,
                        e.unidades_edad AS enfermedad_unidades_edad,

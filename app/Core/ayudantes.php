@@ -1138,19 +1138,33 @@ function errorSexoCie10(string $codigo, string $sexoPaciente): ?string
 }
 
 /**
- * Diagnóstico de un registro PNP para listados y encabezados (2026-10-21):
- * "A27.0 · Leptospirosis". null si el caso no es un registro con diagnóstico
- * (las fichas MINSA se nombran por su enfermedad).
+ * Diagnóstico específico de un caso para listados y encabezados: el de un
+ * registro PNP ("A27.0 · Leptospirosis", 2026-10-21) o, desde el 25/11, el de
+ * una ficha que lo elige en una opción ("A97.0 · Dengue sin signos de
+ * alarma", "B06 · Rubéola"; columna opcion_cie10 = Caso::SQL_OPCION_CIE10).
+ * null si no hay uno más preciso que la ficha.
  */
-function diagnosticoRegistroPnp(array $caso): ?string
+function diagnosticoDelCaso(array $caso): ?string
 {
     $codigo = (string) ($caso['cie10_dx'] ?? '');
-    if ($codigo === '' || !str_starts_with((string) ($caso['cie10'] ?? ''), 'REG-')) {
-        return null;
-    }
-    $nombre = \App\Models\Cie10Vigilancia::nombreDiagnostico($codigo);
+    if ($codigo !== '' && str_starts_with((string) ($caso['cie10'] ?? ''), 'REG-')) {
+        $nombre = \App\Models\Cie10Vigilancia::nombreDiagnostico($codigo);
 
-    return $nombre !== null ? $codigo . ' · ' . $nombre : $codigo;
+        return $nombre !== null ? $codigo . ' · ' . $nombre : $codigo;
+    }
+    if (preg_match('/^(.*?)\s*\(CIE-10: ([A-Z0-9.]+)\)/u', (string) ($caso['opcion_cie10'] ?? ''), $m)) {
+        return $m[2] . ' · ' . $m[1];
+    }
+
+    return null;
+}
+
+/** Solo el código: el específico (A97.0) si lo hay; si no, el de la ficha (A97). */
+function cie10DelCaso(array $caso): string
+{
+    $diagnostico = diagnosticoDelCaso($caso);
+
+    return $diagnostico !== null ? strtok($diagnostico, ' ') : (string) ($caso['cie10'] ?? '');
 }
 
 /** "P21.9 — Asfixia del nacimiento, no especificada", o el código solo si no está en el catálogo. */

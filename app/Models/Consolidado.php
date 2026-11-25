@@ -38,12 +38,7 @@ class Consolidado
             // FormatoPnp::filaIndividual); si no, "FICHA:<cie10>" = la ficha.
             'diagnostico'     => ['etiqueta' => 'Diagnóstico (CIE-10)', 'columna' => false,
                 'sql' => "COALESCE(NULLIF(c.cie10_dx, ''),
-                           (SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(ci.etiqueta, '(CIE-10: ', -1), ')', 1)
-                              FROM caso_valor cv
-                              JOIN campo_def cdx ON cdx.id = cv.campo_def_id
-                              JOIN catalogo_item ci ON ci.catalogo_id = cdx.catalogo_id AND ci.valor = cv.valor
-                             WHERE cv.caso_id = c.id AND ci.etiqueta LIKE '%(CIE-10: %'
-                          ORDER BY cdx.orden LIMIT 1),
+                                      SUBSTRING_INDEX(SUBSTRING_INDEX(" . Caso::SQL_OPCION_CIE10 . ", '(CIE-10: ', -1), ')', 1),
                            CONCAT('FICHA:', e.cie10))"],
             'red'             => ['etiqueta' => 'Red', 'sql' => "COALESCE(r.nombre, 'Sin red')", 'columna' => false],
             'establecimiento' => ['etiqueta' => 'Establecimiento', 'sql' => 'est.nombre', 'columna' => false],

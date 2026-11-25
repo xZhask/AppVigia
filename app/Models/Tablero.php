@@ -216,8 +216,8 @@ class Tablero
     {
         [$where, $parametros] = self::base($usuario);
         return self::consultar(
-            "SELECT c.id, c.codigo, c.fecha_notif, c.clasificacion, e.nombre AS enfermedad_nombre, e.cie10,
-                    est.nombre AS establecimiento_nombre " . Caso::FROM_LISTADO
+            "SELECT c.id, c.codigo, c.fecha_notif, c.clasificacion, e.nombre AS enfermedad_nombre, e.cie10, c.cie10_dx,
+                    " . Caso::SQL_OPCION_CIE10 . " AS opcion_cie10, est.nombre AS establecimiento_nombre " . Caso::FROM_LISTADO
             . " WHERE $where AND e.tipo_notif = 'INMEDIATA' ORDER BY c.fecha_notif DESC, c.id DESC LIMIT " . (int) $limite,
             $parametros
         );
