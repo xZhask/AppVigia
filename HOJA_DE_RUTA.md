@@ -12,6 +12,8 @@ bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 > - **Sábanas DIRSAPOL, fase 3:** para la tabla de equivalencias de
 >   macrorregiones falta **decidir con Epidemiología** quién valida la lista
 >   de unidades.
+> - **EDAs e IRAs como en NOTI (§3, punto 12):** el usuario lo consulta con
+>   Epidemiología (25/11).
 
 ## 0. Al llegar a una estación (lista corta)
 
@@ -904,6 +906,30 @@ No tocar sin una respuesta explícita.
     - Los Excel originales se borraron del proyecto porque tienen datos
       personales. Pedirlos de nuevo para probar y guardarlos fuera del
       proyecto.
+12. **EDAs e IRAs como en NOTI (CDC-MINSA) (25/11): el usuario lo consulta
+    con Epidemiología.** A los usuarios les resulta fácil NOTI, que pide un
+    formulario semanal de **conteos** (EDAs: acuosa y disentérica por <1,
+    1-4, 5-11, 12-17, 18-29, 30-59 y >60, con casos, hospitalizaciones y
+    defunciones; IRAs: IRA <5a, neumonía no grave/grave, hospitalizaciones,
+    defunciones intra y extrahospitalarias, y SOB/asma <5a; más etnia,
+    procedencia y lugar probable de infección).
+    - **Análisis:** todas las casillas de NOTI se calculan con los registros
+      REG-PNP por atención. Al revés no: los conteos de NOTI no traen
+      condición (T/F/alumno/cadete), juntan SOB con asma, no tienen IRA, SOB
+      ni asma de 5a+ y usan otros cortes de edad, así que no alcanzarían para
+      el consolidado PNP ni para la sábana DIRSAPOL.
+    - **Propuesta llevada al Área:**
+      1. «Formato NOTI» en Reportes › Formatos (1–1,5 días): las tablas de
+         EDAs e IRAs ya llenas por establecimiento y SE, una por distrito
+         del lugar probable de infección, para copiar a NOTI.
+      2. «Neumonía grave» obligatoria en menores de 5 años
+         (`reg_neumonia_grave`); decidir si se piden etnia y procedencia
+         (hoy omitidas en REG-PNP).
+      3. Después, carga rápida por lote de atenciones (3–4 días).
+    - **Pregunta clave para el Área:** ¿necesita los datos nominales de
+      EDA/IRA? Si no, cabe un formulario de conteos, que contradice la
+      decisión del 25/11 (consolidado desde los registros) y obligaría a
+      agregar la condición y otros cortes de edad.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
