@@ -48,6 +48,7 @@ class PanelController extends Controller
         $claves12 = array_slice(array_map(fn($s) => $s['anio'] . '-' . $s['semana'], $semanasSeries), -12);
         $enfermedades = [];
         foreach ($series as $id => $serie) {
+            $id = (string) $id; // "1" o "1:A97.1" (Tablero::seriesPorEnfermedad)
             $corredor = Tablero::corredor($serie['historia'], $minimoAnios);
             $enPeriodo = 0;
             $sobre = 0;
@@ -68,6 +69,7 @@ class PanelController extends Controller
                 'id'        => $id,
                 'nombre'    => $serie['enfermedad']['nombre'],
                 'cie10'     => $serie['enfermedad']['cie10'],
+                'ficha'     => $serie['enfermedad']['ficha'] ?? null,
                 'inmediata' => $serie['enfermedad']['tipo_notif'] === 'INMEDIATA',
                 'mini'      => array_map(fn($c) => ['clave' => $c, 'n' => $serie['serie'][$c] ?? 0,
                     'sobre' => $corredor && ($serie['serie'][$c] ?? 0) > $corredor[(int) explode('-', $c)[1]]['q3']], $claves12),
@@ -79,9 +81,12 @@ class PanelController extends Controller
         // Lo activo arriba: casos del periodo, luego del año, luego el nombre.
         usort($enfermedades, fn($a, $b) => [-$a['periodo'], -$a['anio'], $a['nombre']] <=> [-$b['periodo'], -$b['anio'], $b['nombre']]);
 
-        $idElegida = (int) ($_GET['enfermedad'] ?? 0);
+        // Un enlace viejo (?enfermedad=1) a una ficha que ahora se separa por
+        // diagnóstico abre su primer diagnóstico.
+        $idElegida = is_string($_GET['enfermedad'] ?? null) ? $_GET['enfermedad'] : '';
         if (!isset($series[$idElegida])) {
-            $idElegida = (int) $enfermedades[0]['id'];
+            $mismaFicha = array_values(array_filter(array_keys($series), fn($clave) => $idElegida !== '' && str_starts_with((string) $clave, $idElegida . ':')));
+            $idElegida = $mismaFicha ? (string) $mismaFicha[0] : $enfermedades[0]['id'];
         }
         $curva = $this->curva($series[$idElegida], $semanasSeries, $periodo, $actual, $minimoAnios);
 

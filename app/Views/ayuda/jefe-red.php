@@ -92,7 +92,7 @@ require __DIR__ . '/_inicio.php';
           <thead><tr><th>Tarjeta</th><th>Qué muestra</th></tr></thead>
           <tbody>
             <tr><td><b>Indicadores</b></td><td>Fichas, casos en investigación, confirmados y fichas pendientes de validación</td></tr>
-            <tr><td><b>Enfermedades en vigilancia</b></td><td>Casos por enfermedad. Pulse una fila para ver su curva</td></tr>
+            <tr><td><b>Enfermedades en vigilancia</b></td><td>Casos por enfermedad. Pulse una fila para ver su curva. El dengue y las arbovirosis, y el sarampión y la rubéola, aparecen separados por diagnóstico (A97.0, A97.1, B06…)</td></tr>
             <tr><td><b>Curva epidemiológica</b></td><td>Casos por semana. El corredor endémico aparece cuando hay al menos 2 años anteriores con datos; hasta entonces, la enfermedad figura como <b>Sin historia</b></td></tr>
             <tr><td><b>Notificaciones inmediatas recientes</b></td><td>La enfermedad, su clasificación, la IPRESS y la fecha, sin datos del paciente</td></tr>
             <tr><td><b>Cumplimiento de notificación</b></td><td>Un mapa por IPRESS y semana. Pulse una celda para abrir esa semana en Notificación semanal</td></tr>

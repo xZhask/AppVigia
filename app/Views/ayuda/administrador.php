@@ -159,7 +159,7 @@ require __DIR__ . '/_inicio.php';
         <h2>Panel y reportes <?= $ir('/', 'Abrir Panel') ?></h2>
         <?php $captura('admin-panel.jpg', 'Panel de vigilancia: periodo, indicadores de fichas, enfermedades en vigilancia y curva epidemiológica', 'El periodo elegido arriba se aplica a todo el Panel.'); ?>
         <ul>
-          <li><b>Panel:</b> muestra los indicadores nacionales, las enfermedades y su curva epidemiológica. Pulse una enfermedad para ver su curva.</li>
+          <li><b>Panel:</b> muestra los indicadores nacionales, las enfermedades y su curva epidemiológica. Pulse una enfermedad para ver su curva. Dengue y arbovirosis, y sarampión / rubéola, aparecen separados por diagnóstico (por ejemplo, A97.1 Dengue con signos de alarma), según la opción elegida en la ficha.</li>
           <li><b>Corredor endémico:</b> aparece cuando hay al menos 2 años anteriores con datos. Mientras tanto, la enfermedad figura como <b>Sin historia</b>.</li>
           <li><b>Cumplimiento de notificación:</b> es un mapa por establecimiento y semana, que puede filtrar por red. Pulse una celda para abrir esa semana en Notificación semanal.</li>
           <li><b>Reportes:</b> funciona como se explica en la <a href="/ayuda#reportes">Guía del registrador</a>, con datos de todo el país. En los <b>Formatos</b> puede elegir el establecimiento.</li>

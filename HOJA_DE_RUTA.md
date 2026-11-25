@@ -867,6 +867,14 @@ No tocar sin una respuesta explícita.
       - la lista de inmediatas del Panel;
       - la dimensión «Diagnóstico (CIE-10)» del Consolidado.
       «Otras arbovirosis» y «Otras febriles eruptivas» siguen como A97 o B05.
+      - **Panel (25/11):** «Enfermedades en vigilancia» y la curva separan
+        A97 y B05 por diagnóstico (clave `?enfermedad=1:A97.1`;
+        `?enfermedad=1` abre la primera). La fila de la ficha queda solo
+        para los casos sin código específico («Dengue y arbovirosis ·
+        otros»). La marca «Inmediata» y la lista de inmediatas siguen el
+        código: A97.0 y A97.1 son semanales y A97.2 es inmediata. Archivos:
+        `app/Models/Tablero.php`, `app/Controllers/PanelController.php` y
+        las guías `ayuda/administrador.php` y `ayuda/jefe-red.php`.
       Archivos: `app/Core/ayudantes.php`, `app/Models/Caso.php`,
       `app/Models/Tablero.php`, `app/Models/Consolidado.php`,
       `app/Controllers/CasosController.php`, `app/Views/panel/index.php`,

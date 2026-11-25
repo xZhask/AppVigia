@@ -116,42 +116,83 @@ class Tablero
      * Casos por enfermedad y semana desde $desde hasta la SE actual, y la
      * historia de años anteriores para el corredor endémico.
      *
-     * @return array<int, array> enfermedad_id => [enfermedad, serie[clave "anio-se"] => n, historia[anio][se] => n]
+     * @return array<string, array> "id" o "id:CIE-10" => [enfermedad, serie[clave "anio-se"] => n, historia[anio][se] => n]
      */
     public static function seriesPorEnfermedad(array $usuario, array $desde, array $hasta): array
     {
+        // Las fichas que eligen el diagnóstico en una opción (A97: dengue,
+        // chikungunya, zika; B05: sarampión, rubéola) se separan por ese
+        // CIE-10 (2026-11-25): clave "1:A97.1". Sin opción específica, o en
+        // las demás fichas, la clave es el id de la ficha.
+        $dx = "SUBSTRING_INDEX(SUBSTRING_INDEX(" . Caso::SQL_OPCION_CIE10 . ", '(CIE-10: ', -1), ')', 1)";
+        $datos = [];
         [$where, $parametros] = self::base($usuario);
         $rango = self::rango($desde, $hasta, $parametros, 's');
-        $series = [];
-        foreach (Enfermedad::todos('nombre') as $enfermedad) {
-            // Los registros PNP (2026-10-21) no tienen curva: no son casos.
-            if ($enfermedad['activo'] && ($enfermedad['modalidad'] ?? 'FICHA') === 'FICHA') {
-                $series[(int) $enfermedad['id']] = ['enfermedad' => $enfermedad, 'serie' => [], 'historia' => []];
-            }
-        }
         foreach (self::consultar(
-            "SELECT c.enfermedad_id, c.anio_epi, c.semana_epi, COUNT(*) AS n " . Caso::FROM_LISTADO
-            . " WHERE $where AND $rango GROUP BY c.enfermedad_id, c.anio_epi, c.semana_epi",
+            "SELECT c.enfermedad_id, $dx AS dx, c.anio_epi, c.semana_epi, COUNT(*) AS n " . Caso::FROM_LISTADO
+            . " WHERE $where AND $rango GROUP BY c.enfermedad_id, dx, c.anio_epi, c.semana_epi",
             $parametros
         ) as $fila) {
-            if (isset($series[(int) $fila['enfermedad_id']])) {
-                $series[(int) $fila['enfermedad_id']]['serie'][$fila['anio_epi'] . '-' . $fila['semana_epi']] = (int) $fila['n'];
-            }
+            $datos[(int) $fila['enfermedad_id']][(string) $fila['dx']]['serie'][$fila['anio_epi'] . '-' . $fila['semana_epi']] = (int) $fila['n'];
         }
-
         [$where, $parametros] = self::base($usuario);
         $parametros['anio_hist'] = $hasta[0];
         foreach (self::consultar(
-            "SELECT c.enfermedad_id, c.anio_epi, c.semana_epi, COUNT(*) AS n " . Caso::FROM_LISTADO
-            . " WHERE $where AND c.anio_epi < :anio_hist GROUP BY c.enfermedad_id, c.anio_epi, c.semana_epi",
+            "SELECT c.enfermedad_id, $dx AS dx, c.anio_epi, c.semana_epi, COUNT(*) AS n " . Caso::FROM_LISTADO
+            . " WHERE $where AND c.anio_epi < :anio_hist GROUP BY c.enfermedad_id, dx, c.anio_epi, c.semana_epi",
             $parametros
         ) as $fila) {
-            if (isset($series[(int) $fila['enfermedad_id']])) {
-                $series[(int) $fila['enfermedad_id']]['historia'][(int) $fila['anio_epi']][(int) $fila['semana_epi']] = (int) $fila['n'];
+            $datos[(int) $fila['enfermedad_id']][(string) $fila['dx']]['historia'][(int) $fila['anio_epi']][(int) $fila['semana_epi']] = (int) $fila['n'];
+        }
+
+        $opciones = self::opcionesCie10();
+        $series = [];
+        foreach (Enfermedad::todos('nombre') as $enfermedad) {
+            // Los registros PNP (2026-10-21) no tienen curva: no son casos.
+            if (!$enfermedad['activo'] || ($enfermedad['modalidad'] ?? 'FICHA') !== 'FICHA') {
+                continue;
+            }
+            $id = (int) $enfermedad['id'];
+            $porDx = $datos[$id] ?? [];
+            $especificos = array_diff(array_keys($porDx), ['']);
+            sort($especificos);
+            foreach ($especificos as $codigo) {
+                $series["$id:$codigo"] = [
+                    'enfermedad' => array_merge($enfermedad, [
+                        'nombre'     => $opciones[$codigo] ?? $codigo,
+                        'cie10'      => $codigo,
+                        'tipo_notif' => Cie10Vigilancia::notificacionDe($codigo) ?? $enfermedad['tipo_notif'],
+                        'ficha'      => $enfermedad['nombre'],
+                    ]),
+                    'serie'    => $porDx[$codigo]['serie'] ?? [],
+                    'historia' => $porDx[$codigo]['historia'] ?? [],
+                ];
+            }
+            // La ficha como tal: siempre si no se separó, y si se separó solo
+            // cuando tiene casos sin código específico ("Otras arbovirosis").
+            if (!$especificos || isset($porDx[''])) {
+                $series[(string) $id] = [
+                    'enfermedad' => $especificos ? array_merge($enfermedad, ['nombre' => ($enfermedad['nombre_corto'] ?: $enfermedad['nombre']) . ' · otros']) : $enfermedad,
+                    'serie'      => $porDx['']['serie'] ?? [],
+                    'historia'   => $porDx['']['historia'] ?? [],
+                ];
             }
         }
 
         return $series;
+    }
+
+    /** Nombre de cada CIE-10 que traen las opciones de las fichas: "A97.1" => "Dengue con signos de alarma". */
+    private static function opcionesCie10(): array
+    {
+        $opciones = [];
+        foreach (Database::conexion()->query("SELECT DISTINCT etiqueta FROM catalogo_item WHERE etiqueta LIKE '%(CIE-10: %'")->fetchAll(\PDO::FETCH_COLUMN) as $etiqueta) {
+            if (preg_match('/^(.*?)\s*\(CIE-10: ([A-Z0-9.]+)\)/u', (string) $etiqueta, $m)) {
+                $opciones[$m[2]] ??= $m[1];
+            }
+        }
+
+        return $opciones;
     }
 
     /**
@@ -211,16 +252,25 @@ class Tablero
         ), 'dias'));
     }
 
-    /** Las últimas fichas de enfermedades de notificación inmediata. */
+    /**
+     * Las últimas fichas de enfermedades de notificación inmediata. Si la
+     * ficha trae un diagnóstico específico, manda el de ese código
+     * (2026-11-25): la ficha A97 es inmediata, pero A97.0 y A97.1 son
+     * semanales; A97.2 (dengue grave) sí es inmediata.
+     */
     public static function inmediatasRecientes(array $usuario, int $limite = 5): array
     {
         [$where, $parametros] = self::base($usuario);
-        return self::consultar(
+        $filas = self::consultar(
             "SELECT c.id, c.codigo, c.fecha_notif, c.clasificacion, e.nombre AS enfermedad_nombre, e.cie10, c.cie10_dx,
                     " . Caso::SQL_OPCION_CIE10 . " AS opcion_cie10, est.nombre AS establecimiento_nombre " . Caso::FROM_LISTADO
-            . " WHERE $where AND e.tipo_notif = 'INMEDIATA' ORDER BY c.fecha_notif DESC, c.id DESC LIMIT " . (int) $limite,
+            . " WHERE $where AND e.tipo_notif = 'INMEDIATA' ORDER BY c.fecha_notif DESC, c.id DESC LIMIT " . (int) ($limite * 10),
             $parametros
         );
+        $filas = array_filter($filas, fn(array $fila) => diagnosticoDelCaso($fila) === null
+            || (Cie10Vigilancia::notificacionDe(cie10DelCaso($fila)) ?? 'INMEDIATA') === 'INMEDIATA');
+
+        return array_slice(array_values($filas), 0, $limite);
     }
 
     /**
