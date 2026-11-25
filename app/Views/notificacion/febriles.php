@@ -112,3 +112,5 @@ $celda = function (array $e): array {
   </table>
   </div>
 </div>
+
+<script src="<?= e(asset('/js/notificacion-semanal.js')) ?>"></script>

@@ -62,6 +62,38 @@ document.addEventListener('DOMContentLoaded', function () {
     f.addEventListener('submit', function (e) { if (!confirm(f.dataset.confirmar)) e.preventDefault(); });
   });
 
+  // Buscador de establecimiento o red (2026-11-25): Enter no enviaba el
+  // formulario porque el selector de redes con búsqueda agrega un segundo
+  // campo de texto, y con dos el navegador no hace el envío implícito.
+  // Como en Fichas: filtra al dejar de escribir y con Enter, y tras recargar
+  // el foco vuelve al buscador.
+  document.querySelectorAll('form.ns-filtros').forEach(function (filtros) {
+    var buscador = filtros.querySelector('input[name="q"]');
+    if (!buscador) return;
+    var inicial = buscador.value;
+    var espera = null;
+    var aplicar = function () {
+      clearTimeout(espera);
+      if (buscador.value.trim() === inicial.trim()) return;
+      try { sessionStorage.setItem('vigiaNsBuscadorFoco', '1'); } catch (e) {}
+      filtros.submit();
+    };
+    buscador.addEventListener('input', function () {
+      clearTimeout(espera);
+      espera = setTimeout(aplicar, 450);
+    });
+    buscador.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); aplicar(); }
+    });
+    try {
+      if (sessionStorage.getItem('vigiaNsBuscadorFoco')) {
+        sessionStorage.removeItem('vigiaNsBuscadorFoco');
+        buscador.focus();
+        buscador.setSelectionRange(buscador.value.length, buscador.value.length);
+      }
+    } catch (e) {}
+  });
+
   var solo = document.getElementById('soloConCasos');
   if (solo) {
     var aplicar = function () {

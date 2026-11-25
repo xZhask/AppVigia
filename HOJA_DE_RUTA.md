@@ -778,6 +778,14 @@ No tocar sin una respuesta explícita.
       `app/Models/Caso.php`, `app/Controllers/CasosController.php`,
       `app/Views/fichas/index.php`, `public/css/theme.css` y
       `app/Views/ayuda/registrador.php`.
+    - **Buscador de Notificación semanal (25/11):** en la pestaña principal
+      y en la de febriles, escribir en «Buscar establecimiento o red» no
+      filtraba hasta tocar el selector de redes. Ese selector con búsqueda
+      agrega un segundo campo de texto, y con dos el navegador no envía el
+      formulario con Enter. Ahora filtra al dejar de escribir y con Enter,
+      igual que Fichas (`public/js/notificacion-semanal.js`, que ahora carga
+      también `app/Views/notificacion/febriles.php`). Los catálogos filtran
+      en vivo y no tenían el problema.
     - **Archivos para el servidor:** 10 en total, ninguno de base de datos,
       **sin migración**.
       - `app/Controllers/CasosController.php`
