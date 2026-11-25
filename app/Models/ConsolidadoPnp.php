@@ -154,6 +154,137 @@ class ConsolidadoPnp
         return $tablas + ['total' => $total];
     }
 
+    /** Diagnóstico de la sábana DIRSAPOL para cada grupo del consolidado. */
+    private const DX_SABANA = ['EDA' => 'DIARREA', 'DISENTERIA' => 'DISENTERIA', 'COLERA' => 'COLERA', 'IRA' => 'IRA', 'NEUMONIA' => 'NEUMONIA', 'SOBA' => 'SOB', 'ASMA' => 'ASMA'];
+
+    /** Orden de los grupos de edad en la sábana. */
+    public const EDADES_SABANA = ['<2M', '2-11M', '<1A', '<2A', '1-4A', '2-4A', '5A+', '5-9A', '10-19A', '20-59A', '60A+', 'SIN EDAD'];
+
+    /**
+     * Sábana consolidada de EDA/IRA de Epidemiología DIRSAPOL (2026-11-25,
+     * fase 2 de docs/propuesta-sabanas-dirsapol.md): los mismos casos que el
+     * consolidado semanal (registros PNP con diagnóstico y fichas de cólera,
+     * sin descartados), contados por SE, establecimiento, condición,
+     * diagnóstico y grupo de edad, en el formato largo del Área. Decisión del
+     * usuario: sale de los registros de VIGÍA; las IPRESS no mandan conteos.
+     *
+     * Una consulta liviana que se suma fila por fila: un año del país son
+     * decenas de miles de registros.
+     *
+     * @param array{desde: int[], hasta: int[], red_id: ?int, establecimiento_id: ?int} $filtros
+     * @return list<array{anio: int, semana: int, mes: string, red: string, establecimiento: string, condicion: string, dx: string, edad: string, etareo: string, casos: int, hosp: int, def: int, cierre: ?string}>
+     */
+    public static function sabana(array $filtros): array
+    {
+        $parametros = [
+            'otras'    => Cie10Vigilancia::REGISTRO_OTRAS,
+            'se_desde' => $filtros['desde'][0] * 100 + $filtros['desde'][1],
+            'se_hasta' => $filtros['hasta'][0] * 100 + $filtros['hasta'][1],
+        ];
+        $condiciones = [
+            'c.anulado = 0',
+            "c.clasificacion <> 'DESCARTADO'",
+            "((e.cie10 = :otras AND c.cie10_dx IS NOT NULL) OR e.cie10 = 'A00')",
+            '(c.anio_epi * 100 + c.semana_epi) BETWEEN :se_desde AND :se_hasta',
+        ];
+        if (!empty($filtros['establecimiento_id'])) {
+            $condiciones[] = 'c.establecimiento_id = :establecimiento_id';
+            $parametros['establecimiento_id'] = (int) $filtros['establecimiento_id'];
+        }
+        if (!empty($filtros['red_id'])) {
+            $condiciones[] = 'es.red_id = :red_id';
+            $parametros['red_id'] = (int) $filtros['red_id'];
+        }
+        $consulta = \App\Core\Database::conexion()->prepare(
+            "SELECT c.cie10_dx, c.fecha_notif, c.anio_epi, c.semana_epi, c.hospitalizado, c.fallecido, c.edad_valor, c.edad_unidad,
+                    e.modalidad, p.fecha_nac, p.condicion, g.nivel AS grado_nivel, es.nombre AS establecimiento, rs.nombre AS red,
+                    c.establecimiento_id,
+                    (SELECT cv.valor FROM caso_valor cv JOIN campo_def cd ON cd.id = cv.campo_def_id
+                      WHERE cv.caso_id = c.id AND cd.clave = 'reg_lugar_defuncion' LIMIT 1) AS lugar_defuncion
+               FROM caso c
+               JOIN enfermedad e       ON e.id = c.enfermedad_id
+               JOIN persona p          ON p.id = c.persona_id
+               JOIN establecimiento es ON es.id = c.establecimiento_id
+          LEFT JOIN red_salud rs       ON rs.id = es.red_id
+          LEFT JOIN grado_pnp g        ON g.id = p.grado_id
+              WHERE " . implode(' AND ', $condiciones)
+        );
+        $consulta->execute($parametros);
+
+        $grupos = [];
+        while ($fila = $consulta->fetch()) {
+            $grupo = $fila['modalidad'] === 'FICHA' ? 'COLERA' : Cie10Vigilancia::grupoConsolidado((string) $fila['cie10_dx']);
+            if ($grupo === null) {
+                continue;
+            }
+            $edad = self::edad($fila);
+            $rango = self::edadSabana($grupo, $edad);
+            $clave = implode('|', [$fila['anio_epi'], $fila['semana_epi'], $fila['establecimiento_id'], FormatoPnp::condicionTexto($fila), self::DX_SABANA[$grupo], $rango]);
+            $grupos[$clave] ??= [
+                'anio' => (int) $fila['anio_epi'], 'semana' => (int) $fila['semana_epi'],
+                'establecimiento_id' => (int) $fila['establecimiento_id'],
+                'red' => (string) $fila['red'], 'establecimiento' => (string) $fila['establecimiento'],
+                'condicion' => FormatoPnp::condicionTexto($fila), 'dx' => self::DX_SABANA[$grupo], 'edad' => $rango,
+                'etareo' => $edad === null ? '' : ($edad['anios'] < 5 ? '<5A' : '5A+'),
+                'casos' => 0, 'hosp' => 0, 'def' => 0,
+            ];
+            $grupos[$clave]['casos']++;
+            // Como en el consolidado semanal: la defunción intrahospitalaria
+            // cuenta también como hospitalizado.
+            $grupos[$clave]['hosp'] += (int) ((bool) $fila['hospitalizado'] || ($fila['fallecido'] && $fila['lugar_defuncion'] === 'INTRAHOSPITALARIA'));
+            $grupos[$clave]['def'] += (int) (bool) $fila['fallecido'];
+        }
+
+        $cierres = self::cierres($filtros);
+        $meses = [];
+        $orden = array_flip(self::EDADES_SABANA);
+        $filas = array_values($grupos);
+        foreach ($filas as &$fila) {
+            $semana = $fila['anio'] . '-' . $fila['semana'];
+            $meses[$semana] ??= FormatoPnp::mesDeSemana($fila['anio'], $fila['semana']);
+            $fila['mes'] = $meses[$semana];
+            $fila['cierre'] = $cierres[$fila['establecimiento_id'] . '|' . $semana] ?? null;
+        }
+        unset($fila);
+        usort($filas, fn(array $a, array $b) => [$a['anio'], $a['semana'], $a['red'], $a['establecimiento'], $a['condicion'], $a['dx'], $orden[$a['edad']]]
+            <=> [$b['anio'], $b['semana'], $b['red'], $b['establecimiento'], $b['condicion'], $b['dx'], $orden[$b['edad']]]);
+
+        return $filas;
+    }
+
+    /** Fecha en que cada IPRESS cerró cada SE del periodo (Notificación semanal), por "establecimiento|año-SE". */
+    private static function cierres(array $filtros): array
+    {
+        $consulta = \App\Core\Database::conexion()->prepare(
+            'SELECT establecimiento_id, anio_epi, semana_epi, DATE(creado_en) AS fecha FROM notificacion_semanal
+              WHERE anulada_en IS NULL AND (anio_epi * 100 + semana_epi) BETWEEN :se_desde AND :se_hasta'
+        );
+        $consulta->execute(['se_desde' => $filtros['desde'][0] * 100 + $filtros['desde'][1], 'se_hasta' => $filtros['hasta'][0] * 100 + $filtros['hasta'][1]]);
+        $cierres = [];
+        foreach ($consulta->fetchAll() as $fila) {
+            $cierres[$fila['establecimiento_id'] . '|' . $fila['anio_epi'] . '-' . $fila['semana_epi']] = $fila['fecha'];
+        }
+
+        return $cierres;
+    }
+
+    /** Grupo de edad de la sábana, con los rangos de cada diagnóstico en el consolidado semanal. */
+    private static function edadSabana(string $grupo, ?array $edad): string
+    {
+        if ($edad === null) {
+            return 'SIN EDAD';
+        }
+        $anios = $edad['anios'];
+        $menor5 = fn() => $anios >= 1 ? '1-4A' : ($edad['meses'] < 2 ? '<2M' : '2-11M');
+
+        return match ($grupo) {
+            'EDA', 'DISENTERIA', 'COLERA' => $anios < 1 ? '<1A' : ($anios < 5 ? '1-4A' : '5A+'),
+            'IRA'                         => $anios < 5 ? $menor5() : '5A+',
+            'SOBA', 'ASMA'                => $anios < 2 ? '<2A' : ($anios < 5 ? '2-4A' : '5A+'),
+            default                       => $anios < 5 ? $menor5() : ($anios < 10 ? '5-9A' : ($anios < 20 ? '10-19A' : ($anios < 60 ? '20-59A' : '60A+'))),
+        };
+    }
+
     /** <2m, 2-11m, 1-4a (y 5a+ si $con5): claves de columna. */
     private static function rangoMenor5(array $edad, bool $con5): string
     {

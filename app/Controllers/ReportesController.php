@@ -496,6 +496,75 @@ class ReportesController extends Controller
     }
 
     /**
+     * Sábana consolidada de EDA/IRA de Epidemiología DIRSAPOL (2026-11-25):
+     * los registros de VIGÍA contados en el formato largo del Área (ver
+     * ConsolidadoPnp::sabana). Solo ADMIN, como la individual.
+     */
+    public function sabanaConsolidada(): void
+    {
+        Auth::exigirRol('ADMIN');
+        $filtros = $this->leerFiltrosSabana();
+
+        $this->vista('reportes/sabana-consolidada', [
+            'tituloVista'      => 'Sábana consolidada DIRSAPOL',
+            'rutaActual'       => 'reportes',
+            'vistaAncha'       => true,
+            'filtros'          => $filtros,
+            'redes'            => RedSalud::todos('nombre'),
+            'establecimientos' => Establecimiento::todos('nombre'),
+            'filas'            => ConsolidadoPnp::sabana($filtros),
+        ]);
+    }
+
+    /** La sábana consolidada en .xlsx: encabezado de una fila en A1 y la hoja "Información". */
+    public function exportarSabanaConsolidada(): void
+    {
+        Auth::exigirRol('ADMIN');
+        $filtros = $this->leerFiltrosSabana();
+        $filas = ConsolidadoPnp::sabana($filtros);
+
+        $datos = [];
+        foreach ($filas as $i => $f) {
+            $datos[] = [
+                $i + 1, $f['condicion'], $f['dx'], $f['edad'], $f['casos'], $f['hosp'], $f['def'],
+                $f['red'], $f['establecimiento'], $f['semana'], $f['mes'], $f['etareo'], $f['anio'], $f['cierre'],
+            ];
+        }
+        $centro = fn(string $titulo) => ['titulo' => $titulo, 'tipo' => 'centro'];
+        $entero = fn(string $titulo) => ['titulo' => $titulo, 'tipo' => 'entero'];
+        $casos = array_sum(array_column($filas, 'casos'));
+
+        $libro = $this->libro('Sábana consolidada DIRSAPOL');
+        $libro->hoja('EDA IRA')
+            ->tabla([
+                $entero('N.°'), $centro('Condición'), $centro('Dx'), $centro('Edad'),
+                $entero('N.° de casos'), $entero('Hospitalizados'), $entero('Defunciones'),
+                ['titulo' => 'Red', 'anchoMax' => 30], ['titulo' => 'Establecimiento', 'anchoMax' => 40],
+                $entero('SE'), $centro('Mes'), $centro('Etáreo'), $entero('Año'),
+                ['titulo' => 'Cierre de la SE', 'tipo' => 'fecha'],
+            ], $datos, ['congelar' => true, 'filtro' => true, 'vacio' => 'Sin casos en el periodo']);
+
+        $redNombre = $filtros['red_id'] ? (RedSalud::buscar($filtros['red_id'])['nombre'] ?? '') : '';
+        $establecimiento = $filtros['establecimiento_id'] ? Establecimiento::buscar($filtros['establecimiento_id']) : null;
+        $libro->hoja('Información')
+            ->membrete(self::MEMBRETE_PNP)
+            ->titulo('SÁBANA CONSOLIDADA DE EDA E IRA')
+            ->datos([
+                'Periodo'         => $filtros['etiqueta'] . ' (del ' . fechaIsoADmy($filtros['rango'][0]) . ' al ' . fechaIsoADmy($filtros['rango'][1]) . ')',
+                'Red'             => $redNombre ?: 'Todas',
+                'Establecimiento' => $establecimiento['nombre'] ?? 'Todos',
+                'Casos'           => $casos,
+            ], 1)
+            ->nota('Se cuentan los registros de otras enfermedades sujetas a vigilancia (registro PNP) con diagnóstico de EDA, disentería, IRA, neumonía, SOB o asma, '
+                . 'y las fichas de cólera, no anulados ni descartados, por semana epidemiológica de notificación. Cada fila es una combinación de SE, establecimiento, condición, diagnóstico y grupo de edad.')
+            ->nota('Grupos de edad, como en el consolidado semanal: diarrea, disentería y cólera <1A, 1-4A, 5A+; IRA <2M, 2-11M, 1-4A, 5A+; '
+                . 'SOB y asma <2A, 2-4A, 5A+; neumonía <2M, 2-11M, 1-4A, 5-9A, 10-19A, 20-59A, 60A+. Mes: el del sábado que cierra la SE. '
+                . 'Hospitalizados incluye las defunciones intrahospitalarias. Cierre de la SE: la fecha en que la IPRESS cerró la semana en Notificación semanal (vacía si no la cerró).');
+        $libro->descargar('sabana_consolidada_' . preg_replace('/[^0-9A-Za-z]+/', '_', $filtros['etiqueta']));
+        exit;
+    }
+
+    /**
      * Filtros de la sábana: un año completo (hasta la SE actual si es el año
      * en curso) o un rango de SE que puede cruzar de año, más red y
      * establecimiento opcionales.

@@ -127,7 +127,10 @@ class Cie10Vigilancia extends Model
      */
     public static function grupoConsolidado(string $codigo): ?string
     {
-        static $filas = null;
+        static $filas = null, $resultado = [];
+        if (array_key_exists($codigo, $resultado)) {
+            return $resultado[$codigo];
+        }
         $filas ??= Database::conexion()->query('SELECT prefijos, consolidado FROM cie10_vigilancia WHERE consolidado IS NOT NULL')->fetchAll();
         $clave = Cie10::clave($codigo);
         $mejor = null;
@@ -140,15 +143,22 @@ class Cie10Vigilancia extends Model
             }
         }
 
-        return $mejor[1] ?? null;
+        return $resultado[$codigo] = $mejor[1] ?? null;
     }
 
     /** Tipo de notificación del listado PNP para un código (INMEDIATA/SEMANAL/COLECTIVA), o null. */
     public static function notificacionDe(string $codigo): ?string
     {
+        // Una consulta por petición, no por código: la sábana DIRSAPOL lo
+        // pregunta por cada registro de un año (2026-11-25).
+        static $filas = null, $resultado = [];
+        if (array_key_exists($codigo, $resultado)) {
+            return $resultado[$codigo];
+        }
+        $filas ??= Database::conexion()->query('SELECT prefijos, notificacion FROM cie10_vigilancia')->fetchAll();
         $clave = Cie10::clave($codigo);
         $mejor = null;
-        foreach (Database::conexion()->query('SELECT prefijos, notificacion FROM cie10_vigilancia')->fetchAll() as $fila) {
+        foreach ($filas as $fila) {
             foreach (explode(',', $fila['prefijos']) as $prefijo) {
                 $prefijo = trim($prefijo);
                 if ($prefijo !== '' && str_starts_with($clave, $prefijo) && ($mejor === null || strlen($prefijo) > strlen($mejor[0]))) {
@@ -157,6 +167,6 @@ class Cie10Vigilancia extends Model
             }
         }
 
-        return $mejor[1] ?? null;
+        return $resultado[$codigo] = $mejor[1] ?? null;
     }
 }

@@ -76,11 +76,16 @@ class FormatoPnp
      */
     public static function sabana(array $filtros): array
     {
+        // Los registros de notificación colectiva (decenas de miles al año) se
+        // dejan fuera en la consulta, por código, en vez de traerlos y filtrarlos.
         $parametros = ['otras' => Cie10Vigilancia::REGISTRO_OTRAS];
-        $filas = array_values(array_filter(
-            self::casos($filtros, "(e.modalidad = 'FICHA' OR e.cie10 = :otras)", $parametros),
-            fn(array $fila) => $fila['modalidad'] !== 'REGISTRO' || Cie10Vigilancia::notificacionDe((string) $fila['cie10_dx']) !== 'COLECTIVA'
-        ));
+        $codigos = Database::conexion()->prepare(
+            'SELECT DISTINCT c.cie10_dx FROM caso c JOIN enfermedad e ON e.id = c.enfermedad_id WHERE e.cie10 = :otras AND c.cie10_dx IS NOT NULL'
+        );
+        $codigos->execute($parametros);
+        $colectivos = array_values(array_filter($codigos->fetchAll(\PDO::FETCH_COLUMN), fn($codigo) => Cie10Vigilancia::notificacionDe((string) $codigo) === 'COLECTIVA'));
+        $sinColectivos = $colectivos ? ' AND (c.cie10_dx IS NULL OR c.cie10_dx NOT IN (' . self::lista($colectivos, $parametros, 'col') . '))' : '';
+        $filas = self::casos($filtros, "(e.modalidad = 'FICHA' OR (e.cie10 = :otras$sinColectivos))", $parametros);
         usort($filas, fn(array $a, array $b) => [$a['anio_epi'], $a['semana_epi'], $a['fecha_notif'], $a['id']] <=> [$b['anio_epi'], $b['semana_epi'], $b['fecha_notif'], $b['id']]);
         $valores = self::valores(array_column($filas, 'id'));
         $meses = [];
@@ -90,8 +95,7 @@ class FormatoPnp
             $base = self::filaIndividual($fila, $valores[(int) $fila['id']] ?? [], $vih);
             $anios = self::edadEnAnios($fila);
             $semana = $fila['anio_epi'] . '-' . $fila['semana_epi'];
-            // MES (decisión del 24/11): el del sábado que cierra la SE.
-            $meses[$semana] ??= self::MESES[(int) substr(ListadoMuerteFetalNeonatal::rangoDeSemana((int) $fila['anio_epi'], (int) $fila['semana_epi'])[1], 5, 2)];
+            $meses[$semana] ??= self::mesDeSemana((int) $fila['anio_epi'], (int) $fila['semana_epi']);
             $situacion = $base['situacion'];
             if ($situacion === '' && $fila['modalidad'] !== 'REGISTRO') {
                 $situacion = 'Ambulatorio';
@@ -128,8 +132,14 @@ class FormatoPnp
 
     private const MESES = [1 => 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
+    /** MES de las sábanas (decisión del 24/11): el del sábado que cierra la SE. */
+    public static function mesDeSemana(int $anio, int $semana): string
+    {
+        return self::MESES[(int) substr(ListadoMuerteFetalNeonatal::rangoDeSemana($anio, $semana)[1], 5, 2)];
+    }
+
     /** TITULAR, FAMILIAR, ALUMNO o CADETE, como en las sábanas del Área. */
-    private static function condicionTexto(array $fila): string
+    public static function condicionTexto(array $fila): string
     {
         return match ($fila['condicion']) {
             'EFECTIVO'        => 'TITULAR',

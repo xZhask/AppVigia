@@ -287,6 +287,12 @@ $router->get('/reportes/sabana-individual', function () {
 $router->get('/reportes/sabana-individual/exportar', function () {
     (new ReportesController())->exportarSabanaIndividual();
 });
+$router->get('/reportes/sabana-consolidada', function () {
+    (new ReportesController())->sabanaConsolidada();
+});
+$router->get('/reportes/sabana-consolidada/exportar', function () {
+    (new ReportesController())->exportarSabanaConsolidada();
+});
 
 $router->get('/reportes/consolidado-pnp', function () {
     (new ReportesController())->consolidadoPnp();

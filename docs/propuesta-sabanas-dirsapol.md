@@ -1,10 +1,18 @@
 # Propuesta: sábanas de Epidemiología DIRSAPOL en VIGÍA SPNP
 
-Estado: **fase 1 (sábana individual) hecha el 24/11/2026** en Reportes ›
-Formatos, con formato limpio. El MES se calcula de la SE y se usan los 2
-descansos médicos de VIGÍA (decisión 3 y dudas menores de §5). Para las
-fases 2 y 3 faltan las decisiones 1 y 2 de §5. Referencia en
-`HOJA_DE_RUTA.md` §3, punto 11.
+Estado: **fases 1 y 2 hechas** en Reportes › Formatos.
+
+- **Fase 1, sábana individual (24/11/2026):** formato limpio, el MES se calcula
+  de la SE y se usan los 2 descansos médicos de VIGÍA (decisión 3 y dudas
+  menores de §5).
+- **Fase 2, sábana consolidada (25/11/2026):** decisión 1 resuelta. Sale de
+  los registros de VIGÍA, cada atención en REG-PNP, sin formulario de conteos.
+  Revisado de nuevo el 25/11, el Excel del Área trae conteos agrupados por
+  fila (solo el 32 % de las filas vale 1, con hasta 158 casos en una fila),
+  porque hoy las IPRESS mandan conteos por correo.
+- **Fase 3:** falta la decisión 2 de §5.
+
+Referencia en `HOJA_DE_RUTA.md` §3, punto 11.
 
 El Área de Epidemiología de la DIRSAPOL lleva dos Excel anuales ("sábanas")
 que arma con lo que envía cada IPRESS:

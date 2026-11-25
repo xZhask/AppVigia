@@ -8,10 +8,10 @@ bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 >   excluidos (§3, punto 10). Son 10 archivos, sin migración, y hay que
 >   subirlos sin usuarios conectados. **El próximo ZIP debe incluir todos
 >   los archivos cambiados el 24/11** más lo que se cambie después.
-> - **Sábanas DIRSAPOL (§3, punto 11):** la individual quedó hecha el 24/11
->   y también hay que subirla (6 archivos más, sin migración). Para la
->   consolidada y la tabla de equivalencias falta **decidir con
->   Epidemiología** (`docs/propuesta-sabanas-dirsapol.md` §5).
+> - **Sábanas DIRSAPOL (§3, punto 11):** la individual (24/11) y la
+>   consolidada (25/11) están hechas y también hay que subirlas (10 archivos
+>   más, sin migración). Para la tabla de equivalencias de macrorregiones
+>   falta **decidir con Epidemiología** quién valida la lista de unidades.
 
 ## 0. Al llegar a una estación (lista corta)
 
@@ -827,11 +827,38 @@ No tocar sin una respuesta explícita.
         - `app/Views/reportes/index.php` (ya estaba en la lista)
         - `app/Views/ayuda/administrador.php`
         - `public/index.php` (dos rutas nuevas)
-    - **Antes de las fases 2 y 3 falta decidir (§5 de ese documento):**
-      1. Si las IPRESS registran cada atención de EDA/IRA o envían conteos.
-         Son unas 1 470 por SE en todo el país; solo el LNS, unas 254.
-      2. Quién valida la lista de 144 unidades del Área frente a los 82
-         establecimientos de VIGÍA.
+    - **Fase 2, sábana consolidada de EDA/IRA: HECHA el 25/11, FALTA
+      SUBIRLA AL SERVIDOR.** Está en Reportes › Formatos › «Sábana
+      consolidada», solo para ADMIN (`/reportes/sabana-consolidada`,
+      `ConsolidadoPnp::sabana()`), con los mismos filtros que la individual.
+      - **Decisión del usuario (25/11):** sale de los registros de VIGÍA. Las
+        IPRESS registran cada atención en REG-PNP y **no hay formulario de
+        conteos**. El Excel del Área (revisado el 25/11) trae conteos
+        agrupados, porque hoy llegan por correo; desde VIGÍA se arman
+        contando los registros.
+      - **Formato largo del Área:** una fila por SE × establecimiento ×
+        condición × Dx × grupo de edad, con N.° de casos, hospitalizados,
+        defunciones y «Cierre de la SE» (`notificacion_semanal.creado_en`,
+        en lugar de la «fecha de correo»). Usa los mismos casos y grupos de
+        edad que el consolidado semanal. Dx: DIARREA, DISENTERIA, COLERA, IRA,
+        NEUMONIA, SOB, ASMA.
+      - **Rendimiento:** un año del país son unos 66 000 registros. La consulta
+        es liviana y se suma fila por fila. `Cie10Vigilancia::notificacionDe()`
+        y `grupoConsolidado()` guardan en memoria el resultado por código (antes
+        `notificacionDe()` hacía una consulta por llamada). La sábana individual
+        deja fuera los registros colectivos en la consulta.
+      - **Archivos para el servidor (sin migración), que se suman a los de
+        arriba:**
+        - `app/Models/ConsolidadoPnp.php`
+        - `app/Models/Cie10Vigilancia.php`
+        - `app/Views/reportes/sabana-consolidada.php` (nuevo)
+        - `app/Views/partials/sabana-filtros.php` (nuevo)
+        - Además, de nuevo: `FormatoPnp.php`, `ReportesController.php`,
+          `sabana-individual.php`, `reportes/index.php`,
+          `ayuda/administrador.php` y `public/index.php`.
+    - **Antes de la fase 3 falta decidir (§5 de ese documento):** quién
+      valida la lista de 144 unidades del Área frente a los 82
+      establecimientos de VIGÍA (tabla de equivalencias de macrorregiones).
     - Los Excel originales se borraron del proyecto porque tienen datos
       personales. Pedirlos de nuevo para probar y guardarlos fuera del
       proyecto.
