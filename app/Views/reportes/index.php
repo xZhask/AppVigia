@@ -81,7 +81,7 @@ $colorFila = function (string $k) use ($f): ?string {
 
 <nav class="pestanas reporte-pestanas" aria-label="Tipo de reporte">
   <a class="pestana<?= $pestana === 'consolidado' ? ' on' : '' ?>" href="<?= e($url('/reportes')) ?>">Consolidado</a>
-  <?php if (!$esJefeRed): ?><a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono">6</span></a><?php endif; ?>
+  <?php if (!$esJefeRed): ?><a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono"><?= \App\Core\Auth::tieneRol('ADMIN') ? 7 : 6 ?></span></a><?php endif; ?>
 </nav>
 
 <?php if ($pestana === 'formatos'): ?>
@@ -123,6 +123,14 @@ $colorFila = function (string $k) use ($f): ?string {
       <p>Pacientes febriles atendidos, por día o por semana.</p>
       <a class="btn btn-primary" href="/reportes/febriles">Abrir registro</a>
     </div>
+    <?php if (\App\Core\Auth::tieneRol('ADMIN')): ?>
+      <div class="card formato">
+        <span class="codigo-formato mono">DIRSAPOL · Sábana</span>
+        <h3>Sábana individual de notificación epidemiológica</h3>
+        <p>Un caso por fila, de todas las IPRESS, por año o rango de semanas, para Epidemiología DIRSAPOL.</p>
+        <a class="btn btn-primary" href="/reportes/sabana-individual">Abrir sábana</a>
+      </div>
+    <?php endif; ?>
   </div>
 <?php else: ?>
   <form method="get" action="/reportes" class="card reporte-filtros" id="filtrosReporte">

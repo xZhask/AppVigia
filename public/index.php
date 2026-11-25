@@ -280,6 +280,14 @@ $router->post('/febriles/sin-casos/anular', function () {
     (new ReportesController())->anularSinFebriles();
 });
 
+// Sábana individual de Epidemiología DIRSAPOL (2026-11-24): nacional, por periodo, solo ADMIN.
+$router->get('/reportes/sabana-individual', function () {
+    (new ReportesController())->sabanaIndividual();
+});
+$router->get('/reportes/sabana-individual/exportar', function () {
+    (new ReportesController())->exportarSabanaIndividual();
+});
+
 $router->get('/reportes/consolidado-pnp', function () {
     (new ReportesController())->consolidadoPnp();
 });

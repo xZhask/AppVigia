@@ -8,8 +8,10 @@ bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 >   excluidos (§3, punto 10). Son 10 archivos, sin migración, y hay que
 >   subirlos sin usuarios conectados. **El próximo ZIP debe incluir todos
 >   los archivos cambiados el 24/11** más lo que se cambie después.
-> - **Decidir con Epidemiología** las sábanas DIRSAPOL (§3, punto 11 y
->   `docs/propuesta-sabanas-dirsapol.md`).
+> - **Sábanas DIRSAPOL (§3, punto 11):** la individual quedó hecha el 24/11
+>   y también hay que subirla (6 archivos más, sin migración). Para la
+>   consolidada y la tabla de equivalencias falta **decidir con
+>   Epidemiología** (`docs/propuesta-sabanas-dirsapol.md` §5).
 
 ## 0. Al llegar a una estación (lista corta)
 
@@ -794,18 +796,42 @@ No tocar sin una respuesta explícita.
         Si hay migraciones `sql/add_*.sql`, aplicarlas en el servidor.
       - **Después de subir:** entrar como ADMIN y revisar el aviso en Fichas,
         Panel y Reportes, y la ventanita del mapa (p. ej. DIRAVPOL, SE 46).
-11. **Sábanas de Epidemiología DIRSAPOL (24/11): viabilidad analizada,
-    esperando decisiones.** Generar desde VIGÍA el consolidado de EDA/IRA y el
-    individual que el Área arma a mano en Excel.
+11. **Sábanas de Epidemiología DIRSAPOL (24/11).** Generar desde VIGÍA el
+    consolidado de EDA/IRA y el individual que el Área arma a mano en Excel.
     - El detalle completo (hojas, las 65 columnas con su origen en VIGÍA,
       volúmenes, tabla de equivalencias de unidades y macrorregiones, fases y
       estimación) está en `docs/propuesta-sabanas-dirsapol.md`.
-    - **Antes de implementar falta decidir (§5 de ese documento):**
+    - **Fase 1, sábana individual: HECHA el 24/11, FALTA SUBIRLA AL
+      SERVIDOR.** Está en Reportes › Formatos › «Sábana individual», solo
+      para ADMIN (`/reportes/sabana-individual`, `FormatoPnp::sabana()`).
+      Sale por año o por rango de SE (puede cruzar de año), con filtro
+      opcional de red o establecimiento. Muestra un resumen y una vista
+      previa de 300 filas, y el Excel trae 43 columnas.
+      - **Decisiones del usuario (24/11):**
+        - Mismos datos que el Excel del Área pero con **formato limpio**:
+          encabezados corregidos en una sola fila (A1, con filtro y la fila
+          fija) y sin las columnas que siempre quedan vacías (AISLAMIENTO,
+          OTRAS OBS 1–10, tipo de prueba, fechas de hospitalización).
+        - **MES** se calcula del sábado que cierra la SE.
+        - **Descansos médicos:** bastan los 2 de VIGÍA.
+      - **Qué entra:** las mismas filas que el registro individual y el de
+        VIH/SIDA. VIH va con iniciales. EDA, IRA, neumonía, SOB y asma no
+        van uno por uno, porque se cuentan en el consolidado.
+      - **Red y establecimiento** son los de VIGÍA hasta que exista la tabla
+        de equivalencias (fase 3).
+      - **Archivos para el servidor (sin migración), que se suman a los 10
+        del punto 10:**
+        - `app/Models/FormatoPnp.php`
+        - `app/Controllers/ReportesController.php` (ya estaba en la lista)
+        - `app/Views/reportes/sabana-individual.php` (nuevo)
+        - `app/Views/reportes/index.php` (ya estaba en la lista)
+        - `app/Views/ayuda/administrador.php`
+        - `public/index.php` (dos rutas nuevas)
+    - **Antes de las fases 2 y 3 falta decidir (§5 de ese documento):**
       1. Si las IPRESS registran cada atención de EDA/IRA o envían conteos.
          Son unas 1 470 por SE en todo el país; solo el LNS, unas 254.
       2. Quién valida la lista de 144 unidades del Área frente a los 82
          establecimientos de VIGÍA.
-      3. Si la sábana debe salir idéntica al Excel actual.
     - Los Excel originales se borraron del proyecto porque tienen datos
       personales. Pedirlos de nuevo para probar y guardarlos fuera del
       proyecto.

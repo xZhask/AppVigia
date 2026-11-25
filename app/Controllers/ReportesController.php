@@ -15,6 +15,7 @@ use App\Models\FebrilesSinCasos;
 use App\Models\FormatoPnp;
 use App\Models\ListadoMuerteFetalNeonatal;
 use App\Models\NotificacionNegativa;
+use App\Models\RedSalud;
 use App\Models\RegistroBusquedaActivaVih;
 
 class ReportesController extends Controller
@@ -404,6 +405,141 @@ class ReportesController extends Controller
             ->nota('Tipo de diagnóstico: P = probable, C = confirmado, D = descartado. Situación: F = familiar.')
             ->descargar(($vih ? 'registro_individual_vih_' : 'registro_individual_') . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
         exit;
+    }
+
+    /**
+     * Sábana individual de Epidemiología DIRSAPOL (2026-11-24): un caso por
+     * fila, de todo el país y de un periodo (ver FormatoPnp::sabana). Solo
+     * ADMIN: trae datos personales de todas las IPRESS.
+     */
+    public function sabanaIndividual(): void
+    {
+        Auth::exigirRol('ADMIN');
+        $filtros = $this->leerFiltrosSabana();
+        $casos = FormatoPnp::sabana($filtros);
+
+        $this->vista('reportes/sabana-individual', [
+            'tituloVista'      => 'Sábana individual DIRSAPOL',
+            'rutaActual'       => 'reportes',
+            'vistaAncha'       => true,
+            'filtros'          => $filtros,
+            'redes'            => RedSalud::todos('nombre'),
+            'establecimientos' => Establecimiento::todos('nombre'),
+            'casos'            => $casos,
+        ]);
+    }
+
+    /**
+     * La sábana en .xlsx (decisión del 24/11: mismos datos que el Excel del
+     * Área, con formato limpio): encabezado de una sola fila en A1, para que
+     * funcionen filtros y tablas dinámicas, y el periodo en la hoja
+     * "Información".
+     */
+    public function exportarSabanaIndividual(): void
+    {
+        Auth::exigirRol('ADMIN');
+        $filtros = $this->leerFiltrosSabana();
+        $casos = FormatoPnp::sabana($filtros);
+
+        $filas = [];
+        foreach ($casos as $i => $c) {
+            $filas[] = [
+                $i + 1, $c['condicion_texto'], $c['grado'], $c['situacion_pnp'], $c['nombre'], $c['edad'], $c['edad_anios'], $c['sexo_texto'],
+                $c['cip'], $c['dni'], $c['red'], $c['establecimiento'], $c['categoria'], $c['localidad'], $c['direccion'],
+                $c['cie10'], $c['diagnostico'], $c['tipo_dx'], $c['protegido'],
+                $c['inicio_sintomas'], $c['difusion'], $c['notificacion'], $c['investigacion'], $c['vigilancia'],
+                $c['semana'], $c['mes'], $c['grupo_etario'], $c['anio'],
+                $c['lugar_provincia'], $c['lugar_distrito'], $c['lugar_localidad'],
+                $c['observaciones'], $c['hospitalizado'], $c['situacion'], $c['unidad'],
+                $c['descanso'], $c['descanso1_inicio'], $c['descanso1_fin'], $c['descanso2_inicio'], $c['descanso2_fin'], $c['dias_descanso'],
+                $c['fecha_alta'], $c['codigo'],
+            ];
+        }
+        $texto = fn(string $titulo, int $anchoMax = 45) => ['titulo' => $titulo, 'anchoMax' => $anchoMax];
+        $centro = fn(string $titulo) => ['titulo' => $titulo, 'tipo' => 'centro'];
+        $fecha = fn(string $titulo) => ['titulo' => $titulo, 'tipo' => 'fecha'];
+        $entero = fn(string $titulo) => ['titulo' => $titulo, 'tipo' => 'entero'];
+
+        $libro = $this->libro('Sábana individual DIRSAPOL');
+        $libro->hoja('Individual')
+            ->tabla([
+                $entero('N.°'), $centro('Condición'), $centro('Grado'), $centro('Situación'), $texto('Apellidos y nombres', 36),
+                $centro('Edad'), $entero('Edad (años)'), $centro('Sexo'), $texto('CIP'), $texto('Documento de identidad'),
+                $texto('Red', 30), $texto('Establecimiento', 36), $centro('Categoría'), $texto('Localidad', 24), $texto('Dirección', 40),
+                $centro('CIE-10'), $texto('Diagnóstico', 40), $centro('Tipo de Dx (P, C, D)'), $centro('Vacuna (protegido)'),
+                $fecha('Inicio de síntomas'), $fecha('Difusión'), $fecha('Notificación'), $centro('Ficha de investigación'), $centro('Vigilancia (PAS, ACT)'),
+                $entero('SE'), $centro('Mes'), $centro('Grupo etario'), $entero('Año'),
+                $texto('Lugar prob. de infección: provincia', 24), $texto('Lugar prob. de infección: distrito', 24), $texto('Lugar prob. de infección: localidad', 24),
+                $texto('Observaciones', 40), $centro('Hospitalizado'), $centro('Situación del paciente'), $texto('Unidad', 30),
+                $centro('Descanso médico'), $fecha('Descanso 1: inicio'), $fecha('Descanso 1: término'), $fecha('Descanso 2: inicio'), $fecha('Descanso 2: término'),
+                $entero('Días de descanso'), $fecha('Alta médica'), $texto('Ficha VIGÍA SPNP'),
+            ], $filas, ['congelar' => true, 'filtro' => true, 'vacio' => 'Sin casos en el periodo']);
+
+        $redNombre = $filtros['red_id'] ? (RedSalud::buscar($filtros['red_id'])['nombre'] ?? '') : '';
+        $establecimiento = $filtros['establecimiento_id'] ? Establecimiento::buscar($filtros['establecimiento_id']) : null;
+        $libro->hoja('Información')
+            ->membrete(self::MEMBRETE_PNP)
+            ->titulo('SÁBANA INDIVIDUAL DE NOTIFICACIÓN EPIDEMIOLÓGICA')
+            ->datos([
+                'Periodo'         => $filtros['etiqueta'] . ' (del ' . fechaIsoADmy($filtros['rango'][0]) . ' al ' . fechaIsoADmy($filtros['rango'][1]) . ')',
+                'Red'             => $redNombre ?: 'Todas',
+                'Establecimiento' => $establecimiento['nombre'] ?? 'Todos',
+                'Casos'           => count($casos),
+            ], 1)
+            ->nota('Fichas MINSA y registros de otras enfermedades sujetas a vigilancia, no anulados, por semana epidemiológica de notificación. '
+                . 'EDA, IRA, neumonía, SOB y asma no van uno por uno: se cuentan en el consolidado. VIH/SIDA y gestante con VIH / niño expuesto van con las iniciales del paciente.')
+            ->nota('Tipo de Dx: P = probable (incluye sospechoso), C = confirmado, D = descartado. Mes: el del sábado que cierra la SE. '
+                . 'Grupo etario: por quinquenios, con la edad en años a la fecha de notificación (los menores de un año van en 0-4). '
+                . 'Situación: NO APLICA para quien no es efectivo PNP.');
+        $libro->descargar('sabana_individual_' . preg_replace('/[^0-9A-Za-z]+/', '_', $filtros['etiqueta']));
+        exit;
+    }
+
+    /**
+     * Filtros de la sábana: un año completo (hasta la SE actual si es el año
+     * en curso) o un rango de SE que puede cruzar de año, más red y
+     * establecimiento opcionales.
+     *
+     * @return array{periodo: string, desde: int[], hasta: int[], rango: string[], etiqueta: string, red_id: ?int, establecimiento_id: ?int, usuario: array}
+     */
+    private function leerFiltrosSabana(): array
+    {
+        $texto = fn(string $clave): string => is_string($_GET[$clave] ?? null) ? trim($_GET[$clave]) : '';
+        $entero = fn(string $clave, int $defecto): int => ctype_digit($texto($clave)) ? (int) $texto($clave) : $defecto;
+        $actual = semanaEpidemiologica(date('Y-m-d'));
+        $tope = fn(array $se): array => $se[0] * 100 + $se[1] > $actual['anio'] * 100 + $actual['semana'] ? [$actual['anio'], $actual['semana']] : $se;
+        $anioValido = fn(int $anio): int => $anio >= 2000 && $anio <= $actual['anio'] ? $anio : $actual['anio'];
+
+        $periodo = $texto('periodo') === 'rango' ? 'rango' : 'anio';
+        if ($periodo === 'rango') {
+            $anioDesde = $anioValido($entero('anio_desde', $actual['anio']));
+            $anioHasta = $anioValido($entero('anio_hasta', $actual['anio']));
+            $desde = [$anioDesde, max(1, min(semanasEpidemiologicasDelAnio($anioDesde), $entero('se_desde', 1)))];
+            $hasta = [$anioHasta, max(1, min(semanasEpidemiologicasDelAnio($anioHasta), $entero('se_hasta', $actual['semana'])))];
+            if ($desde > $hasta) {
+                [$desde, $hasta] = [$hasta, $desde];
+            }
+            $desde = $tope($desde);
+            $hasta = $tope($hasta);
+        } else {
+            $anio = $anioValido($entero('anio', $actual['anio']));
+            $desde = [$anio, 1];
+            $hasta = $tope([$anio, semanasEpidemiologicasDelAnio($anio)]);
+        }
+        $etiqueta = $desde[0] === $hasta[0]
+            ? 'SE ' . $desde[1] . '-' . $hasta[1] . ' ' . $hasta[0]
+            : 'SE ' . $desde[1] . ' ' . $desde[0] . ' a SE ' . $hasta[1] . ' ' . $hasta[0];
+
+        return [
+            'periodo'            => $periodo,
+            'desde'              => $desde,
+            'hasta'              => $hasta,
+            'rango'              => [ListadoMuerteFetalNeonatal::rangoDeSemana(...$desde)[0], ListadoMuerteFetalNeonatal::rangoDeSemana(...$hasta)[1]],
+            'etiqueta'           => $etiqueta,
+            'red_id'             => $entero('red_id', 0) ?: null,
+            'establecimiento_id' => $entero('establecimiento_id', 0) ?: null,
+            'usuario'            => Auth::usuario(),
+        ];
     }
 
     /**

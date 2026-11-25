@@ -63,6 +63,95 @@ class FormatoPnp
         return array_map(fn(array $fila) => self::filaIndividual($fila, $valores[(int) $fila['id']] ?? [], $vih), $filas);
     }
 
+    /**
+     * Sábana individual de Epidemiología DIRSAPOL (2026-11-24, fase 1 de
+     * docs/propuesta-sabanas-dirsapol.md): las mismas fichas y registros del
+     * registro individual y del de VIH/SIDA, pero de un rango de SE y de todo
+     * el país (o de una red o un establecimiento), con las columnas que el
+     * Área agrega a mano (condición, mes, grupo etario, red...). Los
+     * registros de notificación colectiva no van: se cuentan en el
+     * consolidado. VIH/SIDA va con las iniciales, como en su formato.
+     *
+     * @param array{desde: int[], hasta: int[], red_id: ?int, establecimiento_id: ?int, usuario: array} $filtros
+     */
+    public static function sabana(array $filtros): array
+    {
+        $parametros = ['otras' => Cie10Vigilancia::REGISTRO_OTRAS];
+        $filas = array_values(array_filter(
+            self::casos($filtros, "(e.modalidad = 'FICHA' OR e.cie10 = :otras)", $parametros),
+            fn(array $fila) => $fila['modalidad'] !== 'REGISTRO' || Cie10Vigilancia::notificacionDe((string) $fila['cie10_dx']) !== 'COLECTIVA'
+        ));
+        usort($filas, fn(array $a, array $b) => [$a['anio_epi'], $a['semana_epi'], $a['fecha_notif'], $a['id']] <=> [$b['anio_epi'], $b['semana_epi'], $b['fecha_notif'], $b['id']]);
+        $valores = self::valores(array_column($filas, 'id'));
+        $meses = [];
+
+        return array_map(function (array $fila) use ($valores, &$meses): array {
+            $vih = in_array($fila['enfermedad_cie10'], self::CIE10_VIH, true);
+            $base = self::filaIndividual($fila, $valores[(int) $fila['id']] ?? [], $vih);
+            $anios = self::edadEnAnios($fila);
+            $semana = $fila['anio_epi'] . '-' . $fila['semana_epi'];
+            // MES (decisión del 24/11): el del sábado que cierra la SE.
+            $meses[$semana] ??= self::MESES[(int) substr(ListadoMuerteFetalNeonatal::rangoDeSemana((int) $fila['anio_epi'], (int) $fila['semana_epi'])[1], 5, 2)];
+            $situacion = $base['situacion'];
+            if ($situacion === '' && $fila['modalidad'] !== 'REGISTRO') {
+                $situacion = 'Ambulatorio';
+            }
+            $descansos = [[$fila['descanso1_inicio'], $fila['descanso1_fin']], [$fila['descanso2_inicio'], $fila['descanso2_fin']]];
+            $dias = 0;
+            foreach ($descansos as [$inicio, $fin]) {
+                if ($inicio && $fin && $fin >= $inicio) {
+                    $dias += (int) (new \DateTimeImmutable($inicio))->diff(new \DateTimeImmutable($fin))->days + 1;
+                }
+            }
+
+            // array_merge: "situacion" reemplaza la del registro semanal.
+            return array_merge($base, [
+                'condicion_texto' => self::condicionTexto($fila),
+                'situacion_pnp'   => $fila['condicion'] === 'EFECTIVO' ? (string) ($fila['situacion_pnp'] ?? '') : 'NO APLICA',
+                'sexo_texto'      => ['M' => 'MASCULINO', 'F' => 'FEMENINO'][$fila['sexo'] ?? ''] ?? '',
+                'edad_anios'      => $anios,
+                'grupo_etario'    => $anios === null ? '' : ($anios >= 80 ? '80 a más' : (intdiv($anios, 5) * 5) . '-' . (intdiv($anios, 5) * 5 + 4)),
+                'red'             => (string) $fila['red'],
+                'categoria'       => (string) $fila['establecimiento_categoria'],
+                'localidad'       => (string) ($fila['localidad'] ?? ''),
+                'diagnostico'     => (string) (descripcionCie10($base['cie10']) ?? $fila['enfermedad']),
+                'anio'            => (int) $fila['anio_epi'],
+                'semana'          => (int) $fila['semana_epi'],
+                'mes'             => $meses[$semana],
+                'hospitalizado'   => $situacion === 'Hospitalizado' || (int) $fila['hospitalizado'] === 1 ? 'SI' : 'NO',
+                'situacion'       => $situacion,
+                'descanso'        => ($fila['descanso1_inicio'] || $fila['descanso2_inicio']) ? 'SI' : 'NO',
+                'dias_descanso'   => $dias ?: null,
+            ]);
+        }, $filas);
+    }
+
+    private const MESES = [1 => 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    /** TITULAR, FAMILIAR, ALUMNO o CADETE, como en las sábanas del Área. */
+    private static function condicionTexto(array $fila): string
+    {
+        return match ($fila['condicion']) {
+            'EFECTIVO'        => 'TITULAR',
+            'DERECHOHABIENTE' => 'FAMILIAR',
+            'EN_FORMACION'    => in_array($fila['grado_nivel'], ['CADETE', 'ALUMNO'], true) ? $fila['grado_nivel'] : 'EN FORMACIÓN',
+            default           => (string) $fila['condicion'],
+        };
+    }
+
+    /** Edad en años cumplidos a la fecha de notificación (0 si es en meses o días); null si no se sabe. */
+    private static function edadEnAnios(array $fila): ?int
+    {
+        if ($fila['fecha_nac'] && $fila['fecha_notif'] && $fila['fecha_notif'] >= $fila['fecha_nac']) {
+            return (new \DateTimeImmutable($fila['fecha_nac']))->diff(new \DateTimeImmutable($fila['fecha_notif']))->y;
+        }
+        if ($fila['edad_valor'] === null) {
+            return null;
+        }
+
+        return $fila['edad_unidad'] === 'ANIOS' ? (int) $fila['edad_valor'] : 0;
+    }
+
     /** Filas del registro diario de febriles de la semana (y del día, si se pide). */
     public static function febriles(array $filtros, ?string $dia = null): array
     {
@@ -124,11 +213,24 @@ class FormatoPnp
      */
     public static function casos(array $filtros, string $condicion, array $parametros): array
     {
-        $condiciones = ['c.anulado = 0', 'c.anio_epi = :anio', 'c.semana_epi = :semana', $condicion];
-        $parametros += ['anio' => $filtros['anio'], 'semana' => $filtros['semana']];
+        $condiciones = ['c.anulado = 0', $condicion];
+        // Una semana (anio + semana) o, para la sábana, un rango de SE que
+        // puede cruzar de año (desde/hasta = [año, SE]).
+        if (isset($filtros['desde'], $filtros['hasta'])) {
+            $condiciones[] = '(c.anio_epi * 100 + c.semana_epi) BETWEEN :se_desde AND :se_hasta';
+            $parametros += ['se_desde' => $filtros['desde'][0] * 100 + $filtros['desde'][1], 'se_hasta' => $filtros['hasta'][0] * 100 + $filtros['hasta'][1]];
+        } else {
+            $condiciones[] = 'c.anio_epi = :anio';
+            $condiciones[] = 'c.semana_epi = :semana';
+            $parametros += ['anio' => $filtros['anio'], 'semana' => $filtros['semana']];
+        }
         if (!empty($filtros['establecimiento_id'])) {
             $condiciones[] = 'c.establecimiento_id = :establecimiento_id';
             $parametros['establecimiento_id'] = (int) $filtros['establecimiento_id'];
+        }
+        if (!empty($filtros['red_id'])) {
+            $condiciones[] = 'es.red_id = :red_id';
+            $parametros['red_id'] = (int) $filtros['red_id'];
         }
         // Misma regla que CasosController::puedeVerCaso(): un REGISTRADOR ve
         // su establecimiento y, de las fichas privadas, solo las suyas.
@@ -144,16 +246,18 @@ class FormatoPnp
         $consulta = Database::conexion()->prepare(
             'SELECT c.id, c.codigo, c.cie10_dx, c.clasificacion, c.fecha_notif, c.fecha_inicio_sintomas, c.hospitalizado, c.fallecido,
                     c.tipo_captacion, c.edad_valor, c.edad_unidad, c.lugar_contagio_localidad,
-                    c.descanso1_inicio, c.descanso1_fin, c.descanso2_inicio, c.descanso2_fin, c.fecha_alta,
+                    c.descanso1_inicio, c.descanso1_fin, c.descanso2_inicio, c.descanso2_fin, c.fecha_alta, c.anio_epi, c.semana_epi,
                     e.cie10 AS enfermedad_cie10, e.modalidad, e.nombre AS enfermedad,
                     p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
-                    p.condicion, p.cip, p.situacion_pnp, p.direccion, p.n_historia_clinica,
+                    p.condicion, p.cip, p.situacion_pnp, p.direccion, p.localidad, p.n_historia_clinica,
                     g.abreviatura AS grado, g.nivel AS grado_nivel, un.nombre AS unidad, d.nombre AS distrito_residencia, prr.nombre AS provincia_residencia,
-                    lcd.nombre AS lugar_distrito, lcp.nombre AS lugar_provincia, es.nombre AS establecimiento
+                    lcd.nombre AS lugar_distrito, lcp.nombre AS lugar_provincia, es.nombre AS establecimiento, es.categoria AS establecimiento_categoria,
+                    rs.nombre AS red
                FROM caso c
                JOIN enfermedad e       ON e.id = c.enfermedad_id
                JOIN persona p          ON p.id = c.persona_id
                JOIN establecimiento es ON es.id = c.establecimiento_id
+          LEFT JOIN red_salud rs       ON rs.id = es.red_id
           LEFT JOIN grado_pnp g        ON g.id = p.grado_id
           LEFT JOIN unidad_pnp un      ON un.id = p.unidad_id
           LEFT JOIN distrito d         ON d.id = p.distrito_id

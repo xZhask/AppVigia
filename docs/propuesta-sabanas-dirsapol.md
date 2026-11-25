@@ -1,7 +1,9 @@
 # Propuesta: sábanas de Epidemiología DIRSAPOL en VIGÍA SPNP
 
-Estado: **análisis de viabilidad terminado (24/11/2026); falta que el usuario
-decida los 3 puntos de §5 antes de implementar.** Referencia en
+Estado: **fase 1 (sábana individual) hecha el 24/11/2026** en Reportes ›
+Formatos, con formato limpio. El MES se calcula de la SE y se usan los 2
+descansos médicos de VIGÍA (decisión 3 y dudas menores de §5). Para las
+fases 2 y 3 faltan las decisiones 1 y 2 de §5. Referencia en
 `HOJA_DE_RUTA.md` §3, punto 11.
 
 El Área de Epidemiología de la DIRSAPOL lleva dos Excel anuales ("sábanas")

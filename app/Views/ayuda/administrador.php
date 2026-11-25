@@ -163,6 +163,7 @@ require __DIR__ . '/_inicio.php';
           <li><b>Corredor endémico:</b> aparece cuando hay al menos 2 años anteriores con datos. Mientras tanto, la enfermedad figura como <b>Sin historia</b>.</li>
           <li><b>Cumplimiento de notificación:</b> es un mapa por establecimiento y semana, que puede filtrar por red. Pulse una celda para abrir esa semana en Notificación semanal.</li>
           <li><b>Reportes:</b> funciona como se explica en la <a href="/ayuda#reportes">Guía del registrador</a>, con datos de todo el país. En los <b>Formatos</b> puede elegir el establecimiento.</li>
+          <li><b>Sábana individual DIRSAPOL:</b> en <b>Reportes › Formatos</b>, solo para administradores. Reúne en un Excel todos los casos de todas las IPRESS de un año o de un rango de semanas, uno por fila, para Epidemiología DIRSAPOL. Puede filtrar por red o por establecimiento. EDA, IRA, neumonía, SOB y asma no aparecen ahí porque se cuentan en el consolidado.</li>
         </ul>
       </section>
 
