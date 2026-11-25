@@ -3,15 +3,20 @@
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 
-> **Al 24/11/2026 hay dos pendientes:**
-> - **Subir al servidor de prueba y producción** el aviso de registros PNP
->   excluidos (§3, punto 10). Son 10 archivos, sin migración, y hay que
->   subirlos sin usuarios conectados. **El próximo ZIP debe incluir todos
->   los archivos cambiados el 24/11** más lo que se cambie después.
-> - **Sábanas DIRSAPOL (§3, punto 11):** la individual (24/11) y la
->   consolidada (25/11) están hechas y también hay que subirlas (10 archivos
->   más, sin migración). Para la tabla de equivalencias de macrorregiones
->   falta **decidir con Epidemiología** quién valida la lista de unidades.
+> **Al 25/11/2026 hay dos pendientes:**
+> - **Subir al servidor de prueba y producción `despliegue/parche_a4bdf6d.zip`**
+>   (armado el 25/11 en esta estación). Tiene los 26 archivos de `app` y
+>   `public` cambiados desde `5ff140e`, la última versión subida: el aviso de
+>   registros PNP, las sábanas DIRSAPOL, el CIE-10 específico, la separación
+>   en el Panel, los registros PNP en Fichas y el buscador de Notificación
+>   semanal (§3, puntos 10 y 11). **Sin migración ni SQL.** Hay que subirlo
+>   sin usuarios conectados, descomprimiéndolo sobre la raíz de la app. En
+>   otra estación se arma igual:
+>   `git archive -o despliegue/parche_a4bdf6d.zip a4bdf6d $(git diff --name-only 5ff140e a4bdf6d -- app public)`.
+>   Después de subirlo, la base para el siguiente parche es `a4bdf6d`.
+> - **Sábanas DIRSAPOL, fase 3:** para la tabla de equivalencias de
+>   macrorregiones falta **decidir con Epidemiología** quién valida la
+>   lista de unidades.
 
 ## 0. Al llegar a una estación (lista corta)
 
