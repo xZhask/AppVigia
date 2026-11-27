@@ -16155,6 +16155,11 @@
       "nucleo_incluidos": [
         "n_historia_clinica"
       ],
+      "unidades_edad": [
+        "ANIOS",
+        "MESES",
+        "DIAS"
+      ],
       "nucleo_ajustes": {
         "cie10_dx_desde": "feb_cie10",
         "registrar_y_agregar_otra": true,

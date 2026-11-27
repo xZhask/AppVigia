@@ -288,12 +288,12 @@ require __DIR__ . '/_inicio.php';
         <p><b>EDA e IRA:</b> <b>Nueva ficha</b> abre el registro de diarrea aguda. Para otro grupo, pulse <b>Cambiar enfermedad</b>: arriba está el grupo <b>EDA e IRA · Registro PNP</b>: diarrea aguda, disentería, IRA, neumonía, SOB y asma. También aparecen al escribir «eda» o «ira». <b>EDA grave / cólera</b> es otra cosa: la ficha MINSA para sospecha de cólera o deshidratación grave.</p>
         <ul>
           <li>Al pulsar en <b>Diagnóstico CIE-10</b> se despliegan los códigos del grupo elegido (por ejemplo, J02.9 faringitis aguda).</li>
-          <li>Registre la <b>fecha de nacimiento</b> o, si no la sabe, la <b>edad</b> (aunque sea aproximada): EDA e IRA se notifican por grupo de edad y sin ese dato no se pueden registrar. RENIEC no entrega la fecha de nacimiento.</li>
           <li>En una neumonía de un menor de 5 años, indique si es <b>grave</b>: sin ese dato no se puede registrar, porque va en otra columna del consolidado y de NOTI.</li>
           <li>Para cargar varias atenciones seguidas, pulse <b>Registrar y agregar otra</b>: el siguiente registro abre con el mismo establecimiento, fecha y grupo.</li>
         </ul>
         <p><b>Otras enfermedades:</b> en la misma ventana, elija <b>Otras enfermedades</b> en el grupo «Registro PNP», o busque el diagnóstico por nombre o CIE-10.</p>
         <p><b>Dónde verlos.</b> En <b>Fichas</b>, con «Todas las enfermedades», aparecen junto con las fichas MINSA; para ver solo un registro, elíjalo en el filtro de enfermedad. En el Panel y en Reportes no suman con «Todas»: un aviso indica cuántas atenciones quedan fuera.</p>
+        <p><b>Edad.</b> En los registros PNP (febriles, EDA, IRA y demás) es obligatorio registrar la <b>fecha de nacimiento</b> o, si no se conoce, la <b>edad</b>, aunque sea aproximada: los registros se cuentan por grupo de edad. RENIEC no entrega la fecha de nacimiento. Si escribe la fecha, la edad se calcula de ella y no se puede cambiar.</p>
         <p><b>Pasar a ficha MINSA.</b> Si el diagnóstico tiene ficha MINSA (por ejemplo, un febril con dengue), al guardar se abre el registro con un aviso. Pulse <b>Pasar a ficha MINSA</b> y llene la ficha; ambos quedan relacionados.</p>
       </section>
 
