@@ -949,18 +949,27 @@ No tocar sin una respuesta explícita.
       enlace para corregirlos. No incluye cólera (va en la notificación
       individual) ni IRA/SOB/asma de 5 años a más (NOTI no tiene casilla).
       Etnia y procedencia se completan en NOTI.
+    - **Ajustes del 27/11:** abierto desde un grupo, el diagnóstico queda
+      vacío (antes quedaba «A09», que no es del catálogo, y se rechazaba al
+      grabar) y su lista empieza por el código del grupo; «Nueva ficha» sin
+      enfermedad abre el registro de diarrea aguda; la **condición del
+      paciente** ya no viene marcada Particular: hay que elegirla antes de
+      grabar, y la búsqueda por DNI solo marca efectivo, en formación o
+      derechohabiente.
     - **Para el servidor:**
       - Archivos: `app/Controllers/CasosController.php`,
-        `app/Controllers/ReportesController.php`, `app/Models/Cie10.php`,
+        `app/Controllers/ReportesController.php`, `app/Core/ayudantes.php`,
+        `app/Models/Cie10.php`,
         `app/Models/Cie10Vigilancia.php`, `app/Models/ConsolidadoPnp.php`,
         `app/Models/FormatoPnp.php`, `app/Views/ayuda/registrador.php`,
         `app/Views/nueva/index.php`, `app/Views/reportes/index.php`,
-        `app/Views/reportes/noti.php` (nuevo), `public/index.php` y
-        `public/js/ficha.js`.
+        `app/Views/reportes/noti.php` (nuevo), `public/css/theme.css`,
+        `public/index.php` y `public/js/ficha.js` (14).
+      - Después: probar «Cambiar enfermedad» con «eda» e «ira», un registro
+        de IRA con «Registrar y agregar otra», grabar sin condición del
+        paciente y Reportes › Formatos › NOTI.
       - **SQL en phpMyAdmin** (idempotente):
         `UPDATE enfermedad SET nucleo_ajustes = JSON_SET(COALESCE(nucleo_ajustes, '{}'), '$.registrar_y_agregar_otra', TRUE) WHERE cie10 = 'REG-PNP';`
-      - Después: probar «Cambiar enfermedad» con «eda» e «ira», un registro
-        de IRA con «Registrar y agregar otra» y Reportes › Formatos › NOTI.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 
