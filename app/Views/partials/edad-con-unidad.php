@@ -19,7 +19,7 @@ $etiquetasUnidadEdad = ['ANIOS' => 'Años', 'MESES' => 'Meses', 'DIAS' => 'Días
 <div class="field" data-edad-unidad-bloque data-unidades-edad="<?= e(json_encode($unidadesEdadPersona)) ?>">
   <label class="fl" for="edadValorInput">Edad</label>
   <div class="edad-combo">
-    <div class="control mono"><input type="number" id="edadValorInput" name="edad_valor" min="0" step="1" placeholder="—" aria-label="Edad" value="<?= e($valoresFijos['edad_valor'] ?? '') ?>"></div>
+    <div class="control mono<?= isset($erroresFijos['edad_valor']) ? ' err' : '' ?>"><input type="number" id="edadValorInput" name="edad_valor" min="0" step="1" placeholder="—" aria-label="Edad" value="<?= e($valoresFijos['edad_valor'] ?? '') ?>"></div>
     <div class="control">
       <select id="edadUnidadSelect" name="edad_unidad" data-nosearch="true" aria-label="Unidad de la edad">
         <option value="">Unidad…</option>
@@ -30,4 +30,5 @@ $etiquetasUnidadEdad = ['ANIOS' => 'Años', 'MESES' => 'Meses', 'DIAS' => 'Días
     </div>
   </div>
   <span class="hint" id="edadCalculadaHint">Sin fecha de nacimiento, escríbala a mano.</span>
+  <?php if (isset($erroresFijos['edad_valor'])): ?><span class="hint err"><?= e($erroresFijos['edad_valor']) ?></span><?php endif; ?>
 </div>

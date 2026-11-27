@@ -650,6 +650,7 @@ class CasosController extends Controller
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
         $erroresCampos = $this->errorCie10ConFicha($enfermedad, $valoresCampos, $erroresCampos);
         $erroresCampos = $this->errorNeumoniaGraveSinDato($enfermedad, $valoresCampos, $erroresCampos, $fechaNacIso, $fechaNotifIso ?: null, $valoresFijos);
+        $erroresFijos += $this->errorEdaIraSinEdad($enfermedad, $valoresCampos, $fechaNacIso, $valoresFijos);
         if ($fechaInicioSintomasEsDerivada) {
             $fechaInicioSintomasIso = $this->fechaInicioSintomasCalculada($enfermedad, $valoresCampos);
         }
@@ -1399,6 +1400,7 @@ class CasosController extends Controller
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
         $erroresCampos = $this->errorCie10ConFicha($enfermedad, $valoresCampos, $erroresCampos);
         $erroresCampos = $this->errorNeumoniaGraveSinDato($enfermedad, $valoresCampos, $erroresCampos, $fechaNacIso, $fechaNotifIso ?: null, $valoresFijos);
+        $erroresFijos += $this->errorEdaIraSinEdad($enfermedad, $valoresCampos, $fechaNacIso, $valoresFijos);
         if ($fechaInicioSintomasEsDerivada) {
             $fechaInicioSintomasIso = $this->fechaInicioSintomasCalculada($enfermedad, $valoresCampos);
         }
@@ -2340,6 +2342,32 @@ class CasosController extends Controller
         }
 
         return $erroresCampos;
+    }
+
+    /**
+     * EDA e IRA sin edad (2026-11-27): NOTI y el consolidado las cuentan por
+     * grupo de edad. En el registro PNP, con diagnóstico de EDA o IRA, se
+     * pide la fecha de nacimiento o la edad (aunque sea aproximada); RENIEC
+     * no da la fecha. Otras enfermedades del registro no la exigen.
+     *
+     * @return array<string, string>
+     */
+    private function errorEdaIraSinEdad(array $enfermedad, array $valoresCampos, ?string $fechaNacIso, array $valoresFijos): array
+    {
+        $campoDx = $this->campoCie10Dx($enfermedad);
+        if (!$campoDx || ($enfermedad['cie10'] ?? '') !== Cie10Vigilancia::REGISTRO_OTRAS || $fechaNacIso) {
+            return [];
+        }
+        $dx = (string) ($valoresCampos[(int) $campoDx['id']] ?? '');
+        if ($dx === '' || !in_array(Cie10Vigilancia::grupoConsolidado($dx), ['EDA', 'DISENTERIA', 'IRA', 'NEUMONIA', 'SOBA', 'ASMA'], true)) {
+            return [];
+        }
+        $unidades = json_decode((string) ($enfermedad['unidades_edad'] ?? ''), true);
+        if (ctype_digit((string) ($valoresFijos['edad_valor'] ?? '')) && in_array($valoresFijos['edad_unidad'] ?? '', is_array($unidades) ? $unidades : [], true)) {
+            return [];
+        }
+
+        return ['edad_valor' => 'Indica la fecha de nacimiento o la edad, aunque sea aproximada: EDA e IRA se notifican por grupo de edad.'];
     }
 
     /**

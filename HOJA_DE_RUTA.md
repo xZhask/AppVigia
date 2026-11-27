@@ -9,6 +9,15 @@ bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 > siguiente parche se arma desde ahí:
 > `git archive -o despliegue/parche_<commit>.zip HEAD $(git diff --name-only 0bae30a HEAD -- app public sql config)`.
 >
+> **Hecho después de `0bae30a` (27/11), por subir:** campo **Edad** en el
+> registro PNP de otras enfermedades (`enfermedad.unidades_edad`: años,
+> meses, días) y, con diagnóstico de EDA o IRA, fecha de nacimiento o edad
+> obligatoria al crear y editar (`CasosController::errorEdaIraSinEdad()`):
+> RENIEC no da la fecha y esos registros quedaban fuera de los grupos de
+> edad de NOTI. Migración `sql/migraciones/set_reg_pnp_unidades_edad.php`
+> (aplicada en local). **SQL en phpMyAdmin:**
+> `UPDATE enfermedad SET unidades_edad = '["ANIOS","MESES","DIAS"]' WHERE cie10 = 'REG-PNP';`
+>
 > **Pendiente:**
 > - **Sábanas DIRSAPOL, fase 3:** para la tabla de equivalencias de
 >   macrorregiones falta **decidir con Epidemiología** quién valida la lista

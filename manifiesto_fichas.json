@@ -15938,6 +15938,11 @@
         "clasificacion",
         "investigador"
       ],
+      "unidades_edad": [
+        "ANIOS",
+        "MESES",
+        "DIAS"
+      ],
       "nucleo_ajustes": {
         "_nota": "El diagnóstico (CIE-10) es del caso, no de la enfermedad: va a caso.cie10_dx. registrar_y_agregar_otra (2026-11-26): EDA e IRA se cargan en serie; el siguiente abre con el mismo establecimiento, fecha y grupo.",
         "cie10_dx_desde": "reg_cie10",
