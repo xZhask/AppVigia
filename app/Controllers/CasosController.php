@@ -244,6 +244,19 @@ class CasosController extends Controller
             exit;
         }
 
+        // Sin enfermedad elegida (2026-11-27), Nueva ficha abre el registro de
+        // diarrea aguda: EDA e IRA es lo que más se registra. Es la misma
+        // dirección que "Cambiar enfermedad" › Diarrea aguda. Sin el registro
+        // PNP activo, la primera del catálogo, como antes.
+        if (!$_GET) {
+            foreach ($enfermedades as $activa) {
+                if ($activa['cie10'] === Cie10Vigilancia::REGISTRO_OTRAS && $activa['tiene_definicion']) {
+                    header('Location: /casos/nuevo?' . http_build_query(['enfermedad_id' => (int) $activa['id'], 'cie10' => 'A09']));
+                    exit;
+                }
+            }
+        }
+
         $enfermedadId = isset($_GET['enfermedad_id']) ? (int) $_GET['enfermedad_id'] : (int) $enfermedades[0]['id'];
         $enfermedad = Enfermedad::buscar($enfermedadId) ?: $enfermedades[0];
 

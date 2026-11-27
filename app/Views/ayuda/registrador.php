@@ -71,7 +71,7 @@ require __DIR__ . '/_inicio.php';
         <p>Casi todas las fichas se registran igual, y el formulario sigue la ficha modelo MINSA de cada enfermedad.</p>
         <?php $captura('nueva-ficha.jpg', 'Formulario de Nueva ficha: arriba, la enfermedad y el botón Cambiar enfermedad; a la derecha, el Avance de la ficha y el botón Registrar ficha', 'Nueva ficha: arriba, la enfermedad; a la derecha, el avance y el botón para registrar.'); ?>
         <ol class="guia-pasos">
-          <li>En el menú, pulse <b>Nueva ficha</b>.</li>
+          <li>En el menú, pulse <b>Nueva ficha</b>. Se abre el registro de <b>diarrea aguda</b>, lo que más se registra.</li>
           <li>Si la enfermedad no es la correcta, pulse <b>Cambiar enfermedad</b> y búsquela por nombre o CIE-10. Hacerlo recarga el formulario: elija la enfermedad antes de escribir.</li>
           <li>Revise la <b>Fecha de notificación</b>. De ella sale la semana epidemiológica (SE) de la ficha.</li>
           <li>Escriba el <b>documento de identidad</b> del paciente. Con DNI, los apellidos y nombres se completan del padrón o de RENIEC; si la persona ya está registrada, se cargan sus datos. Si no se encuentra, como ocurre con los menores de edad (RENIEC no entrega sus datos), escriba los apellidos y nombres a mano.</li>
@@ -284,7 +284,7 @@ require __DIR__ . '/_inicio.php';
           <li>Para anularla a mano, pulse <b>Anular</b> en el mismo recuadro. Solo puede hacerlo quien la notificó o un administrador.</li>
           <li>Mientras quede un día pendiente, <b>Notificación semanal</b> no deja cerrar la semana y muestra cuáles faltan.</li>
         </ul>
-        <p><b>EDA e IRA:</b> en <b>Nueva ficha</b>, pulse <b>Cambiar enfermedad</b>. Arriba está el grupo <b>EDA e IRA · Registro PNP</b>: diarrea aguda, disentería, IRA, neumonía, SOB y asma. También aparecen al escribir «eda» o «ira». <b>EDA grave / cólera</b> es otra cosa: la ficha MINSA para sospecha de cólera o deshidratación grave.</p>
+        <p><b>EDA e IRA:</b> <b>Nueva ficha</b> abre el registro de diarrea aguda. Para otro grupo, pulse <b>Cambiar enfermedad</b>: arriba está el grupo <b>EDA e IRA · Registro PNP</b>: diarrea aguda, disentería, IRA, neumonía, SOB y asma. También aparecen al escribir «eda» o «ira». <b>EDA grave / cólera</b> es otra cosa: la ficha MINSA para sospecha de cólera o deshidratación grave.</p>
         <ul>
           <li>Al pulsar en <b>Diagnóstico CIE-10</b> se despliegan los códigos del grupo elegido (por ejemplo, J02.9 faringitis aguda).</li>
           <li>En una neumonía de un menor de 5 años, indique si es <b>grave</b>: sin ese dato no se puede registrar, porque va en otra columna del consolidado y de NOTI.</li>
