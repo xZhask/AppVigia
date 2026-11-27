@@ -297,14 +297,18 @@ class CasosController extends Controller
         // una categoría) queda escrito para elegir el subcódigo de la lista.
         $campoCie10DxNuevo = $this->campoCie10Dx($enfermedad);
         $cie10Pedido = is_string($_GET['cie10'] ?? null) ? strtoupper(trim($_GET['cie10'])) : '';
-        if ($campoCie10DxNuevo && preg_match('/^[A-Z][0-9A-Z.]{1,9}$/', $cie10Pedido)) {
-            $valoresCamposIniciales[(int) $campoCie10DxNuevo['id']] = codigoCie10DelCatalogo($cie10Pedido) ?? $cie10Pedido;
-        }
         // EDA e IRA (2026-11-26): el grupo del listado PNP con que se abrió el
         // registro ("J00-J06" = IRA, que no es un código) titula el formulario
         // y abre en el diagnóstico la lista de sus códigos.
         $grupoRegistro = $campoCie10DxNuevo && ($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS && $cie10Pedido !== ''
             ? Cie10Vigilancia::porCodigo($cie10Pedido) : null;
+        // El código de un grupo ("A09", "A03", "J21") no es del catálogo: el
+        // diagnóstico queda vacío para elegirlo de la lista del grupo
+        // (2026-11-27; antes quedaba "A09" escrito y el registro se rechazaba).
+        $cie10Inicial = codigoCie10DelCatalogo($cie10Pedido) ?? ($grupoRegistro ? '' : $cie10Pedido);
+        if ($campoCie10DxNuevo && $cie10Inicial !== '' && preg_match('/^[A-Z][0-9A-Z.]{1,9}$/', $cie10Pedido)) {
+            $valoresCamposIniciales[(int) $campoCie10DxNuevo['id']] = $cie10Inicial;
+        }
 
         // "Pasar a ficha MINSA" (2026-10-21): ?origen=<registro> abre la
         // ficha con la persona, el establecimiento y la fecha del registro.

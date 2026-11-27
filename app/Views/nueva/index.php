@@ -64,6 +64,12 @@ $nombreDx = $dxRegistro !== '' ? Cie10Vigilancia::nombreDiagnostico($dxRegistro)
 $grupoRegistro = $esRegistroOtras ? ($grupoRegistro ?? null) : null;
 if ($grupoRegistro) {
     $nombreEnfermedad = $grupoRegistro['descripcion'];
+    // La lista del diagnóstico empieza por el código del grupo (A09.x en EDA,
+    // no la fiebre tifoidea A01), 2026-11-27.
+    $prefijosDx = array_map('trim', explode(',', (string) $grupoRegistro['prefijos']));
+    $propio = str_replace('.', '', strtok((string) $grupoRegistro['codigo'], '-'));
+    usort($prefijosDx, fn($a, $b) => ($b === $propio) <=> ($a === $propio));
+    $grupoRegistro['prefijos'] = implode(',', $prefijosDx);
 }
 $tituloEncabezado = $nombreDx ?? $nombreEnfermedad;
 // El tipo de notificación también sigue al diagnóstico (listado PNP: la peste
