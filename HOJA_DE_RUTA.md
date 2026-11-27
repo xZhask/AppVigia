@@ -3,10 +3,11 @@
 Punto de partida para retomar desde cualquier estación. `PENDIENTES.md` es la
 bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 
-> **Servidor al día hasta `a4bdf6d` (25/11/2026).** El usuario subió
-> `despliegue/parche_a4bdf6d.zip` (26 archivos desde `5ff140e`, sin SQL), con
-> todo lo de los puntos 10 y 11 de §3. El siguiente parche se arma desde ahí:
-> `git archive -o despliegue/parche_<commit>.zip HEAD $(git diff --name-only a4bdf6d HEAD -- app public sql config)`.
+> **Servidor al día hasta `0bae30a` (27/11/2026).** El usuario subió
+> `despliegue/parche_0bae30a.zip` (14 archivos desde `a4bdf6d`, más el
+> `UPDATE` de `nucleo_ajustes` de REG-PNP), con todo el punto 12 de §3. El
+> siguiente parche se arma desde ahí:
+> `git archive -o despliegue/parche_<commit>.zip HEAD $(git diff --name-only 0bae30a HEAD -- app public sql config)`.
 >
 > **Pendiente:**
 > - **Sábanas DIRSAPOL, fase 3:** para la tabla de equivalencias de
