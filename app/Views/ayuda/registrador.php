@@ -86,6 +86,7 @@ require __DIR__ . '/_inicio.php';
 
         <div class="guia-sub" id="condicion" data-bloque>
           <h3>Condición del paciente</h3>
+          <p>Ninguna viene marcada: elija una antes de registrar, o la ficha no se guarda. Al buscar el DNI de un efectivo, personal en formación o derechohabiente ya registrado, su condición se marca sola. <b>Particular</b> siempre se marca a mano.</p>
           <div class="guia-tabla-marco"><table class="guia-tabla">
             <thead><tr><th>Condición</th><th>Cuándo usarla</th><th>Datos que pide</th></tr></thead>
             <tbody>

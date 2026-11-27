@@ -1658,10 +1658,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // La condición se elige antes de grabar (2026-11-27): ya no viene marcada
+  // Particular. El servidor también lo exige.
+  var avisoCondicion = null;
+  function limpiarAvisoCondicion() {
+    if (avisoCondicion) { avisoCondicion.remove(); avisoCondicion = null; }
+    var selector = document.querySelector('.cond-pick');
+    if (selector) selector.classList.remove('has-error');
+  }
+  if (radiosCondicion.length && radiosCondicion[0].form) {
+    radiosCondicion[0].form.addEventListener('submit', function (e) {
+      if (document.querySelector('input[name="condicion"]:checked')) return;
+      e.preventDefault();
+      var selector = document.querySelector('.cond-pick');
+      if (!selector) return;
+      selector.classList.add('has-error');
+      if (!avisoCondicion) {
+        avisoCondicion = document.createElement('span');
+        avisoCondicion.className = 'hint err';
+        avisoCondicion.textContent = 'Selecciona la condición del paciente.';
+        selector.insertAdjacentElement('afterend', avisoCondicion);
+      }
+      selector.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
   var condicionAnterior = null;
   function actCondicion(esCambioDeUsuario) {
+    // Sin condición marcada (ficha nueva, 2026-11-27) no se abre ningún panel.
     var seleccionado = document.querySelector('input[name="condicion"]:checked');
-    var valor = seleccionado ? seleccionado.value : 'PARTICULAR';
+    var valor = seleccionado ? seleccionado.value : '';
+    if (valor) limpiarAvisoCondicion();
 
     if (esCambioDeUsuario && condicionAnterior && condicionAnterior !== valor) {
       var huboDatos = limpiarPanel(panelesCondicion[condicionAnterior]);
@@ -1981,7 +2008,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var radioCondicion = document.querySelector('input[name="condicion"][value="' + condicion + '"]');
     // Ajustes por rama (A50): una tarjeta oculta por la rama cuenta como no admitida.
     if (radioCondicion && radioCondicion.closest('.cond-opt[hidden]')) radioCondicion = null;
-    if (radioCondicion) { radioCondicion.checked = true; actCondicion(false); }
+    // Particular es lo que se guarda a quien nadie le eligió condición (RENIEC
+    // o digitado a mano): no se marca sola, la confirma quien registra
+    // (2026-11-27). Efectivo, en formación y derechohabiente sí se marcan.
+    if (radioCondicion && condicion !== 'PARTICULAR') { radioCondicion.checked = true; actCondicion(false); }
     // nucleo_ajustes.condiciones_paciente (P96, 2026-09-14): la ficha puede no
     // ofrecer la condición con la que la persona ya está registrada (un
     // fallecido fetal o neonatal no es efectivo PNP), y entonces tampoco pinta

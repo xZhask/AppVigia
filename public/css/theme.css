@@ -939,6 +939,8 @@
   transition:border-color .15s,background .15s,box-shadow .15s;height:100%;
 }
 .cond-opt label:hover{border-color:#CFD7DD}
+/* Sin condición elegida al grabar (2026-11-27). */
+.cond-pick.has-error .cond-opt label{border-color:var(--s-confirmado)}
 .cond-opt input:checked + label{
   border-color:var(--accent);background:var(--accent-soft);
   box-shadow:0 0 0 1px var(--accent);

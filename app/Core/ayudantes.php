@@ -969,16 +969,6 @@ function condicionesPacientePermitidas(array $enfermedad, ?array $valoresCampos 
 }
 
 /**
- * Condición con la que abre una ficha nueva: Particular, o la primera que la
- * ficha admita si no admite Particular.
- */
-function condicionPacientePorDefecto(array $enfermedad, ?array $valoresCampos = null): string
-{
-    $permitidas = condicionesPacientePermitidas($enfermedad, $valoresCampos);
-    return in_array('PARTICULAR', $permitidas, true) ? 'PARTICULAR' : $permitidas[0];
-}
-
-/**
  * Nombre en MAYÚSCULAS del padrón (RENIPRESS) pasado a nombre propio para
  * listados (2026-10-17): "POLICLINICO POLICIAL SAN DIEGO" -> "Policlinico
  * Policial San Diego". Conectores en minúscula y siglas (PNP, números

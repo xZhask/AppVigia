@@ -3132,9 +3132,9 @@ class CasosController extends Controller
     private function datosPnp(array $enfermedad = []): array
     {
         return [
-            // nucleo_ajustes.condiciones_paciente (P96): Particular, salvo
-            // que la ficha no la admita.
-            'condicionPaciente' => condicionPacientePorDefecto($enfermedad),
+            // Ficha nueva sin condición marcada (2026-11-27): se elige antes
+            // de grabar. Las que llegan de otra ficha traen la de su origen.
+            'condicionPaciente' => '',
             'valoresPnp'        => [
                 'cip' => '', 'situacion_pnp' => '', 'grado_id' => '', 'categoria_pnp' => '',
                 'vinculo_titular' => '', 'doc_titular' => '', 'titular_id' => '', 'titular_nombre' => '',
@@ -3192,17 +3192,21 @@ class CasosController extends Controller
      */
     private function leerDatosPnp(array $enfermedad, array $valoresRama = []): array
     {
-        $condicion = $_POST['condicion'] ?? condicionPacientePorDefecto($enfermedad, $valoresRama);
+        // Sin condición elegida no se graba (2026-11-27): antes valía
+        // Particular, y quedaba así en efectivos que nadie marcó.
+        $condicion = is_string($_POST['condicion'] ?? null) ? $_POST['condicion'] : '';
         if (!in_array($condicion, array_keys(CONDICIONES_PACIENTE), true)) {
-            $condicion = condicionPacientePorDefecto($enfermedad, $valoresRama);
+            $condicion = '';
         }
         // Por rama (A50, 2026-09-14): el producto de la gestación no admite
         // efectivo PNP; la madre sí.
         $condicionesPermitidas = condicionesPacientePermitidas($enfermedad, $valoresRama);
-        $errorCondicion = in_array($condicion, $condicionesPermitidas, true)
-            ? null
-            : 'En esta ficha la condición del paciente solo puede ser '
-                . implode(' o ', array_map(fn(string $c): string => CONDICIONES_PACIENTE[$c], $condicionesPermitidas)) . '.';
+        $errorCondicion = match (true) {
+            $condicion === '' => 'Selecciona la condición del paciente.',
+            in_array($condicion, $condicionesPermitidas, true) => null,
+            default => 'En esta ficha la condición del paciente solo puede ser '
+                . implode(' o ', array_map(fn(string $c): string => CONDICIONES_PACIENTE[$c], $condicionesPermitidas)) . '.',
+        };
 
         // Personal en formación tiene su propio panel; por dentro, su tipo
         // (Cadete, Alumno) también es una fila de grado_pnp.
