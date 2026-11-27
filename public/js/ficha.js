@@ -4730,7 +4730,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.lastChild.textContent = el.getAttribute('data-notif-dx') === 'largo' ? 'Notificación ' + etiqueta.toLowerCase() : etiqueta;
     });
     var base = document.querySelector('[data-titulo-base]');
-    if (base) document.title = 'VIGÍA SPNP · ' + (valido ? 'Nuevo registro · ' + nombre : 'Nueva ficha · ' + base.getAttribute('data-titulo-base'));
+    if (base) document.title = 'VIGÍA SPNP · Nuevo registro · ' + (valido ? nombre : base.getAttribute('data-titulo-base'));
   }
 
   function cotejar(input) {
@@ -4794,11 +4794,22 @@ document.addEventListener('DOMContentLoaded', function () {
     cerrar();
   }
 
+  // EDA e IRA (2026-11-26): el registro abierto desde un grupo del listado
+  // (data-prefijos-dx="J00,J01,...") lista sus códigos con el campo vacío.
+  function prefijosDelGrupo(input) {
+    var formulario = input.closest('form[data-prefijos-dx]');
+    return formulario ? formulario.getAttribute('data-prefijos-dx') : '';
+  }
+
   function consultar(input) {
     var texto = input.value.trim();
-    if (texto.length < 2) { cerrar(); return; }
+    var prefijos = prefijosDelGrupo(input);
+    if (texto.length < 2 && !(texto === '' && prefijos)) { cerrar(); return; }
     ultimaConsulta = texto;
-    fetch('/cie10/buscar?q=' + encodeURIComponent(texto) + '&sexo=' + sexoDelPaciente(), { headers: { 'Accept': 'application/json' } })
+    var url = texto === ''
+      ? '/cie10/buscar?prefijos=' + encodeURIComponent(prefijos) + '&sexo=' + sexoDelPaciente()
+      : '/cie10/buscar?q=' + encodeURIComponent(texto) + '&sexo=' + sexoDelPaciente();
+    fetch(url, { headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (datos) {
         if (input !== campoActivo || texto !== ultimaConsulta) return;
@@ -4834,6 +4845,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.addEventListener('focusout', function (e) {
     if (e.target === campoActivo) setTimeout(cerrar, 120);
+  });
+
+  // Al entrar al diagnóstico vacío de un registro de EDA o IRA, la lista de
+  // códigos del grupo (2026-11-26).
+  document.addEventListener('focusin', function (e) {
+    if (!e.target || !e.target.matches || !e.target.matches('input[data-cie10]')) return;
+    if (e.target.value.trim() !== '' || !prefijosDelGrupo(e.target)) return;
+    campoActivo = e.target;
+    consultar(e.target);
   });
 
   // Escrito a mano sin elegir de la lista: se coteja al salir del campo
@@ -4958,10 +4978,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Por inicio de palabra (2026-11-26): cada palabra escrita tiene que ser el
+  // comienzo de alguna palabra del nombre, el CIE-10 o las palabras clave.
+  // Antes era "contiene": "eda" encontraba "enfermedad" y "ira" encontraba
+  // "respiratorio" o "viral", y la IRA quedaba debajo de otras.
+  function palabras(texto) {
+    return sinTildes(texto).split(/[\s(),;:\/·\-]+/).filter(Boolean);
+  }
+
+  function coincide(item, buscadas) {
+    var propias = item._palabras || (item._palabras = palabras(item.getAttribute('data-busqueda') || ''));
+    return buscadas.every(function (buscada) {
+      return propias.some(function (propia) { return propia.indexOf(buscada) === 0; });
+    });
+  }
+
   function filtrar() {
-    var consulta = sinTildes(buscador.value.trim());
+    var buscadas = palabras(buscador.value.trim());
     items.forEach(function (item) {
-      item.hidden = consulta !== '' && sinTildes(item.getAttribute('data-busqueda')).indexOf(consulta) === -1;
+      item.hidden = buscadas.length > 0 && !coincide(item, buscadas);
     });
     modal.querySelectorAll('.modal-grupo').forEach(function (grupo) {
       var siguiente = grupo.nextElementSibling;

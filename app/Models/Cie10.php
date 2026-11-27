@@ -71,6 +71,37 @@ class Cie10 extends Model
      *
      * @return array<int, array{codigo: string, descripcion: string, sexo: string}>
      */
+    /**
+     * Códigos activos de un grupo del listado PNP (2026-11-26): los que
+     * empiezan por alguno de $prefijos ("J00", "J01"... de IRA), para la
+     * lista que se abre en el diagnóstico de un registro de EDA o IRA antes de
+     * escribir nada.
+     */
+    public static function delGrupo(array $prefijos, string $sexoPaciente = '', int $limite = 60): array
+    {
+        $prefijos = array_values(array_filter(array_map(fn($p) => self::clave((string) $p), $prefijos), fn($p) => preg_match('/^[A-Z][0-9A-Z]{1,5}$/', $p)));
+        if (!$prefijos) {
+            return [];
+        }
+        $parametros = ['excluido' => self::SEXO_EXCLUIDO[$sexoPaciente] ?? ''];
+        $condiciones = [];
+        $orden = [];
+        foreach ($prefijos as $i => $prefijo) {
+            $condiciones[] = "clave LIKE :p$i";
+            $orden[] = "WHEN clave LIKE :o$i THEN $i";
+            $parametros["p$i"] = $parametros["o$i"] = $prefijo . '%';
+        }
+        // En el orden del listado (J00...J06 antes que las otitis H65, H66).
+        $consulta = Database::conexion()->prepare(
+            'SELECT codigo, descripcion, sexo FROM cie10
+              WHERE activo = 1 AND sexo <> :excluido AND (' . implode(' OR ', $condiciones) . ')
+              ORDER BY CASE ' . implode(' ', $orden) . ' END, clave LIMIT ' . max(1, min(100, $limite))
+        );
+        $consulta->execute($parametros);
+
+        return $consulta->fetchAll();
+    }
+
     public static function sugerencias(string $texto, int $limite = 15, string $sexoPaciente = ''): array
     {
         $texto = trim($texto);

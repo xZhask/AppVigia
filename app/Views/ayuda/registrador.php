@@ -284,7 +284,13 @@ require __DIR__ . '/_inicio.php';
           <li>Para anularla a mano, pulse <b>Anular</b> en el mismo recuadro. Solo puede hacerlo quien la notificó o un administrador.</li>
           <li>Mientras quede un día pendiente, <b>Notificación semanal</b> no deja cerrar la semana y muestra cuáles faltan.</li>
         </ul>
-        <p><b>Otras enfermedades:</b> en <b>Nueva ficha</b>, pulse <b>Cambiar enfermedad</b> y elija <b>Otras enfermedades</b> en el grupo «Registro PNP».</p>
+        <p><b>EDA e IRA:</b> en <b>Nueva ficha</b>, pulse <b>Cambiar enfermedad</b>. Arriba está el grupo <b>EDA e IRA · Registro PNP</b>: diarrea aguda, disentería, IRA, neumonía, SOB y asma. También aparecen al escribir «eda» o «ira». <b>EDA grave / cólera</b> es otra cosa: la ficha MINSA para sospecha de cólera o deshidratación grave.</p>
+        <ul>
+          <li>Al pulsar en <b>Diagnóstico CIE-10</b> se despliegan los códigos del grupo elegido (por ejemplo, J02.9 faringitis aguda).</li>
+          <li>En una neumonía de un menor de 5 años, indique si es <b>grave</b>: sin ese dato no se puede registrar, porque va en otra columna del consolidado y de NOTI.</li>
+          <li>Para cargar varias atenciones seguidas, pulse <b>Registrar y agregar otra</b>: el siguiente registro abre con el mismo establecimiento, fecha y grupo.</li>
+        </ul>
+        <p><b>Otras enfermedades:</b> en la misma ventana, elija <b>Otras enfermedades</b> en el grupo «Registro PNP», o busque el diagnóstico por nombre o CIE-10.</p>
         <p><b>Dónde verlos.</b> En <b>Fichas</b>, con «Todas las enfermedades», aparecen junto con las fichas MINSA; para ver solo un registro, elíjalo en el filtro de enfermedad. En el Panel y en Reportes no suman con «Todas»: un aviso indica cuántas atenciones quedan fuera.</p>
         <p><b>Pasar a ficha MINSA.</b> Si el diagnóstico tiene ficha MINSA (por ejemplo, un febril con dengue), al guardar se abre el registro con un aviso. Pulse <b>Pasar a ficha MINSA</b> y llene la ficha; ambos quedan relacionados.</p>
       </section>
@@ -354,6 +360,7 @@ require __DIR__ . '/_inicio.php';
             <tr><td><b>PNP · Registro semanal</b></td><td>Fichas MINSA y registros de otras enfermedades de la semana</td></tr>
             <tr><td><b>PNP · VIH/SIDA</b></td><td>El mismo registro para VIH/SIDA y Z21, con iniciales del paciente</td></tr>
             <tr><td><b>PNP · Consolidado semanal</b></td><td>EDA, cólera, IRA, neumonía, SOB y asma, contados de los casos de la semana</td></tr>
+            <tr><td><b>NOTI · EDAs e IRAs</b></td><td>Las casillas de los formularios semanales de NOTI (CDC-MINSA), ya calculadas con los registros de la semana, para copiarlas en NOTI. Si avisa de neumonías sin gravedad o registros sin edad, corríjalos antes de copiar</td></tr>
             <tr><td><b>PNP · Registro diario</b></td><td>Pacientes febriles, por día o por semana</td></tr>
           </tbody>
         </table></div>

@@ -81,7 +81,7 @@ $colorFila = function (string $k) use ($f): ?string {
 
 <nav class="pestanas reporte-pestanas" aria-label="Tipo de reporte">
   <a class="pestana<?= $pestana === 'consolidado' ? ' on' : '' ?>" href="<?= e($url('/reportes')) ?>">Consolidado</a>
-  <?php if (!$esJefeRed): ?><a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono"><?= \App\Core\Auth::tieneRol('ADMIN') ? 8 : 6 ?></span></a><?php endif; ?>
+  <?php if (!$esJefeRed): ?><a class="pestana<?= $pestana === 'formatos' ? ' on' : '' ?>" href="/reportes?vista=formatos">Formatos<span class="cnt mono"><?= \App\Core\Auth::tieneRol('ADMIN') ? 9 : 7 ?></span></a><?php endif; ?>
 </nav>
 
 <?php if ($pestana === 'formatos'): ?>
@@ -116,6 +116,13 @@ $colorFila = function (string $k) use ($f): ?string {
       <h3><?= e(App\Models\ConsolidadoPnp::NOMBRE) ?></h3>
       <p>EDA, cólera, IRA, neumonía, SOB y asma, contados de los casos registrados en la semana.</p>
       <a class="btn btn-primary" href="/reportes/consolidado-pnp">Abrir consolidado</a>
+    </div>
+    <?php // EDAs e IRAs para NOTI (CDC-MINSA), 2026-11-26. ?>
+    <div class="card formato">
+      <span class="codigo-formato mono">NOTI · EDAs e IRAs</span>
+      <h3><?= e(App\Models\ConsolidadoPnp::NOTI) ?></h3>
+      <p>Las casillas de los formularios semanales de NOTI, ya calculadas con los registros de la semana, para copiarlas.</p>
+      <a class="btn btn-primary" href="/reportes/noti">Abrir formato</a>
     </div>
     <div class="card formato">
       <span class="codigo-formato mono">PNP · Registro diario</span>

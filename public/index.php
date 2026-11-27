@@ -294,6 +294,14 @@ $router->get('/reportes/sabana-consolidada/exportar', function () {
     (new ReportesController())->exportarSabanaConsolidada();
 });
 
+// EDAs e IRAs para NOTI (CDC-MINSA), 2026-11-26.
+$router->get('/reportes/noti', function () {
+    (new ReportesController())->notiPnp();
+});
+$router->get('/reportes/noti/exportar', function () {
+    (new ReportesController())->exportarNotiPnp();
+});
+
 $router->get('/reportes/consolidado-pnp', function () {
     (new ReportesController())->consolidadoPnp();
 });

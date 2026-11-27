@@ -58,23 +58,32 @@ if ($esRegistroOtras && is_string($claveDx = nucleoAjuste($enfermedad, 'cie10_dx
     $dxRegistro = $campoDx && empty($erroresCampos[(int) $campoDx['id']]) ? (string) ($valoresCampos[(int) $campoDx['id']] ?? '') : '';
 }
 $nombreDx = $dxRegistro !== '' ? Cie10Vigilancia::nombreDiagnostico($dxRegistro) : null;
+// EDA e IRA (2026-11-26): abierto desde un grupo del listado ("Infección
+// respiratoria aguda (no neumonía)"), el registro se titula con el grupo
+// mientras no haya diagnóstico, en vez de "Otras enfermedades".
+$grupoRegistro = $esRegistroOtras ? ($grupoRegistro ?? null) : null;
+if ($grupoRegistro) {
+    $nombreEnfermedad = $grupoRegistro['descripcion'];
+}
 $tituloEncabezado = $nombreDx ?? $nombreEnfermedad;
 // El tipo de notificación también sigue al diagnóstico (listado PNP: la peste
 // es inmediata aunque el registro sea semanal).
 $tipoNotifBase = (string) $enfermedad['tipo_notif'];
 $tipoNotif = $nombreDx !== null ? (Cie10Vigilancia::notificacionDe($dxRegistro) ?? $tipoNotifBase) : $tipoNotifBase;
 $esInmediata = $tipoNotif === 'INMEDIATA';
-if ($nombreDx !== null) {
-    $tituloVista = 'Nuevo registro · ' . $nombreDx;
-    $crumbDetalle = $nombreDx;
-}
 // Ventana "Cambiar enfermedad" (2026-10-21): los códigos del registro que se
-// parecen a una ficha (diarrea aguda y "EDA grave / cólera") van justo debajo
-// de ella, cada uno con su criterio de uso; los demás, en su propio grupo.
+// parecen a una ficha (varicela sin complicaciones y "Varicela con
+// complicaciones") van justo debajo de ella, cada uno con su criterio de uso;
+// los demás, en su propio grupo. EDA e IRA (2026-11-26) van arriba, en su
+// propio grupo: es lo que más se registra y "EDA" llevaba a "EDA grave /
+// cólera". La ficha con la que se confunden muestra igual su criterio.
 $vigilanciaSinFicha = Cie10Vigilancia::sinFicha();
+$vigilanciaEdaIra = Cie10Vigilancia::edaIra();
+$codigosEdaIra = array_column($vigilanciaEdaIra, 'codigo');
+$fichasConParEdaIra = array_flip(array_filter(array_column($vigilanciaEdaIra, 'par_cie10')));
 $vigilanciaPorPar = [];
 foreach ($vigilanciaSinFicha as $vig) {
-    if (!empty($vig['par_cie10'])) {
+    if (!empty($vig['par_cie10']) && !in_array($vig['codigo'], $codigosEdaIra, true)) {
         $vigilanciaPorPar[$vig['par_cie10']][] = $vig;
     }
 }
@@ -84,8 +93,8 @@ foreach ($enfermedades as $enf) {
         $registroOtras = $enf;
     }
 }
-$tituloVista = 'Nueva ficha · ' . $nombreEnfermedad;
-$crumbDetalle = $nombreEnfermedad;
+$tituloVista = ($esRegistroPnp ? 'Nuevo registro · ' : 'Nueva ficha · ') . ($nombreDx ?? $nombreEnfermedad);
+$crumbDetalle = $nombreDx ?? $nombreEnfermedad;
 ob_start(); ?>
 <div class="ctxbar" id="ctxBar" aria-hidden="true">
   <span class="ctxbar-franja"></span>
@@ -99,8 +108,9 @@ ob_start(); ?>
 <?php $topbarContexto = ob_get_clean();
 ?>
 
-<form method="post" action="/casos/nuevo"<?= $esRegistroPnp ? ' data-registro-pnp="' . (($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS ? 'otras' : 'febriles') . '"' : '' ?><?= $abrirSugerenciasCie10 ? ' data-abrir-cie10' : '' ?>>
+<form method="post" action="/casos/nuevo"<?= $esRegistroPnp ? ' data-registro-pnp="' . (($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS ? 'otras' : 'febriles') . '"' : '' ?><?= $abrirSugerenciasCie10 ? ' data-abrir-cie10' : '' ?><?= $grupoRegistro ? ' data-prefijos-dx="' . e($grupoRegistro['prefijos']) . '"' : '' ?>>
   <?= Csrf::campoOculto() ?><?= EnvioUnico::campoOculto() ?>
+  <?php if ($grupoRegistro): ?><input type="hidden" name="grupo_registro" value="<?= e($grupoRegistro['codigo']) ?>"><?php endif; ?>
   <script type="application/json" id="mapaCampos"><?= json_encode($mapaClaveNombreCampos, JSON_UNESCAPED_UNICODE) ?></script>
 
   <section class="ctx-head" id="ctxHead">
@@ -755,6 +765,19 @@ if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra')): ?>
         <input type="text" placeholder="Buscar por nombre o CIE-10" autocomplete="off" data-buscar-enfermedad>
       </div>
       <div class="modal-lista" data-lista-enfermedades>
+        <?php // EDA e IRA (2026-11-26): lo que más se registra, primero. Abre el
+        // registro PNP con el grupo puesto ("J00-J06" = IRA). ?>
+        <?php if ($registroOtras && $vigilanciaEdaIra): ?>
+          <div class="modal-grupo">EDA e IRA · Registro PNP</div>
+          <?php foreach ($vigilanciaEdaIra as $vig): ?>
+            <button type="button" class="modal-item" data-id="<?= (int) $registroOtras['id'] ?>" data-nombre="<?= e($vig['descripcion']) ?>"
+                    data-url="/casos/nuevo?<?= e(http_build_query(['enfermedad_id' => (int) $registroOtras['id'], 'cie10' => $vig['codigo']])) ?>"
+                    data-busqueda="<?= e(mb_strtolower($vig['descripcion'] . ' ' . $vig['codigo'] . ' ' . str_replace(',', ' ', $vig['prefijos']) . ' ' . $vig['alias'])) ?>">
+              <span class="mono modal-cie"><?= e($vig['codigo']) ?></span>
+              <span class="modal-nombre"><?= e($vig['descripcion']) ?><?php if (!empty($vig['indicacion'])): ?><small class="modal-criterio"><?= e($vig['indicacion']) ?></small><?php endif; ?></span>
+            </button>
+          <?php endforeach; ?>
+        <?php endif; ?>
         <?php foreach ($enfermedadesPorGrupo as $familia => $lista): ?>
           <div class="modal-grupo"><?= e($familia) ?></div>
           <?php foreach ($lista as $enf): $pares = $registroOtras ? ($vigilanciaPorPar[$enf['cie10'] ?? ''] ?? []) : []; ?>
@@ -763,7 +786,7 @@ if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra')): ?>
                     data-busqueda="<?= e(mb_strtolower(($enf['nombre_corto'] ?: $enf['nombre']) . ' ' . $enf['nombre'] . ' ' . ($enf['cie10'] ?? '') . ' ' . ($enf['palabras_clave'] ?? '') . ' ' . implode(' ', array_column($pares, 'descripcion')))) ?>"
                     <?= (int) $enf['tiene_definicion'] === 0 ? 'disabled' : '' ?>>
               <span class="mono modal-cie"><?= e(Enfermedad::esRegistro($enf) ? 'PNP' : ($enf['cie10'] ?? '')) ?></span>
-              <span class="modal-nombre"><?= e($enf['nombre_corto'] ?: $enf['nombre']) ?><?php if ($pares && !empty($enf['criterio'])): ?><small class="modal-criterio">Ficha MINSA · <?= e($enf['criterio']) ?></small><?php endif; ?></span>
+              <span class="modal-nombre"><?= e($enf['nombre_corto'] ?: $enf['nombre']) ?><?php if (($pares || isset($fichasConParEdaIra[$enf['cie10'] ?? ''])) && !empty($enf['criterio'])): ?><small class="modal-criterio">Ficha MINSA · <?= e($enf['criterio']) ?></small><?php endif; ?></span>
               <?php if ($enf['tipo_notif'] === 'INMEDIATA'): ?><span class="modal-inm">Inmediata</span><?php endif; ?>
             </button>
             <?php foreach ($pares as $vig): ?>
@@ -781,7 +804,7 @@ if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra')): ?>
         // enfermedades con el diagnóstico ya puesto. ?>
         <?php if ($registroOtras): ?>
           <div class="modal-grupo">Otras enfermedades · Registro PNP</div>
-          <?php foreach ($vigilanciaSinFicha as $vig): if (!empty($vig['par_cie10']) && Cie10Vigilancia::parDe($vig['codigo'])) continue; ?>
+          <?php foreach ($vigilanciaSinFicha as $vig): if (in_array($vig['codigo'], $codigosEdaIra, true) || (!empty($vig['par_cie10']) && Cie10Vigilancia::parDe($vig['codigo']))) continue; ?>
             <button type="button" class="modal-item" data-id="<?= (int) $registroOtras['id'] ?>" data-nombre="<?= e($vig['descripcion']) ?>"
                     data-url="/casos/nuevo?<?= e(http_build_query(['enfermedad_id' => (int) $registroOtras['id'], 'cie10' => $vig['codigo']])) ?>"
                     data-busqueda="<?= e(mb_strtolower($vig['descripcion'] . ' ' . $vig['codigo'] . ' ' . str_replace(',', ' ', $vig['prefijos']))) ?>">

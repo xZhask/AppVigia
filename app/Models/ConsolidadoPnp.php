@@ -154,6 +154,151 @@ class ConsolidadoPnp
         return $tablas + ['total' => $total];
     }
 
+    public const NOTI = 'EDAs e IRAs para NOTI (CDC-MINSA)';
+
+    /** Filas del formulario de EDAs de NOTI: clave => etiqueta. */
+    public const NOTI_EDADES_EDA = ['m1' => '< 1a', 'a1_4' => '1-4 a', 'a5_11' => '5-11 a', 'a12_17' => '12-17 a', 'a18_29' => '18-29 a', 'a30_59' => '30-59 a', 'a60' => '>60 a'];
+
+    /** Columnas del formulario de IRAs de NOTI: clave => etiqueta. */
+    public const NOTI_COLUMNAS_IRA = [
+        'iras' => 'IRAS', 'neum_no_grave' => 'Neum. no grave', 'neum_grave' => 'Neum. grave',
+        'hosp' => 'Hosp.', 'def_int' => 'Def. intrahospitalarias', 'def_ext' => 'Def. extrahospitalarias', 'sob_asma' => 'SOB/ASMA',
+    ];
+
+    /**
+     * Filas del formulario de IRAs de NOTI con las columnas que tienen casilla
+     * en cada una (las demás están vacías en NOTI): clave => [etiqueta, columnas].
+     */
+    public const NOTI_FILAS_IRA = [
+        'm0_1'    => ['<02 m.', ['iras', 'neum_grave', 'hosp', 'def_int', 'def_ext']],
+        'm2_11'   => ['02-11 m.', ['iras', 'neum_no_grave', 'neum_grave', 'hosp', 'def_int', 'def_ext']],
+        'a1_4'    => ['01-04 a', ['iras', 'neum_no_grave', 'neum_grave', 'hosp', 'def_int', 'def_ext']],
+        'a5_9'    => ['05-09 años', ['neum_no_grave', 'hosp', 'def_int', 'def_ext']],
+        'a10_19'  => ['10-19 años', ['neum_no_grave', 'hosp', 'def_int', 'def_ext']],
+        'a20_59'  => ['20-59 años', ['neum_no_grave', 'hosp', 'def_int', 'def_ext']],
+        'a60'     => ['60 años a más', ['neum_no_grave', 'hosp', 'def_int', 'def_ext']],
+        'sob_0_1' => ['<02 a', ['sob_asma']],
+        'sob_2_4' => ['02-04 a.', ['sob_asma']],
+    ];
+
+    /**
+     * EDAs e IRAs de la semana con las casillas de los formularios de NOTI
+     * (CDC-MINSA), para copiarlas allá (2026-11-26, aprobado por Epidemiología:
+     * a NOTI van cantidades con sus criterios; VIGÍA guarda cada atención).
+     * Una hoja por lugar probable de infección, porque NOTI pide uno por
+     * formulario. Cuenta los mismos registros que el consolidado semanal, sin
+     * las fichas de cólera (se notifican aparte, en la notificación individual).
+     *
+     *  - EDAs: diarrea acuosa (EDA) y disentérica, por < 1a ... >60 a: casos,
+     *    hospitalizaciones y defunciones.
+     *  - IRAs: IRA (no neumonía) en menores de 5; neumonía no grave y grave
+     *    (en menores de 2 meses toda neumonía es grave), sus hospitalizaciones
+     *    y defunciones intra y extrahospitalarias; SOB y asma sumados en
+     *    menores de 5. IRA, SOB y asma de 5 años a más no tienen casilla.
+     *
+     * @param array{anio: int, semana: int, establecimiento_id: ?int, usuario: array} $filtros
+     * @return array{lugares: list<array{nombre: string, eda: array, ira: array, total: int}>, sin_gravedad: list<array>, sin_edad: list<array>, sin_casilla: array<string, int>, total: int}
+     */
+    public static function noti(array $filtros): array
+    {
+        $filas = FormatoPnp::casos(
+            $filtros,
+            "e.cie10 = :otras AND c.cie10_dx IS NOT NULL AND c.clasificacion <> 'DESCARTADO'",
+            ['otras' => Cie10Vigilancia::REGISTRO_OTRAS]
+        );
+        $valores = FormatoPnp::valores(array_column($filas, 'id'));
+
+        $lugares = [];
+        $sinGravedad = $sinEdad = [];
+        $sinCasilla = ['IRA' => 0, 'SOB' => 0, 'ASMA' => 0];
+        $total = 0;
+        foreach ($filas as $fila) {
+            $grupo = Cie10Vigilancia::grupoConsolidado((string) $fila['cie10_dx']);
+            if (!in_array($grupo, ['EDA', 'DISENTERIA', 'IRA', 'NEUMONIA', 'SOBA', 'ASMA'], true)) {
+                continue;
+            }
+            $caso = ['id' => (int) $fila['id'], 'codigo' => (string) $fila['codigo'], 'cie10' => (string) $fila['cie10_dx']];
+            $edad = self::edad($fila);
+            if ($edad === null) {
+                $sinEdad[] = $caso;
+                continue;
+            }
+            $anios = $edad['anios'];
+            $v = $valores[(int) $fila['id']] ?? [];
+            $fallecido = (bool) $fila['fallecido'];
+            $lugarDefuncion = $v['reg_lugar_defuncion']['valor'] ?? '';
+            $intra = $fallecido && $lugarDefuncion === 'INTRAHOSPITALARIA';
+            $hospitalizado = (bool) $fila['hospitalizado'] || $intra;
+
+            $clave = (string) ($fila['lugar_contagio_distrito_id'] ?? '');
+            $lugares[$clave] ??= [
+                'nombre' => $clave === '' ? '' : implode(' / ', array_filter(array_map('trim', [(string) $fila['lugar_departamento'], (string) $fila['lugar_provincia'], (string) $fila['lugar_distrito']]))),
+                'eda' => [], 'ira' => [], 'total' => 0,
+            ];
+            $sumar = function (string $tabla, string $filaNoti, string $columna) use (&$lugares, $clave): void {
+                $lugares[$clave][$tabla][$filaNoti][$columna] = ($lugares[$clave][$tabla][$filaNoti][$columna] ?? 0) + 1;
+            };
+
+            if ($grupo === 'EDA' || $grupo === 'DISENTERIA') {
+                $rango = $anios < 1 ? 'm1' : ($anios < 5 ? 'a1_4' : ($anios < 12 ? 'a5_11' : ($anios < 18 ? 'a12_17' : ($anios < 30 ? 'a18_29' : ($anios < 60 ? 'a30_59' : 'a60')))));
+                $tipo = $grupo === 'EDA' ? 'acuosa' : 'disenterica';
+                $sumar('eda', $rango, "$tipo.casos");
+                if ($hospitalizado) {
+                    $sumar('eda', $rango, "$tipo.hosp");
+                }
+                if ($fallecido) {
+                    $sumar('eda', $rango, "$tipo.def");
+                }
+            } elseif ($grupo === 'IRA') {
+                if ($anios >= 5) {
+                    $sinCasilla['IRA']++;
+                    continue;
+                }
+                $sumar('ira', self::rangoMenor5($edad, false), 'iras');
+            } elseif ($grupo === 'SOBA' || $grupo === 'ASMA') {
+                if ($anios >= 5) {
+                    $sinCasilla[$grupo === 'SOBA' ? 'SOB' : 'ASMA']++;
+                    continue;
+                }
+                $sumar('ira', $anios < 2 ? 'sob_0_1' : 'sob_2_4', 'sob_asma');
+            } else {
+                $rango = $anios < 5 ? self::rangoMenor5($edad, false)
+                    : ($anios < 10 ? 'a5_9' : ($anios < 20 ? 'a10_19' : ($anios < 60 ? 'a20_59' : 'a60')));
+                if ($anios < 5) {
+                    $gravedad = $v['reg_neumonia_grave']['valor'] ?? '';
+                    if ($rango !== 'm0_1' && $gravedad === '') {
+                        // Sin decir si es grave no tiene columna: se avisa para corregirlo.
+                        $sinGravedad[] = $caso;
+                        continue;
+                    }
+                    $sumar('ira', $rango, ($rango === 'm0_1' || $gravedad === 'SI') ? 'neum_grave' : 'neum_no_grave');
+                } else {
+                    $sumar('ira', $rango, 'neum_no_grave');
+                }
+                if ($hospitalizado) {
+                    $sumar('ira', $rango, 'hosp');
+                }
+                if ($fallecido) {
+                    $sumar('ira', $rango, $intra ? 'def_int' : 'def_ext');
+                }
+            }
+            $lugares[$clave]['total']++;
+            $total++;
+        }
+
+        // Primero los lugares con nombre, en orden alfabético; al final, el
+        // de los registros sin lugar probable de infección.
+        uksort($lugares, fn($a, $b) => [$a === '', $lugares[$a]['nombre']] <=> [$b === '', $lugares[$b]['nombre']]);
+
+        return [
+            'lugares'      => array_values(array_filter($lugares, fn($l) => $l['total'] > 0)),
+            'sin_gravedad' => $sinGravedad,
+            'sin_edad'     => $sinEdad,
+            'sin_casilla'  => array_filter($sinCasilla),
+            'total'        => $total,
+        ];
+    }
+
     /** Diagnóstico de la sábana DIRSAPOL para cada grupo del consolidado. */
     private const DX_SABANA = ['EDA' => 'DIARREA', 'DISENTERIA' => 'DISENTERIA', 'COLERA' => 'COLERA', 'IRA' => 'IRA', 'NEUMONIA' => 'NEUMONIA', 'SOBA' => 'SOB', 'ASMA' => 'ASMA'];
 

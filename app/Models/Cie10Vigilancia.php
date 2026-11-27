@@ -25,8 +25,69 @@ class Cie10Vigilancia extends Model
     public static function sinFicha(): array
     {
         return Database::conexion()->query(
-            'SELECT codigo, prefijos, descripcion, notificacion, par_cie10, indicacion FROM cie10_vigilancia WHERE enfermedad_cie10 IS NULL ORDER BY orden'
+            'SELECT codigo, prefijos, descripcion, notificacion, par_cie10, indicacion, consolidado FROM cie10_vigilancia WHERE enfermedad_cie10 IS NULL ORDER BY orden'
         )->fetchAll();
+    }
+
+    /**
+     * Palabras con que se busca cada grupo del consolidado en la ventana
+     * "Cambiar enfermedad" (2026-11-26): quien escribe "EDA" o "IRA" busca
+     * el registro PNP, no la ficha "EDA grave / cólera".
+     */
+    private const ALIAS_CONSOLIDADO = [
+        'EDA'        => 'eda edas diarrea acuosa gastroenteritis',
+        'DISENTERIA' => 'eda edas diarrea disenterica disentería sangre',
+        'IRA'        => 'ira iras resfrio resfrío faringitis amigdalitis otitis sinusitis laringitis rinofaringitis',
+        'NEUMONIA'   => 'ira iras neumonia neumonía',
+        'SOBA'       => 'ira iras sob soba bronquiolitis obstructivo',
+        'ASMA'       => 'ira iras asma',
+    ];
+
+    /**
+     * EDA e IRA del registro PNP (2026-11-26): los códigos sin ficha que van
+     * al consolidado semanal (diarrea aguda, disentería, IRA, neumonía, SOB,
+     * asma), lo que más se registra. La ventana "Cambiar enfermedad" los pone
+     * primero, con sus palabras de búsqueda ("alias").
+     */
+    public static function edaIra(): array
+    {
+        $filas = [];
+        foreach (self::sinFicha() as $fila) {
+            if (!empty($fila['consolidado'])) {
+                $filas[] = $fila + ['alias' => self::ALIAS_CONSOLIDADO[$fila['consolidado']] ?? ''];
+            }
+        }
+
+        return $filas;
+    }
+
+    /** Fila del listado PNP con ese código exacto ("J00-J06", "A09"), o null. */
+    public static function porCodigo(string $codigo): ?array
+    {
+        foreach (self::sinFicha() as $fila) {
+            if (strcasecmp($fila['codigo'], $codigo) === 0) {
+                return $fila;
+            }
+        }
+
+        return null;
+    }
+
+    /** Fila del listado PNP que contiene un diagnóstico (J06.9 -> "J00-J06"): el prefijo más largo. */
+    public static function grupoDe(string $codigo): ?array
+    {
+        $clave = Cie10::clave($codigo);
+        $mejor = null;
+        foreach (self::sinFicha() as $fila) {
+            foreach (explode(',', $fila['prefijos']) as $prefijo) {
+                $prefijo = trim($prefijo);
+                if ($prefijo !== '' && $clave !== '' && str_starts_with($clave, $prefijo) && ($mejor === null || strlen($prefijo) > strlen($mejor[0]))) {
+                    $mejor = [$prefijo, $fila];
+                }
+            }
+        }
+
+        return $mejor[1] ?? null;
     }
 
     /**

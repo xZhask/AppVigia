@@ -12,8 +12,9 @@ bitácora histórica (más de 7.000 líneas); esto es lo que sigue vigente.
 > - **Sábanas DIRSAPOL, fase 3:** para la tabla de equivalencias de
 >   macrorregiones falta **decidir con Epidemiología** quién valida la lista
 >   de unidades.
-> - **EDAs e IRAs como en NOTI (§3, punto 12):** el usuario lo consulta con
->   Epidemiología (25/11).
+> - **EDAs e IRAs y formato NOTI (§3, punto 12): hecho el 26/11, FALTA
+>   SUBIRLO.** Va en el próximo parche, con **un UPDATE en phpMyAdmin**
+>   (está en el punto 12).
 
 ## 0. Al llegar a una estación (lista corta)
 
@@ -906,30 +907,60 @@ No tocar sin una respuesta explícita.
     - Los Excel originales se borraron del proyecto porque tienen datos
       personales. Pedirlos de nuevo para probar y guardarlos fuera del
       proyecto.
-12. **EDAs e IRAs como en NOTI (CDC-MINSA) (25/11): el usuario lo consulta
-    con Epidemiología.** A los usuarios les resulta fácil NOTI, que pide un
-    formulario semanal de **conteos** (EDAs: acuosa y disentérica por <1,
-    1-4, 5-11, 12-17, 18-29, 30-59 y >60, con casos, hospitalizaciones y
-    defunciones; IRAs: IRA <5a, neumonía no grave/grave, hospitalizaciones,
-    defunciones intra y extrahospitalarias, y SOB/asma <5a; más etnia,
-    procedencia y lugar probable de infección).
-    - **Análisis:** todas las casillas de NOTI se calculan con los registros
-      REG-PNP por atención. Al revés no: los conteos de NOTI no traen
-      condición (T/F/alumno/cadete), juntan SOB con asma, no tienen IRA, SOB
-      ni asma de 5a+ y usan otros cortes de edad, así que no alcanzarían para
-      el consolidado PNP ni para la sábana DIRSAPOL.
-    - **Propuesta llevada al Área:**
-      1. «Formato NOTI» en Reportes › Formatos (1–1,5 días): las tablas de
-         EDAs e IRAs ya llenas por establecimiento y SE, una por distrito
-         del lugar probable de infección, para copiar a NOTI.
-      2. «Neumonía grave» obligatoria en menores de 5 años
-         (`reg_neumonia_grave`); decidir si se piden etnia y procedencia
-         (hoy omitidas en REG-PNP).
-      3. Después, carga rápida por lote de atenciones (3–4 días).
-    - **Pregunta clave para el Área:** ¿necesita los datos nominales de
-      EDA/IRA? Si no, cabe un formulario de conteos, que contradice la
-      decisión del 25/11 (consolidado desde los registros) y obligaría a
-      agregar la condición y otros cortes de edad.
+12. **EDAs e IRAs: registro más claro y formato NOTI (26/11) — hecho, FALTA
+    SUBIRLO AL SERVIDOR.** El 25/11 se analizó replicar los formularios de
+    conteos de NOTI (CDC-MINSA). El 26/11 Epidemiología respondió que **sí
+    necesita los datos del paciente** (se sigue registrando cada atención) y
+    **aprobó el reporte para copiar a NOTI**. Además, el usuario contó que
+    «EDA» llevaba a «EDA grave / cólera» y que el registro se titulaba «Otras
+    enfermedades». El documento para la reunión es «EDAs e IRAs: registro en
+    VIGÍA SPNP frente a NOTI» (Claude Docs).
+    - **«Cambiar enfermedad»:**
+      - **Grupo fijo arriba**, «EDA e IRA · Registro PNP»: los 6 códigos del
+        listado que van al consolidado (diarrea aguda A09, disentería A03, IRA
+        J00-J06, neumonía J12-J18, SOB J21, asma J45-J46), con palabras de
+        búsqueda (`Cie10Vigilancia::edaIra()`, «eda», «ira»…). Ya no se
+        repiten debajo de «EDA grave / cólera», que sigue mostrando su
+        criterio.
+      - **Búsqueda por inicio de palabra** (`ficha.js`, `filtrar()`): antes
+        «eda» encontraba «enfermedad» y «ira» encontraba «respiratorio».
+    - **Título del registro:** abierto desde un grupo (`?cie10=J00-J06`, que
+      no es un código), se titula con el grupo («Infección respiratoria aguda
+      (no neumonía)»); la pestaña y la ruta de arriba dicen «Nuevo registro ·
+      <diagnóstico o grupo>». El grupo viaja en el campo oculto
+      `grupo_registro`. Al entrar al «Diagnóstico CIE-10» vacío se despliegan
+      los códigos del grupo (`/cie10/buscar?prefijos=`, `Cie10::delGrupo()`).
+    - **«Registrar y agregar otra»** en el registro de otras enfermedades
+      (`nucleo_ajustes.registrar_y_agregar_otra`, como P96 y febriles): el
+      siguiente abre con el mismo establecimiento y fecha y, en EDA/IRA, con
+      el mismo grupo. Migración `sql/migraciones/set_reg_pnp_agregar_otra.php`
+      (ya aplicada en local) y manifiesto actualizado.
+    - **«Neumonía grave» obligatoria de 2 meses a 4 años**
+      (`CasosController::errorNeumoniaGraveSinDato()`, al crear y editar):
+      sin ella la neumonía no tiene columna en NOTI ni en el consolidado. En
+      menores de 2 meses toda neumonía es grave.
+    - **Formato NOTI** en Reportes › Formatos (`/reportes/noti`,
+      `ConsolidadoPnp::noti()`, ADMIN y REGISTRADOR): por establecimiento y
+      SE, las tablas de EDAs (acuosa y disentérica por < 1a … >60 a: casos,
+      hospitalizaciones, defunciones) y de IRAs (IRAS, neumonía no grave y
+      grave, hosp., defunciones intra y extra, SOB/ASMA) con la misma forma
+      que NOTI, una hoja por lugar probable de infección, más Excel e
+      impresión. Avisa de neumonías sin gravedad y registros sin edad, con
+      enlace para corregirlos. No incluye cólera (va en la notificación
+      individual) ni IRA/SOB/asma de 5 años a más (NOTI no tiene casilla).
+      Etnia y procedencia se completan en NOTI.
+    - **Para el servidor:**
+      - Archivos: `app/Controllers/CasosController.php`,
+        `app/Controllers/ReportesController.php`, `app/Models/Cie10.php`,
+        `app/Models/Cie10Vigilancia.php`, `app/Models/ConsolidadoPnp.php`,
+        `app/Models/FormatoPnp.php`, `app/Views/ayuda/registrador.php`,
+        `app/Views/nueva/index.php`, `app/Views/reportes/index.php`,
+        `app/Views/reportes/noti.php` (nuevo), `public/index.php` y
+        `public/js/ficha.js`.
+      - **SQL en phpMyAdmin** (idempotente):
+        `UPDATE enfermedad SET nucleo_ajustes = JSON_SET(COALESCE(nucleo_ajustes, '{}'), '$.registrar_y_agregar_otra', TRUE) WHERE cie10 = 'REG-PNP';`
+      - Después: probar «Cambiar enfermedad» con «eda» e «ira», un registro
+        de IRA con «Registrar y agregar otra» y Reportes › Formatos › NOTI.
 
 ## 4. Pendiente — técnico, sin decisión de por medio
 

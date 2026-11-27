@@ -612,6 +612,85 @@ class ReportesController extends Controller
     }
 
     /**
+     * EDAs e IRAs para NOTI (CDC-MINSA), 2026-11-26: las casillas de los
+     * formularios semanales de NOTI ya calculadas desde los registros de la
+     * semana de un establecimiento, para copiarlas (ver ConsolidadoPnp::noti).
+     */
+    public function notiPnp(): void
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
+
+        $this->vista('reportes/noti', [
+            'tituloVista'      => 'EDAs e IRAs para NOTI',
+            'rutaActual'       => 'reportes',
+            'vistaAncha'       => true,
+            'filtros'          => $filtros,
+            'establecimientos' => Establecimiento::todos('nombre'),
+            'puedeElegirEstablecimiento' => !Auth::tieneRol('REGISTRADOR'),
+            'encabezado'       => FormatoPnp::encabezado($filtros['establecimiento_id']),
+            'rangoSemana'      => ListadoMuerteFetalNeonatal::rangoDeSemana($filtros['anio'], $filtros['semana']),
+            'datos'            => ConsolidadoPnp::noti($filtros),
+        ]);
+    }
+
+    /** Las mismas tablas en .xlsx: por cada lugar probable de infección, EDAs y luego IRAs. */
+    public function exportarNotiPnp(): void
+    {
+        $filtros = ListadoMuerteFetalNeonatal::filtros($_GET, Auth::usuario());
+        $datos = ConsolidadoPnp::noti($filtros);
+        $libro = $this->cabeceraPnp($this->libro('EDAs e IRAs para NOTI'), ConsolidadoPnp::NOTI, FormatoPnp::encabezado($filtros['establecimiento_id']), $filtros);
+        $celda = fn(array $tabla, string $fila, string $columna) => $tabla[$fila][$columna] ?? 0;
+
+        if (!$datos['lugares']) {
+            $libro->nota('Sin EDAs ni IRAs registradas en la semana.');
+        }
+        foreach ($datos['lugares'] as $lugar) {
+            $libro->seccion(mb_strtoupper('Lugar probable de infección: ' . ($lugar['nombre'] ?: 'no registrado')));
+            $columnasEda = [['titulo' => 'Edad']];
+            foreach (['acuosa' => 'Diarrea acuosa', 'disenterica' => 'Diarrea disentérica'] as $tipo => $grupo) {
+                foreach (['casos' => 'N.º de casos', 'hosp' => 'N.º de hospitalizaciones', 'def' => 'N.º de defunciones'] as $medida => $titulo) {
+                    $columnasEda[] = ['titulo' => $titulo, 'grupo' => $grupo, 'tipo' => 'entero', 'ancho' => 14];
+                }
+            }
+            $filasEda = [];
+            foreach (ConsolidadoPnp::NOTI_EDADES_EDA as $clave => $etiqueta) {
+                $fila = [$etiqueta];
+                foreach (['acuosa', 'disenterica'] as $tipo) {
+                    foreach (['casos', 'hosp', 'def'] as $medida) {
+                        $fila[] = $celda($lugar['eda'], $clave, "$tipo.$medida");
+                    }
+                }
+                $filasEda[] = $fila;
+            }
+            $libro->tabla($columnasEda, $filasEda);
+
+            $columnasIra = [['titulo' => 'Edad']];
+            foreach (ConsolidadoPnp::NOTI_COLUMNAS_IRA as $clave => $titulo) {
+                $columnasIra[] = ['titulo' => $titulo, 'grupo' => in_array($clave, ['iras', 'sob_asma'], true) ? null : 'Neumonías', 'tipo' => 'entero', 'ancho' => 13];
+            }
+            $filasIra = [];
+            foreach (ConsolidadoPnp::NOTI_FILAS_IRA as $clave => [$etiqueta, $columnas]) {
+                $fila = [$etiqueta];
+                foreach (array_keys(ConsolidadoPnp::NOTI_COLUMNAS_IRA) as $columna) {
+                    $fila[] = in_array($columna, $columnas, true) ? $celda($lugar['ira'], $clave, $columna) : '';
+                }
+                $filasIra[] = $fila;
+            }
+            $libro->tabla($columnasIra, $filasIra);
+        }
+        $libro->nota('Etnia, grupo étnico y procedencia: completarlos en NOTI. Las fichas de cólera no van aquí: se notifican en la notificación individual.');
+        if ($datos['sin_gravedad']) {
+            $libro->nota('Faltan en las tablas ' . count($datos['sin_gravedad']) . ' neumonía(s) de menores de 5 años sin indicar si es grave: '
+                . implode(', ', array_column($datos['sin_gravedad'], 'codigo')) . '. Corrígelas y vuelve a descargar.');
+        }
+        if ($datos['sin_edad']) {
+            $libro->nota('Faltan ' . count($datos['sin_edad']) . ' registro(s) sin edad: ' . implode(', ', array_column($datos['sin_edad'], 'codigo')) . '.');
+        }
+        $libro->descargar('noti_edas_iras_' . $filtros['anio'] . '_SE' . str_pad((string) $filtros['semana'], 2, '0', STR_PAD_LEFT));
+        exit;
+    }
+
+    /**
      * Registro semanal consolidado del Área de Epidemiología PNP (2026-10-21):
      * EDA, cólera, IRA, neumonía, SOB y asma contados de los casos de la
      * semana (ver ConsolidadoPnp).

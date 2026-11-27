@@ -300,6 +300,11 @@ class CasosController extends Controller
         if ($campoCie10DxNuevo && preg_match('/^[A-Z][0-9A-Z.]{1,9}$/', $cie10Pedido)) {
             $valoresCamposIniciales[(int) $campoCie10DxNuevo['id']] = codigoCie10DelCatalogo($cie10Pedido) ?? $cie10Pedido;
         }
+        // EDA e IRA (2026-11-26): el grupo del listado PNP con que se abrió el
+        // registro ("J00-J06" = IRA, que no es un código) titula el formulario
+        // y abre en el diagnóstico la lista de sus códigos.
+        $grupoRegistro = $campoCie10DxNuevo && ($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS && $cie10Pedido !== ''
+            ? Cie10Vigilancia::porCodigo($cie10Pedido) : null;
 
         // "Pasar a ficha MINSA" (2026-10-21): ?origen=<registro> abre la
         // ficha con la persona, el establecimiento y la fecha del registro.
@@ -368,6 +373,7 @@ class CasosController extends Controller
             'valoresSujetoPorRol' => [],
             'casoOrigen'    => $casoOrigen,
             'abrirSugerenciasCie10' => $campoCie10DxNuevo && $cie10Pedido !== '' && codigoCie10DelCatalogo($cie10Pedido) === null,
+            'grupoRegistro' => $grupoRegistro,
         ], $this->datosVinculoCasoVista($enfermedad, $vinculoSeleccionado, null), $this->datosEstablecimiento(), $datosPnpVista, $this->datosMuestrasCatalogo($enfermedad), $this->datosVacunasCatalogo(), $this->datosColumnasTablaHija($enfermedad), contextoUbigeo($distritoInicial)));
     }
 
@@ -626,6 +632,7 @@ class CasosController extends Controller
         // "comparar_fechas"/"maximo_dias_entre" (P96).
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
         $erroresCampos = $this->errorCie10ConFicha($enfermedad, $valoresCampos, $erroresCampos);
+        $erroresCampos = $this->errorNeumoniaGraveSinDato($enfermedad, $valoresCampos, $erroresCampos, $fechaNacIso, $fechaNotifIso ?: null, $valoresFijos);
         if ($fechaInicioSintomasEsDerivada) {
             $fechaInicioSintomasIso = $this->fechaInicioSintomasCalculada($enfermedad, $valoresCampos);
         }
@@ -681,6 +688,8 @@ class CasosController extends Controller
                 'fechaInicioSintomas' => $fechaInicioSintomas,
                 'errorFechaInicioSintomas' => $errorFechaInicioSintomas,
                 'clasificacionActual' => $clasificacion,
+                // EDA e IRA (2026-11-26): el grupo con que se abrió sigue titulando el formulario.
+                'grupoRegistro' => is_string($_POST['grupo_registro'] ?? null) ? Cie10Vigilancia::porCodigo($_POST['grupo_registro']) : null,
                 'filasContactos' => $filasContactos,
                 'filasContactosDirectos' => $filasContactosDirectos,
                 'filasViajes'    => $filasViajes,
@@ -863,8 +872,17 @@ class CasosController extends Controller
         if (nucleoAjuste($enfermedad, 'registrar_y_agregar_otra') === true) {
             if (($_POST['despues_de_registrar'] ?? '') === 'agregar_otra') {
                 Flash::set(sprintf('%s: F-%05d (SE %d · %d). Registra la siguiente: se mantienen el establecimiento y la fecha de notificación.', $textoRegistrada, $casoId, $semana['semana'], $semana['anio']) . $sufijoSinCasos);
+                // Registro de otras enfermedades (2026-11-26): el siguiente abre
+                // en el mismo grupo (IRA, diarrea aguda...), sin el código exacto.
+                $grupoSiguiente = ($enfermedad['cie10'] ?? '') === Cie10Vigilancia::REGISTRO_OTRAS
+                    ? (Cie10Vigilancia::porCodigo((string) ($_POST['grupo_registro'] ?? '')) ?? ($cie10DxGuardado ? Cie10Vigilancia::grupoDe($cie10DxGuardado) : null))
+                    : null;
+                if ($grupoSiguiente && empty($grupoSiguiente['consolidado'])) {
+                    $grupoSiguiente = null; // solo EDA e IRA, lo que se carga en serie
+                }
                 header('Location: /casos/nuevo?' . http_build_query(array_merge(
                     ['enfermedad_id' => $enfermedadId],
+                    $grupoSiguiente ? ['cie10' => $grupoSiguiente['codigo']] : [],
                     $puedeElegirEstablecimiento ? ['establecimiento_id' => (int) $establecimiento['id']] : [],
                     ['fecha_notif' => $fechaNotifIso]
                 )));
@@ -1363,6 +1381,7 @@ class CasosController extends Controller
         $erroresFijos += $erroresObservacionesPnp;
         [$valoresCampos, $erroresCampos, $paraGuardar] = $this->validarCamposDinamicos($enfermedadId, $this->valoresNucleoParaReglas($valoresFijos, $fechaNacIso));
         $erroresCampos = $this->errorCie10ConFicha($enfermedad, $valoresCampos, $erroresCampos);
+        $erroresCampos = $this->errorNeumoniaGraveSinDato($enfermedad, $valoresCampos, $erroresCampos, $fechaNacIso, $fechaNotifIso ?: null, $valoresFijos);
         if ($fechaInicioSintomasEsDerivada) {
             $fechaInicioSintomasIso = $this->fechaInicioSintomasCalculada($enfermedad, $valoresCampos);
         }
@@ -2264,6 +2283,43 @@ class CasosController extends Controller
         $ficha = Cie10Vigilancia::fichaQueCubre((string) ($valoresCampos[(int) $campo['id']] ?? ''));
         if ($ficha) {
             $erroresCampos[(int) $campo['id']] = 'Este diagnóstico tiene ficha MINSA («' . ($ficha['nombre_corto'] ?: $ficha['nombre']) . '»): notifícalo en esa ficha.';
+        }
+
+        return $erroresCampos;
+    }
+
+    /**
+     * Neumonía en un menor de 5 años (2026-11-26, NOTI y consolidado de IRA):
+     * hay que decir si es grave, porque va en otra columna. Desde los 2 meses:
+     * en un menor de 2 meses toda neumonía cuenta como grave. La edad sale de
+     * la fecha de nacimiento a la fecha de notificación o, sin ella, de la
+     * edad declarada.
+     */
+    private function errorNeumoniaGraveSinDato(array $enfermedad, array $valoresCampos, array $erroresCampos, ?string $fechaNacIso, ?string $fechaNotifIso, array $valoresFijos): array
+    {
+        $campoDx = $this->campoCie10Dx($enfermedad);
+        $campoGrave = CampoDef::porClave((int) $enfermedad['id'], 'reg_neumonia_grave');
+        if (!$campoDx || !$campoGrave || ($enfermedad['cie10'] ?? '') !== Cie10Vigilancia::REGISTRO_OTRAS || isset($erroresCampos[(int) $campoGrave['id']])) {
+            return $erroresCampos;
+        }
+        $dx = (string) ($valoresCampos[(int) $campoDx['id']] ?? '');
+        if ($dx === '' || Cie10Vigilancia::grupoConsolidado($dx) !== 'NEUMONIA' || (string) ($valoresCampos[(int) $campoGrave['id']] ?? '') !== '') {
+            return $erroresCampos;
+        }
+        $meses = null;
+        if ($fechaNacIso && $fechaNotifIso && $fechaNacIso <= $fechaNotifIso) {
+            $diferencia = (new DateTime($fechaNacIso))->diff(new DateTime($fechaNotifIso));
+            $meses = $diferencia->y * 12 + $diferencia->m;
+        } elseif (ctype_digit((string) ($valoresFijos['edad_valor'] ?? ''))) {
+            $valor = (int) $valoresFijos['edad_valor'];
+            $meses = match ($valoresFijos['edad_unidad'] ?? '') {
+                'ANIOS' => $valor * 12,
+                'MESES' => $valor,
+                default => 0,
+            };
+        }
+        if ($meses !== null && $meses >= 2 && $meses < 60) {
+            $erroresCampos[(int) $campoGrave['id']] = 'En menores de 5 años indica si la neumonía es grave: va en otra columna del consolidado y de NOTI.';
         }
 
         return $erroresCampos;
@@ -4409,7 +4465,14 @@ class CasosController extends Controller
             ], JSON_UNESCAPED_UNICODE);
             return;
         }
-        echo json_encode(\App\Models\Cie10::sugerencias((string) ($_GET['q'] ?? ''), 15, $sexo), JSON_UNESCAPED_UNICODE);
+        // ?prefijos= sin texto (2026-11-26): los códigos del grupo de EDA o IRA
+        // con que se abrió el registro, antes de escribir nada.
+        $texto = trim((string) ($_GET['q'] ?? ''));
+        if ($texto === '' && is_string($_GET['prefijos'] ?? null)) {
+            echo json_encode(\App\Models\Cie10::delGrupo(explode(',', $_GET['prefijos']), $sexo), JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        echo json_encode(\App\Models\Cie10::sugerencias($texto, 15, $sexo), JSON_UNESCAPED_UNICODE);
     }
 
     /**

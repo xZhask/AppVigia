@@ -261,7 +261,8 @@ class FormatoPnp
                     p.tipo_doc, p.num_doc, p.apellido_paterno, p.apellido_materno, p.nombres, p.sexo, p.fecha_nac,
                     p.condicion, p.cip, p.situacion_pnp, p.direccion, p.localidad, p.n_historia_clinica,
                     g.abreviatura AS grado, g.nivel AS grado_nivel, un.nombre AS unidad, d.nombre AS distrito_residencia, prr.nombre AS provincia_residencia,
-                    lcd.nombre AS lugar_distrito, lcp.nombre AS lugar_provincia, es.nombre AS establecimiento, es.categoria AS establecimiento_categoria,
+                    lcd.nombre AS lugar_distrito, lcp.nombre AS lugar_provincia, lcdep.nombre AS lugar_departamento, c.lugar_contagio_distrito_id,
+                    es.nombre AS establecimiento, es.categoria AS establecimiento_categoria,
                     rs.nombre AS red
                FROM caso c
                JOIN enfermedad e       ON e.id = c.enfermedad_id
@@ -274,6 +275,7 @@ class FormatoPnp
           LEFT JOIN provincia prr      ON prr.id = d.provincia_id
           LEFT JOIN distrito lcd       ON lcd.id = c.lugar_contagio_distrito_id
           LEFT JOIN provincia lcp      ON lcp.id = lcd.provincia_id
+          LEFT JOIN departamento lcdep ON lcdep.id = lcp.departamento_id
               WHERE ' . implode(' AND ', $condiciones) . '
            ORDER BY c.fecha_notif, c.id'
         );
